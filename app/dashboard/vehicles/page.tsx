@@ -6,25 +6,23 @@ import Link from "next/link";
 import { useState } from "react";
 import { CreateVehicleForm } from "@/components/CreateVehicleForm";
 import { VehicleImage } from "@/components/VehicleImage";
+import { Button } from "@/components/ui/button";
 
 export default function VehiclesPage() {
   const vehicles = useQuery(api.vehicles.getAll);
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [isCreateFormOpen, setIsCreateFormOpen] = useState(false);
 
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Vehicles</h1>
-        <button
-          onClick={() => setShowCreateForm(true)}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-        >
+        <Button onClick={() => setIsCreateFormOpen(true)}>
           Add New Vehicle
-        </button>
+        </Button>
       </div>
 
       {/* Cars Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6 w-full">
         {vehicles?.map((vehicle: any) => (
           <Link
             key={vehicle._id}
@@ -57,13 +55,18 @@ export default function VehiclesPage() {
         ))}
       </div>
 
-      {/* Create Vehicle Form Modal */}
-      {showCreateForm && (
-        <CreateVehicleForm
-          onSuccess={() => setShowCreateForm(false)}
-          onCancel={() => setShowCreateForm(false)}
-        />
-      )}
+      {/* Create Vehicle Form Modal (Dialog) */}
+      <CreateVehicleForm
+        open={isCreateFormOpen}
+        onOpenChange={setIsCreateFormOpen}
+        onSuccess={() => {
+          setIsCreateFormOpen(false);
+          // Optionally, trigger a re-fetch or show a toast message
+        }}
+        onCancel={() => {
+          setIsCreateFormOpen(false);
+        }}
+      />
     </div>
   );
 }

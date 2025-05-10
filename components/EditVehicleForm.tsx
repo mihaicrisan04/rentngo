@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useMutation, useAction } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
 
@@ -27,54 +27,74 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CheckedState } from "@radix-ui/react-checkbox";
 
+// Assuming these types are defined in a shared location or are appropriate here
 type VehicleType = "sedan" | "suv" | "hatchback" | "sports";
 type TransmissionType = "automatic" | "manual";
 type FuelType = "petrol" | "diesel" | "electric" | "hybrid";
-type StatusType = "available" | "rented" | "maintenance";
+type StatusType = "available" | "rented" | "maintenance"; // Assuming vehicle object has status
 
-interface CreateVehicleFormProps {
+interface EditVehicleFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  vehicleId: Id<"vehicles">;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
-export function CreateVehicleForm({
+const initialFormData = {
+  make: "",
+  model: "",
+  year: new Date().getFullYear(),
+  type: "sedan" as VehicleType,
+  seats: 5,
+  transmission: "automatic" as TransmissionType,
+  fuelType: "petrol" as FuelType,
+  pricePerDay: 0,
+  location: "",
+  features: [] as string[],
+  status: "available" as StatusType, // Default status
+};
+
+export function EditVehicleForm({
   open,
   onOpenChange,
+  vehicleId,
   onSuccess,
   onCancel,
-}: CreateVehicleFormProps) {
-  const createVehicle = useMutation(api.vehicles.create);
+}: EditVehicleFormProps) {
+  const vehicle = useQuery(api.vehicles.getById, vehicleId ? { id: vehicleId } : "skip");
+  const updateVehicle = useMutation(api.vehicles.update); // IMPORTANT: Ensure api.vehicles.update exists
   const uploadImages = useAction(api.vehicles.uploadImages as any);
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-
-  const initialFormData = {
-    make: "",
-    model: "",
-    year: new Date().getFullYear(),
-    type: "sedan" as VehicleType,
-    seats: 5,
-    transmission: "automatic" as TransmissionType,
-    fuelType: "petrol" as FuelType,
-    pricePerDay: 0,
-    location: "",
-    features: [] as string[],
-    status: "available" as StatusType,
-  };
   const [formData, setFormData] = useState(initialFormData);
 
   useEffect(() => {
-    if (open) {
-    } else {
+    if (open && vehicle) {
+      setFormData({
+        make: vehicle.make,
+        model: vehicle.model,
+        year: vehicle.year,
+        type: vehicle.type as VehicleType,
+        seats: vehicle.seats,
+        transmission: vehicle.transmission as TransmissionType,
+        fuelType: vehicle.fuelType as FuelType,
+        pricePerDay: vehicle.pricePerDay,
+        location: vehicle.location,
+        features: vehicle.features || [],
+        status: (vehicle.status || "available") as StatusType, // Handle if status is not present
+      });
+      setSelectedFiles(null);
+      setPreviewUrls([]);
+    } else if (!open) {
+      // Reset form when dialog closes to avoid stale data
       setFormData(initialFormData);
       setSelectedFiles(null);
       setPreviewUrls([]);
     }
-  }, [open]);
+  }, [open, vehicle, vehicleId]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -90,6 +110,8 @@ export function CreateVehicleForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!vehicle) return; // Should not happen if form is open and populated
+
     setIsSubmitting(true);
 
     try {
@@ -99,7 +121,9 @@ export function CreateVehicleForm({
         seats: Number(formData.seats),
         pricePerDay: Number(formData.pricePerDay),
       };
-      const vehicleId = await createVehicle(vehicleDataToSubmit);
+      
+      // IMPORTANT: This assumes your api.vehicles.update mutation takes { id, ...data }
+      await updateVehicle({ id: vehicleId, ...vehicleDataToSubmit });
 
       if (selectedFiles && selectedFiles.length > 0) {
         const imageBuffers = await Promise.all(
@@ -110,7 +134,7 @@ export function CreateVehicleForm({
         );
 
         await uploadImages({
-          vehicleId: vehicleId as Id<"vehicles">,
+          vehicleId: vehicleId,
           images: imageBuffers,
         });
       }
@@ -118,8 +142,8 @@ export function CreateVehicleForm({
       onSuccess?.();
       onOpenChange(false);
     } catch (error) {
-      console.error("Error creating vehicle:", error);
-      alert("Failed to create vehicle. Please check console for details.");
+      console.error("Error updating vehicle:", error);
+      alert("Failed to update vehicle. Please check console for details.");
     } finally {
       setIsSubmitting(false);
     }
@@ -139,20 +163,28 @@ export function CreateVehicleForm({
         : prev.features.filter(f => f !== featureLower)
     }));
   };
+  
+  if (!open && !vehicle) {
+    // Don't render anything or render a loader if vehicle data is not yet available but dialog is supposed to be open
+    // This check might need refinement based on how `open` and `vehicle` states interact
+    return null; 
+  }
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh]">
         <DialogHeader>
-          <DialogTitle>Create New Vehicle</DialogTitle>
+          <DialogTitle>Edit Vehicle</DialogTitle>
         </DialogHeader>
+        {vehicle ? (
         <ScrollArea className="max-h-[calc(80vh-150px)] pr-6">
-          <form onSubmit={handleSubmit} id="vehicleCreateForm" className="space-y-6 py-4">
+          <form onSubmit={handleSubmit} id="vehicleEditForm" className="space-y-6 py-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="make">Make</Label>
+                <Label htmlFor="edit-make">Make</Label>
                 <Input
-                  id="make"
+                  id="edit-make"
                   type="text"
                   required
                   value={formData.make}
@@ -163,9 +195,9 @@ export function CreateVehicleForm({
               </div>
               
               <div>
-                <Label htmlFor="model">Model</Label>
+                <Label htmlFor="edit-model">Model</Label>
                 <Input
-                  id="model"
+                  id="edit-model"
                   type="text"
                   required
                   value={formData.model}
@@ -176,9 +208,9 @@ export function CreateVehicleForm({
               </div>
 
               <div>
-                <Label htmlFor="year">Year</Label>
+                <Label htmlFor="edit-year">Year</Label>
                 <Input
-                  id="year"
+                  id="edit-year"
                   type="number"
                   required
                   min="1900"
@@ -191,13 +223,13 @@ export function CreateVehicleForm({
               </div>
 
               <div>
-                <Label htmlFor="type">Type</Label>
+                <Label htmlFor="edit-type">Type</Label>
                 <Select
                   value={formData.type}
                   onValueChange={(value: string) => setFormData({ ...formData, type: value as VehicleType })}
                   disabled={isSubmitting}
                 >
-                  <SelectTrigger className="mt-1">
+                  <SelectTrigger className="mt-1" id="edit-type">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -210,9 +242,9 @@ export function CreateVehicleForm({
               </div>
 
               <div>
-                <Label htmlFor="seats">Seats</Label>
+                <Label htmlFor="edit-seats">Seats</Label>
                 <Input
-                  id="seats"
+                  id="edit-seats"
                   type="number"
                   required
                   min="1"
@@ -225,13 +257,13 @@ export function CreateVehicleForm({
               </div>
 
               <div>
-                <Label htmlFor="transmission">Transmission</Label>
+                <Label htmlFor="edit-transmission">Transmission</Label>
                 <Select
                   value={formData.transmission}
                   onValueChange={(value: string) => setFormData({ ...formData, transmission: value as TransmissionType })}
                   disabled={isSubmitting}
                 >
-                  <SelectTrigger className="mt-1">
+                  <SelectTrigger className="mt-1" id="edit-transmission">
                     <SelectValue placeholder="Select transmission" />
                   </SelectTrigger>
                   <SelectContent>
@@ -242,13 +274,13 @@ export function CreateVehicleForm({
               </div>
 
               <div>
-                <Label htmlFor="fuelType">Fuel Type</Label>
+                <Label htmlFor="edit-fuelType">Fuel Type</Label>
                 <Select
                   value={formData.fuelType}
                   onValueChange={(value: string) => setFormData({ ...formData, fuelType: value as FuelType })}
                   disabled={isSubmitting}
                 >
-                  <SelectTrigger className="mt-1">
+                  <SelectTrigger className="mt-1" id="edit-fuelType">
                     <SelectValue placeholder="Select fuel type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -261,9 +293,9 @@ export function CreateVehicleForm({
               </div>
 
               <div>
-                <Label htmlFor="pricePerDay">Price per Day (RON)</Label>
+                <Label htmlFor="edit-pricePerDay">Price per Day (RON)</Label>
                 <Input
-                  id="pricePerDay"
+                  id="edit-pricePerDay"
                   type="number"
                   required
                   min="0"
@@ -276,9 +308,9 @@ export function CreateVehicleForm({
               </div>
               
               <div className="md:col-span-2">
-                <Label htmlFor="location">Location</Label>
+                <Label htmlFor="edit-location">Location</Label>
                 <Input
-                  id="location"
+                  id="edit-location"
                   type="text"
                   required
                   value={formData.location}
@@ -287,6 +319,7 @@ export function CreateVehicleForm({
                   disabled={isSubmitting}
                 />
               </div>
+              {/* You might want to add status editing if it's part of your vehicle schema and editable by users */}
             </div>
 
             <div>
@@ -295,12 +328,12 @@ export function CreateVehicleForm({
                 {["Air Conditioning", "Bluetooth", "Parking Sensors", "Backup Camera", "GPS", "Sunroof", "Heated Seats"].map((feature) => (
                   <div key={feature} className="flex items-center space-x-2">
                     <Checkbox
-                      id={`feature-${feature.toLowerCase().replace(/\s+/g, '-')}`}
+                      id={`edit-feature-${feature.toLowerCase().replace(/\s+/g, '-')}`}
                       checked={formData.features.includes(feature.toLowerCase())}
                       onCheckedChange={(checked: CheckedState) => handleFeatureChange(feature, checked)}
                       disabled={isSubmitting}
                     />
-                    <Label htmlFor={`feature-${feature.toLowerCase().replace(/\s+/g, '-')}`} className="font-normal">
+                    <Label htmlFor={`edit-feature-${feature.toLowerCase().replace(/\s+/g, '-')}`} className="font-normal">
                       {feature}
                     </Label>
                   </div>
@@ -309,11 +342,12 @@ export function CreateVehicleForm({
             </div>
 
             <div>
-              <Label htmlFor="file-upload-input">Images</Label>
+              <Label htmlFor="edit-file-upload-input">Upload New Images</Label>
+              <p className="mt-1 text-xs text-gray-500">Uploading new images will add them to the existing gallery. Current images are not shown here but will be preserved unless replaced by a more specific image update mechanism.</p>
               <div className="mt-2">
                 <Input
-                  id="file-upload-input"
-                  name="file-upload-input"
+                  id="edit-file-upload-input"
+                  name="edit-file-upload-input"
                   type="file"
                   multiple
                   accept="image/*"
@@ -326,7 +360,7 @@ export function CreateVehicleForm({
 
               {previewUrls.length > 0 && (
                 <div className="mt-4">
-                  <h3 className="text-sm font-medium text-gray-700">Selected Images Previews</h3>
+                  <h3 className="text-sm font-medium text-gray-700">New Images Previews</h3>
                   <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                     {previewUrls.map((url, index) => (
                       <div key={index} className="relative">
@@ -334,7 +368,7 @@ export function CreateVehicleForm({
                           src={url}
                           alt={`Preview ${index + 1}`}
                           className="h-24 w-full object-cover rounded"
-                          onLoad={() => URL.revokeObjectURL(url)}
+                          onLoad={() => URL.revokeObjectURL(url)} // Clean up object URLs after image loads
                         />
                       </div>
                     ))}
@@ -344,24 +378,27 @@ export function CreateVehicleForm({
             </div>
           </form>
         </ScrollArea>
+        ) : (
+          <div className="flex justify-center items-center h-40">Loading vehicle data...</div>
+        )}
         <DialogFooter className="pt-4">
           <Button
             type="button"
             variant="outline"
             onClick={handleCancel}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !vehicle}
           >
             Cancel
           </Button>
           <Button
             type="submit"
-            form="vehicleCreateForm"
-            disabled={isSubmitting}
+            form="vehicleEditForm" // ensure this matches the form id
+            disabled={isSubmitting || !vehicle}
           >
-            {isSubmitting ? "Creating..." : "Create Vehicle"}
+            {isSubmitting ? "Saving..." : "Save Changes"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-}
+} 

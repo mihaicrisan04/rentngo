@@ -7,6 +7,19 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { VehicleImage } from "@/components/VehicleImage";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { EditVehicleForm } from "@/components/EditVehicleForm";
 
 export default function CarDetailPage() {
   const params = useParams();
@@ -14,34 +27,33 @@ export default function CarDetailPage() {
   const vehicleId = params.id as Id<"vehicles">;
   
   const vehicle = useQuery(api.vehicles.getById, { id: vehicleId });
-  const deleteVehicle = useMutation(api.vehicles.remove);
-  const uploadImages = useAction(api.vehicles.uploadImages);
+  const deleteVehicleMutation = useMutation(api.vehicles.remove);
+  const uploadImages = useAction(api.vehicles.uploadImages as any);
   const setMainImage = useMutation(api.vehicles.setMainImage);
   
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   if (!vehicle) {
-    return <div>Loading...</div>;
+    return <div className="flex justify-center items-center h-screen">Loading vehicle details...</div>;
   }
 
-  const handleDelete = async () => {
-    if (window.confirm("Are you sure you want to delete this vehicle?")) {
-      setIsDeleting(true);
-      try {
-        await deleteVehicle({ id: vehicleId });
-        router.push("/dashboard/cars");
-      } catch (error) {
-        console.error("Error deleting vehicle:", error);
-        alert("Failed to delete vehicle");
-      } finally {
-        setIsDeleting(false);
-      }
+  const performDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteVehicleMutation({ id: vehicleId });
+      router.push("/dashboard/vehicles");
+    } catch (error) {
+      console.error("Error deleting vehicle:", error);
+      alert("Failed to delete vehicle");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
+    if (e.target.files && e.target.files.length > 0) {
       setIsUploading(true);
       try {
         const imageBuffers = await Promise.all(
@@ -74,110 +86,138 @@ export default function CarDetailPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">
+    <div className="max-w-4xl mx-auto p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold">
           {vehicle.make} {vehicle.model}
         </h1>
-        <div className="space-x-2">
-          <button
-            onClick={() => router.push(`/dashboard/cars/${vehicleId}/edit`)}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+        <div className="flex space-x-2 w-full sm:w-auto">
+          <Button 
+            onClick={() => setIsEditDialogOpen(true)}
+            variant="outline"
+            className="flex-1 sm:flex-none"
           >
             Edit
-          </button>
-          <button
-            onClick={handleDelete}
-            disabled={isDeleting}
-            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-          >
-            {isDeleting ? "Deleting..." : "Delete"}
-          </button>
+          </Button>
+          
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="destructive" 
+                disabled={isDeleting}
+                className="flex-1 sm:flex-none"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the 
+                  vehicle and all its associated data from our servers.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={performDelete} disabled={isDeleting}>
+                  {isDeleting ? "Deleting..." : "Yes, delete vehicle"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 
       {/* Vehicle Details */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <h2 className="text-lg font-semibold mb-4">Vehicle Information</h2>
-            <dl className="space-y-2">
-              <div>
-                <dt className="text-gray-600">Year</dt>
-                <dd>{vehicle.year}</dd>
-              </div>
-              <div>
-                <dt className="text-gray-600">Type</dt>
-                <dd className="capitalize">{vehicle.type}</dd>
-              </div>
-              <div>
-                <dt className="text-gray-600">Transmission</dt>
-                <dd className="capitalize">{vehicle.transmission}</dd>
-              </div>
-              <div>
-                <dt className="text-gray-600">Fuel Type</dt>
-                <dd className="capitalize">{vehicle.fuelType}</dd>
-              </div>
-              <div>
-                <dt className="text-gray-600">Seats</dt>
-                <dd>{vehicle.seats}</dd>
-              </div>
-              <div>
-                <dt className="text-gray-600">Price per Day</dt>
-                <dd>{vehicle.pricePerDay} RON</dd>
-              </div>
-              <div>
-                <dt className="text-gray-600">Location</dt>
-                <dd>{vehicle.location}</dd>
-              </div>
+            <dl className="space-y-3">
+              {[
+                { label: "Year", value: vehicle.year },
+                { label: "Type", value: vehicle.type, capitalize: true },
+                { label: "Transmission", value: vehicle.transmission, capitalize: true },
+                { label: "Fuel Type", value: vehicle.fuelType, capitalize: true },
+                { label: "Seats", value: vehicle.seats },
+                { label: "Price per Day", value: `${vehicle.pricePerDay} RON` },
+                { label: "Location", value: vehicle.location },
+              ].map(item => (
+                <div key={item.label}>
+                  <dt className="text-sm font-medium text-gray-500">{item.label}</dt>
+                  <dd className={`text-gray-900 ${item.capitalize ? 'capitalize' : ''}`}>{item.value}</dd>
+                </div>
+              ))}
             </dl>
           </div>
 
-          {/* Image Upload */}
+          {/* Image Upload & Gallery */}
           <div>
             <h2 className="text-lg font-semibold mb-4">Images</h2>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">
+              <label htmlFor="image-upload" className="block text-sm font-medium text-gray-700 mb-1">
                 Upload New Images
               </label>
               <input
+                id="image-upload"
                 type="file"
                 multiple
                 accept="image/*"
                 onChange={handleImageUpload}
                 disabled={isUploading}
-                className="mt-1 block w-full"
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100"
               />
+              {isUploading && <p className="text-sm text-indigo-600 mt-1">Uploading...</p>}
             </div>
 
-            {/* Image Gallery */}
-            <div className="grid grid-cols-2 gap-4">
-              {vehicle.images.map((imageId) => (
-                <div
-                  key={imageId}
-                  className={`relative group ${
-                    imageId === vehicle.mainImageId ? "ring-2 ring-indigo-500" : ""
-                  }`}
-                >
-                  <VehicleImage 
-                    imageId={imageId} 
-                    alt="Vehicle" 
-                    className="w-full h-32 object-cover rounded" 
-                  />
-                  <button
-                    onClick={() => handleSetMainImage(imageId)}
-                    className={`absolute inset-0 bg-black bg-opacity-50 text-white opacity-0 group-hover:opacity-100 transition-opacity ${
-                      imageId === vehicle.mainImageId ? "hidden" : ""
+            {vehicle.images && vehicle.images.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {vehicle.images.map((imageId) => (
+                  <div
+                    key={imageId}
+                    className={`relative group rounded-md overflow-hidden border ${
+                      imageId === vehicle.mainImageId ? "ring-2 ring-indigo-500 ring-offset-2" : "border-gray-200"
                     }`}
                   >
-                    Set as Main
-                  </button>
-                </div>
-              ))}
-            </div>
+                    <VehicleImage 
+                      imageId={imageId} 
+                      alt="Vehicle image" 
+                      className="w-full h-32 object-cover" 
+                    />
+                    {imageId !== vehicle.mainImageId && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleSetMainImage(imageId)}
+                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white text-xs"
+                      >
+                        Set Main
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500">No images uploaded yet.</p>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Edit Vehicle Dialog */}
+      {vehicleId && (
+        <EditVehicleForm
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          vehicleId={vehicleId}
+          onSuccess={() => {
+            setIsEditDialogOpen(false);
+            // Optionally, you can add a toast notification here or trigger a data refresh
+            // For now, Convex queries should update automatically
+          }}
+        />
+      )}
     </div>
   );
 }
