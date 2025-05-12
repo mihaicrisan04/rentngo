@@ -19,7 +19,7 @@ export default defineSchema({
     make: v.string(),
     model: v.string(),
     year: v.number(),
-    type: v.union(v.literal("sedan"), v.literal("suv"), v.literal("hatchback"), v.literal("sports")),
+    type: v.union(v.literal("sedan"), v.literal("suv"), v.literal("hatchback"), v.literal("sports"), v.literal("truck"), v.literal("van")),
     seats: v.number(),
     transmission: v.union(v.literal("automatic"), v.literal("manual")),
     fuelType: v.union(v.literal("petrol"), v.literal("diesel"), v.literal("electric"), v.literal("hybrid")),

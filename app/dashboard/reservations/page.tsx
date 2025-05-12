@@ -218,7 +218,7 @@ interface CreateReservationDialogProps {
 }
 
 function CreateReservationDialog({ open, onOpenChange, onSuccess }: CreateReservationDialogProps) {
-  const vehicles = useQuery(api.vehicles.getAll); // Fetch all vehicles for selection
+  const vehicles = useQuery(api.vehicles.getAllVehicles); // Fetch all vehicles for selection
   const createReservation = useMutation(api.reservations.createReservation);
   const updateVehicle = useMutation(api.vehicles.update); // To update vehicle status
 

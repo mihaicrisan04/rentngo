@@ -2,9 +2,54 @@ import { v } from "convex/values";
 import { query, mutation, action } from "./_generated/server";
 import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
+import { paginationOptsValidator } from "convex/server";
 
-// Get all vehicles
+// Get all vehicles with pagination and filters
 export const getAll = query({
+  args: { 
+    paginationOpts: paginationOptsValidator,
+    filters: v.optional(v.object({
+      type: v.optional(v.union(v.literal("sedan"), v.literal("suv"), v.literal("hatchback"), v.literal("sports"))),
+      transmission: v.optional(v.union(v.literal("automatic"), v.literal("manual"))),
+      fuelType: v.optional(v.union(v.literal("petrol"), v.literal("diesel"), v.literal("electric"), v.literal("hybrid"))),
+      minPrice: v.optional(v.number()),
+      maxPrice: v.optional(v.number()),
+      status: v.optional(v.union(v.literal("available"), v.literal("rented"), v.literal("maintenance"))),
+    }))
+  },
+  handler: async (ctx, args) => {
+    let query = ctx.db.query("vehicles");
+
+    // Apply filters if they exist
+    if (args.filters) {
+      const { type, transmission, fuelType, minPrice, maxPrice, status } = args.filters;
+      
+      if (type) {
+        query = query.filter((q) => q.eq(q.field("type"), type));
+      }
+      if (transmission) {
+        query = query.filter((q) => q.eq(q.field("transmission"), transmission));
+      }
+      if (fuelType) {
+        query = query.filter((q) => q.eq(q.field("fuelType"), fuelType));
+      }
+      if (minPrice !== undefined) {
+        query = query.filter((q) => q.gte(q.field("pricePerDay"), minPrice));
+      }
+      if (maxPrice !== undefined) {
+        query = query.filter((q) => q.lte(q.field("pricePerDay"), maxPrice));
+      }
+      if (status) {
+        query = query.filter((q) => q.eq(q.field("status"), status));
+      }
+    }
+
+    return await query.order("desc").paginate(args.paginationOpts);
+  },
+});
+
+// Get all vehicles (deprecated - use getAll with pagination instead)
+export const getAllVehicles = query({
   args: {},
   handler: async (ctx) => {
     return await ctx.db.query("vehicles").collect();
