@@ -202,3 +202,81 @@ export const getImageUrl = query({
   },
 });
 
+// Query to search for available vehicles based on date range and location
+export const searchAvailableVehicles = query({
+  args: {
+    startDate: v.number(), // Unix timestamp
+    endDate: v.number(),   // Unix timestamp
+    deliveryLocation: v.string(), // Location for vehicle pickup
+    // Note: restitutionLocation is not directly used for filtering vehicles table due to single 'location' field.
+    // This query primarily filters by deliveryLocation matching vehicle.location.
+    // Further refinement could involve more complex location logic if needed.
+    
+    // Optional filters (similar to getAll)
+    type: v.optional(v.union(v.literal("sedan"), v.literal("suv"), v.literal("hatchback"), v.literal("sports"))),
+    transmission: v.optional(v.union(v.literal("automatic"), v.literal("manual"))),
+    fuelType: v.optional(v.union(v.literal("petrol"), v.literal("diesel"), v.literal("electric"), v.literal("hybrid"))),
+    minPrice: v.optional(v.number()),
+    maxPrice: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const { startDate, endDate, deliveryLocation, type, transmission, fuelType, minPrice, maxPrice } = args;
+
+    // 1. Find all reservations that overlap with the given date range.
+    // A reservation overlaps if its start is before the query's end, AND its end is after the query's start.
+    // We also only care about 'confirmed' or 'pending' reservations that would make a car unavailable.
+    // 'cancelled' or 'completed' reservations do not block availability.
+    const overlappingReservations = await ctx.db
+      .query("reservations")
+      .filter((q) =>
+        q.and(
+          q.lt(q.field("startDate"), endDate),    // Reservation starts before query period ends
+          q.gt(q.field("endDate"), startDate),      // Reservation ends after query period starts
+          q.or(                                   // Reservation status indicates unavailability
+            q.eq(q.field("status"), "confirmed"),
+            q.eq(q.field("status"), "pending")
+          )
+        )
+      )
+      .collect();
+
+    // 2. Extract unavailable vehicle IDs from these reservations.
+    const unavailableVehicleIds = new Set(
+      overlappingReservations.map((r) => r.vehicleId.toString()) // Use toString for Set comparison if Ids are objects
+    );
+
+    // 3. Query vehicles, initially filtering by deliveryLocation.
+    // We are assuming deliveryLocation maps to the vehicle's primary 'location'.
+    let vehicleQuery = ctx.db
+      .query("vehicles")
+      .filter((q) => q.eq(q.field("location"), deliveryLocation))
+      .filter((q) => q.eq(q.field("status"), "available")); // Only consider vehicles marked as 'available'
+
+    // Apply optional filters
+    if (type) {
+      vehicleQuery = vehicleQuery.filter((q) => q.eq(q.field("type"), type));
+    }
+    if (transmission) {
+      vehicleQuery = vehicleQuery.filter((q) => q.eq(q.field("transmission"), transmission));
+    }
+    if (fuelType) {
+      vehicleQuery = vehicleQuery.filter((q) => q.eq(q.field("fuelType"), fuelType));
+    }
+    if (minPrice !== undefined) {
+      vehicleQuery = vehicleQuery.filter((q) => q.gte(q.field("pricePerDay"), minPrice));
+    }
+    if (maxPrice !== undefined) {
+      vehicleQuery = vehicleQuery.filter((q) => q.lte(q.field("pricePerDay"), maxPrice));
+    }
+
+    const potentiallyAvailableVehicles = await vehicleQuery.collect();
+
+    // 4. Filter out unavailable vehicles.
+    const availableVehicles = potentiallyAvailableVehicles.filter(
+      (vehicle) => !unavailableVehicleIds.has(vehicle._id.toString())
+    );
+
+    return availableVehicles;
+  },
+});
+
