@@ -12,10 +12,9 @@ import { api } from "../convex/_generated/api";
 // import { SignInButton } from "@clerk/nextjs"; // Not directly used in main flow for now
 import Image from "next/image"; // Import Next.js Image component
 import { UserButton } from "@clerk/nextjs";
-import { format } from "date-fns";
-import { Sparkles, Twitter, Github, Hexagon } from "lucide-react";
+import { Sparkles, Instagram, Facebook} from "lucide-react";
 import { Id } from "../convex/_generated/dataModel";
-
+import Link from "next/link";
 import { FeaturesSectionWithHoverEffects } from "@/components/blocks/feature-section-with-hover-effects";
 import { Footer } from "@/components/ui/footer";
 import { Button } from "@/components/ui/button";
@@ -106,7 +105,7 @@ const testimonials = [
       handle: "@emmaai",
       avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face"
     },
-    text: "Using this AI platform has transformed how we handle data analysis. The speed and accuracy are unprecedented.",
+    text: "The car rental process was incredibly smooth and efficient. The online booking system made it so easy to find and reserve the perfect vehicle for our family vacation.",
     href: "https://twitter.com/emmaai"
   },
   {
@@ -115,7 +114,7 @@ const testimonials = [
       handle: "@davidtech",
       avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
     },
-    text: "The API integration is flawless. We\'ve reduced our development time by 60% since implementing this solution.",
+    text: "I've rented from many companies, but this one stands out. The cars are always clean, well-maintained, and the customer service is exceptional. Will definitely use again!",
     href: "https://twitter.com/davidtech"
   },
   {
@@ -124,7 +123,7 @@ const testimonials = [
       handle: "@sofiaml",
       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face"
     },
-    text: "Finally, an AI tool that actually understands context! The accuracy in natural language processing is impressive."
+    text: "The flexible rental options and competitive pricing made it perfect for my business trip. The car was exactly as advertised and the pickup/dropoff process was seamless."
   }
 ];
 
@@ -282,10 +281,18 @@ export default function Home() {
   const vehiclesToDisplay = searchResults !== null ? searchResults : (featuredVehiclesQuery?.page || []);
   const currentTitle = isSearching ? "Searching..." : searchResults !== null ? (searchResults.length > 0 ? "Available Cars" : "No Cars Found") : "Featured Cars";
 
+  const isAuthorized = useQuery(api.auth.isAuthorized);
+
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header logo={<Image src="/logo.png" alt="Rent\'n Go Logo" width={100} height={40} />} />
+      <Header logo={<Image src="/logo.png" alt="Rent\'n Go Logo" width={150} height={50} />} />
+
+      {isAuthorized && (
+        <Button>
+          <Link href="/dashboard">Dashboard</Link>
+        </Button>
+      )}
 
       <main className="p-8 flex flex-col gap-8">
         <div className="flex flex-col gap-12 max-w-5xl mx-auto py-8">
@@ -301,11 +308,11 @@ export default function Home() {
           {/* Replace old VehicleSearchForm with the new VehicleSearchFilterForm */}
           <VehicleSearchFilterForm onSearchSubmit={handleNewVehicleSearch} />
 
-          <div className="flex min-h-[400px] w-full items-center justify-center py-20">
+          {/* <div className="flex min-h-[400px] w-full items-center justify-center py-20">
             <div className="w-full max-w-3xl">
               <DisplayCards cards={defaultCards} />
             </div>
-          </div>
+          </div> */}
 
           <FeaturesSectionWithHoverEffects />
 
@@ -326,19 +333,25 @@ export default function Home() {
       </main>
 
       <Footer
-        logo={<Hexagon className="h-10 w-10" />}
-        brandName="Awesome Corp"
+        logo={<Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} />}
+        brandName=""
         socialLinks={[
           {
-            icon: <Twitter className="h-5 w-5" />,
-            href: "https://twitter.com",
-            label: "Twitter",
+            icon: <Instagram className="h-5 w-5" />,
+            href: "https://www.instagram.com/rentn_go.ro",
+            label: "Instagram",
           },
           {
-            icon: <Github className="h-5 w-5" />,
-            href: "https://github.com",
-            label: "GitHub",
+            icon: <Facebook className="h-5 w-5" />,
+            href: "https://www.facebook.com/share/1Ad82uMtP3/?mibextid=wwXIfr",
+            label: "Facebook",
           },
+          // {
+          //   icon: <TikTok className="h-5 w-5" />,
+          //   href: "https://www.tiktok.com",
+          //   label: "TikTok",
+          // }
+
         ]}
         mainLinks={[
           { href: "/", label: "Home" },

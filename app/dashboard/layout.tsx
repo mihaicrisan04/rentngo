@@ -33,7 +33,7 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider open={open} onOpenChange={setOpen}>
-      <div className="flex-1 h-screen bg-gray-100">
+      <div className="flex-1 h-screen bg-background">
         <Sidebar variant="sidebar" collapsible="icon">
           <SidebarHeader className="p-4">
             <Settings2 className="w-5 h-5" />

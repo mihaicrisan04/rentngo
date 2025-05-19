@@ -75,7 +75,7 @@ export default function VehiclesPage() {
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 bg-white p-4 rounded-lg shadow">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 bg-card text-card-foreground p-4 rounded-lg shadow">
           <div className="space-y-2">
             <Label>Type</Label>
             <Select
@@ -178,7 +178,7 @@ export default function VehiclesPage() {
             key={vehicle._id}
             href={`/dashboard/vehicles/${vehicle._id}`}
             ref={index === vehicles.length - 1 ? lastElementRef : null}
-            className="block bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+            className="block bg-card text-card-foreground rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
           >
             <div className="aspect-w-16 aspect-h-9">
               {vehicle.mainImageId ? (

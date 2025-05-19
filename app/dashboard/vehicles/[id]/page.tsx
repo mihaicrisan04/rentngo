@@ -130,7 +130,7 @@ export default function CarDetailPage() {
       </div>
 
       {/* Vehicle Details */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div className="bg-background rounded-lg shadow-md p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <h2 className="text-lg font-semibold mb-4">Vehicle Information</h2>
@@ -145,8 +145,8 @@ export default function CarDetailPage() {
                 { label: "Location", value: vehicle.location },
               ].map(item => (
                 <div key={item.label}>
-                  <dt className="text-sm font-medium text-gray-500">{item.label}</dt>
-                  <dd className={`text-gray-900 ${item.capitalize ? 'capitalize' : ''}`}>{item.value}</dd>
+                  <dt className="text-sm font-medium text-muted-foreground">{item.label}</dt>
+                  <dd className={`text-foreground ${item.capitalize ? 'capitalize' : ''}`}>{item.value}</dd>
                 </div>
               ))}
             </dl>
@@ -156,7 +156,7 @@ export default function CarDetailPage() {
           <div>
             <h2 className="text-lg font-semibold mb-4">Images</h2>
             <div className="mb-4">
-              <label htmlFor="image-upload" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="image-upload" className="block text-sm font-medium text-muted-foreground mb-1">
                 Upload New Images
               </label>
               <input
@@ -190,7 +190,7 @@ export default function CarDetailPage() {
                         size="sm"
                         variant="outline"
                         onClick={() => handleSetMainImage(imageId)}
-                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white/80 hover:bg-white text-xs"
+                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-background/80 hover:bg-background text-xs"
                       >
                         Set Main
                       </Button>

@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: "Rent'n Go",
   description: "Rent a car in minutes",
   icons: {
-    icon: "/convex.svg",
+    icon: "/Apple-light.svg",
   },
 };
 

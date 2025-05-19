@@ -441,7 +441,7 @@ export default function ReservationsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Reservation ID</TableHead>
-              <TableHead>Vehicle ID</TableHead> {/* TODO: Replace with Vehicle Make/Model */}
+              <TableHead>Vehicle ID</TableHead>
               <TableHead>Start Date</TableHead>
               <TableHead>End Date</TableHead>
               <TableHead>Total Price (RON)</TableHead>

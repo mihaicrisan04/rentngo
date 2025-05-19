@@ -33,7 +33,7 @@ export function Footer({
   return (
     <footer className="pb-6 pt-16 lg:pb-8 lg:pt-24">
       <div className="px-4 lg:px-8">
-        <div className="md:flex md:items-start md:justify-between">
+        <div className="md:flex md:items-end md:justify-between">
           <a
             href="/"
             className="flex items-center gap-x-2"
