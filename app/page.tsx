@@ -285,14 +285,23 @@ export default function Home() {
 
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header logo={<Image src="/logo.png" alt="Rent\'n Go Logo" width={150} height={50} />} />
+    <div className="relative flex flex-col min-h-screen">
+      {/* Background Gradient and Noise Effect Start */}
+      {/* <div className="absolute inset-0 overflow-hidden -z-10 pointer-events-none">
+        <div className="flex flex-col items-end absolute -right-120 -top-40 blur-xl">
+          <div className="h-[40rem] rounded-full w-[160rem] bg-gradient-to-b blur-[12rem] from-neutral-700 to-neutral-900 opacity-50"></div>
+          <div className="h-[40rem] rounded-full w-[180rem] mt-12 bg-gradient-to-b blur-[12rem] from-black to-neutral-800 opacity-50"></div>
+          <div className="h-[40rem] rounded-full w-[160rem] mt-12 bg-gradient-to-b blur-[12rem] from-neutral-600 to-black opacity-50"></div>
+        </div>
 
-      {/* {isAuthorized && (
-        <Button>
-          <Link href="/dashboard">Dashboard</Link>
-        </Button>
-      )} */}
+        <div className="flex flex-col items-start absolute -left-120 top-1000 blur-xl">
+          <div className="h-[40rem] rounded-full w-[160rem] bg-gradient-to-b blur-[12rem] from-neutral-700 to-neutral-900 opacity-50"></div>
+          <div className="h-[40rem] rounded-full w-[180rem] mt-12 bg-gradient-to-b blur-[12rem] from-black to-neutral-800 opacity-50"></div>
+          <div className="h-[40rem] rounded-full w-[160rem] mt-12 bg-gradient-to-b blur-[12rem] from-neutral-600 to-black opacity-50"></div>
+        </div>
+      </div> */}
+
+      <Header logo={<Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} />} />
 
       <main className="p-8 flex flex-col gap-8">
         <div className="flex flex-col gap-12 max-w-5xl mx-auto py-8">
@@ -308,11 +317,13 @@ export default function Home() {
           {/* Replace old VehicleSearchForm with the new VehicleSearchFilterForm */}
           <VehicleSearchFilterForm onSearchSubmit={handleNewVehicleSearch} />
 
-          {/* <div className="flex min-h-[400px] w-full items-center justify-center py-20">
-            <div className="w-full max-w-3xl">
-              <DisplayCards cards={defaultCards} />
-            </div>
-          </div> */}
+          <div className="mt-8">
+            <h2 className="text-3xl font-semibold mb-6 text-center">
+              {currentTitle}
+            </h2>
+            {/* Update isLoading prop for VehicleList */}
+            <VehicleList vehicles={vehiclesToDisplay as Vehicle[]} isLoading={isSearching || (featuredVehiclesQuery === undefined && searchResults === null)} />
+          </div>
 
           <FeaturesSectionWithHoverEffects />
 
@@ -322,13 +333,6 @@ export default function Home() {
             testimonials={testimonials}
           />
 
-          <div className="mt-8">
-            <h2 className="text-3xl font-semibold mb-6 text-center">
-              {currentTitle}
-            </h2>
-            {/* Update isLoading prop for VehicleList */}
-            <VehicleList vehicles={vehiclesToDisplay as Vehicle[]} isLoading={isSearching || (featuredVehiclesQuery === undefined && searchResults === null)} />
-          </div>
         </div>
       </main>
 

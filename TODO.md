@@ -15,7 +15,7 @@ after entering this few details, the user can click on a button to search for ve
 
 
 TODOs:
-[]
+[] only allow for commone image types like jpg, png, jpeg, gif, etc. not heic, heif, etc. (for now), and the size should be less than 10mb
 
 
 Components:

@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { SignInButton, UserButton, SignedIn, SignedOut } from "@clerk/nextjs";
+import React, { useState, useEffect } from "react";
 
 interface HeaderProps {
   logo: React.ReactNode;
@@ -8,9 +11,33 @@ interface HeaderProps {
 }
 
 export function Header({ logo, brandName }: HeaderProps) {
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 0);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    // Call handler once to set initial state
+    handleScroll();
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 max-w-screen-2xl items-center justify-between">
+    <header
+      className={`sticky top-0 z-50 w-full border-b transition-all duration-300 ease-in-out
+        ${
+          isScrolled
+            ? "border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+            : "border-transparent bg-transparent"
+        }
+      `}
+    >
+      <div className="container flex h-14 max-w-screen-2xl items-center justify-between px-49">
         <div className="flex items-center md:ml-4">
           <Link href="/" className="mr-6 flex items-center">
             {logo}
@@ -49,12 +76,3 @@ export function Header({ logo, brandName }: HeaderProps) {
     </header>
   );
 }
-
-// Example usage (remove or modify for actual implementation)
-// import Image from "next/image";
-// const App = () => (
-//   <Header 
-//     logo={<Image src="/logo.png" alt="Rent'n Go Logo" width={100} height={40} />} 
-//     // brandName="Rent'n Go" // brandName is optional
-//   />
-// ); 
