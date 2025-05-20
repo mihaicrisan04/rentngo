@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 // Define the expected shape of a vehicle object (can be refined)
 interface Vehicle {
@@ -45,6 +46,11 @@ interface Vehicle {
   status: string;
   images: Id<"_storage">[];
   mainImageId?: Id<"_storage">;
+}
+
+interface LocationWithPrice {
+  name: string;
+  price: number;
 }
 
 interface VehicleSearchFilterFormProps {
@@ -62,20 +68,25 @@ interface VehicleSearchFilterFormProps {
   initialReturnDate?: Date;
 }
 
-const hardcodedLocations = [
-  "Cluj-Napoca Airport",
-  "Cluj-Napoca City Center",
-  "Iulius Mall Cluj",
-  "Sigma Shopping Center",
-  "Vivo! Cluj-Napoca",
-  "Floresti Central",
-  "Baciu Industrial Park",
-  "Apahida East Gate",
-  "Turda Salt Mine Entrance",
-  "Gara Cluj-Napoca"
+const hardcodedLocations: LocationWithPrice[] = [
+  { name: "Aeroport Cluj-Napoca", price: 0 },
+  { name: "Alba-Iulia", price: 80 },
+  { name: "Bacau", price: 220 },
+  { name: "Baia mare", price: 120 },
+  { name: "Bistrita", price: 80 },
+  { name: "Brasov", price: 180 },
+  { name: "Bucuresti", price: 220 },
+  { name: "Cluj-Napoca", price: 10 },
+  { name: "Floresti", price: 10 },
+  { name: "Oradea", price: 120 },
+  { name: "Satu mare", price: 120 },
+  { name: "Sibiu", price: 120 },
+  { name: "Suceava", price: 220 },
+  { name: "Targu Mures", price: 70 },
+  { name: "Timisoara", price: 200 },
 ];
 
-const defaultDeliveryLocation = "Cluj-Napoca Airport";
+const defaultDeliveryLocation = "Aeroport Cluj-Napoca";
 
 const generateTimeSlots = () => {
   const slots = [];
@@ -83,7 +94,6 @@ const generateTimeSlots = () => {
     slots.push({ time: `${String(hour).padStart(2, "0")}:00`, available: true });
     slots.push({ time: `${String(hour).padStart(2, "0")}:30`, available: true });
   }
-  slots.filter(s => parseInt(s.time.split(":")[0]) < 8).forEach(s => s.available = false);
   return slots;
 };
 
@@ -103,7 +113,7 @@ export function VehicleSearchFilterForm({
   const defaultReturnDate = initialReturnDate || new Date(new Date(defaultPickupDate).setDate(defaultPickupDate.getDate() + 7));
 
   const [deliveryLocation, setDeliveryLocation] = React.useState<string>(initialDeliveryLocation);
-  const [restitutionLocation, setRestitutionLocation] = React.useState<string>(initialRestitutionLocation || initialDeliveryLocation);
+  const [restitutionLocation, setRestitutionLocation] = React.useState<string>(initialRestitutionLocation || defaultDeliveryLocation);
 
   const [pickupDateState, setPickupDateState] = React.useState<Date>(defaultPickupDate);
   const [pickupTime, setPickupTime] = React.useState<string | null>("10:00");
@@ -113,14 +123,6 @@ export function VehicleSearchFilterForm({
 
   const [isLoading, setIsLoading] = React.useState(false);
 
-  React.useEffect(() => {
-    if (initialRestitutionLocation === undefined || initialRestitutionLocation === deliveryLocation) {
-        if (!initialRestitutionLocation) {
-             setRestitutionLocation(deliveryLocation);
-        }
-    }
-  }, [deliveryLocation, initialRestitutionLocation]);
-  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -157,25 +159,28 @@ export function VehicleSearchFilterForm({
     }, 500);
   };
 
-  const LocationSelectComponent = ({ id, label, value, onValueChange, placeholder, disabled } : {
+  const LocationSelectComponent = ({ id, label, value, onValueChange, placeholder, disabled, contentAlign = 'start' } : {
     id: string;
     label: string;
     value: string;
     onValueChange: (value: string) => void;
     placeholder: string;
     disabled: boolean;
+    contentAlign?: 'start' | 'end';
   }) => (
-    <div className="grid gap-1.5 w-full">
-        <Label htmlFor={id} className="text-sm font-medium">{label}</Label>
+    <div className={cn("grid gap-1.5 w-full", contentAlign === 'end' && "justify-items-end")}>
+        <Label htmlFor={id} className={cn("text-sm font-medium", contentAlign === 'end' && "text-right")}>{label}</Label>
         <Select onValueChange={onValueChange} defaultValue={value} disabled={disabled}>
-            <SelectTrigger id={id} className="text-base py-2.5 pl-3 pr-3 data-[placeholder]:text-muted-foreground">
+            <SelectTrigger id={id} className="text-base py-2.5 pl-3 pr-3 data-[placeholder]:text-muted-foreground h-10 w-74">
                 <MapPin className="mr-2 h-5 w-5 text-muted-foreground" />
                 <SelectValue placeholder={placeholder} />
             </SelectTrigger>
             <SelectContent>
                 {hardcodedLocations.map(loc => (
-                    <SelectItem key={loc} value={loc} className="text-base">
-                        {loc}
+                    <SelectItem key={loc.name} value={loc.name} className="text-base">
+                        <div className="flex w-full">
+                            <span>{loc.name} - {loc.price} €</span>
+                        </div>
                     </SelectItem>
                 ))}
             </SelectContent>
@@ -183,16 +188,27 @@ export function VehicleSearchFilterForm({
     </div>
   );
 
-  const DateTimePickerComponent = ({ id, label, dateState, setDateState, timeState, setTimeState, minDate, disabledDateRanges, popoverAlign = "start" } : any) => (
-    <div className="grid gap-1.5 w-full">
-      <Label htmlFor={id} className="text-sm font-medium">{label}</Label>
+  const DateTimePickerComponent = ({ id, label, dateState, setDateState, timeState, setTimeState, minDate, disabledDateRanges, popoverAlign = "start", contentAlign = 'start' } : {
+    id: string;
+    label: string;
+    dateState: Date | undefined;
+    setDateState: (date: Date) => void;
+    timeState: string | null;
+    setTimeState: (time: string) => void;
+    minDate: Date;
+    disabledDateRanges: any;
+    popoverAlign?: "start" | "center" | "end";
+    contentAlign?: 'start' | 'end';
+  }) => (
+    <div className={cn("grid gap-1.5 w-full", contentAlign === 'end' && "justify-items-end")}>
+      <Label htmlFor={id} className={cn("text-sm font-medium", contentAlign === 'end' && "text-right")}>{label}</Label>
       <Popover>
         <PopoverTrigger asChild>
           <Button
             id={id}
             variant={"outline"}
             className={cn(
-              "w-full justify-start text-left font-normal text-base py-2.5 pl-3 pr-3",
+              "justify-start text-left font-normal text-base py-2.5 pl-3 pr-3 h-10 w-74",
               !dateState && "text-muted-foreground"
             )}
             disabled={isLoading}
@@ -260,8 +276,9 @@ export function VehicleSearchFilterForm({
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4 md:space-y-6 p-4 md:p-6">
-          <div className="flex flex-col md:flex-row gap-4 items-end">
-            <div className="w-full md:w-1/4">
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Column 1: Pick-up */}
+            <div className="flex flex-col gap-4 w-full md:w-1/2 py-4 px-4">
               <LocationSelectComponent
                 id="deliveryLocation"
                 label="Pick-up Location"
@@ -269,10 +286,8 @@ export function VehicleSearchFilterForm({
                 onValueChange={setDeliveryLocation}
                 placeholder="Select pick-up location"
                 disabled={isLoading}
+                contentAlign="end"
               />
-            </div>
-
-            <div className="w-full md:w-1/4">
               <DateTimePickerComponent
                 id="pickupDate"
                 label="Pick-up Date & Time"
@@ -283,21 +298,26 @@ export function VehicleSearchFilterForm({
                 minDate={today}
                 disabledDateRanges={{ before: today }}
                 popoverAlign="start"
+                contentAlign="end"
               />
             </div>
-            
-            <div className="w-full md:w-1/4">
-                <LocationSelectComponent
-                    id="restitutionLocation"
-                    label="Return Location"
-                    value={restitutionLocation}
-                    onValueChange={setRestitutionLocation}
-                    placeholder="Select return location"
-                    disabled={isLoading}
-                />
+
+            {/* Vertical Separator */}
+            <div className="hidden md:flex justify-center py-4">
+              <Separator orientation="vertical" className="h-auto" />
             </div>
 
-            <div className="w-full md:w-1/4">
+            {/* Column 2: Return */}
+            <div className="flex flex-col gap-4 w-full md:w-1/2 py-4 px-4">
+              <LocationSelectComponent
+                id="restitutionLocation"
+                label="Return Location"
+                value={restitutionLocation}
+                onValueChange={setRestitutionLocation}
+                placeholder="Select return location"
+                disabled={isLoading}
+                contentAlign="start"
+              />
               <DateTimePickerComponent
                 id="returnDate"
                 label="Return Date & Time"
@@ -308,6 +328,7 @@ export function VehicleSearchFilterForm({
                 minDate={pickupDateState || today}
                 disabledDateRanges={{ before: pickupDateState || today }}
                 popoverAlign="end"
+                contentAlign="start"
               />
             </div>
           </div>
