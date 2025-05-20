@@ -43,6 +43,7 @@ import { Header } from "@/components/ui/header";
 // import { Calendar } from "@/components/ui/calendar";
 import { VehicleSearchFilterForm } from "@/components/VehicleSearchFilterForm"; // Import the new form
 import { VehicleCard } from "@/components/VehicleCard"; // Import the new VehicleCard
+import { FaqSection } from "@/components/blocks/faq"; // Added import for FaqSection
 
 // Define the expected shape of a vehicle object from the backend
 interface Vehicle {
@@ -63,6 +64,34 @@ interface Vehicle {
   engineCapacity?: string; // Optional
   fuelType?: string; // Optional
 }
+
+// Car Rental FAQ Data
+const CAR_RENTAL_FAQS = [
+  {
+    question: "What documents do I need to rent a car?",
+    answer: "You\'ll typically need a valid driver\'s license held for at least one year, a credit card in the main driver\'s name for the security deposit, and a form of photo ID (like a passport or national ID card). International renters might need an International Driving Permit (IDP).",
+  },
+  {
+    question: "Is there a minimum age to rent a car?",
+    answer: "Yes, the minimum age is generally 21 years. However, drivers between 21-24 may be subject to a young driver surcharge and may have restrictions on available vehicle categories.",
+  },
+  {
+    question: "Can I add an additional driver?",
+    answer: "Yes, additional drivers can usually be added for an extra daily fee. They must meet the same age and license requirements as the main driver and must be present at the rental counter with their documents.",
+  },
+  {
+    question: "What is your fuel policy?",
+    answer: "Our standard fuel policy is \'full-to-full.\' You will receive the car with a full tank of fuel and you should return it full. If returned with less fuel, refueling charges will apply. Other pre-paid fuel options might be available.",
+  },
+  {
+    question: "What happens if I return the car late?",
+    answer: "We understand delays can happen. A short grace period is usually allowed, but late returns beyond that may incur additional charges, potentially a full extra day\'s rental. Please contact us if you anticipate being late.",
+  },
+  {
+    question: "Is insurance included in the rental price?",
+    answer: "Basic Collision Damage Waiver (CDW) and Theft Protection (TP) with an excess amount are typically included. We also offer optional insurance packages to reduce the excess or provide more comprehensive coverage.",
+  },
+];
 
 // The old VehicleSearchFormProps and VehicleSearchForm component will be removed.
 // interface VehicleSearchFormProps {
@@ -251,21 +280,33 @@ export default function Home() {
 
 
   return (
-    <div className="relative flex flex-col min-h-screen">
-      {/* Background Gradient and Noise Effect Start */}
-      {/* <div className="absolute inset-0 overflow-hidden -z-10 pointer-events-none">
+    <div
+      className="relative flex flex-col min-h-screen"
+      // style={{ backgroundImage: "url('/hero-background.png')" }} // Removed image background style
+    >
+      {/* Background Image Start - REMOVED */}
+      {/* <div className="absolute inset-0 -z-10">
+        <Image
+          src="/hero-background.png"
+          alt="Page background"
+          layout="fill"
+          objectFit="cover"
+          quality={100} // Adjust quality as needed
+        />
+      </div> */}
+      {/* Background Image End - REMOVED */}
+
+      {/* Gradient Background - Restoring the first gradient */}
+      <div className="absolute inset-0 overflow-hidden -z-10 pointer-events-none">
         <div className="flex flex-col items-end absolute -right-120 -top-40 blur-xl">
           <div className="h-[40rem] rounded-full w-[160rem] bg-gradient-to-b blur-[12rem] from-neutral-700 to-neutral-900 opacity-50"></div>
-          <div className="h-[40rem] rounded-full w-[180rem] mt-12 bg-gradient-to-b blur-[12rem] from-black to-neutral-800 opacity-50"></div>
-          <div className="h-[40rem] rounded-full w-[160rem] mt-12 bg-gradient-to-b blur-[12rem] from-neutral-600 to-black opacity-50"></div>
+          {/* Removed second and third gradient divs from this block */}
         </div>
-
-        <div className="flex flex-col items-start absolute -left-120 top-1000 blur-xl">
+        {/* Mirrored gradient for footer area */}
+        <div className="flex flex-col items-start absolute -left-120 -bottom-40 blur-xl">
           <div className="h-[40rem] rounded-full w-[160rem] bg-gradient-to-b blur-[12rem] from-neutral-700 to-neutral-900 opacity-50"></div>
-          <div className="h-[40rem] rounded-full w-[180rem] mt-12 bg-gradient-to-b blur-[12rem] from-black to-neutral-800 opacity-50"></div>
-          <div className="h-[40rem] rounded-full w-[160rem] mt-12 bg-gradient-to-b blur-[12rem] from-neutral-600 to-black opacity-50"></div>
         </div>
-      </div> */}
+      </div>
 
       <Header logo={<Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} />} />
 
@@ -302,6 +343,23 @@ export default function Home() {
             title="What Our Customers Say"
             description="Read what our customers have to say about us."
             testimonials={testimonials}
+          />
+
+          {/* FAQ Section Start */}
+          <FaqSection
+            title="Frequently Asked Questions"
+            description="Find answers to common questions about renting a car with us."
+            items={CAR_RENTAL_FAQS}
+            contactInfo={{
+              title: "Still have questions?",
+              description: "Our team is ready to help you with any inquiries.",
+              buttonText: "Contact Us",
+              onContact: () => {
+                // You can implement navigation to a contact page or open a contact modal here
+                console.log("Contact Us button clicked from FAQ");
+                // Example: window.location.href = \'/contact\';
+              },
+            }}
           />
 
         </div>
