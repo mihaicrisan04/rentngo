@@ -42,6 +42,7 @@ import { Header } from "@/components/ui/header";
 // Calendar import is likely not needed here anymore as it's encapsulated in VehicleSearchFilterForm
 // import { Calendar } from "@/components/ui/calendar";
 import { VehicleSearchFilterForm } from "@/components/VehicleSearchFilterForm"; // Import the new form
+import { VehicleCard } from "@/components/VehicleCard"; // Import the new VehicleCard
 
 // Define the expected shape of a vehicle object from the backend
 interface Vehicle {
@@ -51,13 +52,16 @@ interface Vehicle {
   year: number;
   type: string;
   pricePerDay: number;
+  currency?: string; // Optional, will default in Card
   location: string;
   features: string[];
   status: string;
   images: Id<"_storage">[];
-  mainImageId?: Id<"_storage">; // Corrected to Id<"_storage">
+  mainImageId?: Id<"_storage">;
   title?: string;
   desc?: string;
+  engineCapacity?: string; // Optional
+  fuelType?: string; // Optional
 }
 
 // The old VehicleSearchFormProps and VehicleSearchForm component will be removed.
@@ -127,58 +131,18 @@ const testimonials = [
   }
 ];
 
-// The old VehicleSearchForm component definition is removed from here.
-// function VehicleSearchForm({ onSearch }: VehicleSearchFormProps) { ... }
-
-
-// VehicleCard component to display individual vehicle information
-function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
-  if (!vehicle || typeof vehicle._id !== 'string' ) { // Simplified ID check for now
-    return <Card className="flex flex-col p-4"><CardContent>Invalid vehicle data</CardContent></Card>;
-  }
-
-   const imageUrl = vehicle.mainImageId ? useQuery(api.vehicles.getImageUrl, { imageId: vehicle.mainImageId }) : null;
-
-
-  return (
-    <Card className="flex flex-col">
-      <CardHeader className="pb-4">
-        <div className="aspect-[16/9] bg-muted rounded-md flex items-center justify-center mb-4 overflow-hidden text-muted-foreground">
-          {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt={`${vehicle.make} ${vehicle.model}`}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <span className="text-sm">No Image</span>
-          )}
-        </div>
-        <CardTitle>{`${vehicle.make} ${vehicle.model} (${vehicle.year})`}</CardTitle>
-        <CardDescription>{`Type: ${vehicle.type}, Location: ${vehicle.location}`}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex-grow">
-        <div className="flex justify-between items-center mb-3">
-          <span className="text-sm text-muted-foreground">Price per day:</span>
-          <span className="text-xl font-semibold">{vehicle.pricePerDay} RON</span>
-        </div>
-        <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-          {vehicle.features.slice(0, 3).map(feature => <li key={feature}>{feature}</li>)}
-          {vehicle.features.length === 0 && <li>No specific features listed.</li>}
-        </ul>
-      </CardContent>
-      <CardFooter>
-        {vehicle._id && (
-          <Button className="w-full" asChild>
-             <a href={`/dashboard/vehicles/${vehicle._id}`}>View Details & Book</a>
-          </Button>
-        )}
-      </CardFooter>
-    </Card>
-  );
-}
-
-function VehicleList({ vehicles, isLoading }: { vehicles: Vehicle[] | null, isLoading: boolean }) {
+// Updated VehicleList to accept search dates and pass them to VehicleCard
+function VehicleList({
+  vehicles,
+  isLoading,
+  pickupDate,
+  returnDate,
+}: {
+  vehicles: Vehicle[] | null;
+  isLoading: boolean;
+  pickupDate?: Date | null;
+  returnDate?: Date | null;
+}) {
   if (isLoading) {
     return <p className="text-center text-muted-foreground">Searching for available cars...</p>;
   }
@@ -192,11 +156,11 @@ function VehicleList({ vehicles, isLoading }: { vehicles: Vehicle[] | null, isLo
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {vehicles.map((vehicle) => {
-        // Simplified ID check
         if (!vehicle || typeof vehicle._id !== 'string') {
           return null;
         }
-        return <VehicleCard key={vehicle._id} vehicle={vehicle} />;
+        // Pass pickupDate and returnDate to VehicleCard
+        return <VehicleCard key={vehicle._id} vehicle={vehicle} pickupDate={pickupDate} returnDate={returnDate} />;
       })}
     </div>
   );
@@ -221,6 +185,7 @@ export default function Home() {
 
   const [searchResults, setSearchResults] = React.useState<Vehicle[] | null>(null);
   const [isSearching, setIsSearching] = React.useState(false);
+  const [currentSearchParams, setCurrentSearchParams] = React.useState<SearchParams | null>(null);
 
   // featuredVehiclesQuery remains the same
   const featuredVehiclesQuery = useQuery(api.vehicles.getAll, { paginationOpts: { numItems: 3, cursor: null }});
@@ -230,6 +195,7 @@ export default function Home() {
     console.log("Search initiated with params:", params);
     setIsSearching(true);
     setSearchResults(null); // Clear previous results while searching
+    setCurrentSearchParams(params); // Store current search params
 
     const startDateTimestamp = Math.floor(params.pickupDate.getTime() / 1000);
     const endDateTimestamp = Math.floor(params.returnDate.getTime() / 1000);
@@ -321,8 +287,13 @@ export default function Home() {
             <h2 className="text-3xl font-semibold mb-6 text-center">
               {currentTitle}
             </h2>
-            {/* Update isLoading prop for VehicleList */}
-            <VehicleList vehicles={vehiclesToDisplay as Vehicle[]} isLoading={isSearching || (featuredVehiclesQuery === undefined && searchResults === null)} />
+            {/* Update isLoading prop and pass search dates to VehicleList */}
+            <VehicleList
+              vehicles={vehiclesToDisplay as Vehicle[]}
+              isLoading={isSearching || (featuredVehiclesQuery === undefined && searchResults === null)}
+              pickupDate={currentSearchParams?.pickupDate}
+              returnDate={currentSearchParams?.returnDate}
+            />
           </div>
 
           <FeaturesSectionWithHoverEffects />
