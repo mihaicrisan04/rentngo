@@ -15,12 +15,10 @@ export function VehicleImage({ imageId, alt, className = "" }: VehicleImageProps
   const [isError, setIsError] = useState(false);
   const imageUrl = useQuery(api.vehicles.getImageUrl, { imageId });
 
-  console.log(imageUrl);
-
   if (!imageUrl || isError) {
     return (
       <div className={`bg-gray-200 flex items-center justify-center ${className}`}>
-        <span className="text-gray-400">No image</span>
+        <span className="text-gray-400">No Image</span>
       </div>
     );
   }

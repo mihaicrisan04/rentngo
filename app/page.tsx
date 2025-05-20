@@ -288,11 +288,11 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       <Header logo={<Image src="/logo.png" alt="Rent\'n Go Logo" width={150} height={50} />} />
 
-      {isAuthorized && (
+      {/* {isAuthorized && (
         <Button>
           <Link href="/dashboard">Dashboard</Link>
         </Button>
-      )}
+      )} */}
 
       <main className="p-8 flex flex-col gap-8">
         <div className="flex flex-col gap-12 max-w-5xl mx-auto py-8">

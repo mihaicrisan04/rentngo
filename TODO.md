@@ -19,7 +19,7 @@ TODOs:
 
 
 Components:
-[] search(filter) form:
+[x] search(filter) form:
     - should be on the home page in the middle of the screen when the home page is loaded
     - should have as the main input field the location of where the user wants to rent the vehicle
     - should have a button to search for the vehicles, this button should work even no filed was inputed and in that case all the searching fields are the default ones. this button will redirect to the vehicle list page.

@@ -66,6 +66,7 @@ export default function VehiclesPage() {
 
   return (
     <div className="w-full">
+      {/* Header */}
       <div className="flex flex-col gap-4 mb-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Vehicles</h1>
@@ -181,15 +182,24 @@ export default function VehiclesPage() {
             className="block bg-card text-card-foreground rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
           >
             <div className="aspect-w-16 aspect-h-9">
-              {vehicle.mainImageId ? (
+              {vehicle.mainImageId ? ( // If there is a main image, use it
                 <VehicleImage 
                   imageId={vehicle.mainImageId} 
                   alt={`${vehicle.make} ${vehicle.model}`} 
-                  className="w-full h-48 object-cover" />
+                  className="w-full h-48 object-cover" 
+                />
               ) : (
-                <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-                  <span className="text-gray-400">No image</span>
-                </div>
+                vehicle.images.length > 0 ? ( // If there are other images, use the first one
+                  <VehicleImage
+                    imageId={vehicle.images[0]}
+                    alt={`${vehicle.make} ${vehicle.model}`}
+                    className="w-full h-48 object-cover"
+                  />
+                ) : ( // If there are no images, show a placeholder
+                  <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                    <span className="text-gray-400">No image</span>
+                  </div>
+                )
               )}
             </div>
             <div className="p-4">
