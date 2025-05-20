@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon, Search, MapPin } from "lucide-react";
+import { Calendar as CalendarIcon, Search, MapPin, Check, ChevronsUpDown } from "lucide-react";
 import { Id } from "../convex/_generated/dataModel";
 
 import { Button } from "@/components/ui/button";
@@ -24,12 +24,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 
@@ -170,23 +171,84 @@ export function VehicleSearchFilterForm({
   }) => (
     <div className={cn("grid gap-1.5 w-full", contentAlign === 'end' && "justify-items-end")}>
         <Label htmlFor={id} className={cn("text-sm font-medium", contentAlign === 'end' && "text-right")}>{label}</Label>
-        <Select onValueChange={onValueChange} defaultValue={value} disabled={disabled}>
-            <SelectTrigger id={id} className="text-base py-2.5 pl-3 pr-3 data-[placeholder]:text-muted-foreground h-10 w-74">
-                <MapPin className="mr-2 h-5 w-5 text-muted-foreground" />
-                <SelectValue placeholder={placeholder} />
-            </SelectTrigger>
-            <SelectContent>
-                {hardcodedLocations.map(loc => (
-                    <SelectItem key={loc.name} value={loc.name} className="text-base">
-                        <div className="flex w-full">
-                            <span>{loc.name} - {loc.price} €</span>
-                        </div>
-                    </SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
+        <LocationCombobox
+          id={id}
+          value={value}
+          onValueChange={onValueChange}
+          placeholder={placeholder}
+          disabled={disabled}
+          locations={hardcodedLocations}
+        />
     </div>
   );
+
+  const LocationCombobox = ({ id, value, onValueChange, placeholder, disabled, locations } : {
+    id: string;
+    value: string;
+    onValueChange: (value: string) => void;
+    placeholder: string;
+    disabled: boolean;
+    locations: LocationWithPrice[];
+  }) => {
+    const [open, setOpen] = React.useState(false);
+
+    return (
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="text-base py-2.5 pl-3 pr-3 data-[placeholder]:text-muted-foreground h-10 w-74 justify-between"
+            disabled={disabled}
+            id={id}
+          >
+            <div className="flex items-center">
+              <MapPin className="mr-2 h-5 w-5 text-muted-foreground" />
+              {value
+                ? locations.find((loc) => loc.name === value)?.name + (typeof locations.find((loc) => loc.name === value)?.price === 'number' ? ` - ${locations.find((loc) => loc.name === value)?.price} €` : "")
+                : placeholder}
+            </div>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-74 p-0">
+          <Command>
+            <CommandInput placeholder="Search location..." />
+            <CommandList>
+              <CommandEmpty>No location found.</CommandEmpty>
+              <CommandGroup>
+                {locations.map((loc) => (
+                  <CommandItem
+                    key={loc.name}
+                    value={loc.name}
+                    onSelect={(currentValue) => {
+                      const selectedLocation = locations.find(l => l.name.toLowerCase() === currentValue.toLowerCase());
+                      if (selectedLocation) {
+                        onValueChange(selectedLocation.name === value ? "" : selectedLocation.name);
+                      } else {
+                        onValueChange(""); // Or handle as an error/clear
+                      }
+                      setOpen(false);
+                    }}
+                    className="text-base"
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === loc.name ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {loc.name} - {loc.price} €
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    );
+  };
 
   const DateTimePickerComponent = ({ id, label, dateState, setDateState, timeState, setTimeState, minDate, disabledDateRanges, popoverAlign = "start", contentAlign = 'start' } : {
     id: string;
