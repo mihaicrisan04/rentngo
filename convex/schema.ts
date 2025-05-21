@@ -22,7 +22,7 @@ export default defineSchema({
     type: v.optional(v.union(v.literal("sedan"), v.literal("suv"), v.literal("hatchback"), v.literal("sports"), v.literal("truck"), v.literal("van"))),
     seats: v.optional(v.number()),
     transmission: v.optional(v.union(v.literal("automatic"), v.literal("manual"))),
-    fuelType: v.optional(v.union(v.literal("petrol"), v.literal("diesel"), v.literal("electric"), v.literal("hybrid"))),
+    fuelType: v.optional(v.union(v.literal("petrol"), v.literal("diesel"), v.literal("electric"), v.literal("hybrid"), v.literal("benzina"))),
     engineCapacity: v.optional(v.number()),
     engineType: v.optional(v.string()),
     pricePerDay: v.number(),

@@ -61,7 +61,8 @@ interface Vehicle {
   mainImageId?: Id<"_storage">;
   title?: string;
   desc?: string;
-  engineCapacity?: string; // Optional
+  engineCapacity?: number; // Optional
+  engineType?: string; // Optional
   fuelType?: string; // Optional
 }
 
@@ -282,27 +283,12 @@ export default function Home() {
   return (
     <div
       className="relative flex flex-col min-h-screen"
-      // style={{ backgroundImage: "url('/hero-background.png')" }} // Removed image background style
     >
-      {/* Background Image Start - REMOVED */}
-      {/* <div className="absolute inset-0 -z-10">
-        <Image
-          src="/hero-background.png"
-          alt="Page background"
-          layout="fill"
-          objectFit="cover"
-          quality={100} // Adjust quality as needed
-        />
-      </div> */}
-      {/* Background Image End - REMOVED */}
-
       {/* Gradient Background - Restoring the first gradient */}
       <div className="absolute inset-0 overflow-hidden -z-10 pointer-events-none">
         <div className="flex flex-col items-end absolute -right-120 -top-40 blur-xl">
           <div className="h-[40rem] rounded-full w-[160rem] bg-gradient-to-b blur-[12rem] from-neutral-700 to-neutral-900 opacity-50"></div>
-          {/* Removed second and third gradient divs from this block */}
         </div>
-        {/* Mirrored gradient for footer area */}
         <div className="flex flex-col items-start absolute -left-120 -bottom-40 blur-xl">
           <div className="h-[40rem] rounded-full w-[160rem] bg-gradient-to-b blur-[12rem] from-neutral-700 to-neutral-900 opacity-50"></div>
         </div>
