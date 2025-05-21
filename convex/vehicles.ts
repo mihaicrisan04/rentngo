@@ -74,6 +74,8 @@ export const create = mutation({
     seats: v.number(),
     transmission: v.union(v.literal("automatic"), v.literal("manual")),
     fuelType: v.union(v.literal("petrol"), v.literal("diesel"), v.literal("electric"), v.literal("hybrid")),
+    engineCapacity: v.number(),
+    engineType: v.string(),
     pricePerDay: v.number(),
     location: v.string(),
     features: v.array(v.string()),
@@ -98,6 +100,8 @@ export const update = mutation({
     seats: v.optional(v.number()),
     transmission: v.optional(v.union(v.literal("automatic"), v.literal("manual"))),
     fuelType: v.optional(v.union(v.literal("petrol"), v.literal("diesel"), v.literal("electric"), v.literal("hybrid"))),
+    engineCapacity: v.optional(v.number()),
+    engineType: v.optional(v.string()),
     pricePerDay: v.optional(v.number()),
     location: v.optional(v.string()),
     features: v.optional(v.array(v.string())),
@@ -122,7 +126,7 @@ export const remove = mutation({
     }
 
     // Delete all associated images from storage
-    if (vehicle.images.length > 0) {
+    if (vehicle.images && vehicle.images.length > 0) {
       for (const imageId of vehicle.images) {
         await ctx.storage.delete(imageId);
       }
@@ -181,7 +185,7 @@ export const setMainImage = mutation({
       throw new Error("Vehicle not found");
     }
 
-    if (!vehicle.images.includes(imageId)) {
+    if (vehicle.images && !vehicle.images.includes(imageId)) {
       throw new Error("Image not found in vehicle's images");
     }
 
@@ -279,4 +283,6 @@ export const searchAvailableVehicles = query({
     return availableVehicles;
   },
 });
+
+// --- End of Migration ---
 

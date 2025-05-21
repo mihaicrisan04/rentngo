@@ -53,6 +53,8 @@ const initialFormData = {
   location: "",
   features: [] as string[],
   status: "available" as StatusType, // Default status
+  engineCapacity: 0, // Added engineCapacity
+  engineType: "", // Added engineType
 };
 
 export function EditVehicleForm({
@@ -76,15 +78,17 @@ export function EditVehicleForm({
       setFormData({
         make: vehicle.make,
         model: vehicle.model,
-        year: vehicle.year,
+        year: vehicle.year || new Date().getFullYear(),
         type: vehicle.type as VehicleType,
-        seats: vehicle.seats,
+        seats: vehicle.seats || 5,
         transmission: vehicle.transmission as TransmissionType,
         fuelType: vehicle.fuelType as FuelType,
         pricePerDay: vehicle.pricePerDay,
-        location: vehicle.location,
+        location: vehicle.location || "",
         features: vehicle.features || [],
         status: (vehicle.status || "available") as StatusType, // Handle if status is not present
+        engineCapacity: vehicle.engineCapacity || 0, // Add with fallback
+        engineType: vehicle.engineType || "", // Add with fallback
       });
       setSelectedFiles(null);
       setPreviewUrls([]);
@@ -120,6 +124,8 @@ export function EditVehicleForm({
         year: Number(formData.year),
         seats: Number(formData.seats),
         pricePerDay: Number(formData.pricePerDay),
+        engineCapacity: Number(formData.engineCapacity), // Ensure it's a number
+        engineType: formData.engineType,
       };
       
       // IMPORTANT: This assumes your api.vehicles.update mutation takes { id, ...data }
@@ -319,7 +325,35 @@ export function EditVehicleForm({
                   disabled={isSubmitting}
                 />
               </div>
-              {/* You might want to add status editing if it's part of your vehicle schema and editable by users */}
+
+              <div>
+                <Label htmlFor="edit-engineCapacity">Engine Capacity (e.g., 2.0)</Label>
+                <Input
+                  id="edit-engineCapacity"
+                  type="number"
+                  step="0.1"
+                  required
+                  value={formData.engineCapacity}
+                  onChange={(e) => setFormData({ ...formData, engineCapacity: parseFloat(e.target.value) || 0 })}
+                  className="mt-1"
+                  disabled={isSubmitting}
+                  placeholder="e.g., 1.6"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="edit-engineType">Engine Type (e.g., TSI, dCi)</Label>
+                <Input
+                  id="edit-engineType"
+                  type="text"
+                  required
+                  value={formData.engineType}
+                  onChange={(e) => setFormData({ ...formData, engineType: e.target.value })}
+                  className="mt-1"
+                  disabled={isSubmitting}
+                  placeholder="e.g., TSI, dCi"
+                />
+              </div>
             </div>
 
             <div>

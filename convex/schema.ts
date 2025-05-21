@@ -18,18 +18,18 @@ export default defineSchema({
   vehicles: defineTable({
     make: v.string(),
     model: v.string(),
-    year: v.number(),
-    type: v.union(v.literal("sedan"), v.literal("suv"), v.literal("hatchback"), v.literal("sports"), v.literal("truck"), v.literal("van")),
-    seats: v.number(),
-    transmission: v.union(v.literal("automatic"), v.literal("manual")),
-    fuelType: v.union(v.literal("petrol"), v.literal("diesel"), v.literal("electric"), v.literal("hybrid")),
+    year: v.optional(v.number()),
+    type: v.optional(v.union(v.literal("sedan"), v.literal("suv"), v.literal("hatchback"), v.literal("sports"), v.literal("truck"), v.literal("van"))),
+    seats: v.optional(v.number()),
+    transmission: v.optional(v.union(v.literal("automatic"), v.literal("manual"))),
+    fuelType: v.optional(v.union(v.literal("petrol"), v.literal("diesel"), v.literal("electric"), v.literal("hybrid"))),
+    engineCapacity: v.optional(v.number()),
+    engineType: v.optional(v.string()),
     pricePerDay: v.number(),
-    location: v.string(), // City/area in Cluj
-    features: v.array(v.string()), // e.g., ["air conditioning", "bluetooth", "parking sensors"]
+    location: v.optional(v.string()),
+    features: v.optional(v.array(v.string())),
     status: v.union(v.literal("available"), v.literal("rented"), v.literal("maintenance")),
-    // Store image IDs from Convex storage
-    images: v.array(v.id("_storage")),
-    // Store the main/featured image ID
+    images: v.optional(v.array(v.id("_storage"))),
     mainImageId: v.optional(v.id("_storage")),
   }).index("by_location", ["location"])
     .index("by_type", ["type"])
