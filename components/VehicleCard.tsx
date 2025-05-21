@@ -25,7 +25,8 @@ interface Vehicle {
   mainImageId?: Id<"_storage">;
   title?: string;
   desc?: string;
-  engineCapacity?: string;
+  engineCapacity?: number;
+  engineType?: string;
   fuelType?: string;
 }
 
@@ -130,7 +131,7 @@ export function VehicleCard({ vehicle, pickupDate, returnDate }: VehicleCardProp
           </div>
           <div className="flex items-center space-x-1">
             <Cog className="h-4 w-4" />
-            <span>{vehicle.engineCapacity || "N/A"}</span>
+            <span>{vehicle.engineCapacity ? `${vehicle.engineCapacity.toFixed(1)} ${vehicle.engineType || ''}` : "N/A"}</span>
           </div>
           <div className="flex items-center self-stretch px-1.5">
             <Separator orientation="vertical" />
