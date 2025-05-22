@@ -64,7 +64,7 @@ export function DateTimePicker({
             id={id}
             variant={"outline"}
             className={cn(
-              "justify-start text-left font-normal text-base py-2.5 pl-3 pr-3 h-10 w-74",
+              "justify-start text-left font-normal text-base py-2.5 pl-3 pr-3 h-10 w-full",
               !dateState && "text-muted-foreground"
             )}
             disabled={isLoading}
@@ -75,7 +75,7 @@ export function DateTimePicker({
               <span>Pick a date & time</span>}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 flex max-sm:flex-col bg-card shadow-xl border-border" align={popoverAlign}>
+        <PopoverContent className="w-auto max-w-full p-0 flex max-sm:flex-col bg-card shadow-xl border-border" align={popoverAlign}>
           <Calendar
             mode="single"
             selected={dateState}
@@ -92,8 +92,8 @@ export function DateTimePicker({
             disabled={disabledDateRanges}
             initialFocus
           />
-          <div className="relative w-full max-sm:min-h-[180px] sm:w-40">
-            <ScrollArea className="h-full py-2 max-h-60 sm:max-h-[270px]">
+          <div className="relative w-full max-sm:h-60 sm:w-40 sm:h-[270px]">
+            <ScrollArea className="h-full py-2">
               <div className="space-y-2 px-3">
                 <div className="flex h-5 shrink-0 items-center">
                   <p className="text-xs font-medium text-muted-foreground">

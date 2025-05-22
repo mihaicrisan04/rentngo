@@ -68,7 +68,7 @@ export function FeaturesSectionWithHoverEffects() {
     },
   ];
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4  relative z-10 py-10 max-w-7xl mx-auto">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4  relative z-10 py-10 w-full lg:max-w-5xl mx-auto lg:p-8 px-4">
       {features.map((feature, index) => (
         <Feature key={feature.title} {...feature} index={index} />
       ))}
@@ -90,9 +90,9 @@ const Feature = ({
   return (
     <div
       className={cn(
-        "flex flex-col lg:border-r  py-10 relative group/feature dark:border-border",
-        (index === 0 || index === 4) && "lg:border-l dark:border-border",
-        index < 4 && "lg:border-b dark:border-border"
+        "flex flex-col lg:border-r md:border-r py-10 relative group/feature dark:border-border",
+        (index === 0 || index === 4) && "lg:border-l md:border-l dark:border-border",
+        index < 4 && "lg:border-b md:border-b dark:border-border"
       )}
     >
       {index < 4 && (

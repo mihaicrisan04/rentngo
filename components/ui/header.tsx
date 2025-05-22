@@ -63,7 +63,11 @@ export function Header({ logo, brandName }: HeaderProps) {
             href="/"
             className={cn(
               "transition-colors hover:text-foreground/80",
-              pathname === "/" ? "text-primary" : "text-foreground/60"
+              isScrolled
+                ? (pathname === "/" ? "text-primary" : "text-foreground/60")
+                : (pathname === "/"
+                    ? "text-background"
+                    : (pathname === "/" ? "text-primary" : "text-foreground/60"))
             )}
           >
             Home
@@ -72,7 +76,11 @@ export function Header({ logo, brandName }: HeaderProps) {
             href="/cars"
             className={cn(
               "transition-colors hover:text-foreground/80",
-              pathname === "/cars" ? "text-primary" : "text-foreground/60"
+              isScrolled
+                ? (pathname === "/cars" ? "text-primary" : "text-foreground/60")
+                : (pathname === "/"
+                    ? "text-background"
+                    : (pathname === "/cars" ? "text-primary" : "text-foreground/60"))
             )}
           >
             Cars
@@ -81,7 +89,11 @@ export function Header({ logo, brandName }: HeaderProps) {
             href="/transfers"
             className={cn(
               "transition-colors hover:text-foreground/80",
-              pathname === "/transfers" ? "text-primary" : "text-foreground/60"
+              isScrolled
+                ? (pathname === "/transfers" ? "text-primary" : "text-foreground/60")
+                : (pathname === "/"
+                    ? "text-background"
+                    : (pathname === "/transfers" ? "text-primary" : "text-foreground/60"))
             )}
           >
             Transfers
@@ -90,7 +102,11 @@ export function Header({ logo, brandName }: HeaderProps) {
             href="/about"
             className={cn(
               "transition-colors hover:text-foreground/80",
-              pathname === "/about" ? "text-primary" : "text-foreground/60"
+              isScrolled
+                ? (pathname === "/about" ? "text-primary" : "text-foreground/60")
+                : (pathname === "/"
+                    ? "text-background"
+                    : (pathname === "/about" ? "text-primary" : "text-foreground/60"))
             )}
           >
             About
@@ -99,7 +115,11 @@ export function Header({ logo, brandName }: HeaderProps) {
             href="/contact"
             className={cn(
               "transition-colors hover:text-foreground/80",
-              pathname === "/contact" ? "text-primary" : "text-foreground/60"
+              isScrolled
+                ? (pathname === "/contact" ? "text-primary" : "text-foreground/60")
+                : (pathname === "/"
+                    ? "text-background"
+                    : (pathname === "/contact" ? "text-primary" : "text-foreground/60"))
             )}
           >
             Contact
@@ -125,13 +145,15 @@ export function Header({ logo, brandName }: HeaderProps) {
             <button
               onClick={() => setMenuState(!menuState)}
               aria-label={menuState ? "Close Menu" : "Open Menu"}
-              className="relative -m-2.5 p-2.5"
+              className={cn(
+                "relative -m-2.5 p-2.5",
+              )}
             >
               <Menu
-                className={cn("m-auto size-6 duration-200", menuState && "scale-0 opacity-0 rotate-180")}
+                className={cn("m-auto size-6 duration-200", menuState && "scale-0 opacity-0 rotate-180", !isScrolled && "text-background")}
               />
               <X
-                className={cn("absolute inset-0 m-auto size-6 rotate-180 scale-0 opacity-0 duration-200", menuState && "scale-100 opacity-100 rotate-0")}
+                className={cn("absolute inset-0 m-auto size-6 rotate-180 scale-0 opacity-0 duration-200", menuState && "scale-100 opacity-100 rotate-0", !isScrolled && "text-background")}
               />
             </button>
           </div>

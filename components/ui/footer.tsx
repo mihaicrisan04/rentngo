@@ -40,7 +40,7 @@ const copyright = {
 
 export function Footer({ logo, brandName }: FooterProps) {
   return (
-    <footer className="pb-6 pt-16 lg:pb-8 lg:pt-24 bg-muted border-t">
+    <footer className="pb-6 pt-16 lg:pb-8 px-4 lg:pt-24 bg-muted border-t">
       <div className="container mx-auto lg:px-8">
         <div className="md:flex md:items-end md:justify-between">
           <Link href="/" className="flex items-center gap-x-2" aria-label={brandName || "Go to homepage"}>

@@ -61,7 +61,7 @@ const LocationCombobox = ({ id, value, onValueChange, placeholder, disabled, loc
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="text-base py-2.5 pl-3 pr-3 data-[placeholder]:text-muted-foreground h-10 w-74 justify-between"
+          className="text-base py-2.5 pl-3 pr-3 data-[placeholder]:text-muted-foreground h-10 w-full justify-between"
           disabled={disabled}
           id={id}
         >
@@ -74,7 +74,7 @@ const LocationCombobox = ({ id, value, onValueChange, placeholder, disabled, loc
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-74 p-0">
+      <PopoverContent className="w-full max-w-full p-0">
         <Command>
           <CommandInput placeholder="Search location..." />
           <CommandList>

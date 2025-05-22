@@ -125,17 +125,11 @@ export function VehicleSearchFilterForm({
 
   return (
     <Card className="w-full shadow-xl relative">
-      <CardHeader>
-        <CardTitle className="text-2xl md:text-3xl font-bold text-center">Rent Your Ideal Car</CardTitle>
-        <CardDescription className="text-center text-muted-foreground text-sm md:text-base">
-          Find the perfect vehicle for your dates and locations.
-        </CardDescription>
-      </CardHeader>
       <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4 md:space-y-6 p-4 md:p-6">
-          <div className="flex flex-col md:flex-row gap-4">
+        <CardContent className="p-4 lg:p-6 pb-0">
+          <div className="flex flex-col lg:flex-row gap-4">
             {/* Column 1: Pick-up */}
-            <div className="flex flex-col gap-4 w-full md:w-1/2 py-4 px-4">
+            <div className="flex flex-col gap-4 w-full lg:w-1/2">
               <LocationPicker
                 id="deliveryLocation"
                 label="Pick-up Location"
@@ -143,7 +137,7 @@ export function VehicleSearchFilterForm({
                 onValueChange={setDeliveryLocation}
                 placeholder="Select pick-up location"
                 disabled={isLoading}
-                contentAlign="end"
+                contentAlign="start"
               />
               <DateTimePicker
                 id="pickupDate"
@@ -155,7 +149,7 @@ export function VehicleSearchFilterForm({
                 minDate={today}
                 disabledDateRanges={{ before: today }}
                 popoverAlign="start"
-                contentAlign="end"
+                contentAlign="start"
                 isLoading={isLoading}
                 onDateChange={(newDate) => {
                   if (newDate && returnDateState < newDate) {
@@ -166,12 +160,12 @@ export function VehicleSearchFilterForm({
             </div>
 
             {/* Vertical Separator */}
-            <div className="hidden md:flex justify-center py-4">
+            <div className="hidden lg:flex justify-center items-center">
               <Separator orientation="vertical" className="h-auto" />
             </div>
 
             {/* Column 2: Return */}
-            <div className="flex flex-col gap-4 w-full md:w-1/2 py-4 px-4">
+            <div className="flex flex-col gap-4 w-full lg:w-1/2">
               <LocationPicker
                 id="restitutionLocation"
                 label="Return Location"
@@ -197,8 +191,8 @@ export function VehicleSearchFilterForm({
             </div>
           </div>
         </CardContent>
-        <CardFooter className="flex justify-center pt-6 md:pt-8 p-4 md:p-6">
-          <Button type="submit" size="lg" className="w-full md:w-auto md:px-12 text-base py-3" disabled={isLoading}>
+        <CardFooter className="flex justify-center pt-4 lg:pt-8 sm:pt-6 lg:p-6 md:pt-8">
+          <Button type="submit" size="lg" className="w-full lg:w-auto lg:px-12 text-base py-3" disabled={isLoading}>
             <Search className="mr-2 h-5 w-5" />
             {isLoading ? "Searching Cars..." : "Search Cars"}
           </Button>

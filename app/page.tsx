@@ -29,6 +29,8 @@ import { VehicleSearchFilterForm } from "@/components/VehicleSearchFilterForm"; 
 import { VehicleCard } from "@/components/VehicleCard"; // Import the new VehicleCard
 import { FaqSection } from "@/components/blocks/faq"; // Re-added import for FaqSection
 import { BackgroundImage } from "@/components/ui/BackgroundImage"; // Import the new BackgroundImage component
+import { AnimatedGroup } from "@/components/ui/animated-group"; // Import AnimatedGroup
+import { Variants } from "framer-motion"; // Import Variants for typing
 
 // Define the expected shape of a vehicle object from the backend
 interface Vehicle {
@@ -172,6 +174,43 @@ function VehicleList({
   );
 }
 
+// Define the animation variants
+const sectionAnimationVariants: {
+  container: Variants;
+  item: Variants;
+} = {
+  container: {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.3, // Adjust stagger timing as needed
+        delayChildren: 0.2, // Optional delay before children start animating
+      },
+    },
+  },
+  item: {
+    hidden: {
+      opacity: 0,
+      scale: 0.9,
+      filter: "blur(8px)",
+      y: 20, // Slight upward movement
+    },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      filter: "blur(0px)",
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 15,
+        duration: 0.8, // Adjust duration as needed
+      },
+    },
+  },
+};
+
 export default function Home() {
   // const ensureUserMutation = useMutation(api.users.ensureUser);
   // // const convex = useConvex(); // convex client might not be needed if imperative queries for search are removed
@@ -195,38 +234,45 @@ export default function Home() {
 
       <Header logo={<Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} />} />
 
-      <main className="relative z-10 p-8 flex flex-col gap-8 mt-100">
-        <div className="flex flex-col gap-12 max-w-5xl mx-auto py-8">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-              Find Your Perfect Ride
-            </h1>
-            <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-              Explore Cluj-Napoca with our wide range of rental cars. Easy booking, great prices.
-            </p>
+      <main className="relative z-10 flex flex-col gap-8 mt-[10%] md:mt-[15%] lg:mt-[20%]">
+        <AnimatedGroup variants={sectionAnimationVariants}>
+          <div className="flex flex-col gap-12 max-w-5xl mx-auto p-4 md:p-6 lg:p-8 w-full">
+            <div className="text-center">
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+                Find Your Perfect Ride
+              </h1>
+              <p className="mt-4 text-lg md:text-xl text-muted-foreground">
+                Explore Cluj-Napoca with our wide range of rental cars. Easy booking, great prices.
+              </p>
+            </div>
+
+            <VehicleSearchFilterForm />
+
+            <div className="mt-8">
+              <h2 className="text-3xl font-semibold mb-6 text-center">
+                {currentTitle}
+              </h2>
+              <VehicleList
+                vehicles={vehiclesToDisplay as Vehicle[]}
+                isLoading={featuredVehiclesQuery === undefined}
+              />
+            </div>
           </div>
-
-          <VehicleSearchFilterForm />
-
-          <div className="mt-8">
-            <h2 className="text-3xl font-semibold mb-6 text-center">
-              {currentTitle}
-            </h2>
-            <VehicleList
-              vehicles={vehiclesToDisplay as Vehicle[]}
-              isLoading={featuredVehiclesQuery === undefined}
-            />
-          </div>
-
+        </AnimatedGroup>
+        
+        <AnimatedGroup variants={sectionAnimationVariants}>
           <FeaturesSectionWithHoverEffects />
+        </AnimatedGroup>
 
+        <AnimatedGroup variants={sectionAnimationVariants}>
           <TestimonialsSection
             title="What Our Customers Say"
             description="Read what our customers have to say about us."
             testimonials={testimonials}
           />
+        </AnimatedGroup>
 
-          {/* FAQ Section Start */}
+        <AnimatedGroup variants={sectionAnimationVariants}>
           <FaqSection
             title="Frequently Asked Questions"
             description="Find answers to common questions about renting a car with us."
@@ -242,8 +288,7 @@ export default function Home() {
               },
             }}
           />
-
-        </div>
+        </AnimatedGroup>
       </main>
 
       <Footer
