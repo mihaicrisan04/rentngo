@@ -23,6 +23,7 @@ const socialLinks = [
 const mainLinks = [
   { href: "/", label: "Home" },
   { href: "/cars", label: "Cars" },
+  { href: "/transfers", label: "Transfers" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ]

@@ -28,6 +28,7 @@ import { Header } from "@/components/ui/header";
 import { VehicleSearchFilterForm } from "@/components/VehicleSearchFilterForm"; // Import the new form
 import { VehicleCard } from "@/components/VehicleCard"; // Import the new VehicleCard
 import { FaqSection } from "@/components/blocks/faq"; // Re-added import for FaqSection
+import { BackgroundImage } from "@/components/ui/BackgroundImage"; // Import the new BackgroundImage component
 
 // Define the expected shape of a vehicle object from the backend
 interface Vehicle {
@@ -190,10 +191,11 @@ export default function Home() {
 
   return (
     <div className="relative flex flex-col min-h-screen">
+      <BackgroundImage />
 
       <Header logo={<Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} />} />
 
-      <main className="p-8 flex flex-col gap-8">
+      <main className="relative z-10 p-8 flex flex-col gap-8 mt-100">
         <div className="flex flex-col gap-12 max-w-5xl mx-auto py-8">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
@@ -204,16 +206,12 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Replace old VehicleSearchForm with the new VehicleSearchFilterForm */}
-          {/* onSearchSubmit prop removed */}
           <VehicleSearchFilterForm />
 
           <div className="mt-8">
             <h2 className="text-3xl font-semibold mb-6 text-center">
               {currentTitle}
             </h2>
-            {/* Update isLoading prop and pass search dates to VehicleList */}
-            {/* pickupDate and returnDate props removed from VehicleList */}
             <VehicleList
               vehicles={vehiclesToDisplay as Vehicle[]}
               isLoading={featuredVehiclesQuery === undefined}

@@ -17,6 +17,7 @@ interface HeaderProps {
 const menuItems = [
   { name: "Home", href: "/" },
   { name: "Cars", href: "/cars" },
+  { name: "Transfers", href: "/transfers" },
   { name: "About", href: "/about" },
   { name: "Contact", href: "/contact" },
 ];
@@ -75,6 +76,15 @@ export function Header({ logo, brandName }: HeaderProps) {
             )}
           >
             Cars
+          </Link>
+          <Link
+            href="/transfers"
+            className={cn(
+              "transition-colors hover:text-foreground/80",
+              pathname === "/transfers" ? "text-primary" : "text-foreground/60"
+            )}
+          >
+            Transfers
           </Link>
           <Link
             href="/about"
