@@ -64,7 +64,6 @@ export function VehicleCard({ vehicle, pickupDate, returnDate }: VehicleCardProp
     returnDate
   );
   const currency = vehicle.currency?.toUpperCase() || "EUR";
-  const pricePer10Days = vehicle.pricePerDay * 10;
 
   return (
     <div className="flex flex-col bg-card text-card-foreground overflow-hidden rounded-lg shadow-lg w-full max-w-sm">
@@ -96,21 +95,19 @@ export function VehicleCard({ vehicle, pickupDate, returnDate }: VehicleCardProp
               <span className="text-2xl font-bold text-yellow-500">
                 {vehicle.pricePerDay}
               </span>
-              <span className="text-sm text-muted-foreground"> {currency} / Zi</span>
+              <span className="text-sm text-muted-foreground"> {currency} / Day</span>
             </div>
-            <div>
-              <span className="text-xl font-semibold text-yellow-600">
-                {pricePer10Days}
-              </span>
-              <span className="text-xs text-muted-foreground"> {currency} / 10 Zile</span>
-            </div>
+            {totalPrice !== null && days !== null && (
+              <div>
+                <span className="text-xl font-semibold text-yellow-600">
+                  {totalPrice}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {" "}{currency} / {days} Day{days === 1 ? "" : "s"}
+                </span>
+              </div>
+            )}
           </div>
-
-          {totalPrice !== null && days !== null && (
-            <p className="text-sm text-muted-foreground mt-1">
-              Total selectat: <span className="font-semibold">{totalPrice} {currency}</span> / {days} Zil{days === 1 ? "a" : "e"}
-            </p>
-          )}
         </div>
 
         <Button className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-md text-sm" asChild>

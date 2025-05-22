@@ -7,20 +7,13 @@ import {
   useConvex,
 } from "convex/react";
 import { api } from "../convex/_generated/api";
-// import Link from "next/link"; // Not currently used
-// import { SignUpButton } from "@clerk/nextjs"; // Not directly used in main flow for now
-// import { SignInButton } from "@clerk/nextjs"; // Not directly used in main flow for now
 import Image from "next/image"; // Import Next.js Image component
-import { UserButton } from "@clerk/nextjs";
-import { Sparkles, Instagram, Facebook} from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Id } from "../convex/_generated/dataModel";
 import Link from "next/link";
 import { FeaturesSectionWithHoverEffects } from "@/components/blocks/feature-section-with-hover-effects";
 import { Footer } from "@/components/ui/footer";
 import { Button } from "@/components/ui/button";
-// Input and Label might not be directly needed if the old form is entirely removed
-// import { Input } from "@/components/ui/input";
-// import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -29,21 +22,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-// Popover, PopoverContent, PopoverTrigger might not be needed if old form is removed
-// import {
-//   Popover,
-//   PopoverContent,
-//   PopoverTrigger,
-// } from "@/components/ui/popover";
-// import { cn } from "@/lib/utils"; // cn might not be needed if old form is removed
 import DisplayCards from "@/components/ui/display-cards";
 import { TestimonialsSection } from "@/components/blocks/testimonials-with-marquee";
 import { Header } from "@/components/ui/header";
-// Calendar import is likely not needed here anymore as it's encapsulated in VehicleSearchFilterForm
-// import { Calendar } from "@/components/ui/calendar";
 import { VehicleSearchFilterForm } from "@/components/VehicleSearchFilterForm"; // Import the new form
 import { VehicleCard } from "@/components/VehicleCard"; // Import the new VehicleCard
-import { FaqSection } from "@/components/blocks/faq"; // Added import for FaqSection
+import { FaqSection } from "@/components/blocks/faq"; // Re-added import for FaqSection
 
 // Define the expected shape of a vehicle object from the backend
 interface Vehicle {
@@ -93,11 +77,6 @@ const CAR_RENTAL_FAQS = [
     answer: "Basic Collision Damage Waiver (CDW) and Theft Protection (TP) with an excess amount are typically included. We also offer optional insurance packages to reduce the excess or provide more comprehensive coverage.",
   },
 ];
-
-// The old VehicleSearchFormProps and VehicleSearchForm component will be removed.
-// interface VehicleSearchFormProps {
-//   onSearch: (results: Vehicle[] | null, loading: boolean) => void;
-// }
 
 const defaultCards = [
   {
@@ -165,22 +144,18 @@ const testimonials = [
 function VehicleList({
   vehicles,
   isLoading,
-  pickupDate,
-  returnDate,
 }: {
   vehicles: Vehicle[] | null;
   isLoading: boolean;
-  pickupDate?: Date | null;
-  returnDate?: Date | null;
 }) {
   if (isLoading) {
-    return <p className="text-center text-muted-foreground">Searching for available cars...</p>;
+    return <p className="text-center text-muted-foreground">Loading featured cars...</p>;
   }
   if (vehicles === null) {
-    return <p className="text-center text-destructive">Could not load vehicles. Please try searching again.</p>;
+    return <p className="text-center text-destructive">Could not load featured cars.</p>;
   }
   if (!Array.isArray(vehicles) || vehicles.length === 0) {
-    return <p className="text-center text-muted-foreground">No vehicles found matching your criteria. Try broadening your search.</p>;
+    return <p className="text-center text-muted-foreground">No featured cars available at the moment.</p>;
   }
 
   return (
@@ -189,110 +164,32 @@ function VehicleList({
         if (!vehicle || typeof vehicle._id !== 'string') {
           return null;
         }
-        // Pass pickupDate and returnDate to VehicleCard
-        return <VehicleCard key={vehicle._id} vehicle={vehicle} pickupDate={pickupDate} returnDate={returnDate} />;
+        // Pass pickupDate and returnDate to VehicleCard // These are removed
+        return <VehicleCard key={vehicle._id} vehicle={vehicle} />;
       })}
     </div>
   );
 }
 
-interface SearchParams {
-  deliveryLocation: string;
-  pickupDate: Date;
-  pickupTime: string;
-  restitutionLocation: string;
-  returnDate: Date;
-  returnTime: string;
-}
-
 export default function Home() {
-  const ensureUserMutation = useMutation(api.users.ensureUser);
-  const convex = useConvex(); // Get Convex client for imperative queries
+  // const ensureUserMutation = useMutation(api.users.ensureUser);
+  // // const convex = useConvex(); // convex client might not be needed if imperative queries for search are removed
 
-  React.useEffect(() => {
-    ensureUserMutation({});
-  }, [ensureUserMutation]);
+  // React.useEffect(() => {
+  //   ensureUserMutation({});
+  // }, [ensureUserMutation]);
 
-  const [searchResults, setSearchResults] = React.useState<Vehicle[] | null>(null);
-  const [isSearching, setIsSearching] = React.useState(false);
-  const [currentSearchParams, setCurrentSearchParams] = React.useState<SearchParams | null>(null);
-
-  // featuredVehiclesQuery remains the same
   const featuredVehiclesQuery = useQuery(api.vehicles.getAll, { paginationOpts: { numItems: 3, cursor: null }});
 
-  // This function will be called by VehicleSearchFilterForm
-  const handleNewVehicleSearch = async (params: SearchParams) => {
-    console.log("Search initiated with params:", params);
-    setIsSearching(true);
-    setSearchResults(null); // Clear previous results while searching
-    setCurrentSearchParams(params); // Store current search params
 
-    const startDateTimestamp = Math.floor(params.pickupDate.getTime() / 1000);
-    const endDateTimestamp = Math.floor(params.returnDate.getTime() / 1000);
-
-    if (endDateTimestamp <= startDateTimestamp) {
-      // More specific check considering time for same-day rentals might be needed if backend supports it
-      if (params.returnDate.getTime() === params.pickupDate.getTime() && params.returnTime <= params.pickupTime) {
-          alert("Return time must be after pick-up time for same-day rentals.");
-          setIsSearching(false);
-          return;
-      }
-      // If not same day, or if same day but time is valid, this condition is for date part only
-      if (params.returnDate.getTime() < params.pickupDate.getTime()){ 
-        alert("Return date must be after or the same as pick-up date.");
-        setIsSearching(false);
-        return;
-      }
-    }
-
-    try {
-      // Note: params.pickupTime, params.returnTime, and params.restitutionLocation
-      // are not currently used by the api.vehicles.searchAvailableVehicles query.
-      // They are available here if the backend query is updated.
-      console.log("Calling Convex query with:", {
-        startDate: startDateTimestamp,
-        endDate: endDateTimestamp,
-        deliveryLocation: params.deliveryLocation,
-        // restitutionLocation: params.restitutionLocation, // If backend supports
-        // pickupTime: params.pickupTime, // If backend supports
-        // returnTime: params.returnTime, // If backend supports
-      });
-
-      const results = await convex.query(api.vehicles.searchAvailableVehicles, {
-        startDate: startDateTimestamp,
-        endDate: endDateTimestamp,
-        deliveryLocation: params.deliveryLocation,
-      });
-      setSearchResults(results as Vehicle[]);
-    } catch (error) {
-      console.error("Search failed:", error);
-      alert("Search failed. Please try again.");
-      setSearchResults(null); // Explicitly set to null on error
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-
-  const vehiclesToDisplay = searchResults !== null ? searchResults : (featuredVehiclesQuery?.page || []);
-  const currentTitle = isSearching ? "Searching..." : searchResults !== null ? (searchResults.length > 0 ? "Available Cars" : "No Cars Found") : "Featured Cars";
+  const vehiclesToDisplay = featuredVehiclesQuery?.page || [];
+  const currentTitle = featuredVehiclesQuery === undefined ? "Loading..." : (vehiclesToDisplay.length > 0 ? "Featured Cars" : "No Featured Cars");
 
   const isAuthorized = useQuery(api.auth.isAuthorized);
 
 
   return (
-    <div
-      className="relative flex flex-col min-h-screen"
-    >
-      {/* Gradient Background - Restoring the first gradient */}
-      <div className="absolute inset-0 overflow-hidden -z-10 pointer-events-none">
-        <div className="flex flex-col items-end absolute -right-120 -top-40 blur-xl">
-          <div className="h-[40rem] rounded-full w-[160rem] bg-gradient-to-b blur-[12rem] from-neutral-700 to-neutral-900 opacity-50"></div>
-        </div>
-        <div className="flex flex-col items-start absolute -left-120 -bottom-40 blur-xl">
-          <div className="h-[40rem] rounded-full w-[160rem] bg-gradient-to-b blur-[12rem] from-neutral-700 to-neutral-900 opacity-50"></div>
-        </div>
-      </div>
+    <div className="relative flex flex-col min-h-screen">
 
       <Header logo={<Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} />} />
 
@@ -308,18 +205,18 @@ export default function Home() {
           </div>
 
           {/* Replace old VehicleSearchForm with the new VehicleSearchFilterForm */}
-          <VehicleSearchFilterForm onSearchSubmit={handleNewVehicleSearch} />
+          {/* onSearchSubmit prop removed */}
+          <VehicleSearchFilterForm />
 
           <div className="mt-8">
             <h2 className="text-3xl font-semibold mb-6 text-center">
               {currentTitle}
             </h2>
             {/* Update isLoading prop and pass search dates to VehicleList */}
+            {/* pickupDate and returnDate props removed from VehicleList */}
             <VehicleList
               vehicles={vehiclesToDisplay as Vehicle[]}
-              isLoading={isSearching || (featuredVehiclesQuery === undefined && searchResults === null)}
-              pickupDate={currentSearchParams?.pickupDate}
-              returnDate={currentSearchParams?.returnDate}
+              isLoading={featuredVehiclesQuery === undefined}
             />
           </div>
 
@@ -354,38 +251,6 @@ export default function Home() {
       <Footer
         logo={<Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} />}
         brandName=""
-        socialLinks={[
-          {
-            icon: <Instagram className="h-5 w-5" />,
-            href: "https://www.instagram.com/rentn_go.ro",
-            label: "Instagram",
-          },
-          {
-            icon: <Facebook className="h-5 w-5" />,
-            href: "https://www.facebook.com/share/1Ad82uMtP3/?mibextid=wwXIfr",
-            label: "Facebook",
-          },
-          // {
-          //   icon: <TikTok className="h-5 w-5" />,
-          //   href: "https://www.tiktok.com",
-          //   label: "TikTok",
-          // }
-
-        ]}
-        mainLinks={[
-          { href: "/", label: "Home" },
-          { href: "/about", label: "About" },
-          { href: "/blog", label: "Blog" },
-          { href: "/contact", label: "Contact" },
-        ]}
-        legalLinks={[
-          { href: "/privacy", label: "Privacy" },
-          { href: "/terms", label: "Terms" },
-        ]}
-        copyright={{
-          text: "© 2025 RentNGo Cluj",
-          license: "All rights reserved",
-        }}
       />
 
     </div>

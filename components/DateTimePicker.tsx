@@ -1,0 +1,126 @@
+"use client";
+
+import * as React from "react";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+
+const generateTimeSlots = () => {
+  const slots = [];
+  for (let hour = 0; hour < 24; hour++) {
+    slots.push({ time: `${String(hour).padStart(2, "0")}:00`, available: true });
+    slots.push({ time: `${String(hour).padStart(2, "0")}:30`, available: true });
+  }
+  return slots;
+};
+
+const timeSlots = generateTimeSlots();
+
+interface DateTimePickerProps {
+  id: string;
+  label: string;
+  dateState: Date | undefined;
+  setDateState: (date: Date) => void;
+  timeState: string | null;
+  setTimeState: (time: string) => void;
+  minDate?: Date;
+  disabledDateRanges?: any;
+  popoverAlign?: "start" | "center" | "end";
+  contentAlign?: 'start' | 'end';
+  isLoading?: boolean;
+  onDateChange?: (newDate: Date | undefined) => void; // Optional: To handle side effects like updating return date
+}
+
+export function DateTimePicker({
+  id,
+  label,
+  dateState,
+  setDateState,
+  timeState,
+  setTimeState,
+  minDate,
+  disabledDateRanges,
+  popoverAlign = "start",
+  contentAlign = 'start',
+  isLoading = false,
+  onDateChange,
+}: DateTimePickerProps) {
+  return (
+    <div className={cn("grid gap-1.5 w-full", contentAlign === 'end' && "justify-items-end")}>
+      <Label htmlFor={id} className={cn("text-sm font-medium", contentAlign === 'end' && "text-right")}>{label}</Label>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            id={id}
+            variant={"outline"}
+            className={cn(
+              "justify-start text-left font-normal text-base py-2.5 pl-3 pr-3 h-10 w-74",
+              !dateState && "text-muted-foreground"
+            )}
+            disabled={isLoading}
+          >
+            <CalendarIcon className="mr-2 h-5 w-5 text-muted-foreground" />
+            {dateState ?
+              `${format(dateState, "EEE, MMM d")} at ${timeState || "Select time"}` :
+              <span>Pick a date & time</span>}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0 flex max-sm:flex-col bg-card shadow-xl border-border" align={popoverAlign}>
+          <Calendar
+            mode="single"
+            selected={dateState}
+            onSelect={(newDate) => {
+              if (newDate) {
+                setDateState(newDate);
+                if (onDateChange) {
+                  onDateChange(newDate);
+                }
+              }
+            }}
+            fromDate={minDate}
+            className="p-2 sm:pe-3 border-border max-sm:border-b sm:border-r"
+            disabled={disabledDateRanges}
+            initialFocus
+          />
+          <div className="relative w-full max-sm:min-h-[180px] sm:w-40">
+            <ScrollArea className="h-full py-2 max-h-60 sm:max-h-[270px]">
+              <div className="space-y-2 px-3">
+                <div className="flex h-5 shrink-0 items-center">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {dateState ? format(dateState, "EEEE, MMM d") : "Select a date first"}
+                  </p>
+                </div>
+                <div className="grid gap-1.5 max-sm:grid-cols-3 sm:grid-cols-2">
+                  {timeSlots.map(({ time: timeSlot, available }) => (
+                    <Button
+                      key={`${id}-time-${timeSlot}`}
+                      variant={timeState === timeSlot ? "default" : "outline"}
+                      size="sm"
+                      className="w-full text-xs h-8"
+                      onClick={() => setTimeState(timeSlot)}
+                      disabled={!available || isLoading || !dateState}
+                    >
+                      {timeSlot}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </ScrollArea>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
+export default DateTimePicker; 
