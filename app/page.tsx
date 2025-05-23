@@ -167,8 +167,19 @@ function VehicleList({
         if (!vehicle || typeof vehicle._id !== 'string') {
           return null;
         }
-        // Pass pickupDate and returnDate to VehicleCard // These are removed
-        return <VehicleCard key={vehicle._id} vehicle={vehicle} />;
+        // For featured cars on homepage, we don't have search parameters
+        return (
+          <VehicleCard 
+            key={vehicle._id} 
+            vehicle={vehicle}
+            pickupDate={null}
+            returnDate={null}
+            deliveryLocation={null}
+            restitutionLocation={null}
+            pickupTime={null}
+            returnTime={null}
+          />
+        );
       })}
     </div>
   );
@@ -221,12 +232,10 @@ export default function Home() {
 
   const featuredVehiclesQuery = useQuery(api.vehicles.getAll, { paginationOpts: { numItems: 3, cursor: null }});
 
-
   const vehiclesToDisplay = featuredVehiclesQuery?.page || [];
   const currentTitle = featuredVehiclesQuery === undefined ? "Loading..." : (vehiclesToDisplay.length > 0 ? "Featured Cars" : "No Featured Cars");
 
   const isAuthorized = useQuery(api.auth.isAuthorized);
-
 
   return (
     <div className="relative flex flex-col min-h-screen">

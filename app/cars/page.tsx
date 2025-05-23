@@ -10,14 +10,7 @@ import { Header } from "@/components/ui/header";
 import { Footer } from "@/components/ui/footer";
 import { VehicleCard } from "@/components/VehicleCard";
 import { VehicleFilters } from "@/components/VehicleFilters";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { format } from "date-fns";
+import { Card, CardContent } from "@/components/ui/card";
 
 import { LocationPicker } from "@/components/LocationPicker";
 import { DateTimePicker } from "@/components/DateTimePicker";
@@ -42,16 +35,126 @@ interface Vehicle {
   fuelType?: string;
 }
 
+// URL State Management (shareable search criteria)
+interface URLSearchState {
+  deliveryLocation?: string;
+  pickupDate?: string; // Unix timestamp
+  pickupTime?: string;
+  restitutionLocation?: string;
+  returnDate?: string; // Unix timestamp
+  returnTime?: string;
+}
+
+// UI State Management (local preferences)
+interface UISearchState {
+  filtersExpanded?: boolean;
+  sortBy?: string;
+  viewMode?: 'grid' | 'list';
+}
+
+// Utility functions for state management
+const useSearchStateManager = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Debounced URL update function
+  const updateURLDebounced = React.useCallback(
+    debounce((newState: URLSearchState) => {
+      const params = new URLSearchParams();
+      
+      Object.entries(newState).forEach(([key, value]) => {
+        if (value) {
+          params.set(key, value);
+        }
+      });
+
+      const paramString = params.toString();
+      const newUrl = `/cars${paramString ? `?${paramString}` : ''}`;
+      router.replace(newUrl);
+    }, 300),
+    [router]
+  );
+
+  // Read URL state
+  const getURLState = React.useCallback((): URLSearchState => {
+    return {
+      deliveryLocation: searchParams.get("deliveryLocation") || undefined,
+      pickupDate: searchParams.get("pickupDate") || undefined,
+      pickupTime: searchParams.get("pickupTime") || undefined,
+      restitutionLocation: searchParams.get("restitutionLocation") || undefined,
+      returnDate: searchParams.get("returnDate") || undefined,
+      returnTime: searchParams.get("returnTime") || undefined,
+    };
+  }, [searchParams]);
+
+  // Update URL state
+  const setURLState = React.useCallback((newState: URLSearchState) => {
+    updateURLDebounced(newState);
+  }, [updateURLDebounced]);
+
+  // Read UI state from localStorage
+  const getUIState = React.useCallback((): UISearchState => {
+    if (typeof window === 'undefined') return {};
+    
+    try {
+      const stored = localStorage.getItem('carSearchUIState');
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  }, []);
+
+  // Update UI state in localStorage
+  const setUIState = React.useCallback((newState: Partial<UISearchState>) => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      const current = getUIState();
+      const updated = { ...current, ...newState };
+      localStorage.setItem('carSearchUIState', JSON.stringify(updated));
+    } catch (error) {
+      console.warn('Failed to save UI state to localStorage:', error);
+    }
+  }, [getUIState]);
+
+  return {
+    getURLState,
+    setURLState,
+    getUIState,
+    setUIState,
+  };
+};
+
+// Debounce utility function
+function debounce<T extends (...args: any[]) => void>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
+
 function VehicleList({
   vehicles,
   isLoading,
   pickupDate,
   returnDate,
+  deliveryLocation,
+  restitutionLocation,
+  pickupTime,
+  returnTime,
 }: {
   vehicles: Vehicle[] | null;
   isLoading: boolean;
   pickupDate?: Date | null;
   returnDate?: Date | null;
+  deliveryLocation?: string | null;
+  restitutionLocation?: string | null;
+  pickupTime?: string | null;
+  returnTime?: string | null;
 }) {
   if (isLoading) {
     return <p className="text-center text-muted-foreground">Searching for available cars...</p>;
@@ -70,29 +173,41 @@ function VehicleList({
           console.warn("Skipping invalid vehicle data:", vehicle);
           return null;
         }
-        return <VehicleCard key={vehicle._id} vehicle={vehicle} pickupDate={pickupDate} returnDate={returnDate} />;
+        return (
+          <VehicleCard 
+            key={vehicle._id} 
+            vehicle={vehicle} 
+            pickupDate={pickupDate} 
+            returnDate={returnDate}
+            deliveryLocation={deliveryLocation}
+            restitutionLocation={restitutionLocation}
+            pickupTime={pickupTime}
+            returnTime={returnTime}
+          />
+        );
       })}
     </div>
   );
 }
 
 export default function CarsPage() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
   const convex = useConvex();
+  const { getURLState, setURLState, getUIState } = useSearchStateManager();
 
   const [allFetchedVehicles, setAllFetchedVehicles] = React.useState<Vehicle[] | null>(null);
   const [displayedVehicles, setDisplayedVehicles] = React.useState<Vehicle[] | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  // Search form state - derived from URL parameters
   const [currentDeliveryLocation, setCurrentDeliveryLocation] = React.useState<string | null>(null);
   const [currentPickupDate, setCurrentPickupDate] = React.useState<Date | null>(null);
   const [currentPickupTime, setCurrentPickupTime] = React.useState<string | null>(null);
   const [currentRestitutionLocation, setCurrentRestitutionLocation] = React.useState<string | null>(null);
   const [currentReturnDate, setCurrentReturnDate] = React.useState<Date | null>(null);
   const [currentReturnTime, setCurrentReturnTime] = React.useState<string | null>(null);
-  const [initialPopulationComplete, setInitialPopulationComplete] = React.useState(false);
+
+  const [initialStateLoaded, setInitialStateLoaded] = React.useState(false);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -100,10 +215,61 @@ export default function CarsPage() {
   // Helper function to sanitize time strings from URL params
   const sanitizeTime = (timeStr: string | null): string | null => {
     if (!timeStr) return null;
-    // Matches HH:MM at the beginning of the string
     const match = timeStr.match(/^(\d{2}:\d{2})/); 
-    return match ? match[1] : null; // Returns "HH:MM" or null
+    return match ? match[1] : null;
   };
+
+  // Load initial state from URL and localStorage
+  React.useEffect(() => {
+    const urlState = getURLState();
+
+    // Restore search form state from URL
+    setCurrentDeliveryLocation(urlState.deliveryLocation || null);
+    setCurrentPickupDate(urlState.pickupDate ? new Date(parseInt(urlState.pickupDate) * 1000) : null);
+    setCurrentPickupTime(sanitizeTime(urlState.pickupTime || null));
+    setCurrentRestitutionLocation(urlState.restitutionLocation || urlState.deliveryLocation || null);
+    setCurrentReturnDate(urlState.returnDate ? new Date(parseInt(urlState.returnDate) * 1000) : null);
+    setCurrentReturnTime(sanitizeTime(urlState.returnTime || null));
+
+    setInitialStateLoaded(true);
+  }, [getURLState, getUIState]);
+
+  // Update URL when search criteria changes
+  React.useEffect(() => {
+    if (!initialStateLoaded) return;
+
+    const urlState: URLSearchState = {};
+    
+    if (currentDeliveryLocation) {
+      urlState.deliveryLocation = currentDeliveryLocation;
+    }
+    if (currentPickupDate) {
+      urlState.pickupDate = Math.floor(currentPickupDate.getTime() / 1000).toString();
+    }
+    if (currentPickupTime) {
+      urlState.pickupTime = currentPickupTime;
+    }
+    if (currentRestitutionLocation) {
+      urlState.restitutionLocation = currentRestitutionLocation;
+    }
+    if (currentReturnDate) {
+      urlState.returnDate = Math.floor(currentReturnDate.getTime() / 1000).toString();
+    }
+    if (currentReturnTime) {
+      urlState.returnTime = currentReturnTime;
+    }
+
+    setURLState(urlState);
+  }, [
+    currentDeliveryLocation,
+    currentPickupDate,
+    currentPickupTime,
+    currentRestitutionLocation,
+    currentReturnDate,
+    currentReturnTime,
+    initialStateLoaded,
+    setURLState
+  ]);
 
   const executeVehicleSearch = React.useCallback(async (
     pickupLoc: string | null, 
@@ -167,60 +333,26 @@ export default function CarsPage() {
     }
   }, [convex]);
 
-  // Effect for initial population from URL and initial search
+  // Execute search when state changes
   React.useEffect(() => {
-    const deliveryLocParam = searchParams.get("deliveryLocation");
-    const pickupDateStrParam = searchParams.get("pickupDate");
-    const rawPickupTimeParam = searchParams.get("pickupTime"); // Raw value from URL
-    const restitutionLocParam = searchParams.get("restitutionLocation");
-    const returnDateStrParam = searchParams.get("returnDate");
-    const rawReturnTimeParam = searchParams.get("returnTime"); // Raw value from URL
+    if (!initialStateLoaded) return;
 
-    const sanitizedPickupTime = sanitizeTime(rawPickupTimeParam); // Sanitize
-    const sanitizedReturnTime = sanitizeTime(rawReturnTimeParam); // Sanitize
-
-    const initialPickupD = pickupDateStrParam ? new Date(parseInt(pickupDateStrParam, 10) * 1000) : null;
-    const initialReturnD = returnDateStrParam ? new Date(parseInt(returnDateStrParam, 10) * 1000) : null;
-
-    setCurrentDeliveryLocation(deliveryLocParam);
-    setCurrentPickupDate(initialPickupD);
-    setCurrentPickupTime(sanitizedPickupTime); // Use sanitized value
-    setCurrentRestitutionLocation(restitutionLocParam || deliveryLocParam); // Default return to delivery if not specified
-    setCurrentReturnDate(initialReturnD);
-    setCurrentReturnTime(sanitizedReturnTime); // Use sanitized value
-    
-    setInitialPopulationComplete(true);
-    // Trigger initial search with populated or null values
     executeVehicleSearch(
-        deliveryLocParam, 
-        initialPickupD, 
-        sanitizedPickupTime, // Pass sanitized value
-        restitutionLocParam || deliveryLocParam, 
-        initialReturnD, 
-        sanitizedReturnTime // Pass sanitized value
+      currentDeliveryLocation,
+      currentPickupDate,
+      currentPickupTime,
+      currentRestitutionLocation,
+      currentReturnDate,
+      currentReturnTime
     );
-
-  }, [searchParams, executeVehicleSearch]); // executeVehicleSearch is memoized
-
-  React.useEffect(() => {
-    if (initialPopulationComplete) {
-      executeVehicleSearch(
-        currentDeliveryLocation,
-        currentPickupDate,
-        currentPickupTime,
-        currentRestitutionLocation,
-        currentReturnDate,
-        currentReturnTime
-      );
-    }
   }, [
-    initialPopulationComplete,
     currentDeliveryLocation,
     currentPickupDate,
     currentPickupTime,
     currentRestitutionLocation,
     currentReturnDate,
     currentReturnTime,
+    initialStateLoaded,
     executeVehicleSearch
   ]);
 
@@ -248,6 +380,7 @@ export default function CarsPage() {
                 <DateTimePicker
                   id="currentPickupDate"
                   label="Pick-up Date & Time"
+                  disabledDateRanges={{ before: today }}
                   dateState={currentPickupDate || undefined}
                   setDateState={setCurrentPickupDate}
                   timeState={currentPickupTime}
@@ -306,6 +439,10 @@ export default function CarsPage() {
             isLoading={isLoading}
             pickupDate={currentPickupDate}
             returnDate={currentReturnDate}
+            deliveryLocation={currentDeliveryLocation}
+            restitutionLocation={currentRestitutionLocation}
+            pickupTime={currentPickupTime}
+            returnTime={currentReturnTime}
           />
         </div>
       </main>
