@@ -29,8 +29,8 @@ const mainLinks = [
 ]
 
 const legalLinks = [
-  { href: "/privacy", label: "Privacy" },
-  { href: "/terms", label: "Terms" },
+  { href: "/privacy-policy", label: "Privacy" },
+  { href: "/terms-and-conditions", label: "Terms" },
 ]
 
 const copyright = {

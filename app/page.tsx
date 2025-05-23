@@ -8,7 +8,7 @@ import {
 } from "convex/react";
 import { api } from "../convex/_generated/api";
 import Image from "next/image"; // Import Next.js Image component
-import { Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { Id } from "../convex/_generated/dataModel";
 import Link from "next/link";
 import { FeaturesSectionWithHoverEffects } from "@/components/blocks/feature-section-with-hover-effects";
@@ -30,6 +30,7 @@ import { VehicleCard } from "@/components/VehicleCard"; // Import the new Vehicl
 import { FaqSection } from "@/components/blocks/faq"; // Re-added import for FaqSection
 import { BackgroundImage } from "@/components/ui/BackgroundImage"; // Import the new BackgroundImage component
 import { AnimatedGroup } from "@/components/ui/animated-group"; // Import AnimatedGroup
+import { Slideshow } from "@/components/ui/slideshow"; // Import the new Slideshow component
 import { Variants } from "framer-motion"; // Import Variants for typing
 
 // Define the expected shape of a vehicle object from the backend
@@ -257,7 +258,7 @@ export default function Home() {
 
             <VehicleSearchFilterForm />
 
-            <div className="mt-8">
+            <div className="my-8">
               <h2 className="text-3xl font-semibold mb-6 text-center">
                 {currentTitle}
               </h2>
@@ -265,7 +266,25 @@ export default function Home() {
                 vehicles={vehiclesToDisplay as Vehicle[]}
                 isLoading={featuredVehiclesQuery === undefined}
               />
+              <div className="flex justify-center mt-12">
+                <Button
+                  variant="default"
+                  size="lg"
+                  className="bg-primary hover:bg-primary/90 text-white"
+                  onClick={() => window.location.href = '/cars'}
+                >
+                  View All Cars
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
             </div>
+          
+          </div>
+        </AnimatedGroup>
+        
+        <AnimatedGroup variants={sectionAnimationVariants}>
+          <div className="w-full">
+            <Slideshow className="mb-8" />
           </div>
         </AnimatedGroup>
         

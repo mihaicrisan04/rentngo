@@ -93,23 +93,19 @@ export function VehicleCard({
 
   const carDetailsUrl = buildCarDetailsUrl(vehicle._id);
 
-  const handleCardClick = (e: React.MouseEvent) => {
-    // Prevent navigation if clicking on the reserve button
-    const target = e.target as HTMLElement;
-    if (target.closest('button') || target.closest('a[href*="reservation"]')) {
-      return;
-    }
-    
-    // Navigate to car details page with search parameters
+  const handleImageClick = () => {
+    // Navigate to car details page
     window.location.href = carDetailsUrl;
   };
 
   return (
     <div 
-      className="flex flex-col bg-card text-card-foreground overflow-hidden rounded-lg shadow-lg w-full max-w-sm cursor-pointer transition-all duration-200 hover:shadow-xl hover:-translate-y-1"
-      onClick={handleCardClick}
+      className="flex flex-col bg-accent text-card-foreground overflow-hidden rounded-lg shadow-lg w-full max-w-sm transition-all duration-200 hover:shadow-xl hover:-translate-y-1"
     >
-      <div className="aspect-[4/3] relative w-full bg-muted overflow-hidden">
+      <div 
+        className="aspect-[4/3] relative w-full bg-muted overflow-hidden cursor-pointer"
+        onClick={handleImageClick}
+      >
         {imageUrl ? (
           <Image
             src={imageUrl}
@@ -155,7 +151,6 @@ export function VehicleCard({
         <Button 
           className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-md text-sm" 
           asChild
-          onClick={(e) => e.stopPropagation()}
         >
           <Link href={reservationUrl}>
             RESERVE NOW
@@ -163,7 +158,7 @@ export function VehicleCard({
         </Button>
       </div>
 
-      <div className="p-3 border-t border-border bg-card">
+      <div className="p-3 border-t border-border">
         <div className="flex justify-around items-center w-full text-xs text-muted-foreground">
           <div className="flex items-center space-x-1">
             <CarFront className="h-4 w-4" />
