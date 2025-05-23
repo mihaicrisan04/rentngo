@@ -12,7 +12,13 @@ const vehicleTypes = ["sedan", "suv", "hatchback", "sports", "truck", "van"] as 
 const transmissions = ["automatic", "manual"] as const;
 const fuelTypes = ["petrol", "diesel", "electric", "hybrid"] as const;
 const statuses = ["available", "rented", "maintenance"] as const;
-const locations = ["Cluj-Napoca Center", "Cluj-Napoca Airport", "Floresti", "Baciu", "Marasti", "Manastur"] as const;
+const locations = [
+  "Aeroport Cluj-Napoca", "Alba-Iulia", "Bacau", "Baia mare", "Bistrita", 
+  "Brasov", "Bucuresti", "Cluj-Napoca", "Floresti", "Oradea", 
+  "Satu mare", "Sibiu", "Suceava", "Targu Mures", "Timisoara"
+] as const;
+const paymentMethods = ["cash_on_delivery", "card_on_delivery", "card_online"] as const;
+const timeSlots = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"] as const;
 const featuresList = [
       "air conditioning", "bluetooth", "parking sensors", "heated seats", 
       "backup camera", "navigation", "sunroof", "cruise control",
@@ -153,8 +159,19 @@ export const generateFakeReservation = mutation({
       vehicleId: args.vehicleId,
       startDate: startDate.getTime(),
       endDate: endDate.getTime(),
+      pickupTime: timeSlots[Math.floor(Math.random() * timeSlots.length)],
+      restitutionTime: timeSlots[Math.floor(Math.random() * timeSlots.length)],
+      pickupLocation: locations[Math.floor(Math.random() * locations.length)],
+      restitutionLocation: locations[Math.floor(Math.random() * locations.length)],
+      paymentMethod: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
       status: reservationStatuses[Math.floor(Math.random() * reservationStatuses.length)], // Math.random for status
       totalPrice,
+      customerInfo: {
+        name: faker.person.fullName(),
+        email: faker.internet.email(),
+        phone: faker.phone.number(),
+        message: Math.random() > 0.7 ? faker.lorem.sentence() : undefined,
+      },
       // Using Math.random for promo and additional charges as well, to reduce faker dependency
       promoCode: Math.random() > 0.7 ? Array(6).fill(0).map(() => "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random() * 36)]).join('') : undefined,
       additionalCharges: Math.random() > 0.5 ? [

@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { LocationPicker } from "./LocationPicker";
 import { DateTimePicker } from "./DateTimePicker";
+import { searchStorage } from "@/lib/searchStorage";
 
 // Define the expected shape of a vehicle object (can be refined)
 interface Vehicle {
@@ -59,10 +60,8 @@ interface VehicleSearchFilterFormProps {
   initialReturnDate?: Date;
 }
 
-const defaultDeliveryLocation = "Aeroport Cluj-Napoca";
-
 export function VehicleSearchFilterForm({
-  initialDeliveryLocation = defaultDeliveryLocation,
+  initialDeliveryLocation,
   initialRestitutionLocation,
   initialPickupDate,
   initialReturnDate,
@@ -70,56 +69,95 @@ export function VehicleSearchFilterForm({
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const defaultPickupDate = initialPickupDate || new Date(new Date().setDate(today.getDate() + 1));
-  const defaultReturnDate = initialReturnDate || new Date(new Date(defaultPickupDate).setDate(defaultPickupDate.getDate() + 7));
-
-  const [deliveryLocation, setDeliveryLocation] = React.useState<string>(initialDeliveryLocation);
-  const [restitutionLocation, setRestitutionLocation] = React.useState<string>(initialRestitutionLocation || defaultDeliveryLocation);
-
-  const [pickupDateState, setPickupDateState] = React.useState<Date>(defaultPickupDate);
-  const [pickupTime, setPickupTime] = React.useState<string | null>("10:00");
-
-  const [returnDateState, setReturnDateState] = React.useState<Date>(defaultReturnDate);
-  const [returnTime, setReturnTime] = React.useState<string | null>("10:00");
+  // Start with empty/default state to avoid hydration mismatch
+  const [deliveryLocation, setDeliveryLocation] = React.useState<string>("");
+  const [restitutionLocation, setRestitutionLocation] = React.useState<string>("");
+  const [pickupDateState, setPickupDateState] = React.useState<Date | undefined>(undefined);
+  const [pickupTime, setPickupTime] = React.useState<string | null>(null);
+  const [returnDateState, setReturnDateState] = React.useState<Date | undefined>(undefined);
+  const [returnTime, setReturnTime] = React.useState<string | null>(null);
 
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isHydrated, setIsHydrated] = React.useState(false);
   const router = useRouter();
+
+  // Load data from localStorage after hydration to prevent SSR mismatch
+  React.useEffect(() => {
+    const storedData = searchStorage.load();
+    
+    // Only update state if there's stored data, otherwise leave empty for user selection
+    if (storedData.deliveryLocation) {
+      setDeliveryLocation(storedData.deliveryLocation);
+    } else if (initialDeliveryLocation) {
+      setDeliveryLocation(initialDeliveryLocation);
+    }
+    
+    if (storedData.restitutionLocation) {
+      setRestitutionLocation(storedData.restitutionLocation);
+    } else if (initialRestitutionLocation) {
+      setRestitutionLocation(initialRestitutionLocation);
+    }
+    
+    if (storedData.pickupDate) {
+      setPickupDateState(storedData.pickupDate);
+    } else if (initialPickupDate) {
+      setPickupDateState(initialPickupDate);
+    }
+    
+    if (storedData.returnDate) {
+      setReturnDateState(storedData.returnDate);
+    } else if (initialReturnDate) {
+      setReturnDateState(initialReturnDate);
+    }
+    
+    if (storedData.pickupTime) {
+      setPickupTime(storedData.pickupTime);
+    }
+    
+    if (storedData.returnTime) {
+      setReturnTime(storedData.returnTime);
+    }
+
+    setIsHydrated(true);
+  }, [initialDeliveryLocation, initialRestitutionLocation, initialPickupDate, initialReturnDate]);
+
+  // Save to localStorage when state changes (only after hydration)
+  React.useEffect(() => {
+    if (!isHydrated) return;
+    
+    searchStorage.save({
+      deliveryLocation: deliveryLocation || undefined,
+      pickupDate: pickupDateState,
+      pickupTime,
+      restitutionLocation: restitutionLocation || undefined,
+      returnDate: returnDateState,
+      returnTime,
+    });
+  }, [deliveryLocation, pickupDateState, pickupTime, restitutionLocation, returnDateState, returnTime, isHydrated]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    if (!deliveryLocation || !pickupDateState || !pickupTime || !restitutionLocation || !returnDateState || !returnTime) {
-      alert("Please fill in all required fields including times.");
-      setIsLoading(false);
-      return;
+    // Validate dates if both are provided
+    if (pickupDateState && returnDateState) {
+      if (returnDateState < pickupDateState) {
+        alert("Return date must be after or the same as pick-up date.");
+        setIsLoading(false);
+        return;
+      }
+      if (returnDateState.getTime() === pickupDateState.getTime() && returnTime && pickupTime && returnTime <= pickupTime) {
+        alert("Return time must be after pick-up time if dates are the same.");
+        setIsLoading(false);
+        return;
+      }
     }
 
-    if (returnDateState < pickupDateState) {
-      alert("Return date must be after or the same as pick-up date.");
-      setIsLoading(false);
-      return;
-    }
-    if (returnDateState.getTime() === pickupDateState.getTime() && returnTime <= pickupTime) {
-      alert("Return time must be after pick-up time if dates are the same.");
-      setIsLoading(false);
-      return;
-    }
-
-    // Construct query parameters
-    const params = new URLSearchParams();
-    params.append("deliveryLocation", deliveryLocation);
-    params.append("pickupDate", Math.floor(pickupDateState.getTime() / 1000).toString());
-    params.append("pickupTime", pickupTime);
-    params.append("restitutionLocation", restitutionLocation);
-    params.append("returnDate", Math.floor(returnDateState.getTime() / 1000).toString());
-    params.append("returnTime", returnTime);
-
-    router.push(`/cars?${params.toString()}`);
+    // Navigate to cars page regardless of completeness - the cars page will handle partial data
+    router.push("/cars");
 
     setTimeout(() => {
       setIsLoading(false);
-      console.log("Search submitted from form with:", { deliveryLocation, pickupDateState, pickupTime, restitutionLocation, returnDateState, returnTime });
     }, 500);
   };
 
@@ -152,7 +190,7 @@ export function VehicleSearchFilterForm({
                 contentAlign="start"
                 isLoading={isLoading}
                 onDateChange={(newDate) => {
-                  if (newDate && returnDateState < newDate) {
+                  if (newDate && returnDateState && returnDateState < newDate) {
                     setReturnDateState(newDate);
                   }
                 }}

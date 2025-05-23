@@ -14,6 +14,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { searchStorage } from "@/lib/searchStorage";
 
 const generateTimeSlots = () => {
   const slots = [];
@@ -30,7 +31,7 @@ interface DateTimePickerProps {
   id: string;
   label: string;
   dateState: Date | undefined;
-  setDateState: (date: Date) => void;
+  setDateState: (date: Date | undefined) => void;
   timeState: string | null;
   setTimeState: (time: string) => void;
   minDate?: Date;
@@ -55,6 +56,44 @@ export function DateTimePicker({
   isLoading = false,
   onDateChange,
 }: DateTimePickerProps) {
+
+  const handleDateChange = (newDate: Date | undefined) => {
+    if (newDate) {
+      setDateState(newDate);
+      
+      // Save to localStorage based on the component ID
+      if (id.includes('pickup')) {
+        searchStorage.updateField('pickupDate', newDate);
+      } else if (id.includes('return')) {
+        searchStorage.updateField('returnDate', newDate);
+      }
+      
+      if (onDateChange) {
+        onDateChange(newDate);
+      }
+    } else {
+      // Handle clearing the date
+      setDateState(newDate);
+      
+      if (id.includes('pickup')) {
+        searchStorage.updateField('pickupDate', undefined);
+      } else if (id.includes('return')) {
+        searchStorage.updateField('returnDate', undefined);
+      }
+    }
+  };
+
+  const handleTimeChange = (time: string) => {
+    setTimeState(time);
+    
+    // Save to localStorage based on the component ID
+    if (id.includes('pickup')) {
+      searchStorage.updateField('pickupTime', time);
+    } else if (id.includes('return')) {
+      searchStorage.updateField('returnTime', time);
+    }
+  };
+
   return (
     <div className={cn("grid gap-1.5 w-full", contentAlign === 'end' && "justify-items-end")}>
       <Label htmlFor={id} className={cn("text-sm font-medium", contentAlign === 'end' && "text-right")}>{label}</Label>
@@ -79,14 +118,7 @@ export function DateTimePicker({
           <Calendar
             mode="single"
             selected={dateState}
-            onSelect={(newDate) => {
-              if (newDate) {
-                setDateState(newDate);
-                if (onDateChange) {
-                  onDateChange(newDate);
-                }
-              }
-            }}
+            onSelect={handleDateChange}
             fromDate={minDate}
             className="p-2 sm:pe-3 border-border max-sm:border-b sm:border-r"
             disabled={disabledDateRanges}
@@ -107,7 +139,7 @@ export function DateTimePicker({
                       variant={timeState === timeSlot ? "default" : "outline"}
                       size="sm"
                       className="w-full text-xs h-8"
-                      onClick={() => setTimeState(timeSlot)}
+                      onClick={() => handleTimeChange(timeSlot)}
                       disabled={!available || isLoading || !dateState}
                     >
                       {timeSlot}

@@ -54,72 +54,14 @@ function calculatePriceDetails(
   return { totalPrice: null, days: null };
 }
 
-function buildReservationUrl(
-  vehicleId: string,
-  deliveryLocation?: string | null,
-  pickupDate?: Date | null,
-  pickupTime?: string | null,
-  restitutionLocation?: string | null,
-  returnDate?: Date | null,
-  returnTime?: string | null
-): string {
+function buildReservationUrl(vehicleId: string): string {
   const params = new URLSearchParams();
   params.append("vehicleId", vehicleId);
-  
-  if (deliveryLocation) {
-    params.append("deliveryLocation", deliveryLocation);
-  }
-  if (pickupDate) {
-    params.append("pickupDate", Math.floor(pickupDate.getTime() / 1000).toString());
-  }
-  if (pickupTime) {
-    params.append("pickupTime", pickupTime);
-  }
-  if (restitutionLocation) {
-    params.append("restitutionLocation", restitutionLocation);
-  }
-  if (returnDate) {
-    params.append("returnDate", Math.floor(returnDate.getTime() / 1000).toString());
-  }
-  if (returnTime) {
-    params.append("returnTime", returnTime);
-  }
-
   return `/reservation?${params.toString()}`;
 }
 
-function buildCarDetailsUrl(
-  vehicleId: string,
-  deliveryLocation?: string | null,
-  pickupDate?: Date | null,
-  pickupTime?: string | null,
-  restitutionLocation?: string | null,
-  returnDate?: Date | null,
-  returnTime?: string | null
-): string {
-  const params = new URLSearchParams();
-  
-  if (deliveryLocation) {
-    params.append("deliveryLocation", deliveryLocation);
-  }
-  if (pickupDate) {
-    params.append("pickupDate", Math.floor(pickupDate.getTime() / 1000).toString());
-  }
-  if (pickupTime) {
-    params.append("pickupTime", pickupTime);
-  }
-  if (restitutionLocation) {
-    params.append("restitutionLocation", restitutionLocation);
-  }
-  if (returnDate) {
-    params.append("returnDate", Math.floor(returnDate.getTime() / 1000).toString());
-  }
-  if (returnTime) {
-    params.append("returnTime", returnTime);
-  }
-
-  const paramString = params.toString();
-  return `/cars/${vehicleId}${paramString ? `?${paramString}` : ''}`;
+function buildCarDetailsUrl(vehicleId: string): string {
+  return `/cars/${vehicleId}`;
 }
 
 export function VehicleCard({ 
@@ -147,25 +89,9 @@ export function VehicleCard({
   );
   const currency = "EUR";
 
-  const reservationUrl = buildReservationUrl(
-    vehicle._id,
-    deliveryLocation,
-    pickupDate,
-    pickupTime,
-    restitutionLocation,
-    returnDate,
-    returnTime
-  );
+  const reservationUrl = buildReservationUrl(vehicle._id);
 
-  const carDetailsUrl = buildCarDetailsUrl(
-    vehicle._id,
-    deliveryLocation,
-    pickupDate,
-    pickupTime,
-    restitutionLocation,
-    returnDate,
-    returnTime
-  );
+  const carDetailsUrl = buildCarDetailsUrl(vehicle._id);
 
   const handleCardClick = (e: React.MouseEvent) => {
     // Prevent navigation if clicking on the reserve button

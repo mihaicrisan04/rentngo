@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useParams, useSearchParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
@@ -34,38 +34,11 @@ import {
 import { differenceInDays, format } from "date-fns";
 import { LocationPicker } from "@/components/LocationPicker";
 import { DateTimePicker } from "@/components/DateTimePicker";
+import { searchStorage } from "@/lib/searchStorage";
 
-function buildReservationUrl(
-  vehicleId: string,
-  deliveryLocation?: string | null,
-  pickupDate?: Date | null,
-  pickupTime?: string | null,
-  restitutionLocation?: string | null,
-  returnDate?: Date | null,
-  returnTime?: string | null
-): string {
+function buildReservationUrl(vehicleId: string): string {
   const params = new URLSearchParams();
   params.append("vehicleId", vehicleId);
-  
-  if (deliveryLocation) {
-    params.append("deliveryLocation", deliveryLocation);
-  }
-  if (pickupDate) {
-    params.append("pickupDate", Math.floor(pickupDate.getTime() / 1000).toString());
-  }
-  if (pickupTime) {
-    params.append("pickupTime", pickupTime);
-  }
-  if (restitutionLocation) {
-    params.append("restitutionLocation", restitutionLocation);
-  }
-  if (returnDate) {
-    params.append("returnDate", Math.floor(returnDate.getTime() / 1000).toString());
-  }
-  if (returnTime) {
-    params.append("returnTime", returnTime);
-  }
-
   return `/reservation?${params.toString()}`;
 }
 
@@ -82,30 +55,6 @@ function calculatePriceDetails(
   return { totalPrice: null, days: null };
 }
 
-function buildCarsPageUrl(searchParams: URLSearchParams): string {
-  const params = new URLSearchParams();
-  
-  // Copy relevant search parameters for the cars page
-  const relevantParams = [
-    'deliveryLocation',
-    'pickupDate', 
-    'pickupTime',
-    'restitutionLocation',
-    'returnDate',
-    'returnTime'
-  ];
-  
-  relevantParams.forEach(param => {
-    const value = searchParams.get(param);
-    if (value) {
-      params.set(param, value);
-    }
-  });
-
-  const paramString = params.toString();
-  return `/cars${paramString ? `?${paramString}` : ''}`;
-}
-
 // Rental Details Component
 function RentalDetails({
   deliveryLocation,
@@ -116,11 +65,11 @@ function RentalDetails({
   returnTime,
   onUpdateDetails,
 }: {
-  deliveryLocation?: string | null;
-  pickupDate?: Date | null;
+  deliveryLocation?: string;
+  pickupDate?: Date;
   pickupTime?: string | null;
-  restitutionLocation?: string | null;
-  returnDate?: Date | null;
+  restitutionLocation?: string;
+  returnDate?: Date;
   returnTime?: string | null;
   onUpdateDetails?: (updates: {
     deliveryLocation?: string;
@@ -131,16 +80,13 @@ function RentalDetails({
     returnTime?: string;
   }) => void;
 }) {
-  if (!deliveryLocation && !pickupDate && !restitutionLocation && !returnDate) {
-    return null;
-  }
-
+  // Always show the rental details form, even if no data exists
   // Local state for the components
   const [localDeliveryLocation, setLocalDeliveryLocation] = React.useState(deliveryLocation || "");
-  const [localPickupDate, setLocalPickupDate] = React.useState<Date | undefined>(pickupDate || undefined);
+  const [localPickupDate, setLocalPickupDate] = React.useState<Date | undefined>(pickupDate);
   const [localPickupTime, setLocalPickupTime] = React.useState(pickupTime || "");
   const [localRestitutionLocation, setLocalRestitutionLocation] = React.useState(restitutionLocation || "");
-  const [localReturnDate, setLocalReturnDate] = React.useState<Date | undefined>(returnDate || undefined);
+  const [localReturnDate, setLocalReturnDate] = React.useState<Date | undefined>(returnDate);
   const [localReturnTime, setLocalReturnTime] = React.useState(returnTime || "");
 
   const today = new Date();
@@ -261,20 +207,16 @@ function RentalDetails({
 
 export default function CarDetailPage() {
   const params = useParams();
-  const searchParams = useSearchParams();
-  const router = useRouter();
   const vehicleId = params.id as string;
 
-  // Get search parameters that might be passed from the cars listing page
-  const [deliveryLocation, setDeliveryLocation] = React.useState(searchParams.get("deliveryLocation"));
-  const [pickupDateParam, setPickupDateParam] = React.useState(searchParams.get("pickupDate"));
-  const [pickupTime, setPickupTime] = React.useState(searchParams.get("pickupTime"));
-  const [restitutionLocation, setRestitutionLocation] = React.useState(searchParams.get("restitutionLocation"));
-  const [returnDateParam, setReturnDateParam] = React.useState(searchParams.get("returnDate"));
-  const [returnTime, setReturnTime] = React.useState(searchParams.get("returnTime"));
-
-  const pickupDate = pickupDateParam ? new Date(parseInt(pickupDateParam) * 1000) : null;
-  const returnDate = returnDateParam ? new Date(parseInt(returnDateParam) * 1000) : null;
+  // Start with empty state to avoid hydration issues
+  const [deliveryLocation, setDeliveryLocation] = React.useState<string>("");
+  const [pickupDate, setPickupDate] = React.useState<Date | undefined>(undefined);
+  const [pickupTime, setPickupTime] = React.useState<string | null>(null);
+  const [restitutionLocation, setRestitutionLocation] = React.useState<string>("");
+  const [returnDate, setReturnDate] = React.useState<Date | undefined>(undefined);
+  const [returnTime, setReturnTime] = React.useState<string | null>(null);
+  const [isHydrated, setIsHydrated] = React.useState(false);
 
   const vehicle = useQuery(api.vehicles.getById, { id: vehicleId as Id<"vehicles"> });
 
@@ -284,6 +226,33 @@ export default function CarDetailPage() {
   const [current, setCurrent] = React.useState(0);
 
   const currency = "EUR"; // Changed to EUR
+
+  // Load data from localStorage on component mount
+  React.useEffect(() => {
+    const storedData = searchStorage.load();
+    
+    // Only populate fields that exist in localStorage
+    if (storedData.deliveryLocation) {
+      setDeliveryLocation(storedData.deliveryLocation);
+    }
+    if (storedData.pickupDate) {
+      setPickupDate(storedData.pickupDate);
+    }
+    if (storedData.pickupTime) {
+      setPickupTime(storedData.pickupTime);
+    }
+    if (storedData.restitutionLocation) {
+      setRestitutionLocation(storedData.restitutionLocation);
+    }
+    if (storedData.returnDate) {
+      setReturnDate(storedData.returnDate);
+    }
+    if (storedData.returnTime) {
+      setReturnTime(storedData.returnTime);
+    }
+    
+    setIsHydrated(true);
+  }, []);
 
   // Calculate pricing details
   const { totalPrice, days } = calculatePriceDetails(
@@ -303,42 +272,23 @@ export default function CarDetailPage() {
   }) => {
     // Update local state
     if (updates.deliveryLocation !== undefined) setDeliveryLocation(updates.deliveryLocation);
-    if (updates.pickupDate !== undefined) setPickupDateParam(updates.pickupDate ? Math.floor(updates.pickupDate.getTime() / 1000).toString() : null);
+    if (updates.pickupDate !== undefined) setPickupDate(updates.pickupDate);
     if (updates.pickupTime !== undefined) setPickupTime(updates.pickupTime);
     if (updates.restitutionLocation !== undefined) setRestitutionLocation(updates.restitutionLocation);
-    if (updates.returnDate !== undefined) setReturnDateParam(updates.returnDate ? Math.floor(updates.returnDate.getTime() / 1000).toString() : null);
+    if (updates.returnDate !== undefined) setReturnDate(updates.returnDate);
     if (updates.returnTime !== undefined) setReturnTime(updates.returnTime);
 
-    // Update URL parameters
-    const params = new URLSearchParams(searchParams);
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value === undefined || value === "" || value === null) {
-        params.delete(key);
-      } else if (value instanceof Date) {
-        if (key === 'pickupDate' || key === 'returnDate') {
-          params.set(key, Math.floor(value.getTime() / 1000).toString());
-        }
-      } else {
-        params.set(key, value.toString());
-      }
-    });
+    // Save to localStorage (only after hydration)
+    if (isHydrated) {
+      const currentData = searchStorage.load();
+      searchStorage.save({
+        ...currentData,
+        ...updates,
+      });
+    }
+  }, [isHydrated]);
 
-    const newUrl = `/cars/${vehicleId}?${params.toString()}`;
-    router.replace(newUrl);
-  }, [searchParams, vehicleId, router]);
-
-  const reservationUrl = buildReservationUrl(
-    vehicleId,
-    deliveryLocation,
-    pickupDate,
-    pickupTime,
-    restitutionLocation,
-    returnDate,
-    returnTime
-  );
-
-  // Build cars page URL with search parameters preserved
-  const carsPageUrl = buildCarsPageUrl(searchParams);
+  const reservationUrl = buildReservationUrl(vehicleId);
 
   // Synchronize the carousels
   React.useEffect(() => {
@@ -397,7 +347,7 @@ export default function CarDetailPage() {
           <div className="text-center">
             <h1 className="text-2xl font-bold mb-4">Vehicle Not Found</h1>
             <p className="text-muted-foreground mb-6">The vehicle you&apos;re looking for doesn&apos;t exist or has been removed.</p>
-            <Link href={carsPageUrl}>
+            <Link href="/cars">
               <Button>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Cars
@@ -418,7 +368,7 @@ export default function CarDetailPage() {
         <div className="max-w-6xl mx-auto">
           {/* Back button */}
           <div className="mb-6">
-            <Link href={carsPageUrl}>
+            <Link href="/cars">
               <Button variant="outline" size="sm">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Cars

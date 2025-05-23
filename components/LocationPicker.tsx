@@ -18,13 +18,14 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
+import { searchStorage } from "@/lib/searchStorage";
 
-interface LocationWithPrice {
+export interface LocationWithPrice {
   name: string;
   price: number;
 }
 
-const hardcodedLocations: LocationWithPrice[] = [
+export const LOCATION_DATA: LocationWithPrice[] = [
   { name: "Aeroport Cluj-Napoca", price: 0 },
   { name: "Alba-Iulia", price: 80 },
   { name: "Bacau", price: 220 },
@@ -42,6 +43,12 @@ const hardcodedLocations: LocationWithPrice[] = [
   { name: "Timisoara", price: 200 },
 ];
 
+// Utility function to get location price by name
+export const getLocationPrice = (locationName: string): number => {
+  const location = LOCATION_DATA.find(loc => loc.name === locationName);
+  return location ? location.price : 0;
+};
+
 interface LocationComboboxProps {
   id: string;
   value: string;
@@ -53,6 +60,27 @@ interface LocationComboboxProps {
 
 const LocationCombobox = ({ id, value, onValueChange, placeholder, disabled, locations }: LocationComboboxProps) => {
   const [open, setOpen] = React.useState(false);
+
+  const handleLocationChange = (selectedLocationName: string) => {
+    const newValue = selectedLocationName === value ? "" : selectedLocationName;
+    onValueChange(newValue);
+    
+    // Save to localStorage based on the component ID (only if there's a value)
+    if (newValue) {
+      if (id.includes('delivery') || id.includes('pickup')) {
+        searchStorage.updateField('deliveryLocation', newValue);
+      } else if (id.includes('restitution') || id.includes('return')) {
+        searchStorage.updateField('restitutionLocation', newValue);
+      }
+    } else {
+      // Clear from localStorage if value is empty
+      if (id.includes('delivery') || id.includes('pickup')) {
+        searchStorage.updateField('deliveryLocation', undefined);
+      } else if (id.includes('restitution') || id.includes('return')) {
+        searchStorage.updateField('restitutionLocation', undefined);
+      }
+    }
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -87,9 +115,9 @@ const LocationCombobox = ({ id, value, onValueChange, placeholder, disabled, loc
                   onSelect={(currentValue) => {
                     const selectedLocation = locations.find(l => l.name.toLowerCase() === currentValue.toLowerCase());
                     if (selectedLocation) {
-                      onValueChange(selectedLocation.name === value ? "" : selectedLocation.name);
+                      handleLocationChange(selectedLocation.name);
                     } else {
-                      onValueChange(""); // Or handle as an error/clear
+                      handleLocationChange(""); // Or handle as an error/clear
                     }
                     setOpen(false);
                   }}
@@ -132,7 +160,7 @@ export function LocationPicker({ id, label, value, onValueChange, placeholder, d
         onValueChange={onValueChange}
         placeholder={placeholder}
         disabled={disabled}
-        locations={hardcodedLocations}
+        locations={LOCATION_DATA}
       />
     </div>
   );
