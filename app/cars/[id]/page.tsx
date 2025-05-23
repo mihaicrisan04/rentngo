@@ -32,7 +32,7 @@ import {
   Clock
 } from "lucide-react";
 import { differenceInDays, format } from "date-fns";
-import { LocationPicker } from "@/components/LocationPicker";
+import { LocationPicker, getLocationPrice } from "@/components/LocationPicker";
 import { DateTimePicker } from "@/components/DateTimePicker";
 import { searchStorage } from "@/lib/searchStorage";
 
@@ -45,14 +45,44 @@ function buildReservationUrl(vehicleId: string): string {
 function calculatePriceDetails(
   pricePerDay: number,
   pickup?: Date | null,
-  restitution?: Date | null
-): { totalPrice: number | null; days: number | null } {
+  restitution?: Date | null,
+  deliveryLocation?: string,
+  restitutionLocation?: string
+): { 
+  basePrice: number | null; 
+  totalPrice: number | null; 
+  days: number | null;
+  deliveryFee: number;
+  returnFee: number;
+  totalLocationFees: number;
+} {
   if (pickup && restitution && restitution > pickup) {
     const days = differenceInDays(restitution, pickup);
     const calculatedDays = days === 0 ? 1 : days;
-    return { totalPrice: calculatedDays * pricePerDay, days: calculatedDays };
+    const basePrice = calculatedDays * pricePerDay;
+    
+    // Add location fees
+    const deliveryFee = deliveryLocation ? getLocationPrice(deliveryLocation) : 0;
+    const returnFee = restitutionLocation ? getLocationPrice(restitutionLocation) : 0;
+    const totalLocationFees = deliveryFee + returnFee;
+    
+    return { 
+      basePrice,
+      totalPrice: basePrice + totalLocationFees, 
+      days: calculatedDays,
+      deliveryFee,
+      returnFee,
+      totalLocationFees
+    };
   }
-  return { totalPrice: null, days: null };
+  return { 
+    basePrice: null, 
+    totalPrice: null, 
+    days: null, 
+    deliveryFee: 0, 
+    returnFee: 0, 
+    totalLocationFees: 0 
+  };
 }
 
 // Rental Details Component
@@ -88,6 +118,31 @@ function RentalDetails({
   const [localRestitutionLocation, setLocalRestitutionLocation] = React.useState(restitutionLocation || "");
   const [localReturnDate, setLocalReturnDate] = React.useState<Date | undefined>(returnDate);
   const [localReturnTime, setLocalReturnTime] = React.useState(returnTime || "");
+
+  // Sync local state with props when they change (after localStorage load)
+  React.useEffect(() => {
+    setLocalDeliveryLocation(deliveryLocation || "");
+  }, [deliveryLocation]);
+
+  React.useEffect(() => {
+    setLocalPickupDate(pickupDate);
+  }, [pickupDate]);
+
+  React.useEffect(() => {
+    setLocalPickupTime(pickupTime || "");
+  }, [pickupTime]);
+
+  React.useEffect(() => {
+    setLocalRestitutionLocation(restitutionLocation || "");
+  }, [restitutionLocation]);
+
+  React.useEffect(() => {
+    setLocalReturnDate(returnDate);
+  }, [returnDate]);
+
+  React.useEffect(() => {
+    setLocalReturnTime(returnTime || "");
+  }, [returnTime]);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -255,10 +310,12 @@ export default function CarDetailPage() {
   }, []);
 
   // Calculate pricing details
-  const { totalPrice, days } = calculatePriceDetails(
+  const { basePrice, totalPrice, days, deliveryFee, returnFee, totalLocationFees } = calculatePriceDetails(
     vehicle?.pricePerDay || 0,
     pickupDate,
-    returnDate
+    returnDate,
+    deliveryLocation,
+    restitutionLocation
   );
 
   // Handle rental details updates
@@ -365,7 +422,7 @@ export default function CarDetailPage() {
       <Header logo={<Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} />} />
 
       <main className="flex-grow p-4 md:p-8">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           {/* Back button */}
           <div className="mb-6">
             <Link href="/cars">
@@ -494,20 +551,56 @@ export default function CarDetailPage() {
                     {/* Total price if dates are available */}
                     {totalPrice !== null && days !== null && (
                       <>
-                        <div className="border-t pt-4">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm text-muted-foreground">
-                              Rental period: {days} day{days === 1 ? "" : "s"}
+                        <div className="border-t pt-4 space-y-2">
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">
+                              Base price ({days} day{days === 1 ? "" : "s"}):
                             </span>
-                            <span className="text-sm text-muted-foreground">
-                              {vehicle.pricePerDay} × {days}
+                            <span className="text-muted-foreground">
+                              {basePrice} {currency}
                             </span>
                           </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-lg font-semibold">Total Price:</span>
-                            <span className="text-2xl font-bold text-green-600">
-                              {totalPrice} {currency}
-                            </span>
+
+                          {deliveryFee > 0 && (
+                            <div className="flex justify-between items-center text-sm">
+                              <span className="text-muted-foreground">
+                                Pick-up location fee ({deliveryLocation}):
+                              </span>
+                              <span className="text-muted-foreground">
+                                {deliveryFee} {currency}
+                              </span>
+                            </div>
+                          )}
+
+                          {returnFee > 0 && (
+                            <div className="flex justify-between items-center text-sm">
+                              <span className="text-muted-foreground">
+                                Return location fee ({restitutionLocation}):
+                              </span>
+                              <span className="text-muted-foreground">
+                                {returnFee} {currency}
+                              </span>
+                            </div>
+                          )}
+
+                          {totalLocationFees > 0 && (
+                            <div className="flex justify-between items-center text-sm">
+                              <span className="text-muted-foreground/60">
+                                Total location fees:
+                              </span>
+                              <span className="text-muted-foreground/60">
+                                {totalLocationFees} {currency}
+                              </span>
+                            </div>
+                          )}
+
+                          <div className="border-t pt-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-lg font-semibold">Total Price:</span>
+                              <span className="text-2xl font-bold text-green-600">
+                                {totalPrice} {currency}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </>

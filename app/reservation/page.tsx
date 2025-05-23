@@ -790,7 +790,7 @@ export default function ReservationPage() {
                       )}
                       
                       {totalLocationFees > 0 && (
-                        <div className="flex justify-between text-sm text-muted-foreground">
+                        <div className="flex justify-between text-sm text-muted-foreground/60">
                           <span>Total location fees:</span>
                           <span>{totalLocationFees} EUR</span>
                         </div>

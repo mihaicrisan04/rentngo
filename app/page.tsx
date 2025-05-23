@@ -247,10 +247,10 @@ export default function Home() {
         <AnimatedGroup variants={sectionAnimationVariants}>
           <div className="flex flex-col gap-12 max-w-5xl mx-auto p-4 md:p-6 lg:p-8 w-full">
             <div className="text-center">
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+              <h1 className="text-4xl md:text-5xl text-secondary font-bold tracking-tight">
                 Find Your Perfect Ride
               </h1>
-              <p className="mt-4 text-lg md:text-xl text-muted-foreground">
+              <p className="mt-4 text-lg md:text-xl text-foreground">
                 Explore Cluj-Napoca with our wide range of rental cars. Easy booking, great prices.
               </p>
             </div>

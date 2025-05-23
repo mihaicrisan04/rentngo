@@ -133,7 +133,18 @@ export function Header({ logo, brandName }: HeaderProps) {
             </SignedIn>
             <SignedOut>
               <SignInButton mode="modal">
-                <Button variant="ghost" size="sm">Login</Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className={cn(
+                    "transition-colors hover:text-foreground",
+                    isScrolled
+                      ? "text-primary"
+                      : (pathname === "/" ? "text-foreground" : "text-primary")
+                  )}
+                >
+                  Login
+                </Button>
               </SignInButton>
               <SignInButton mode="modal">
                 <Button size="sm">Sign Up</Button>
