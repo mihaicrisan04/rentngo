@@ -2,12 +2,13 @@
 
 import * as React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { differenceInDays, format } from "date-fns";
+import { differenceInDays } from "date-fns";
 import { Cog, Fuel, CarFront } from "lucide-react";
 
 interface Vehicle {
@@ -25,7 +26,8 @@ interface Vehicle {
   mainImageId?: Id<"_storage">;
   title?: string;
   desc?: string;
-  engineCapacity?: string;
+  engineCapacity?: number;
+  engineType?: string;
   fuelType?: string;
 }
 
@@ -33,6 +35,10 @@ interface VehicleCardProps {
   vehicle: Vehicle;
   pickupDate?: Date | null;
   returnDate?: Date | null;
+  deliveryLocation?: string | null;
+  restitutionLocation?: string | null;
+  pickupTime?: string | null;
+  returnTime?: string | null;
 }
 
 function calculatePriceDetails(
@@ -48,26 +54,58 @@ function calculatePriceDetails(
   return { totalPrice: null, days: null };
 }
 
-export function VehicleCard({ vehicle, pickupDate, returnDate }: VehicleCardProps) {
+function buildReservationUrl(vehicleId: string): string {
+  const params = new URLSearchParams();
+  params.append("vehicleId", vehicleId);
+  return `/reservation?${params.toString()}`;
+}
+
+function buildCarDetailsUrl(vehicleId: string): string {
+  return `/cars/${vehicleId}`;
+}
+
+export function VehicleCard({ 
+  vehicle, 
+  pickupDate, 
+  returnDate, 
+  deliveryLocation,
+  restitutionLocation,
+  pickupTime,
+  returnTime 
+}: VehicleCardProps) {
+  // Always call hooks at the top level, before any early returns
+  const imageUrl = useQuery(api.vehicles.getImageUrl, 
+    vehicle?.mainImageId ? { imageId: vehicle.mainImageId } : "skip"
+  );
+
   if (!vehicle || typeof vehicle._id !== "string") {
     return <div className="p-4 border rounded-lg shadow-md bg-card text-card-foreground">Invalid vehicle data</div>;
   }
-
-  const imageUrl = vehicle.mainImageId
-    ? useQuery(api.vehicles.getImageUrl, { imageId: vehicle.mainImageId })
-    : null;
 
   const { totalPrice, days } = calculatePriceDetails(
     vehicle.pricePerDay,
     pickupDate,
     returnDate
   );
-  const currency = vehicle.currency?.toUpperCase() || "EUR";
-  const pricePer10Days = vehicle.pricePerDay * 10;
+  const currency = "EUR";
+
+  const reservationUrl = buildReservationUrl(vehicle._id);
+
+  const carDetailsUrl = buildCarDetailsUrl(vehicle._id);
+
+  const handleImageClick = () => {
+    // Navigate to car details page
+    window.location.href = carDetailsUrl;
+  };
 
   return (
-    <div className="flex flex-col bg-card text-card-foreground overflow-hidden rounded-lg shadow-lg w-full max-w-sm">
-      <div className="aspect-[4/3] relative w-full bg-muted overflow-hidden">
+    <div 
+      className="flex flex-col bg-accent text-card-foreground overflow-hidden rounded-lg shadow-lg w-full max-w-sm transition-all duration-200 hover:shadow-xl hover:-translate-y-1"
+    >
+      <div 
+        className="aspect-[4/3] relative w-full bg-muted overflow-hidden cursor-pointer"
+        onClick={handleImageClick}
+      >
         {imageUrl ? (
           <Image
             src={imageUrl}
@@ -95,31 +133,32 @@ export function VehicleCard({ vehicle, pickupDate, returnDate }: VehicleCardProp
               <span className="text-2xl font-bold text-yellow-500">
                 {vehicle.pricePerDay}
               </span>
-              <span className="text-sm text-muted-foreground"> {currency} / Zi</span>
+              <span className="text-sm text-muted-foreground"> {currency} / Day</span>
             </div>
-            <div>
-              <span className="text-xl font-semibold text-yellow-600">
-                {pricePer10Days}
-              </span>
-              <span className="text-xs text-muted-foreground"> {currency} / 10 Zile</span>
-            </div>
+            {totalPrice !== null && days !== null && (
+              <div>
+                <span className="text-xl font-semibold text-yellow-600">
+                  {totalPrice}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {" "}{currency} / {days} Day{days === 1 ? "" : "s"}
+                </span>
+              </div>
+            )}
           </div>
-
-          {totalPrice !== null && days !== null && (
-            <p className="text-sm text-muted-foreground mt-1">
-              Total selectat: <span className="font-semibold">{totalPrice} {currency}</span> / {days} Zil{days === 1 ? "a" : "e"}
-            </p>
-          )}
         </div>
 
-        <Button className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-md text-sm" asChild>
-          <a href={`/dashboard/vehicles/${vehicle._id}?pickup=${pickupDate ? format(pickupDate, 'yyyy-MM-dd') : ''}&return=${returnDate ? format(returnDate, 'yyyy-MM-dd') : ''}`}>
+        <Button 
+          className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-md text-sm" 
+          asChild
+        >
+          <Link href={reservationUrl}>
             RESERVE NOW
-          </a>
+          </Link>
         </Button>
       </div>
 
-      <div className="p-3 border-t border-border bg-card">
+      <div className="p-3 border-t border-border">
         <div className="flex justify-around items-center w-full text-xs text-muted-foreground">
           <div className="flex items-center space-x-1">
             <CarFront className="h-4 w-4" />
@@ -130,7 +169,7 @@ export function VehicleCard({ vehicle, pickupDate, returnDate }: VehicleCardProp
           </div>
           <div className="flex items-center space-x-1">
             <Cog className="h-4 w-4" />
-            <span>{vehicle.engineCapacity || "N/A"}</span>
+            <span>{vehicle.engineCapacity ? `${vehicle.engineCapacity.toFixed(1)} ${vehicle.engineType || ''}` : "N/A"}</span>
           </div>
           <div className="flex items-center self-stretch px-1.5">
             <Separator orientation="vertical" />

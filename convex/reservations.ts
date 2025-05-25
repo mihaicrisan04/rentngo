@@ -23,10 +23,26 @@ const additionalChargeValidator = v.object({
 // --- CREATE ---
 export const createReservation = mutation({
   args: {
+    userId: v.id("users"),
     vehicleId: v.id("vehicles"),
     startDate: v.number(), // Unix timestamp
     endDate: v.number(),   // Unix timestamp
+    pickupTime: v.string(), // Time in "HH:MM" format
+    restitutionTime: v.string(), // Time in "HH:MM" format
+    pickupLocation: v.string(), // Name of pickup location
+    restitutionLocation: v.string(), // Name of return location
+    paymentMethod: v.union(
+      v.literal("cash_on_delivery"),
+      v.literal("card_on_delivery"),
+      v.literal("card_online")
+    ),
     totalPrice: v.number(),
+    customerInfo: v.object({
+      name: v.string(),
+      email: v.string(),
+      phone: v.string(),
+      message: v.optional(v.string()),
+    }),
     promoCode: v.optional(v.string()),
     additionalCharges: v.optional(v.array(additionalChargeValidator)),
   },
@@ -69,8 +85,14 @@ export const createReservation = mutation({
       vehicleId: args.vehicleId,
       startDate: args.startDate,
       endDate: args.endDate,
+      pickupTime: args.pickupTime,
+      restitutionTime: args.restitutionTime,
+      pickupLocation: args.pickupLocation,
+      restitutionLocation: args.restitutionLocation,
+      paymentMethod: args.paymentMethod,
       status: "pending" as ReservationStatusType, // Initial status
       totalPrice: args.totalPrice,
+      customerInfo: args.customerInfo,
       promoCode: args.promoCode,
       additionalCharges: args.additionalCharges,
     };
@@ -144,6 +166,58 @@ export const getReservationsByVehicle = query({
   },
 });
 
+export const getReservationsByPickupLocation = query({
+  args: { pickupLocation: v.string() },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || !identity.email) {
+      throw new Error("User not authenticated or email missing.");
+    }
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", identity.email!))
+      .unique();
+
+    if (!user || user.role !== "admin") {
+      throw new Error("User not authorized (admin only).");
+    }
+
+    return await ctx.db
+      .query("reservations")
+      .withIndex("by_pickup_location", (q) => q.eq("pickupLocation", args.pickupLocation))
+      .collect();
+  },
+});
+
+export const getReservationsByPaymentMethod = query({
+  args: { 
+    paymentMethod: v.union(
+      v.literal("cash_on_delivery"),
+      v.literal("card_on_delivery"),
+      v.literal("card_online")
+    ) 
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || !identity.email) {
+      throw new Error("User not authenticated or email missing.");
+    }
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_email", (q) => q.eq("email", identity.email!))
+      .unique();
+
+    if (!user || user.role !== "admin") {
+      throw new Error("User not authorized (admin only).");
+    }
+
+    return await ctx.db
+      .query("reservations")
+      .withIndex("by_payment_method", (q) => q.eq("paymentMethod", args.paymentMethod))
+      .collect();
+  },
+});
+
 // Admin-only
 export const getAllReservations = query({
   args: {},
@@ -205,7 +279,22 @@ export const updateReservationDetails = mutation({
     reservationId: v.id("reservations"),
     startDate: v.optional(v.number()),
     endDate: v.optional(v.number()),
+    pickupTime: v.optional(v.string()),
+    restitutionTime: v.optional(v.string()),
+    pickupLocation: v.optional(v.string()),
+    restitutionLocation: v.optional(v.string()),
+    paymentMethod: v.optional(v.union(
+      v.literal("cash_on_delivery"),
+      v.literal("card_on_delivery"),
+      v.literal("card_online")
+    )),
     totalPrice: v.optional(v.number()),
+    customerInfo: v.optional(v.object({
+      name: v.string(),
+      email: v.string(),
+      phone: v.string(),
+      message: v.optional(v.string()),
+    })),
     status: v.optional(reservationStatusValidator), // Use the correct validator
     promoCode: v.optional(v.string()),
     additionalCharges: v.optional(v.array(additionalChargeValidator)),
@@ -236,7 +325,13 @@ export const updateReservationDetails = mutation({
     const updatesToApply: Partial<typeof reservation> = {};
     if (updatesIn.startDate !== undefined) updatesToApply.startDate = updatesIn.startDate;
     if (updatesIn.endDate !== undefined) updatesToApply.endDate = updatesIn.endDate;
+    if (updatesIn.pickupTime !== undefined) updatesToApply.pickupTime = updatesIn.pickupTime;
+    if (updatesIn.restitutionTime !== undefined) updatesToApply.restitutionTime = updatesIn.restitutionTime;
+    if (updatesIn.pickupLocation !== undefined) updatesToApply.pickupLocation = updatesIn.pickupLocation;
+    if (updatesIn.restitutionLocation !== undefined) updatesToApply.restitutionLocation = updatesIn.restitutionLocation;
+    if (updatesIn.paymentMethod !== undefined) updatesToApply.paymentMethod = updatesIn.paymentMethod;
     if (updatesIn.totalPrice !== undefined) updatesToApply.totalPrice = updatesIn.totalPrice;
+    if (updatesIn.customerInfo !== undefined) updatesToApply.customerInfo = updatesIn.customerInfo;
     if (updatesIn.status !== undefined) updatesToApply.status = updatesIn.status; // status is already validated by args
     if (updatesIn.promoCode !== undefined) updatesToApply.promoCode = updatesIn.promoCode;
     if (updatesIn.additionalCharges !== undefined) updatesToApply.additionalCharges = updatesIn.additionalCharges;

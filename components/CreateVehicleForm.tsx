@@ -60,6 +60,8 @@ export function CreateVehicleForm({
     seats: 5,
     transmission: "automatic" as TransmissionType,
     fuelType: "petrol" as FuelType,
+    engineCapacity: 0,
+    engineType: "",
     pricePerDay: 0,
     location: "",
     features: [] as string[],
@@ -97,6 +99,8 @@ export function CreateVehicleForm({
         ...formData,
         year: Number(formData.year),
         seats: Number(formData.seats),
+        engineCapacity: Number(formData.engineCapacity),
+        engineType: formData.engineType,
         pricePerDay: Number(formData.pricePerDay),
       };
       const vehicleId = await createVehicle(vehicleDataToSubmit);
@@ -258,6 +262,35 @@ export function CreateVehicleForm({
                     <SelectItem value="hybrid">Hybrid</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="engineCapacity">Engine Capacity (e.g., 2.0)</Label>
+                <Input
+                  id="engineCapacity"
+                  type="number"
+                  step="0.1"
+                  required
+                  value={formData.engineCapacity}
+                  onChange={(e) => setFormData({ ...formData, engineCapacity: parseFloat(e.target.value) || 0 })}
+                  className="mt-1"
+                  disabled={isSubmitting}
+                  placeholder="e.g., 1.6"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="engineType">Engine Type (e.g., TSI, dCi)</Label>
+                <Input
+                  id="engineType"
+                  type="text"
+                  required
+                  value={formData.engineType}
+                  onChange={(e) => setFormData({ ...formData, engineType: e.target.value })}
+                  className="mt-1"
+                  disabled={isSubmitting}
+                  placeholder="e.g., TSI, dCi"
+                />
               </div>
 
               <div>

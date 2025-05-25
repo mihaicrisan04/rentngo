@@ -7,20 +7,13 @@ import {
   useConvex,
 } from "convex/react";
 import { api } from "../convex/_generated/api";
-// import Link from "next/link"; // Not currently used
-// import { SignUpButton } from "@clerk/nextjs"; // Not directly used in main flow for now
-// import { SignInButton } from "@clerk/nextjs"; // Not directly used in main flow for now
 import Image from "next/image"; // Import Next.js Image component
-import { UserButton } from "@clerk/nextjs";
-import { Sparkles, Instagram, Facebook} from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { Id } from "../convex/_generated/dataModel";
 import Link from "next/link";
 import { FeaturesSectionWithHoverEffects } from "@/components/blocks/feature-section-with-hover-effects";
 import { Footer } from "@/components/ui/footer";
 import { Button } from "@/components/ui/button";
-// Input and Label might not be directly needed if the old form is entirely removed
-// import { Input } from "@/components/ui/input";
-// import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -29,21 +22,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-// Popover, PopoverContent, PopoverTrigger might not be needed if old form is removed
-// import {
-//   Popover,
-//   PopoverContent,
-//   PopoverTrigger,
-// } from "@/components/ui/popover";
-// import { cn } from "@/lib/utils"; // cn might not be needed if old form is removed
 import DisplayCards from "@/components/ui/display-cards";
 import { TestimonialsSection } from "@/components/blocks/testimonials-with-marquee";
 import { Header } from "@/components/ui/header";
-// Calendar import is likely not needed here anymore as it's encapsulated in VehicleSearchFilterForm
-// import { Calendar } from "@/components/ui/calendar";
 import { VehicleSearchFilterForm } from "@/components/VehicleSearchFilterForm"; // Import the new form
 import { VehicleCard } from "@/components/VehicleCard"; // Import the new VehicleCard
-import { FaqSection } from "@/components/blocks/faq"; // Added import for FaqSection
+import { FaqSection } from "@/components/blocks/faq"; // Re-added import for FaqSection
+import { BackgroundImage } from "@/components/ui/BackgroundImage"; // Import the new BackgroundImage component
+import { AnimatedGroup } from "@/components/ui/animated-group"; // Import AnimatedGroup
+import { Slideshow } from "@/components/ui/slideshow"; // Import the new Slideshow component
+import { Variants } from "framer-motion"; // Import Variants for typing
 
 // Define the expected shape of a vehicle object from the backend
 interface Vehicle {
@@ -61,7 +49,8 @@ interface Vehicle {
   mainImageId?: Id<"_storage">;
   title?: string;
   desc?: string;
-  engineCapacity?: string; // Optional
+  engineCapacity?: number; // Optional
+  engineType?: string; // Optional
   fuelType?: string; // Optional
 }
 
@@ -92,11 +81,6 @@ const CAR_RENTAL_FAQS = [
     answer: "Basic Collision Damage Waiver (CDW) and Theft Protection (TP) with an excess amount are typically included. We also offer optional insurance packages to reduce the excess or provide more comprehensive coverage.",
   },
 ];
-
-// The old VehicleSearchFormProps and VehicleSearchForm component will be removed.
-// interface VehicleSearchFormProps {
-//   onSearch: (results: Vehicle[] | null, loading: boolean) => void;
-// }
 
 const defaultCards = [
   {
@@ -164,22 +148,18 @@ const testimonials = [
 function VehicleList({
   vehicles,
   isLoading,
-  pickupDate,
-  returnDate,
 }: {
   vehicles: Vehicle[] | null;
   isLoading: boolean;
-  pickupDate?: Date | null;
-  returnDate?: Date | null;
 }) {
   if (isLoading) {
-    return <p className="text-center text-muted-foreground">Searching for available cars...</p>;
+    return <p className="text-center text-muted-foreground">Loading featured cars...</p>;
   }
   if (vehicles === null) {
-    return <p className="text-center text-destructive">Could not load vehicles. Please try searching again.</p>;
+    return <p className="text-center text-destructive">Could not load featured cars.</p>;
   }
   if (!Array.isArray(vehicles) || vehicles.length === 0) {
-    return <p className="text-center text-muted-foreground">No vehicles found matching your criteria. Try broadening your search.</p>;
+    return <p className="text-center text-muted-foreground">No featured cars available at the moment.</p>;
   }
 
   return (
@@ -188,164 +168,139 @@ function VehicleList({
         if (!vehicle || typeof vehicle._id !== 'string') {
           return null;
         }
-        // Pass pickupDate and returnDate to VehicleCard
-        return <VehicleCard key={vehicle._id} vehicle={vehicle} pickupDate={pickupDate} returnDate={returnDate} />;
+        // For featured cars on homepage, we don't have search parameters
+        return (
+          <VehicleCard 
+            key={vehicle._id} 
+            vehicle={vehicle}
+            pickupDate={null}
+            returnDate={null}
+            deliveryLocation={null}
+            restitutionLocation={null}
+            pickupTime={null}
+            returnTime={null}
+          />
+        );
       })}
     </div>
   );
 }
 
-interface SearchParams {
-  deliveryLocation: string;
-  pickupDate: Date;
-  pickupTime: string;
-  restitutionLocation: string;
-  returnDate: Date;
-  returnTime: string;
-}
+// Define the animation variants
+const sectionAnimationVariants: {
+  container: Variants;
+  item: Variants;
+} = {
+  container: {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.3, // Adjust stagger timing as needed
+        delayChildren: 0.2, // Optional delay before children start animating
+      },
+    },
+  },
+  item: {
+    hidden: {
+      opacity: 0,
+      scale: 0.9,
+      filter: "blur(8px)",
+      y: 20, // Slight upward movement
+    },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      filter: "blur(0px)",
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 100,
+        damping: 15,
+        duration: 0.8, // Adjust duration as needed
+      },
+    },
+  },
+};
 
 export default function Home() {
-  const ensureUserMutation = useMutation(api.users.ensureUser);
-  const convex = useConvex(); // Get Convex client for imperative queries
+  // const ensureUserMutation = useMutation(api.users.ensureUser);
+  // // const convex = useConvex(); // convex client might not be needed if imperative queries for search are removed
 
-  React.useEffect(() => {
-    ensureUserMutation({});
-  }, [ensureUserMutation]);
+  // React.useEffect(() => {
+  //   ensureUserMutation({});
+  // }, [ensureUserMutation]);
 
-  const [searchResults, setSearchResults] = React.useState<Vehicle[] | null>(null);
-  const [isSearching, setIsSearching] = React.useState(false);
-  const [currentSearchParams, setCurrentSearchParams] = React.useState<SearchParams | null>(null);
-
-  // featuredVehiclesQuery remains the same
   const featuredVehiclesQuery = useQuery(api.vehicles.getAll, { paginationOpts: { numItems: 3, cursor: null }});
 
-  // This function will be called by VehicleSearchFilterForm
-  const handleNewVehicleSearch = async (params: SearchParams) => {
-    console.log("Search initiated with params:", params);
-    setIsSearching(true);
-    setSearchResults(null); // Clear previous results while searching
-    setCurrentSearchParams(params); // Store current search params
-
-    const startDateTimestamp = Math.floor(params.pickupDate.getTime() / 1000);
-    const endDateTimestamp = Math.floor(params.returnDate.getTime() / 1000);
-
-    if (endDateTimestamp <= startDateTimestamp) {
-      // More specific check considering time for same-day rentals might be needed if backend supports it
-      if (params.returnDate.getTime() === params.pickupDate.getTime() && params.returnTime <= params.pickupTime) {
-          alert("Return time must be after pick-up time for same-day rentals.");
-          setIsSearching(false);
-          return;
-      }
-      // If not same day, or if same day but time is valid, this condition is for date part only
-      if (params.returnDate.getTime() < params.pickupDate.getTime()){ 
-        alert("Return date must be after or the same as pick-up date.");
-        setIsSearching(false);
-        return;
-      }
-    }
-
-    try {
-      // Note: params.pickupTime, params.returnTime, and params.restitutionLocation
-      // are not currently used by the api.vehicles.searchAvailableVehicles query.
-      // They are available here if the backend query is updated.
-      console.log("Calling Convex query with:", {
-        startDate: startDateTimestamp,
-        endDate: endDateTimestamp,
-        deliveryLocation: params.deliveryLocation,
-        // restitutionLocation: params.restitutionLocation, // If backend supports
-        // pickupTime: params.pickupTime, // If backend supports
-        // returnTime: params.returnTime, // If backend supports
-      });
-
-      const results = await convex.query(api.vehicles.searchAvailableVehicles, {
-        startDate: startDateTimestamp,
-        endDate: endDateTimestamp,
-        deliveryLocation: params.deliveryLocation,
-      });
-      setSearchResults(results as Vehicle[]);
-    } catch (error) {
-      console.error("Search failed:", error);
-      alert("Search failed. Please try again.");
-      setSearchResults(null); // Explicitly set to null on error
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-
-  const vehiclesToDisplay = searchResults !== null ? searchResults : (featuredVehiclesQuery?.page || []);
-  const currentTitle = isSearching ? "Searching..." : searchResults !== null ? (searchResults.length > 0 ? "Available Cars" : "No Cars Found") : "Featured Cars";
+  const vehiclesToDisplay = featuredVehiclesQuery?.page || [];
+  const currentTitle = featuredVehiclesQuery === undefined ? "Loading..." : (vehiclesToDisplay.length > 0 ? "Featured Cars" : "No Featured Cars");
 
   const isAuthorized = useQuery(api.auth.isAuthorized);
 
-
   return (
-    <div
-      className="relative flex flex-col min-h-screen"
-      // style={{ backgroundImage: "url('/hero-background.png')" }} // Removed image background style
-    >
-      {/* Background Image Start - REMOVED */}
-      {/* <div className="absolute inset-0 -z-10">
-        <Image
-          src="/hero-background.png"
-          alt="Page background"
-          layout="fill"
-          objectFit="cover"
-          quality={100} // Adjust quality as needed
-        />
-      </div> */}
-      {/* Background Image End - REMOVED */}
-
-      {/* Gradient Background - Restoring the first gradient */}
-      <div className="absolute inset-0 overflow-hidden -z-10 pointer-events-none">
-        <div className="flex flex-col items-end absolute -right-120 -top-40 blur-xl">
-          <div className="h-[40rem] rounded-full w-[160rem] bg-gradient-to-b blur-[12rem] from-neutral-700 to-neutral-900 opacity-50"></div>
-          {/* Removed second and third gradient divs from this block */}
-        </div>
-        {/* Mirrored gradient for footer area */}
-        <div className="flex flex-col items-start absolute -left-120 -bottom-40 blur-xl">
-          <div className="h-[40rem] rounded-full w-[160rem] bg-gradient-to-b blur-[12rem] from-neutral-700 to-neutral-900 opacity-50"></div>
-        </div>
-      </div>
+    <div className="relative flex flex-col min-h-screen">
+      <BackgroundImage />
 
       <Header logo={<Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} />} />
 
-      <main className="p-8 flex flex-col gap-8">
-        <div className="flex flex-col gap-12 max-w-5xl mx-auto py-8">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-              Find Your Perfect Ride
-            </h1>
-            <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-              Explore Cluj-Napoca with our wide range of rental cars. Easy booking, great prices.
-            </p>
+      <main className="relative z-10 flex flex-col gap-8 mt-[10%] md:mt-[15%] lg:mt-[20%]">
+        <AnimatedGroup variants={sectionAnimationVariants}>
+          <div className="flex flex-col gap-12 max-w-5xl mx-auto p-4 md:p-6 lg:p-8 w-full">
+            <div className="text-center">
+              <h1 className="text-4xl md:text-5xl text-secondary font-bold tracking-tight">
+                Find Your Perfect Ride
+              </h1>
+              <p className="mt-4 text-lg md:text-xl text-foreground">
+                Explore Cluj-Napoca with our wide range of rental cars. Easy booking, great prices.
+              </p>
+            </div>
+
+            <VehicleSearchFilterForm />
+
+            <div className="my-8">
+              <h2 className="text-3xl font-semibold mb-6 text-center">
+                {currentTitle}
+              </h2>
+              <VehicleList
+                vehicles={vehiclesToDisplay as Vehicle[]}
+                isLoading={featuredVehiclesQuery === undefined}
+              />
+              <div className="flex justify-center mt-12">
+                <Button
+                  variant="default"
+                  size="lg"
+                  className="bg-primary hover:bg-primary/90 text-white"
+                  onClick={() => window.location.href = '/cars'}
+                >
+                  View All Cars
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          
           </div>
-
-          {/* Replace old VehicleSearchForm with the new VehicleSearchFilterForm */}
-          <VehicleSearchFilterForm onSearchSubmit={handleNewVehicleSearch} />
-
-          <div className="mt-8">
-            <h2 className="text-3xl font-semibold mb-6 text-center">
-              {currentTitle}
-            </h2>
-            {/* Update isLoading prop and pass search dates to VehicleList */}
-            <VehicleList
-              vehicles={vehiclesToDisplay as Vehicle[]}
-              isLoading={isSearching || (featuredVehiclesQuery === undefined && searchResults === null)}
-              pickupDate={currentSearchParams?.pickupDate}
-              returnDate={currentSearchParams?.returnDate}
-            />
+        </AnimatedGroup>
+        
+        <AnimatedGroup variants={sectionAnimationVariants}>
+          <div className="w-full">
+            <Slideshow className="mb-8" />
           </div>
-
+        </AnimatedGroup>
+        
+        <AnimatedGroup variants={sectionAnimationVariants}>
           <FeaturesSectionWithHoverEffects />
+        </AnimatedGroup>
 
+        <AnimatedGroup variants={sectionAnimationVariants}>
           <TestimonialsSection
             title="What Our Customers Say"
             description="Read what our customers have to say about us."
             testimonials={testimonials}
           />
+        </AnimatedGroup>
 
-          {/* FAQ Section Start */}
+        <AnimatedGroup variants={sectionAnimationVariants}>
           <FaqSection
             title="Frequently Asked Questions"
             description="Find answers to common questions about renting a car with us."
@@ -361,45 +316,12 @@ export default function Home() {
               },
             }}
           />
-
-        </div>
+        </AnimatedGroup>
       </main>
 
       <Footer
         logo={<Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} />}
         brandName=""
-        socialLinks={[
-          {
-            icon: <Instagram className="h-5 w-5" />,
-            href: "https://www.instagram.com/rentn_go.ro",
-            label: "Instagram",
-          },
-          {
-            icon: <Facebook className="h-5 w-5" />,
-            href: "https://www.facebook.com/share/1Ad82uMtP3/?mibextid=wwXIfr",
-            label: "Facebook",
-          },
-          // {
-          //   icon: <TikTok className="h-5 w-5" />,
-          //   href: "https://www.tiktok.com",
-          //   label: "TikTok",
-          // }
-
-        ]}
-        mainLinks={[
-          { href: "/", label: "Home" },
-          { href: "/about", label: "About" },
-          { href: "/blog", label: "Blog" },
-          { href: "/contact", label: "Contact" },
-        ]}
-        legalLinks={[
-          { href: "/privacy", label: "Privacy" },
-          { href: "/terms", label: "Terms" },
-        ]}
-        copyright={{
-          text: "© 2025 RentNGo Cluj",
-          license: "All rights reserved",
-        }}
       />
 
     </div>

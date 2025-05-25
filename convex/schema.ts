@@ -18,18 +18,18 @@ export default defineSchema({
   vehicles: defineTable({
     make: v.string(),
     model: v.string(),
-    year: v.number(),
-    type: v.union(v.literal("sedan"), v.literal("suv"), v.literal("hatchback"), v.literal("sports"), v.literal("truck"), v.literal("van")),
-    seats: v.number(),
-    transmission: v.union(v.literal("automatic"), v.literal("manual")),
-    fuelType: v.union(v.literal("petrol"), v.literal("diesel"), v.literal("electric"), v.literal("hybrid")),
+    year: v.optional(v.number()),
+    type: v.optional(v.union(v.literal("sedan"), v.literal("suv"), v.literal("hatchback"), v.literal("sports"), v.literal("truck"), v.literal("van"))),
+    seats: v.optional(v.number()),
+    transmission: v.optional(v.union(v.literal("automatic"), v.literal("manual"))),
+    fuelType: v.optional(v.union(v.literal("petrol"), v.literal("diesel"), v.literal("electric"), v.literal("hybrid"), v.literal("benzina"))),
+    engineCapacity: v.optional(v.number()),
+    engineType: v.optional(v.string()),
     pricePerDay: v.number(),
-    location: v.string(), // City/area in Cluj
-    features: v.array(v.string()), // e.g., ["air conditioning", "bluetooth", "parking sensors"]
+    location: v.optional(v.string()),
+    features: v.optional(v.array(v.string())),
     status: v.union(v.literal("available"), v.literal("rented"), v.literal("maintenance")),
-    // Store image IDs from Convex storage
-    images: v.array(v.id("_storage")),
-    // Store the main/featured image ID
+    images: v.optional(v.array(v.id("_storage"))),
     mainImageId: v.optional(v.id("_storage")),
   }).index("by_location", ["location"])
     .index("by_type", ["type"])
@@ -41,6 +41,15 @@ export default defineSchema({
     vehicleId: v.id("vehicles"),
     startDate: v.number(), // Unix timestamp
     endDate: v.number(), // Unix timestamp
+    pickupTime: v.string(), // Time in "HH:MM" format (e.g., "14:30")
+    restitutionTime: v.string(), // Time in "HH:MM" format (e.g., "16:00")
+    pickupLocation: v.string(), // Name of pickup location
+    restitutionLocation: v.string(), // Name of return location
+    paymentMethod: v.union(
+      v.literal("cash_on_delivery"),
+      v.literal("card_on_delivery"),
+      v.literal("card_online")
+    ),
     status: v.union(
       v.literal("pending"),
       v.literal("confirmed"),
@@ -48,15 +57,25 @@ export default defineSchema({
       v.literal("completed")
     ),
     totalPrice: v.number(),
+    // Customer information (for non-authenticated or guest bookings)
+    customerInfo: v.object({
+      name: v.string(),
+      email: v.string(),
+      phone: v.string(),
+      message: v.optional(v.string()),
+    }),
     promoCode: v.optional(v.string()),
-    // Store any additional charges or fees
+    // Store any additional charges or fees (delivery fees, extras, etc.)
     additionalCharges: v.optional(v.array(v.object({
       description: v.string(),
       amount: v.number(),
     }))),
   }).index("by_user", ["userId"])
     .index("by_vehicle", ["vehicleId"])
-    .index("by_dates", ["startDate", "endDate"]),
+    .index("by_dates", ["startDate", "endDate"])
+    .index("by_pickup_location", ["pickupLocation"])
+    .index("by_restitution_location", ["restitutionLocation"])
+    .index("by_payment_method", ["paymentMethod"]),
 
   // Payments table - stores payment records
   payments: defineTable({

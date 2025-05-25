@@ -12,7 +12,13 @@ const vehicleTypes = ["sedan", "suv", "hatchback", "sports", "truck", "van"] as 
 const transmissions = ["automatic", "manual"] as const;
 const fuelTypes = ["petrol", "diesel", "electric", "hybrid"] as const;
 const statuses = ["available", "rented", "maintenance"] as const;
-const locations = ["Cluj-Napoca Center", "Cluj-Napoca Airport", "Floresti", "Baciu", "Marasti", "Manastur"] as const;
+const locations = [
+  "Aeroport Cluj-Napoca", "Alba-Iulia", "Bacau", "Baia mare", "Bistrita", 
+  "Brasov", "Bucuresti", "Cluj-Napoca", "Floresti", "Oradea", 
+  "Satu mare", "Sibiu", "Suceava", "Targu Mures", "Timisoara"
+] as const;
+const paymentMethods = ["cash_on_delivery", "card_on_delivery", "card_online"] as const;
+const timeSlots = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"] as const;
 const featuresList = [
       "air conditioning", "bluetooth", "parking sensors", "heated seats", 
       "backup camera", "navigation", "sunroof", "cruise control",
@@ -20,6 +26,8 @@ const featuresList = [
 ] as const;
 const seatOptions = [2, 4, 5, 7] as const;
 const pricePerDayOptions = [100, 120, 150, 180, 200, 250, 300, 350, 400, 500] as const;
+const engineCapacityOptions = [1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.5, 3.0, 1.5, 1.9, 2.4] as const;
+const engineTypeOptions = ["TSI", "TCe", "MPI", "dCi", "HDI", "CDTI", "EcoBoost", "SkyActiv-G", "i-VTEC", "GDI", "CRDi", "BlueHDi"] as const;
 
 // Generate a single fake user
 export const generateFakeUser = mutation({
@@ -64,6 +72,8 @@ export const generateFakeVehicle = mutation({
       seats: v.number(), 
       transmission: v.union(...transmissions.map(val => v.literal(val))),
       fuelType: v.union(...fuelTypes.map(val => v.literal(val))),
+      engineCapacity: v.number(),
+      engineType: v.string(),
       pricePerDay: v.number(), 
       location: v.union(...locations.map(val => v.literal(val))),
       features: v.array(v.union(...featuresList.map(val => v.literal(val)))),
@@ -99,6 +109,8 @@ export const generateMultipleFakeVehicles = action({
         seats: seatOptions[Math.floor(Math.random() * seatOptions.length)],
         transmission: transmissions[Math.floor(Math.random() * transmissions.length)],
         fuelType: fuelTypes[Math.floor(Math.random() * fuelTypes.length)],
+        engineCapacity: engineCapacityOptions[Math.floor(Math.random() * engineCapacityOptions.length)],
+        engineType: engineTypeOptions[Math.floor(Math.random() * engineTypeOptions.length)],
         pricePerDay: pricePerDayOptions[Math.floor(Math.random() * pricePerDayOptions.length)],
         location: locations[Math.floor(Math.random() * locations.length)],
         features: selectedFeatures,
@@ -147,8 +159,19 @@ export const generateFakeReservation = mutation({
       vehicleId: args.vehicleId,
       startDate: startDate.getTime(),
       endDate: endDate.getTime(),
+      pickupTime: timeSlots[Math.floor(Math.random() * timeSlots.length)],
+      restitutionTime: timeSlots[Math.floor(Math.random() * timeSlots.length)],
+      pickupLocation: locations[Math.floor(Math.random() * locations.length)],
+      restitutionLocation: locations[Math.floor(Math.random() * locations.length)],
+      paymentMethod: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
       status: reservationStatuses[Math.floor(Math.random() * reservationStatuses.length)], // Math.random for status
       totalPrice,
+      customerInfo: {
+        name: faker.person.fullName(),
+        email: faker.internet.email(),
+        phone: faker.phone.number(),
+        message: Math.random() > 0.7 ? faker.lorem.sentence() : undefined,
+      },
       // Using Math.random for promo and additional charges as well, to reduce faker dependency
       promoCode: Math.random() > 0.7 ? Array(6).fill(0).map(() => "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"[Math.floor(Math.random() * 36)]).join('') : undefined,
       additionalCharges: Math.random() > 0.5 ? [
