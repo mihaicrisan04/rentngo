@@ -16,7 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ArrowLeft, Calendar, MapPin, Send, User, CreditCard, AlertCircle } from "lucide-react";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { ArrowLeft, Calendar, MapPin, Send, User, CreditCard, AlertCircle, Info } from "lucide-react";
 import { LocationPicker, getLocationPrice } from "@/components/LocationPicker";
 import { DateTimePicker } from "@/components/DateTimePicker";
 import { differenceInDays } from "date-fns";
@@ -80,6 +81,7 @@ export default function ReservationPage() {
   // Payment state
   const [paymentMethod, setPaymentMethod] = React.useState<string>("");
   const [termsAccepted, setTermsAccepted] = React.useState(false);
+  const [scdwSelected, setScdwSelected] = React.useState(false);
   
   // Form state
   const [isHydrated, setIsHydrated] = React.useState(false);
@@ -155,6 +157,16 @@ export default function ReservationPage() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  // SCDW calculation function
+  const calculateSCDW = (days: number, dailyRate: number): number => {
+    const base = dailyRate * 2; // costul asigurării pentru 1–3 zile
+    if (days <= 3) {
+      return base;
+    }
+    const blocks = Math.ceil((days - 3) / 3);
+    return base + 6 + 5 * (blocks - 1);
+  };
+
   // Calculate pricing including location fees
   const calculateTotalPrice = () => {
     if (pickupDate && returnDate && vehicle?.pricePerDay) {
@@ -167,13 +179,17 @@ export default function ReservationPage() {
       const returnFee = getLocationPrice(restitutionLocation);
       const totalLocationFees = deliveryFee + returnFee;
       
+      // Add SCDW if selected
+      const scdwPrice = scdwSelected ? calculateSCDW(calculatedDays, vehicle.pricePerDay) : 0;
+      
       return { 
         basePrice,
-        totalPrice: basePrice + totalLocationFees, 
+        totalPrice: basePrice + totalLocationFees + scdwPrice, 
         days: calculatedDays,
         deliveryFee,
         returnFee,
-        totalLocationFees
+        totalLocationFees,
+        scdwPrice
       };
     }
     return { 
@@ -182,11 +198,12 @@ export default function ReservationPage() {
       days: null, 
       deliveryFee: 0, 
       returnFee: 0, 
-      totalLocationFees: 0 
+      totalLocationFees: 0,
+      scdwPrice: 0
     };
   };
 
-  const { basePrice, totalPrice, days, deliveryFee, returnFee, totalLocationFees } = calculateTotalPrice();
+  const { basePrice, totalPrice, days, deliveryFee, returnFee, totalLocationFees, scdwPrice } = calculateTotalPrice();
 
   // Form validation
   const validateForm = (): FormErrors => {
@@ -262,7 +279,7 @@ export default function ReservationPage() {
       if (user) {
         await ensureUserMutation({});
       }
-      // Prepare additional charges for location fees only (core info is now in dedicated fields)
+      // Prepare additional charges for location fees and SCDW (core info is now in dedicated fields)
       const additionalCharges = [];
       
       // Add location fees as charges if they exist
@@ -277,6 +294,14 @@ export default function ReservationPage() {
         additionalCharges.push({
           description: `Return location fee (${restitutionLocation})`,
           amount: returnFee,
+        });
+      }
+      
+      // Add SCDW insurance if selected
+      if (scdwSelected && scdwPrice > 0) {
+        additionalCharges.push({
+          description: "SCDW Insurance",
+          amount: scdwPrice,
         });
       }
 
@@ -795,6 +820,57 @@ export default function ReservationPage() {
                           <span>{totalLocationFees} EUR</span>
                         </div>
                       )}
+                      
+                      {/* SCDW Insurance Option */}
+                      <div className="border-t pt-3 space-y-3">
+                        <div className="flex items-start space-x-2">
+                          <Checkbox
+                            id="scdw-insurance"
+                            checked={scdwSelected}
+                            onCheckedChange={(checked) => setScdwSelected(checked === true)}
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-1">
+                              <Label htmlFor="scdw-insurance" className="text-sm font-medium cursor-pointer">
+                                SCDW Insurance
+                              </Label>
+                              <HoverCard>
+                                <HoverCardTrigger asChild>
+                                  <Info className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
+                                </HoverCardTrigger>
+                                <HoverCardContent className="w-80">
+                                  <div className="space-y-2">
+                                    <h4 className="text-sm font-semibold">SCDW Insurance Details</h4>
+                                    <p className="text-xs text-muted-foreground">
+                                      Super Collision Damage Waiver (SCDW) provides additional protection for your rental.
+                                    </p>
+                                    <div className="text-xs text-muted-foreground space-y-1">
+                                      <p><strong>Calculation:</strong></p>
+                                      <p>• Base cost: 2 × daily rate (covers 1-3 days)</p>
+                                      <p>• For each 3-day block after first 3 days:</p>
+                                      <p>  - First additional block: +6 EUR</p>
+                                      <p>  - Each subsequent block: +5 EUR</p>
+                                    </div>
+                                    {days && vehicle?.pricePerDay && (
+                                      <div className="text-xs border-t pt-2 mt-2">
+                                        <p><strong>Your calculation:</strong></p>
+                                        <p>Days: {days} | Daily rate: {vehicle.pricePerDay} EUR</p>
+                                        <p>SCDW cost: {calculateSCDW(days, vehicle.pricePerDay)} EUR</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </HoverCardContent>
+                              </HoverCard>
+                            </div>
+                            <div className="flex justify-between text-sm mt-1">
+                              <span className="text-muted-foreground">Additional protection coverage</span>
+                              <span className="font-medium">
+                                {days && vehicle?.pricePerDay ? `${calculateSCDW(days, vehicle.pricePerDay)} EUR` : '0 EUR'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                       
                       <div className="border-t pt-2">
                         <div className="flex justify-between font-semibold">
