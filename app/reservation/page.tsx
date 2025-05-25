@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -17,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { ArrowLeft, Calendar, MapPin, Send, User, CreditCard, AlertCircle, Info } from "lucide-react";
+import { ArrowLeft, Calendar, Send, User, CreditCard, AlertCircle, Info } from "lucide-react";
 import { LocationPicker, getLocationPrice } from "@/components/LocationPicker";
 import { DateTimePicker } from "@/components/DateTimePicker";
 import { differenceInDays } from "date-fns";
@@ -54,7 +55,7 @@ interface FormErrors {
   };
 }
 
-export default function ReservationPage() {
+function ReservationPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useUser();
@@ -902,5 +903,13 @@ export default function ReservationPage() {
         brandName=""
       />
     </div>
+  );
+}
+
+export default function ReservationPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ReservationPageContent />
+    </Suspense>
   );
 } 
