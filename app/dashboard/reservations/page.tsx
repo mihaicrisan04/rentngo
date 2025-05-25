@@ -221,12 +221,22 @@ function CreateReservationDialog({ open, onOpenChange, onSuccess }: CreateReserv
   const vehicles = useQuery(api.vehicles.getAllVehicles); // Fetch all vehicles for selection
   const createReservation = useMutation(api.reservations.createReservation);
   const updateVehicle = useMutation(api.vehicles.update); // To update vehicle status
+  const ensureUserMutation = useMutation(api.users.ensureUser); // Add this import
 
   const initialFormData = {
     vehicleId: "" as Id<"vehicles"> | "",
     startDate: "", // Will be stored as timestamp
     endDate: "",   // Will be stored as timestamp
+    pickupTime: "10:00", // Default pickup time
+    restitutionTime: "10:00", // Default return time
+    pickupLocation: "Bucharest Airport", // Default pickup location
+    restitutionLocation: "Bucharest Airport", // Default return location
+    paymentMethod: "cash_on_delivery" as "cash_on_delivery" | "card_on_delivery" | "card_online",
     totalPrice: 0,
+    customerName: "", // Customer name
+    customerEmail: "", // Customer email
+    customerPhone: "", // Customer phone
+    customerMessage: "", // Optional customer message
     promoCode: "",
     // additionalCharges: [], // For simplicity, not adding complex fields initially
   };
@@ -250,17 +260,36 @@ function CreateReservationDialog({ open, onOpenChange, onSuccess }: CreateReserv
         toast.error("Please select start and end dates.");
         return;
     }
+    if (!formData.customerName || !formData.customerEmail || !formData.customerPhone) {
+      toast.error("Please fill in all customer information fields.");
+      return;
+    }
 
     setIsSubmitting(true);
 
     try {
+      // Ensure user exists in the database
+      const convexUser = await ensureUserMutation({});
+
       const reservationDataToSubmit = {
+        userId: convexUser._id,
         vehicleId: formData.vehicleId as Id<"vehicles">,
         startDate: new Date(formData.startDate).getTime(),
         endDate: new Date(formData.endDate).getTime(),
+        pickupTime: formData.pickupTime,
+        restitutionTime: formData.restitutionTime,
+        pickupLocation: formData.pickupLocation,
+        restitutionLocation: formData.restitutionLocation,
+        paymentMethod: formData.paymentMethod,
         totalPrice: Number(formData.totalPrice),
+        customerInfo: {
+          name: formData.customerName,
+          email: formData.customerEmail,
+          phone: formData.customerPhone,
+          message: formData.customerMessage || undefined,
+        },
         promoCode: formData.promoCode || undefined,
-        // additionalCharges: formData.additionalCharges.length > 0 ? formData.additionalCharges : undefined,
+        additionalCharges: undefined,
       };
 
       // TODO: Add more robust validation, e.g., endDate > startDate, totalPrice > 0
@@ -275,7 +304,7 @@ function CreateReservationDialog({ open, onOpenChange, onSuccess }: CreateReserv
         id: reservationDataToSubmit.vehicleId, 
         status: "rented" as VehicleStatusType 
       });
-      toast.info(`Vehicle ${reservationDataToSubmit.vehicleId} status updated to rented.`);
+      toast.info(`Vehicle status updated to rented.`);
       
       onSuccess?.();
       onOpenChange(false);
@@ -293,7 +322,7 @@ function CreateReservationDialog({ open, onOpenChange, onSuccess }: CreateReserv
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Create New Reservation</DialogTitle>
         </DialogHeader>
@@ -326,30 +355,117 @@ function CreateReservationDialog({ open, onOpenChange, onSuccess }: CreateReserv
               </Select>
             </div>
 
-            <div>
-              <Label htmlFor="create-startDate">Start Date</Label>
-              <Input
-                id="create-startDate"
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                className="mt-1"
-                disabled={isSubmitting}
-                required
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="create-startDate">Start Date</Label>
+                <Input
+                  id="create-startDate"
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  className="mt-1"
+                  disabled={isSubmitting}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="create-endDate">End Date</Label>
+                <Input
+                  id="create-endDate"
+                  type="date"
+                  value={formData.endDate}
+                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                  className="mt-1"
+                  disabled={isSubmitting}
+                  required
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="create-endDate">End Date</Label>
-              <Input
-                id="create-endDate"
-                type="date"
-                value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                className="mt-1"
-                disabled={isSubmitting}
-                required
-              />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="pickupTime">Pickup Time</Label>
+                <Input
+                  id="pickupTime"
+                  type="time"
+                  value={formData.pickupTime}
+                  onChange={(e) => setFormData({ ...formData, pickupTime: e.target.value })}
+                  className="mt-1"
+                  disabled={isSubmitting}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="restitutionTime">Return Time</Label>
+                <Input
+                  id="restitutionTime"
+                  type="time"
+                  value={formData.restitutionTime}
+                  onChange={(e) => setFormData({ ...formData, restitutionTime: e.target.value })}
+                  className="mt-1"
+                  disabled={isSubmitting}
+                  required
+                />
+              </div>
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="pickupLocation">Pickup Location</Label>
+                <Select
+                  value={formData.pickupLocation}
+                  onValueChange={(value) => setFormData({ ...formData, pickupLocation: value })}
+                  disabled={isSubmitting}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select pickup location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Bucharest Airport">Bucharest Airport</SelectItem>
+                    <SelectItem value="Bucharest City Center">Bucharest City Center</SelectItem>
+                    <SelectItem value="Cluj Airport">Cluj Airport</SelectItem>
+                    <SelectItem value="Timisoara Airport">Timisoara Airport</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="restitutionLocation">Return Location</Label>
+                <Select
+                  value={formData.restitutionLocation}
+                  onValueChange={(value) => setFormData({ ...formData, restitutionLocation: value })}
+                  disabled={isSubmitting}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select return location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Bucharest Airport">Bucharest Airport</SelectItem>
+                    <SelectItem value="Bucharest City Center">Bucharest City Center</SelectItem>
+                    <SelectItem value="Cluj Airport">Cluj Airport</SelectItem>
+                    <SelectItem value="Timisoara Airport">Timisoara Airport</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="paymentMethod">Payment Method</Label>
+              <Select
+                value={formData.paymentMethod}
+                onValueChange={(value) => setFormData({ ...formData, paymentMethod: value as "cash_on_delivery" | "card_on_delivery" | "card_online" })}
+                disabled={isSubmitting}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select payment method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash_on_delivery">Cash on Delivery</SelectItem>
+                  <SelectItem value="card_on_delivery">Card on Delivery</SelectItem>
+                  <SelectItem value="card_online">Card Online</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <Label htmlFor="totalPrice">Total Price (RON)</Label>
               <Input
@@ -364,6 +480,60 @@ function CreateReservationDialog({ open, onOpenChange, onSuccess }: CreateReserv
                 required
               />
             </div>
+
+            <div className="space-y-4">
+              <h4 className="font-medium">Customer Information</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="customerName">Customer Name</Label>
+                  <Input
+                    id="customerName"
+                    type="text"
+                    value={formData.customerName}
+                    onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                    className="mt-1"
+                    disabled={isSubmitting}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="customerEmail">Customer Email</Label>
+                  <Input
+                    id="customerEmail"
+                    type="email"
+                    value={formData.customerEmail}
+                    onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
+                    className="mt-1"
+                    disabled={isSubmitting}
+                    required
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="customerPhone">Customer Phone</Label>
+                <Input
+                  id="customerPhone"
+                  type="tel"
+                  value={formData.customerPhone}
+                  onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
+                  className="mt-1"
+                  disabled={isSubmitting}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="customerMessage">Customer Message (Optional)</Label>
+                <Input
+                  id="customerMessage"
+                  type="text"
+                  value={formData.customerMessage}
+                  onChange={(e) => setFormData({ ...formData, customerMessage: e.target.value })}
+                  className="mt-1"
+                  disabled={isSubmitting}
+                />
+              </div>
+            </div>
+
             <div>
               <Label htmlFor="promoCode">Promo Code (Optional)</Label>
               <Input

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
@@ -32,7 +33,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-export default function ReservationConfirmationPage() {
+function ReservationConfirmationContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const reservationId = searchParams.get("reservationId");
@@ -64,7 +65,7 @@ export default function ReservationConfirmationPage() {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Rent\'n Go Reservation Confirmation',
+          title: 'Rent&apos;n Go Reservation Confirmation',
           text: 'My car rental reservation is confirmed!',
           url: window.location.href,
         });
@@ -87,7 +88,7 @@ export default function ReservationConfirmationPage() {
             <AlertCircle className="h-16 w-16 text-amber-500 mx-auto mb-4" />
             <h1 className="text-2xl font-bold mb-4">No Reservation Found</h1>
             <p className="text-muted-foreground mb-6">
-              We couldn't find a reservation ID in the URL. Please check your confirmation email or contact support.
+              We couldn&apos;t find a reservation ID in the URL. Please check your confirmation email or contact support.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/cars">
@@ -521,5 +522,13 @@ export default function ReservationConfirmationPage() {
         brandName=""
       />
     </div>
+  );
+}
+
+export default function ReservationConfirmationPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ReservationConfirmationContent />
+    </Suspense>
   );
 } 
