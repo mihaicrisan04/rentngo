@@ -65,7 +65,7 @@ export function Header({ logo, brandName }: HeaderProps) {
               "transition-colors hover:text-foreground/80",
               isScrolled
                 ? (pathname === "/" ? "text-primary" : "text-foreground/60")
-                : (pathname === "/"
+                : (pathname === "/" || pathname === "/about"
                     ? "text-background"
                     : (pathname === "/" ? "text-primary" : "text-foreground/60"))
             )}
@@ -78,7 +78,7 @@ export function Header({ logo, brandName }: HeaderProps) {
               "transition-colors hover:text-foreground/80",
               isScrolled
                 ? (pathname === "/cars" ? "text-primary" : "text-foreground/60")
-                : (pathname === "/"
+                : (pathname === "/" || pathname === "/about"
                     ? "text-background"
                     : (pathname === "/cars" ? "text-primary" : "text-foreground/60"))
             )}
@@ -91,7 +91,7 @@ export function Header({ logo, brandName }: HeaderProps) {
               "transition-colors hover:text-foreground/80",
               isScrolled
                 ? (pathname === "/transfers" ? "text-primary" : "text-foreground/60")
-                : (pathname === "/"
+                : (pathname === "/" || pathname === "/about"
                     ? "text-background"
                     : (pathname === "/transfers" ? "text-primary" : "text-foreground/60"))
             )}
@@ -104,7 +104,7 @@ export function Header({ logo, brandName }: HeaderProps) {
               "transition-colors hover:text-foreground/80",
               isScrolled
                 ? (pathname === "/about" ? "text-primary" : "text-foreground/60")
-                : (pathname === "/"
+                : (pathname === "/" || pathname === "/about"
                     ? "text-background"
                     : (pathname === "/about" ? "text-primary" : "text-foreground/60"))
             )}
@@ -117,7 +117,7 @@ export function Header({ logo, brandName }: HeaderProps) {
               "transition-colors hover:text-foreground/80",
               isScrolled
                 ? (pathname === "/contact" ? "text-primary" : "text-foreground/60")
-                : (pathname === "/"
+                : (pathname === "/" || pathname === "/about"
                     ? "text-background"
                     : (pathname === "/contact" ? "text-primary" : "text-foreground/60"))
             )}
@@ -161,10 +161,18 @@ export function Header({ logo, brandName }: HeaderProps) {
               )}
             >
               <Menu
-                className={cn("m-auto size-6 duration-200", menuState && "scale-0 opacity-0 rotate-180", !isScrolled && "text-background")}
+                className={cn(
+                  "m-auto size-6 duration-200", 
+                  menuState && "scale-0 opacity-0 rotate-180",
+                  !isScrolled && (pathname === "/" || pathname === "/about") && "text-background"
+                )}
               />
               <X
-                className={cn("absolute inset-0 m-auto size-6 rotate-180 scale-0 opacity-0 duration-200", menuState && "scale-100 opacity-100 rotate-0", !isScrolled && "text-background")}
+                className={cn(
+                  "absolute inset-0 m-auto size-6 rotate-180 scale-0 opacity-0 duration-200", 
+                  menuState && "scale-100 opacity-100 rotate-0",
+                  !isScrolled && (pathname === "/" || pathname === "/about") && "text-background"
+                )}
               />
             </button>
           </div>

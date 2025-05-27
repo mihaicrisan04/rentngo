@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, Mail } from "lucide-react";
+import { ChevronDown, Car, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -41,16 +41,16 @@ interface FaqSectionProps extends React.HTMLAttributes<HTMLElement> {
     question: string;
     answer: string;
   }[];
-  contactInfo?: {
+  ctaSection?: {
     title: string;
     description: string;
     buttonText: string;
-    onContact?: () => void;
+    onBrowseCars?: () => void;
   };
 }
 
 const FaqSection = React.forwardRef<HTMLElement, FaqSectionProps>(
-  ({ className, title, description, items = DEFAULT_CAR_RENTAL_FAQS, contactInfo, ...props }, ref) => {
+  ({ className, title, description, items = DEFAULT_CAR_RENTAL_FAQS, ctaSection, ...props }, ref) => {
     return (
       <section
         ref={ref}
@@ -88,25 +88,30 @@ const FaqSection = React.forwardRef<HTMLElement, FaqSectionProps>(
             ))}
           </div>
 
-          {/* Contact Section */}
-          {contactInfo && (
+          {/* Call to Action Section */}
+          {ctaSection && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="max-w-md mx-auto mt-12 p-6 rounded-lg text-center"
+              className="max-w-lg mx-auto mt-12 md:mt-16 lg:mt-20 p-8 rounded-lg text-center bg-gradient-to-br from-primary/5 to-secondary/5 border border-primary/20"
             >
-              <div className="inline-flex items-center justify-center p-1.5 rounded-full mb-4">
-                <Mail className="h-4 w-4" />
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full mb-4">
+                <Car className="h-6 w-6 text-primary" />
               </div>
-              <p className="text-sm font-medium text-foreground mb-1">
-                {contactInfo.title}
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                {ctaSection.title}
+              </h3>
+              <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+                {ctaSection.description}
               </p>
-              <p className="text-xs text-muted-foreground mb-4">
-                {contactInfo.description}
-              </p>
-              <Button size="sm" onClick={contactInfo.onContact}>
-                {contactInfo.buttonText}
+              <Button 
+                size="lg" 
+                className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                onClick={ctaSection.onBrowseCars}
+              >
+                {ctaSection.buttonText}
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </motion.div>
           )}

@@ -22,14 +22,13 @@ import {
   CreditCard, 
   Phone, 
   Mail, 
-  Download, 
-  Share, 
   Home,
   Car,
   User,
   FileText,
   AlertCircle,
-  ArrowLeft
+  ArrowLeft,
+  Plane
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -56,28 +55,7 @@ function ReservationConfirmationContent() {
     vehicle?.mainImageId ? { imageId: vehicle.mainImageId } : "skip"
   );
 
-  const handleDownloadPDF = () => {
-    // TODO: Implement PDF generation
-    toast.info("PDF download will be available soon.");
-  };
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Rent&apos;n Go Reservation Confirmation',
-          text: 'My car rental reservation is confirmed!',
-          url: window.location.href,
-        });
-      } catch (err) {
-        // User cancelled sharing
-      }
-    } else {
-      // Fallback to copying link
-      navigator.clipboard.writeText(window.location.href);
-      toast.success("Link copied to clipboard!");
-    }
-  };
 
   if (!reservationId) {
     return (
@@ -197,10 +175,10 @@ function ReservationConfirmationContent() {
               <CheckCircle className="h-12 w-12 text-green-600" />
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">
-              Reservation Confirmed!
+              Reservation Request Sent!
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Your car rental has been successfully booked. We've sent a confirmation email with all the details.
+              Your reservation request has been successfully submitted. We will review your request and send you an email with the confirmation status and details within 24 hours.
             </p>
           </div>
 
@@ -295,6 +273,15 @@ function ReservationConfirmationContent() {
                     <p className="text-sm text-muted-foreground">Phone</p>
                     <p className="font-medium">{reservation.customerInfo.phone}</p>
                   </div>
+                  {reservation.customerInfo.flightNumber && (
+                    <div>
+                      <p className="text-sm text-muted-foreground flex items-center">
+                        <Plane className="h-4 w-4 mr-1" />
+                        Flight Number
+                      </p>
+                      <p className="font-medium">{reservation.customerInfo.flightNumber}</p>
+                    </div>
+                  )}
                   {reservation.customerInfo.message && (
                     <div>
                       <p className="text-sm text-muted-foreground">Message</p>
@@ -410,17 +397,9 @@ function ReservationConfirmationContent() {
           </Card>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-8">
-            <Button onClick={handleDownloadPDF} className="flex-1">
-              <Download className="mr-2 h-4 w-4" />
-              Download PDF
-            </Button>
-            <Button variant="outline" onClick={handleShare} className="flex-1">
-              <Share className="mr-2 h-4 w-4" />
-              Share
-            </Button>
-            <Link href="/cars" className="flex-1">
-              <Button variant="outline" className="w-full">
+          <div className="flex justify-center mb-8">
+            <Link href="/cars">
+              <Button className="px-8">
                 <Car className="mr-2 h-4 w-4" />
                 Book Another Car
               </Button>
@@ -434,36 +413,36 @@ function ReservationConfirmationContent() {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <FileText className="h-5 w-5" />
-                  <span>Next Steps</span>
+                  <span>What Happens Next</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-start space-x-3">
-                    <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
+                    <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
                       1
                     </div>
                     <div>
-                      <p className="font-medium">Bring Required Documents</p>
-                      <p className="text-sm text-muted-foreground">Valid driver's license and credit card</p>
+                      <p className="font-medium">Request Review</p>
+                      <p className="text-sm text-muted-foreground">We'll review your reservation request within 24 hours</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
+                    <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
                       2
                     </div>
                     <div>
-                      <p className="font-medium">Arrive on Time</p>
-                      <p className="text-sm text-muted-foreground">Please arrive 15 minutes before pickup time</p>
+                      <p className="font-medium">Email Confirmation</p>
+                      <p className="text-sm text-muted-foreground">You'll receive an email with the final confirmation and payment instructions</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
+                    <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
                       3
                     </div>
                     <div>
-                      <p className="font-medium">Vehicle Inspection</p>
-                      <p className="text-sm text-muted-foreground">Complete pre-rental inspection with our staff</p>
+                      <p className="font-medium">Prepare Documents</p>
+                      <p className="text-sm text-muted-foreground">Have your valid driver's license and credit card ready for pickup</p>
                     </div>
                   </div>
                 </div>
@@ -484,14 +463,14 @@ function ReservationConfirmationContent() {
                     <Phone className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <p className="font-medium">Customer Support</p>
-                      <p className="text-sm text-muted-foreground">+40 123 456 789</p>
+                      <p className="text-sm text-muted-foreground">+40 773 932 961</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <Mail className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <p className="font-medium">Email Support</p>
-                      <p className="text-sm text-muted-foreground">support@rentngo.ro</p>
+                      <p className="text-sm text-muted-foreground">office@rngo.ro</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
@@ -504,7 +483,7 @@ function ReservationConfirmationContent() {
                   <Separator />
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground mb-2">
-                      Questions about your reservation?
+                      Questions about your reservation request?
                     </p>
                     <Link href="/terms-and-conditions" className="text-primary hover:underline text-sm">
                       View Terms & Conditions

@@ -63,6 +63,7 @@ export default defineSchema({
       email: v.string(),
       phone: v.string(),
       message: v.optional(v.string()),
+      flightNumber: v.optional(v.string()), // Format: "XX 1234" (airline code + space + number)
     }),
     promoCode: v.optional(v.string()),
     // Store any additional charges or fees (delivery fees, extras, etc.)

@@ -8,7 +8,7 @@ import {
 } from "convex/react";
 import { api } from "../convex/_generated/api";
 import Image from "next/image"; // Import Next.js Image component
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Car } from "lucide-react";
 import { Id } from "../convex/_generated/dataModel";
 import Link from "next/link";
 import { FeaturesSectionWithHoverEffects } from "@/components/blocks/feature-section-with-hover-effects";
@@ -152,56 +152,110 @@ export default function Home() {
 
   return (
     <div className="relative flex flex-col min-h-screen">
-      <BackgroundImage />
+      <BackgroundImage bottomGradient={true} />
 
       <Header logo={<Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} />} />
 
-      <main className="relative z-10 flex flex-col gap-8 mt-[10%] md:mt-[15%] lg:mt-[20%]">
-        <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
-          <div className="flex flex-col gap-12 max-w-5xl mx-auto p-4 md:p-6 lg:p-8 w-full">
-            <div className="text-center">
-              <h1 className="text-4xl md:text-5xl text-secondary font-bold tracking-tight">
-                Find Your Perfect Ride
-              </h1>
-              <p className="mt-4 text-lg md:text-xl text-primary-foreground">
-                Explore Cluj-Napoca with our wide range of rental cars. Easy booking, great prices.
-              </p>
-            </div>
-
-            <VehicleSearchFilterForm />
-
-            <div className="my-8">
-              <h2 className="text-3xl font-semibold mb-6 text-center">
-                {currentTitle}
-              </h2>
-              <VehicleList
-                vehicles={vehiclesToDisplay as Vehicle[]}
-                isLoading={featuredVehiclesQuery === undefined}
-              />
-              <div className="flex justify-center mt-12">
-                <Button
-                  variant="default"
-                  size="lg"
-                  className="bg-primary hover:bg-primary/90 text-white"
-                  onClick={() => window.location.href = '/cars'}
-                >
-                  View All Cars
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+      <main className="relative z-10 flex flex-col gap-8">
+          <div className="flex flex-col gap-12 max-w-5xl mx-auto p-4 md:p-6 lg:p-8 w-full mt-[10%] md:mt-[15%] lg:mt-[20%]">
+            <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
+              <div className="text-center">
+                <h1 className="text-4xl md:text-5xl text-secondary font-bold tracking-tight">
+                  Find Your Perfect Ride
+                </h1>
+                <p className="mt-4 text-lg md:text-xl text-primary-foreground">
+                  Explore Cluj-Napoca with our wide range of rental cars. Easy booking, great prices.
+                </p>
               </div>
-            </div>
+            </AnimatedGroup>
+
+
+            <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
+              <VehicleSearchFilterForm />
+            </AnimatedGroup>
+
+            <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
+              <div className="my-8">
+                <h2 className="text-3xl font-semibold mb-6 text-center">
+                  {currentTitle}
+                </h2>
+                <VehicleList
+                  vehicles={vehiclesToDisplay as Vehicle[]}
+                  isLoading={featuredVehiclesQuery === undefined}
+                />
+                <div className="flex justify-center mt-12">
+                  <Button
+                    variant="default"
+                    size="lg"
+                    className="bg-primary hover:bg-primary/90 text-white"
+                    onClick={() => window.location.href = '/cars'}
+                  >
+                    View All Cars
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </AnimatedGroup>
           
           </div>
-        </AnimatedGroup>
         
         <AnimatedGroup variants={sectionAnimationVariants} threshold={0.3} triggerOnce={true}>
           <div className="w-full">
             <Slideshow className="mb-8" />
           </div>
         </AnimatedGroup>
+
+        {/* Our Story Section */}
+        <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
+          <section className="py-16 px-4">
+            <div className="container mx-auto">
+              <div className="max-w-6xl mx-auto">
+                <div className="text-center mb-12">
+                  <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                    Our Story
+                  </h2>
+                  <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                    Your trusted partner for exploring Cluj-Napoca and beyond
+                  </p>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-12 items-center">
+                  <div className="space-y-6">
+                    <p className="text-lg text-muted-foreground leading-relaxed">
+                      At Rent'n Go, we believe that every journey should be memorable. Founded with a passion 
+                      for travel and a commitment to excellence, we've been serving the Cluj-Napoca community 
+                      with reliable, affordable car rental solutions.
+                    </p>
+                    <p className="text-lg text-muted-foreground leading-relaxed">
+                      Whether you're exploring the historic streets of Cluj-Napoca, venturing into the 
+                      beautiful Transylvanian countryside, or need a reliable vehicle for business, 
+                      we're here to make your journey smooth and enjoyable.
+                    </p>
+                    <p className="text-lg text-muted-foreground leading-relaxed">
+                      Our carefully curated fleet of modern vehicles, combined with transparent pricing 
+                      and exceptional customer service, ensures that your rental experience exceeds expectations 
+                      every time.
+                    </p>
+                  </div>
+                  <div className="relative">
+                    <Card className="overflow-hidden shadow-xl">
+                      <CardContent className="p-0">
+                        <div className="relative h-80 bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                          <Car className="w-24 h-24 text-primary/60" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </AnimatedGroup>
         
         <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
-          <FeaturesSectionWithHoverEffects />
+          <div className="py-16 px-4 mx-auto bg-muted/20">
+            <FeaturesSectionWithHoverEffects />
+          </div>
         </AnimatedGroup>
 
         <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
@@ -215,14 +269,12 @@ export default function Home() {
           <FaqSection
             title="Frequently Asked Questions"
             description="Find answers to common questions about renting a car with us."
-            contactInfo={{
-              title: "Still have questions?",
-              description: "Our team is ready to help you with any inquiries.",
-              buttonText: "Contact Us",
-              onContact: () => {
-                // You can implement navigation to a contact page or open a contact modal here
-                console.log("Contact Us button clicked from FAQ");
-                // Example: window.location.href = \'/contact\';
+            ctaSection={{
+              title: "Ready to Hit the Road?",
+              description: "Browse our extensive fleet of vehicles and find the perfect car for your next adventure in Cluj-Napoca.",
+              buttonText: "Browse Our Cars",
+              onBrowseCars: () => {
+                window.location.href = '/cars';
               },
             }}
           />

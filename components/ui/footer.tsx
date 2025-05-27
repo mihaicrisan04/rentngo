@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
-import { Instagram, Facebook } from "lucide-react"
+import { Instagram, Facebook, Heart } from "lucide-react"
 import Link from "next/link"
 
 interface FooterProps {
@@ -100,6 +100,19 @@ export function Footer({ logo, brandName }: FooterProps) {
           <div className="mt-6 text-sm leading-6 text-muted-foreground whitespace-nowrap lg:mt-0 lg:row-start-1 lg:col-span-4 xl:col-span-5">
             <div>{copyright.text}</div>
             {copyright.license && <div>{copyright.license}</div>}
+            <div className="flex items-center gap-1 mt-2">
+              <span>Built with</span>
+              <Heart className="h-4 w-4 text-red-500 fill-current" />
+              <span>by</span>
+              <Link 
+                href="https://mihaicrisan-com.vercel.app/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary hover:underline underline-offset-4 transition-colors"
+              >
+                Mihai Crisan
+              </Link>
+            </div>
           </div>
         </div>
       </div>

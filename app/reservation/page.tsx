@@ -26,6 +26,8 @@ import { searchStorage } from "@/lib/searchStorage";
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { validateFlightNumber, formatFlightNumber } from "@/lib/flightValidation";
+import { Progress } from "@/components/ui/progress";
 
 // Payment method options
 const paymentMethods = [
@@ -40,6 +42,7 @@ interface FormErrors {
     name?: string;
     email?: string;
     phone?: string;
+    flightNumber?: string;
   };
   rentalDetails?: {
     deliveryLocation?: string;
@@ -76,7 +79,8 @@ function ReservationPageContent() {
     name: "",
     email: "",
     phone: "",
-    message: ""
+    message: "",
+    flightNumber: ""
   });
   
   // Payment state
@@ -128,7 +132,8 @@ function ReservationPageContent() {
         ...prev,
         name: prev.name || currentUser.name || user.fullName || "",
         email: prev.email || currentUser.email || user.primaryEmailAddress?.emailAddress || "",
-        phone: prev.phone || currentUser.phone || ""
+        phone: prev.phone || currentUser.phone || "",
+        flightNumber: prev.flightNumber || "" // Keep existing flight number if any
       }));
     }
   }, [user, currentUser, isHydrated]);
@@ -206,6 +211,36 @@ function ReservationPageContent() {
 
   const { basePrice, totalPrice, days, deliveryFee, returnFee, totalLocationFees, scdwPrice } = calculateTotalPrice();
 
+  // Calculate form completion progress
+  const calculateFormProgress = (): number => {
+    const requiredFields = [
+      // Personal info (4 required fields)
+      personalInfo.name.trim(),
+      personalInfo.email.trim(),
+      personalInfo.phone.trim(),
+      personalInfo.email.trim() && /\S+@\S+\.\S+/.test(personalInfo.email), // Valid email
+      
+      // Rental details (6 required fields)
+      deliveryLocation,
+      pickupDate,
+      pickupTime,
+      restitutionLocation,
+      returnDate,
+      returnTime,
+      
+      // Payment (2 required fields)
+      paymentMethod,
+      termsAccepted
+    ];
+    
+    const completedFields = requiredFields.filter(field => Boolean(field)).length;
+    const totalRequiredFields = requiredFields.length;
+    
+    return Math.round((completedFields / totalRequiredFields) * 100);
+  };
+
+  const formProgress = calculateFormProgress();
+
   // Form validation
   const validateForm = (): FormErrors => {
     const newErrors: FormErrors = {};
@@ -221,6 +256,9 @@ function ReservationPageContent() {
     }
     if (!personalInfo.phone.trim()) {
       newErrors.personalInfo = { ...newErrors.personalInfo, phone: "Phone number is required" };
+    }
+    if (personalInfo.flightNumber.trim() && !validateFlightNumber(personalInfo.flightNumber)) {
+      newErrors.personalInfo = { ...newErrors.personalInfo, flightNumber: "Flight number must be in format 'XX 1234' (e.g., 'AA 1234')" };
     }
 
     // Rental details validation
@@ -325,6 +363,7 @@ function ReservationPageContent() {
           email: personalInfo.email.trim(),
           phone: personalInfo.phone.trim(),
           message: personalInfo.message && personalInfo.message.trim() ? personalInfo.message.trim() : undefined,
+          flightNumber: personalInfo.flightNumber && personalInfo.flightNumber.trim() ? personalInfo.flightNumber.trim() : undefined,
         },
         promoCode: undefined, // TODO: Add promo code functionality
         additionalCharges: additionalCharges.length > 0 ? additionalCharges : undefined,
@@ -412,13 +451,20 @@ function ReservationPageContent() {
 
       <main className="flex-grow p-4 md:p-8">
         <div className="max-w-4xl mx-auto">
-          <div className="mb-6">
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <Link href={`/cars/${vehicleId}`}>
               <Button variant="outline" size="sm">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Vehicle Details
               </Button>
             </Link>
+            
+            <div className="flex items-center space-x-3">
+              <div className="text-sm text-muted-foreground font-medium">
+                Form Progress: {formProgress}%
+              </div>
+              <Progress value={formProgress} className="w-32 sm:w-40" />
+            </div>
           </div>
 
           {/* Interactive Rental Details */}
@@ -666,6 +712,31 @@ function ReservationPageContent() {
                       </div>
                       
                       <div>
+                        <Label htmlFor="customer-flight" className="pb-2">Flight Number (Optional)</Label>
+                        <Input
+                          id="customer-flight"
+                          type="text"
+                          placeholder="e.g., AA 1234, LH 456, BA 2847"
+                          value={personalInfo.flightNumber}
+                          onChange={(e) => {
+                            const formattedValue = formatFlightNumber(e.target.value);
+                            setPersonalInfo(prev => ({ ...prev, flightNumber: formattedValue }));
+                          }}
+                          className={cn(errors.personalInfo?.flightNumber && "border-red-500")}
+                          maxLength={10} // XX 1234 format shouldn't exceed this
+                        />
+                        {errors.personalInfo?.flightNumber && (
+                          <p className="text-sm text-red-500 mt-1 flex items-center">
+                            <AlertCircle className="h-4 w-4 mr-1" />
+                            {errors.personalInfo.flightNumber}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Format: Two letter airline code + flight number (e.g., "AA 1234, LH 456, BA 2847")
+                        </p>
+                      </div>
+                      
+                      <div>
                         <Label htmlFor="customer-message" className="pb-2">Additional Message (Optional)</Label>
                         <Textarea
                           id="customer-message"
@@ -792,6 +863,13 @@ function ReservationPageContent() {
                         <span className="font-medium text-muted-foreground">Duration:</span>
                         <span>{days ? `${days} day${days === 1 ? "" : "s"}` : "Not calculated"}</span>
                       </div>
+                      
+                      {personalInfo.flightNumber && (
+                        <div className="grid grid-cols-2 gap-2">
+                          <span className="font-medium text-muted-foreground">Flight:</span>
+                          <span>{personalInfo.flightNumber}</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Pricing Summary */}
@@ -888,7 +966,7 @@ function ReservationPageContent() {
                       disabled={isSubmitting}
                     >
                       <Send className="mr-2 h-4 w-4" />
-                      {isSubmitting ? "Processing..." : "Complete Reservation"}
+                      {isSubmitting ? "Processing..." : "Send Reservation Request"}
                     </Button>
                   </div>
                 </CardContent>
