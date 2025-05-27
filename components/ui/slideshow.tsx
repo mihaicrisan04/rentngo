@@ -32,23 +32,16 @@ interface SlideshowProps {
 const defaultSlides: SlideData[] = [
   {
     id: "1",
-    image: "/hero-background.png",
-    title: "Premium Car Rental Experience",
-    description: "Discover luxury and comfort with our premium vehicle collection",
-    alt: "Premium cars showcasing luxury rental experience",
+    image: "/slideshow/banner1.png",
+    // title: "Adventure Awaits",
+    // description: "Perfect vehicles for your next adventure in Cluj-Napoca",
+    alt: "Cars ready for adventure and exploration",
   },
   {
     id: "2",
-    image: "/mercedes-background.png",
-    title: "Mercedes Collection",
-    description: "Experience the elegance and performance of Mercedes-Benz vehicles",
-    alt: "Mercedes-Benz luxury vehicle collection",
-  },
-  {
-    id: "3",
-    image: "/banner1.png",
-    title: "Adventure Awaits",
-    description: "Perfect vehicles for your next adventure in Cluj-Napoca",
+    image: "/slideshow/banner2.png",
+    // title: "Adventure Awaits",
+    // description: "Perfect vehicles for your next adventure in Cluj-Napoca",
     alt: "Cars ready for adventure and exploration",
   },
 ];

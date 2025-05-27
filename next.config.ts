@@ -13,19 +13,12 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "ceaseless-trout-193.convex.cloud",
+        hostname: process.env.NEXT_PUBLIC_CONVEX_URL?.replace("https://", "").replace("http://", "") ?? "ceaseless-trout-193.convex.cloud",
         port: "",
         pathname: "/api/storage/**",
       },
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com",
-        port: "",
-        pathname: "/**",
-      },
     ],
   },
-  /* config options here */
 };
 
 export default nextConfig;

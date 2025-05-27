@@ -6,10 +6,38 @@ import { ChevronDown, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
+// Default FAQ data for car rental
+const DEFAULT_CAR_RENTAL_FAQS = [
+  {
+    question: "What documents do I need to rent a car?",
+    answer: "You'll typically need a valid driver's license held for at least one year, a credit card in the main driver's name for the security deposit, and a form of photo ID (like a passport or national ID card). International renters might need an International Driving Permit (IDP).",
+  },
+  {
+    question: "Is there a minimum age to rent a car?",
+    answer: "Yes, the minimum age is generally 21 years. However, drivers between 21-24 may be subject to a young driver surcharge and may have restrictions on available vehicle categories.",
+  },
+  {
+    question: "Can I add an additional driver?",
+    answer: "Yes, additional drivers can usually be added for an extra daily fee. They must meet the same age and license requirements as the main driver and must be present at the rental counter with their documents.",
+  },
+  {
+    question: "What is your fuel policy?",
+    answer: "Our standard fuel policy is 'full-to-full.' You will receive the car with a full tank of fuel and you should return it full. If returned with less fuel, refueling charges will apply. Other pre-paid fuel options might be available.",
+  },
+  {
+    question: "What happens if I return the car late?",
+    answer: "We understand delays can happen. A short grace period is usually allowed, but late returns beyond that may incur additional charges, potentially a full extra day's rental. Please contact us if you anticipate being late.",
+  },
+  {
+    question: "Is insurance included in the rental price?",
+    answer: "Basic Collision Damage Waiver (CDW) and Theft Protection (TP) with an excess amount are typically included. We also offer optional insurance packages to reduce the excess or provide more comprehensive coverage.",
+  },
+];
+
 interface FaqSectionProps extends React.HTMLAttributes<HTMLElement> {
   title: string;
   description?: string;
-  items: {
+  items?: {
     question: string;
     answer: string;
   }[];
@@ -22,7 +50,7 @@ interface FaqSectionProps extends React.HTMLAttributes<HTMLElement> {
 }
 
 const FaqSection = React.forwardRef<HTMLElement, FaqSectionProps>(
-  ({ className, title, description, items, contactInfo, ...props }, ref) => {
+  ({ className, title, description, items = DEFAULT_CAR_RENTAL_FAQS, contactInfo, ...props }, ref) => {
     return (
       <section
         ref={ref}

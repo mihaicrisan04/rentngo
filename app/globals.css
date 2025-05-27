@@ -278,7 +278,7 @@
       transform: translateX(0);
     }
     to {
-      transform: translateX(calc(-100% - var(--gap)));
+      transform: translateX(calc(-50% - var(--gap) / 2));
     }
   }
 }

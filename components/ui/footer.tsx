@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { Instagram, Facebook } from "lucide-react"
 import Link from "next/link"
 
@@ -47,22 +48,25 @@ export function Footer({ logo, brandName }: FooterProps) {
             {logo}
             {brandName && <span className="font-bold text-xl">{brandName}</span>}
           </Link>
-          <ul className="flex list-none mt-6 md:mt-0 space-x-3">
-            {socialLinks.map((link, i) => (
-              <li key={i}>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-10 w-10 rounded-full"
-                  asChild
-                >
-                  <a href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.label}>
-                    {link.icon}
-                  </a>
-                </Button>
-              </li>
-            ))}
-          </ul>
+          <div className="flex items-center gap-3 mt-6 md:mt-0">
+            <ul className="flex list-none space-x-3">
+              {socialLinks.map((link, i) => (
+                <li key={i}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 rounded-full"
+                    asChild
+                  >
+                    <a href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.label}>
+                      {link.icon}
+                    </a>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+            <ThemeToggle />
+          </div>
         </div>
         <div className="border-t mt-6 pt-6 md:mt-8 md:pt-8 lg:grid lg:grid-cols-10 lg:gap-8">
           <nav className="lg:col-start-5 lg:col-span-6 xl:col-start-6 xl:col-span-5 mb-6 lg:mb-0">

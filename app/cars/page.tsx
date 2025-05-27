@@ -8,6 +8,7 @@ import Image from "next/image";
 import { Header } from "@/components/ui/header";
 import { Footer } from "@/components/ui/footer";
 import { VehicleCard } from "@/components/VehicleCard";
+import { VehicleCardSkeleton } from "@/components/VehicleCardSkeleton";
 import { VehicleFilters } from "@/components/VehicleFilters";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -38,6 +39,7 @@ interface Vehicle {
 function VehicleList({
   vehicles,
   isLoading,
+  isHydrated,
   pickupDate,
   returnDate,
   deliveryLocation,
@@ -47,6 +49,7 @@ function VehicleList({
 }: {
   vehicles: Vehicle[] | null;
   isLoading: boolean;
+  isHydrated: boolean;
   pickupDate?: Date | null;
   returnDate?: Date | null;
   deliveryLocation?: string | null;
@@ -54,10 +57,17 @@ function VehicleList({
   pickupTime?: string | null;
   returnTime?: string | null;
 }) {
-  if (isLoading) {
-    return <p className="text-center text-muted-foreground">Searching for available cars...</p>;
+  // Show skeleton loading while not hydrated or while loading
+  if (!isHydrated || isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Array.from({ length: 6 }, (_, index) => (
+          <VehicleCardSkeleton key={index} />
+        ))}
+      </div>
+    );
   }
-  if (vehicles === null && !isLoading) {
+  if (vehicles === null) {
     return <p className="text-center text-destructive">Could not load vehicles. Please try searching again.</p>;
   }
   if (!Array.isArray(vehicles) || vehicles.length === 0) {
@@ -93,7 +103,7 @@ export default function CarsPage() {
 
   const [allFetchedVehicles, setAllFetchedVehicles] = React.useState<Vehicle[] | null>(null);
   const [displayedVehicles, setDisplayedVehicles] = React.useState<Vehicle[] | null>(null);
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
   // Search form state - start with empty state to avoid hydration issues
@@ -158,109 +168,29 @@ export default function CarsPage() {
     isHydrated,
   ]);
 
-  const executeVehicleSearch = React.useCallback(async (
-    pickupLoc: string, 
-    pickupDate: Date | undefined, 
-    pickupTime: string | null, 
-    restitutionLoc: string, 
-    returnDate: Date | undefined, 
-    returnTime: string | null
-  ) => {
-    setIsLoading(true);
-    setError(null);
-
-    // If no search criteria provided, show all vehicles
-    if (!pickupLoc && !pickupDate && !pickupTime && !restitutionLoc && !returnDate && !returnTime) {
-      try {
-        const results = await convex.query(api.vehicles.getAllVehicles, {});
-        setAllFetchedVehicles(results as Vehicle[]);
-        setDisplayedVehicles(results as Vehicle[]); 
-      } catch (err) {
-        console.error("Failed to fetch all vehicles:", err);
-        setError("Failed to load vehicles. Please try refreshing or contact support.");
-        setAllFetchedVehicles(null);
-        setDisplayedVehicles(null);
-      } finally {
-        setIsLoading(false);
-      }
-      return;
-    }
-
-    // If we have complete search criteria, perform availability search
-    if (pickupLoc && pickupDate && pickupTime && restitutionLoc && returnDate && returnTime) {
-      if (returnDate.getTime() < pickupDate.getTime()) {
-        setError("Return date must be after or the same as pick-up date.");
-        setIsLoading(false);
-        setAllFetchedVehicles([]);
-        setDisplayedVehicles([]);
-        return;
-      }
-      if (returnDate.getTime() === pickupDate.getTime() && returnTime <= pickupTime) {
-        setError("Return time must be after pick-up time for same-day rentals.");
-        setIsLoading(false);
-        setAllFetchedVehicles([]);
-        setDisplayedVehicles([]);
-        return;
-      }
-
-      const startDateTimestamp = Math.floor(pickupDate.getTime() / 1000);
-      const endDateTimestamp = Math.floor(returnDate.getTime() / 1000);
-
-      try {
-        const results = await convex.query(api.vehicles.searchAvailableVehicles, {
-          startDate: startDateTimestamp,
-          endDate: endDateTimestamp,
-        });
-        setAllFetchedVehicles(results as Vehicle[]);
-        setDisplayedVehicles(results as Vehicle[]);
-      } catch (err) {
-        console.error("Failed to fetch vehicles:", err);
-        setError("Failed to load vehicles. Please try your search again or contact support.");
-        setAllFetchedVehicles(null);
-        setDisplayedVehicles(null);
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      // Partial search criteria - show all vehicles but with message
-      try {
-        const results = await convex.query(api.vehicles.getAllVehicles, {});
-        setAllFetchedVehicles(results as Vehicle[]);
-        setDisplayedVehicles(results as Vehicle[]); 
-        setError("Complete your search criteria above to check availability for specific dates.");
-      } catch (err) {
-        console.error("Failed to fetch all vehicles:", err);
-        setError("Failed to load vehicles. Please try refreshing or contact support.");
-        setAllFetchedVehicles(null);
-        setDisplayedVehicles(null);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-  }, [convex]);
-
-  // Execute search when state changes (only after hydration)
+  // Load all vehicles once on component mount
   React.useEffect(() => {
     if (!isHydrated) return;
 
-    executeVehicleSearch(
-      currentDeliveryLocation,
-      currentPickupDate,
-      currentPickupTime,
-      currentRestitutionLocation,
-      currentReturnDate,
-      currentReturnTime
-    );
-  }, [
-    currentDeliveryLocation,
-    currentPickupDate,
-    currentPickupTime,
-    currentRestitutionLocation,
-    currentReturnDate,
-    currentReturnTime,
-    isHydrated,
-    executeVehicleSearch
-  ]);
+    const loadAllVehicles = async () => {
+      setError(null);
+
+      try {
+        const results = await convex.query(api.vehicles.getAllVehicles, {});
+        setAllFetchedVehicles(results as Vehicle[]);
+        setDisplayedVehicles(results as Vehicle[]); 
+      } catch (err) {
+        console.error("Failed to fetch all vehicles:", err);
+        setError("Failed to load vehicles. Please try refreshing or contact support.");
+        setAllFetchedVehicles(null);
+        setDisplayedVehicles(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadAllVehicles();
+  }, [isHydrated, convex]);
 
   return (
     <div className="relative flex flex-col min-h-screen">
@@ -335,18 +265,19 @@ export default function CarsPage() {
           <VehicleFilters allVehicles={allFetchedVehicles} onFilterChange={setDisplayedVehicles} />
           
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-6 text-center">
-            {isLoading ? "Finding Your Ride..." : (displayedVehicles && displayedVehicles.length > 0 ? "Available Cars" : "No Cars Found")}
+            {isLoading ? "Loading Vehicles..." : (displayedVehicles && displayedVehicles.length > 0 ? "Available Cars" : "No Cars Found")}
           </h1>
 
           {error && (
             <div className="text-center mb-4">
-              <p className={error.includes("Complete your search") ? "text-yellow-600" : "text-destructive"}>{error}</p>
+              <p className="text-destructive">{error}</p>
             </div>
           )}
           
           <VehicleList
             vehicles={displayedVehicles}
             isLoading={isLoading}
+            isHydrated={isHydrated}
             pickupDate={currentPickupDate || null}
             returnDate={currentReturnDate || null}
             deliveryLocation={currentDeliveryLocation || null}
