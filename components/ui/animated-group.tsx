@@ -1,8 +1,8 @@
 'use client';
 import { ReactNode } from 'react';
-import { motion, Variants } from 'framer-motion';
+import { motion, Variants, useInView } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import React from 'react';
+import React, { useRef } from 'react';
 
 type PresetType =
   | 'fade'
@@ -24,6 +24,8 @@ type AnimatedGroupProps = {
     item?: Variants;
   };
   preset?: PresetType;
+  threshold?: number; // How much of the element should be visible to trigger animation (0-1)
+  triggerOnce?: boolean; // Whether to animate only once or every time it comes into view
 };
 
 const defaultContainerVariants: Variants = {
@@ -142,7 +144,15 @@ function AnimatedGroup({
   className,
   variants,
   preset,
+  threshold = 0.1,
+  triggerOnce = true,
 }: AnimatedGroupProps) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { 
+    amount: threshold,
+    once: triggerOnce
+  });
+
   const selectedVariants = preset
     ? presetVariants[preset]
     : { container: defaultContainerVariants, item: defaultItemVariants };
@@ -151,8 +161,9 @@ function AnimatedGroup({
 
   return (
     <motion.div
+      ref={ref}
       initial='hidden'
-      animate='visible'
+      animate={isInView ? 'visible' : 'hidden'}
       variants={containerVariants}
       className={cn(className)}
     >

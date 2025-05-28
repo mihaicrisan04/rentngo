@@ -6,13 +6,15 @@ export default defineSchema({
   users: defineTable({
     name: v.string(),
     email: v.string(),
+    clerkId: v.string(), // Clerk user ID from the JWT subject
     phone: v.optional(v.string()),
     role: v.union(v.literal("renter"), v.literal("admin")),
     preferences: v.optional(v.object({
       language: v.union(v.literal("en"), v.literal("ro")),
       notifications: v.boolean(),
     })),
-  }).index("by_email", ["email"]),
+  }).index("by_email", ["email"])
+    .index("by_clerk_id", ["clerkId"]),
 
   // Vehicles table - stores car inventory
   vehicles: defineTable({
@@ -37,7 +39,7 @@ export default defineSchema({
 
   // Reservations table - stores booking records
   reservations: defineTable({
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
     vehicleId: v.id("vehicles"),
     startDate: v.number(), // Unix timestamp
     endDate: v.number(), // Unix timestamp
@@ -63,6 +65,7 @@ export default defineSchema({
       email: v.string(),
       phone: v.string(),
       message: v.optional(v.string()),
+      flightNumber: v.optional(v.string()), // Format: "XX 1234" (airline code + space + number)
     }),
     promoCode: v.optional(v.string()),
     // Store any additional charges or fees (delivery fees, extras, etc.)

@@ -26,6 +26,9 @@ import { searchStorage } from "@/lib/searchStorage";
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { validateFlightNumber, formatFlightNumber } from "@/lib/flightValidation";
+import { Progress } from "@/components/ui/progress";
+import { before } from "node:test";
 
 // Payment method options
 const paymentMethods = [
@@ -40,6 +43,7 @@ interface FormErrors {
     name?: string;
     email?: string;
     phone?: string;
+    flightNumber?: string;
   };
   rentalDetails?: {
     deliveryLocation?: string;
@@ -76,7 +80,8 @@ function ReservationPageContent() {
     name: "",
     email: "",
     phone: "",
-    message: ""
+    message: "",
+    flightNumber: ""
   });
   
   // Payment state
@@ -92,7 +97,6 @@ function ReservationPageContent() {
   // Queries and mutations
   const currentUser = useQuery(api.users.get);
   const createReservationMutation = useMutation(api.reservations.createReservation);
-  const ensureUserMutation = useMutation(api.users.ensureUser);
 
   // Load data from localStorage after hydration
   React.useEffect(() => {
@@ -128,7 +132,8 @@ function ReservationPageContent() {
         ...prev,
         name: prev.name || currentUser.name || user.fullName || "",
         email: prev.email || currentUser.email || user.primaryEmailAddress?.emailAddress || "",
-        phone: prev.phone || currentUser.phone || ""
+        phone: prev.phone || currentUser.phone || "",
+        flightNumber: prev.flightNumber || "" // Keep existing flight number if any
       }));
     }
   }, [user, currentUser, isHydrated]);
@@ -206,6 +211,36 @@ function ReservationPageContent() {
 
   const { basePrice, totalPrice, days, deliveryFee, returnFee, totalLocationFees, scdwPrice } = calculateTotalPrice();
 
+  // Calculate form completion progress
+  const calculateFormProgress = (): number => {
+    const requiredFields = [
+      // Personal info (4 required fields)
+      personalInfo.name.trim(),
+      personalInfo.email.trim(),
+      personalInfo.phone.trim(),
+      personalInfo.email.trim() && /\S+@\S+\.\S+/.test(personalInfo.email), // Valid email
+      
+      // Rental details (6 required fields)
+      deliveryLocation,
+      pickupDate,
+      pickupTime,
+      restitutionLocation,
+      returnDate,
+      returnTime,
+      
+      // Payment (2 required fields)
+      paymentMethod,
+      termsAccepted
+    ];
+    
+    const completedFields = requiredFields.filter(field => Boolean(field)).length;
+    const totalRequiredFields = requiredFields.length;
+    
+    return Math.round((completedFields / totalRequiredFields) * 100);
+  };
+
+  const formProgress = calculateFormProgress();
+
   // Form validation
   const validateForm = (): FormErrors => {
     const newErrors: FormErrors = {};
@@ -221,6 +256,9 @@ function ReservationPageContent() {
     }
     if (!personalInfo.phone.trim()) {
       newErrors.personalInfo = { ...newErrors.personalInfo, phone: "Phone number is required" };
+    }
+    if (personalInfo.flightNumber.trim() && !validateFlightNumber(personalInfo.flightNumber)) {
+      newErrors.personalInfo = { ...newErrors.personalInfo, flightNumber: "Flight number must be in format 'XX 1234' (e.g., 'AA 1234')" };
     }
 
     // Rental details validation
@@ -276,10 +314,6 @@ function ReservationPageContent() {
     setIsSubmitting(true);
 
     try {
-      // Ensure user exists in the database (for Clerk authenticated users)
-      if (user) {
-        await ensureUserMutation({});
-      }
       // Prepare additional charges for location fees and SCDW (core info is now in dedicated fields)
       const additionalCharges = [];
       
@@ -307,10 +341,8 @@ function ReservationPageContent() {
       }
 
       // Get the Convex user ID (not the Clerk user ID)
-      const convexUser = await ensureUserMutation({});
-      
       const reservationId = await createReservationMutation({
-        userId: convexUser._id,
+        userId: currentUser ? currentUser._id : undefined,
         vehicleId: vehicleId as Id<"vehicles">,
         startDate: pickupDate.getTime(),
         endDate: returnDate.getTime(),
@@ -325,24 +357,77 @@ function ReservationPageContent() {
           email: personalInfo.email.trim(),
           phone: personalInfo.phone.trim(),
           message: personalInfo.message && personalInfo.message.trim() ? personalInfo.message.trim() : undefined,
+          flightNumber: personalInfo.flightNumber && personalInfo.flightNumber.trim() ? personalInfo.flightNumber.trim() : undefined,
         },
         promoCode: undefined, // TODO: Add promo code functionality
         additionalCharges: additionalCharges.length > 0 ? additionalCharges : undefined,
       });
 
-      // Success notification
-              toast("Reservation created successfully!", {
-          description: "You will receive a confirmation email shortly.",
-          action: {
-            label: "View Reservation",
-            onClick: () => router.push(`/reservation/confirmation?reservationId=${reservationId}`),
+      // Send confirmation email
+      try {
+        const emailResponse = await fetch('/api/send/request-confirmation', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
+          body: JSON.stringify({
+            reservationId: reservationId,
+            startDate: pickupDate.getTime() / 1000, // Convert to Unix timestamp
+            endDate: returnDate.getTime() / 1000, // Convert to Unix timestamp
+            pickupTime: pickupTime || "00:00",
+            restitutionTime: returnTime || "00:00",
+            pickupLocation: deliveryLocation.trim(),
+            restitutionLocation: restitutionLocation.trim(),
+            paymentMethod: paymentMethod,
+            status: "pending",
+            totalPrice: totalPrice,
+            vehicle: {
+              make: vehicle.make,
+              model: vehicle.model,
+              year: vehicle.year,
+              type: vehicle.type,
+              seats: vehicle.seats,
+              transmission: vehicle.transmission,
+              fuelType: vehicle.fuelType,
+              pricePerDay: vehicle.pricePerDay,
+              features: vehicle.features || [],
+            },
+            customerInfo: {
+              name: personalInfo.name.trim(),
+              email: personalInfo.email.trim(),
+              phone: personalInfo.phone.trim(),
+              message: personalInfo.message && personalInfo.message.trim() ? personalInfo.message.trim() : undefined,
+              flightNumber: personalInfo.flightNumber && personalInfo.flightNumber.trim() ? personalInfo.flightNumber.trim() : undefined,
+            },
+            promoCode: undefined,
+            additionalCharges: additionalCharges.length > 0 ? additionalCharges : undefined,
+          }),
         });
-        console.log("Reservation created successfully!");
+
+        if (!emailResponse.ok) {
+          console.error('Failed to send confirmation email:', await emailResponse.text());
+          // Don't throw error - reservation was successful, just email failed
+        } else {
+          console.log('Confirmation email sent successfully');
+        }
+      } catch (emailError) {
+        console.error('Error sending confirmation email:', emailError);
+        // Don't throw error - reservation was successful, just email failed
+      }
+
+      // Success notification
+      toast("Reservation created successfully!", {
+        description: "You will receive a confirmation email shortly.",
+        action: {
+          label: "View Reservation",
+          onClick: () => router.push(`/reservation/confirmation?reservationId=${reservationId}`),
+        },
+      });
+      console.log("Reservation created successfully!");
         
-        // Clear localStorage and redirect
-        searchStorage.clear();
-        router.push(`/reservation/confirmation?reservationId=${reservationId}`);
+      // Clear localStorage and redirect
+      searchStorage.clear();
+      router.push(`/reservation/confirmation?reservationId=${reservationId}`);
 
     } catch (error) {
       console.error("Error creating reservation:", error);
@@ -412,13 +497,20 @@ function ReservationPageContent() {
 
       <main className="flex-grow p-4 md:p-8">
         <div className="max-w-4xl mx-auto">
-          <div className="mb-6">
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <Link href={`/cars/${vehicleId}`}>
               <Button variant="outline" size="sm">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Vehicle Details
               </Button>
             </Link>
+            
+            <div className="flex items-center space-x-3">
+              <div className="text-sm text-muted-foreground font-medium">
+                Form Progress: {formProgress}%
+              </div>
+              <Progress value={formProgress} className="w-32 sm:w-40" />
+            </div>
           </div>
 
           {/* Interactive Rental Details */}
@@ -458,6 +550,7 @@ function ReservationPageContent() {
                         id="res-pickup-datetime"
                         label="Pick-up Date & Time"
                         dateState={pickupDate}
+                        disabledDateRanges={{ before: today }}
                         setDateState={(date) => {
                           setPickupDate(date);
                           // Auto-adjust return date if needed
@@ -666,6 +759,31 @@ function ReservationPageContent() {
                       </div>
                       
                       <div>
+                        <Label htmlFor="customer-flight" className="pb-2">Flight Number (Optional)</Label>
+                        <Input
+                          id="customer-flight"
+                          type="text"
+                          placeholder="e.g., AA 1234, LH 456, BA 2847"
+                          value={personalInfo.flightNumber}
+                          onChange={(e) => {
+                            const formattedValue = formatFlightNumber(e.target.value);
+                            setPersonalInfo(prev => ({ ...prev, flightNumber: formattedValue }));
+                          }}
+                          className={cn(errors.personalInfo?.flightNumber && "border-red-500")}
+                          maxLength={10} // XX 1234 format shouldn't exceed this
+                        />
+                        {errors.personalInfo?.flightNumber && (
+                          <p className="text-sm text-red-500 mt-1 flex items-center">
+                            <AlertCircle className="h-4 w-4 mr-1" />
+                            {errors.personalInfo.flightNumber}
+                          </p>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Format: Two letter airline code + flight number (e.g., "AA 1234, LH 456, BA 2847")
+                        </p>
+                      </div>
+                      
+                      <div>
                         <Label htmlFor="customer-message" className="pb-2">Additional Message (Optional)</Label>
                         <Textarea
                           id="customer-message"
@@ -792,6 +910,13 @@ function ReservationPageContent() {
                         <span className="font-medium text-muted-foreground">Duration:</span>
                         <span>{days ? `${days} day${days === 1 ? "" : "s"}` : "Not calculated"}</span>
                       </div>
+                      
+                      {personalInfo.flightNumber && (
+                        <div className="grid grid-cols-2 gap-2">
+                          <span className="font-medium text-muted-foreground">Flight:</span>
+                          <span>{personalInfo.flightNumber}</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Pricing Summary */}
@@ -888,7 +1013,7 @@ function ReservationPageContent() {
                       disabled={isSubmitting}
                     >
                       <Send className="mr-2 h-4 w-4" />
-                      {isSubmitting ? "Processing..." : "Complete Reservation"}
+                      {isSubmitting ? "Processing..." : "Send Reservation Request"}
                     </Button>
                   </div>
                 </CardContent>

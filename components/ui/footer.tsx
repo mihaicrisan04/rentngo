@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button"
-import { Instagram, Facebook } from "lucide-react"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
+import { Instagram, Facebook, Heart } from "lucide-react"
 import Link from "next/link"
 
 interface FooterProps {
@@ -47,22 +48,25 @@ export function Footer({ logo, brandName }: FooterProps) {
             {logo}
             {brandName && <span className="font-bold text-xl">{brandName}</span>}
           </Link>
-          <ul className="flex list-none mt-6 md:mt-0 space-x-3">
-            {socialLinks.map((link, i) => (
-              <li key={i}>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-10 w-10 rounded-full"
-                  asChild
-                >
-                  <a href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.label}>
-                    {link.icon}
-                  </a>
-                </Button>
-              </li>
-            ))}
-          </ul>
+          <div className="flex items-center gap-3 mt-6 md:mt-0">
+            <ul className="flex list-none space-x-3">
+              {socialLinks.map((link, i) => (
+                <li key={i}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 rounded-full"
+                    asChild
+                  >
+                    <a href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.label}>
+                      {link.icon}
+                    </a>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+            <ThemeToggle />
+          </div>
         </div>
         <div className="border-t mt-6 pt-6 md:mt-8 md:pt-8 lg:grid lg:grid-cols-10 lg:gap-8">
           <nav className="lg:col-start-5 lg:col-span-6 xl:col-start-6 xl:col-span-5 mb-6 lg:mb-0">
@@ -96,6 +100,19 @@ export function Footer({ logo, brandName }: FooterProps) {
           <div className="mt-6 text-sm leading-6 text-muted-foreground whitespace-nowrap lg:mt-0 lg:row-start-1 lg:col-span-4 xl:col-span-5">
             <div>{copyright.text}</div>
             {copyright.license && <div>{copyright.license}</div>}
+            <div className="flex items-center gap-1 mt-2">
+              <span>Built with</span>
+              <Heart className="h-4 w-4 text-red-500 fill-current" />
+              <span>by</span>
+              <Link 
+                href="https://mihaicrisan-com.vercel.app/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary hover:underline underline-offset-4 transition-colors"
+              >
+                Mihai Crisan
+              </Link>
+            </div>
           </div>
         </div>
       </div>

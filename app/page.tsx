@@ -8,7 +8,7 @@ import {
 } from "convex/react";
 import { api } from "../convex/_generated/api";
 import Image from "next/image"; // Import Next.js Image component
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Car } from "lucide-react";
 import { Id } from "../convex/_generated/dataModel";
 import Link from "next/link";
 import { FeaturesSectionWithHoverEffects } from "@/components/blocks/feature-section-with-hover-effects";
@@ -54,95 +54,7 @@ interface Vehicle {
   fuelType?: string; // Optional
 }
 
-// Car Rental FAQ Data
-const CAR_RENTAL_FAQS = [
-  {
-    question: "What documents do I need to rent a car?",
-    answer: "You\'ll typically need a valid driver\'s license held for at least one year, a credit card in the main driver\'s name for the security deposit, and a form of photo ID (like a passport or national ID card). International renters might need an International Driving Permit (IDP).",
-  },
-  {
-    question: "Is there a minimum age to rent a car?",
-    answer: "Yes, the minimum age is generally 21 years. However, drivers between 21-24 may be subject to a young driver surcharge and may have restrictions on available vehicle categories.",
-  },
-  {
-    question: "Can I add an additional driver?",
-    answer: "Yes, additional drivers can usually be added for an extra daily fee. They must meet the same age and license requirements as the main driver and must be present at the rental counter with their documents.",
-  },
-  {
-    question: "What is your fuel policy?",
-    answer: "Our standard fuel policy is \'full-to-full.\' You will receive the car with a full tank of fuel and you should return it full. If returned with less fuel, refueling charges will apply. Other pre-paid fuel options might be available.",
-  },
-  {
-    question: "What happens if I return the car late?",
-    answer: "We understand delays can happen. A short grace period is usually allowed, but late returns beyond that may incur additional charges, potentially a full extra day\'s rental. Please contact us if you anticipate being late.",
-  },
-  {
-    question: "Is insurance included in the rental price?",
-    answer: "Basic Collision Damage Waiver (CDW) and Theft Protection (TP) with an excess amount are typically included. We also offer optional insurance packages to reduce the excess or provide more comprehensive coverage.",
-  },
-];
 
-const defaultCards = [
-  {
-    icon: <Sparkles className="size-4 text-blue-300" />,
-    title: "Featured",
-    description: "Discover amazing content",
-    date: "Just now",
-    iconClassName: "text-blue-500",
-    titleClassName: "text-blue-500",
-    className:
-      "[grid-area:stack] hover:-translate-y-10 before:absolute before:w-[100%] before:outline-1 before:rounded-xl before:outline-border before:h-[100%] before:content-[''] before:bg-blend-overlay before:bg-background/50 grayscale-[100%] hover:before:opacity-0 before:transition-opacity before:duration-700 hover:grayscale-0 before:left-0 before:top-0",
-  },
-  {
-    icon: <Sparkles className="size-4 text-blue-300" />,
-    title: "Popular",
-    description: "Trending this week",
-    date: "2 days ago",
-    iconClassName: "text-blue-500",
-    titleClassName: "text-blue-500",
-    className:
-      "[grid-area:stack] translate-x-12 translate-y-10 hover:-translate-y-1 before:absolute before:w-[100%] before:outline-1 before:rounded-xl before:outline-border before:h-[100%] before:content-[''] before:bg-blend-overlay before:bg-background/50 grayscale-[100%] hover:before:opacity-0 before:transition-opacity before:duration-700 hover:grayscale-0 before:left-0 before:top-0",
-  },
-  {
-    icon: <Sparkles className="size-4 text-blue-300" />,
-    title: "New",
-    description: "Latest updates and features",
-    date: "Today",
-    iconClassName: "text-blue-500",
-    titleClassName: "text-blue-500",
-    className:
-      "[grid-area:stack] translate-x-24 translate-y-20 hover:translate-y-10",
-  },
-];
-
-const testimonials = [
-  {
-    author: {
-      name: "Emma Thompson",
-      handle: "@emmaai",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face"
-    },
-    text: "The car rental process was incredibly smooth and efficient. The online booking system made it so easy to find and reserve the perfect vehicle for our family vacation.",
-    href: "https://twitter.com/emmaai"
-  },
-  {
-    author: {
-      name: "David Park",
-      handle: "@davidtech",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face"
-    },
-    text: "I've rented from many companies, but this one stands out. The cars are always clean, well-maintained, and the customer service is exceptional. Will definitely use again!",
-    href: "https://twitter.com/davidtech"
-  },
-  {
-    author: {
-      name: "Sofia Rodriguez",
-      handle: "@sofiaml",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face"
-    },
-    text: "The flexible rental options and competitive pricing made it perfect for my business trip. The car was exactly as advertised and the pickup/dropoff process was seamless."
-  }
-];
 
 // Updated VehicleList to accept search dates and pass them to VehicleCard
 function VehicleList({
@@ -240,79 +152,129 @@ export default function Home() {
 
   return (
     <div className="relative flex flex-col min-h-screen">
-      <BackgroundImage />
+      <BackgroundImage bottomGradient={true} />
 
       <Header logo={<Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} />} />
 
-      <main className="relative z-10 flex flex-col gap-8 mt-[10%] md:mt-[15%] lg:mt-[20%]">
-        <AnimatedGroup variants={sectionAnimationVariants}>
-          <div className="flex flex-col gap-12 max-w-5xl mx-auto p-4 md:p-6 lg:p-8 w-full">
-            <div className="text-center">
-              <h1 className="text-4xl md:text-5xl text-secondary font-bold tracking-tight">
-                Find Your Perfect Ride
-              </h1>
-              <p className="mt-4 text-lg md:text-xl text-foreground">
-                Explore Cluj-Napoca with our wide range of rental cars. Easy booking, great prices.
-              </p>
-            </div>
-
-            <VehicleSearchFilterForm />
-
-            <div className="my-8">
-              <h2 className="text-3xl font-semibold mb-6 text-center">
-                {currentTitle}
-              </h2>
-              <VehicleList
-                vehicles={vehiclesToDisplay as Vehicle[]}
-                isLoading={featuredVehiclesQuery === undefined}
-              />
-              <div className="flex justify-center mt-12">
-                <Button
-                  variant="default"
-                  size="lg"
-                  className="bg-primary hover:bg-primary/90 text-white"
-                  onClick={() => window.location.href = '/cars'}
-                >
-                  View All Cars
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+      <main className="relative z-10 flex flex-col gap-8">
+          <div className="flex flex-col gap-12 max-w-5xl mx-auto p-4 md:p-6 lg:p-8 w-full mt-[10%] md:mt-[15%] lg:mt-[20%]">
+            <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
+              <div className="text-center">
+                <h1 className="text-4xl md:text-5xl text-secondary font-bold tracking-tight">
+                  Find Your Perfect Ride
+                </h1>
+                <p className="mt-4 text-lg md:text-xl text-primary-foreground">
+                  Explore Cluj-Napoca with our wide range of rental cars. Easy booking, great prices.
+                </p>
               </div>
-            </div>
+            </AnimatedGroup>
+
+
+            <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
+              <VehicleSearchFilterForm />
+            </AnimatedGroup>
+
+            <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
+              <div className="my-8">
+                <h2 className="text-3xl font-semibold mb-6 text-center">
+                  {currentTitle}
+                </h2>
+                <VehicleList
+                  vehicles={vehiclesToDisplay as Vehicle[]}
+                  isLoading={featuredVehiclesQuery === undefined}
+                />
+                <div className="flex justify-center mt-12">
+                  <Button
+                    variant="default"
+                    size="lg"
+                    className="bg-primary hover:bg-primary/90 text-white"
+                    onClick={() => window.location.href = '/cars'}
+                  >
+                    View All Cars
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </AnimatedGroup>
           
           </div>
-        </AnimatedGroup>
         
-        <AnimatedGroup variants={sectionAnimationVariants}>
+        <AnimatedGroup variants={sectionAnimationVariants} threshold={0.3} triggerOnce={true}>
           <div className="w-full">
             <Slideshow className="mb-8" />
           </div>
         </AnimatedGroup>
+
+        {/* Our Story Section */}
+        <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
+          <section className="py-16 px-4">
+            <div className="container mx-auto">
+              <div className="max-w-6xl mx-auto">
+                <div className="text-center mb-12">
+                  <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                    Our Story
+                  </h2>
+                  <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                    Your trusted partner for exploring Cluj-Napoca and beyond
+                  </p>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-12 items-center">
+                  <div className="space-y-6">
+                    <p className="text-lg text-muted-foreground leading-relaxed">
+                      At Rent'n Go, we believe that every journey should be memorable. Founded with a passion 
+                      for travel and a commitment to excellence, we've been serving the Cluj-Napoca community 
+                      with reliable, affordable car rental solutions.
+                    </p>
+                    <p className="text-lg text-muted-foreground leading-relaxed">
+                      Whether you're exploring the historic streets of Cluj-Napoca, venturing into the 
+                      beautiful Transylvanian countryside, or need a reliable vehicle for business, 
+                      we're here to make your journey smooth and enjoyable.
+                    </p>
+                    <p className="text-lg text-muted-foreground leading-relaxed">
+                      Our carefully curated fleet of modern vehicles, combined with transparent pricing 
+                      and exceptional customer service, ensures that your rental experience exceeds expectations 
+                      every time.
+                    </p>
+                  </div>
+                  <div className="relative">
+                    <Card className="overflow-hidden shadow-xl">
+                      <CardContent className="p-0">
+                        <div className="relative h-80 bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                          <Car className="w-24 h-24 text-primary/60" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </AnimatedGroup>
         
-        <AnimatedGroup variants={sectionAnimationVariants}>
-          <FeaturesSectionWithHoverEffects />
+        <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
+          <div className="py-16 px-4 mx-auto bg-muted/20">
+            <FeaturesSectionWithHoverEffects />
+          </div>
         </AnimatedGroup>
 
-        <AnimatedGroup variants={sectionAnimationVariants}>
+        <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
           <TestimonialsSection
             title="What Our Customers Say"
             description="Read what our customers have to say about us."
-            testimonials={testimonials}
           />
         </AnimatedGroup>
 
-        <AnimatedGroup variants={sectionAnimationVariants}>
+        <AnimatedGroup variants={sectionAnimationVariants} threshold={0.15} triggerOnce={true}>
           <FaqSection
             title="Frequently Asked Questions"
             description="Find answers to common questions about renting a car with us."
-            items={CAR_RENTAL_FAQS}
-            contactInfo={{
-              title: "Still have questions?",
-              description: "Our team is ready to help you with any inquiries.",
-              buttonText: "Contact Us",
-              onContact: () => {
-                // You can implement navigation to a contact page or open a contact modal here
-                console.log("Contact Us button clicked from FAQ");
-                // Example: window.location.href = \'/contact\';
+            ctaSection={{
+              title: "Ready to Hit the Road?",
+              description: "Browse our extensive fleet of vehicles and find the perfect car for your next adventure in Cluj-Napoca.",
+              buttonText: "Browse Our Cars",
+              onBrowseCars: () => {
+                window.location.href = '/cars';
               },
             }}
           />
