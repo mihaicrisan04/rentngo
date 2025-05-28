@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { validateFlightNumber, formatFlightNumber } from "@/lib/flightValidation";
 import { Progress } from "@/components/ui/progress";
+import { before } from "node:test";
 
 // Payment method options
 const paymentMethods = [
@@ -96,7 +97,6 @@ function ReservationPageContent() {
   // Queries and mutations
   const currentUser = useQuery(api.users.get);
   const createReservationMutation = useMutation(api.reservations.createReservation);
-  const ensureUserMutation = useMutation(api.users.ensureUser);
 
   // Load data from localStorage after hydration
   React.useEffect(() => {
@@ -314,10 +314,6 @@ function ReservationPageContent() {
     setIsSubmitting(true);
 
     try {
-      // Ensure user exists in the database (for Clerk authenticated users)
-      if (user) {
-        await ensureUserMutation({});
-      }
       // Prepare additional charges for location fees and SCDW (core info is now in dedicated fields)
       const additionalCharges = [];
       
@@ -345,10 +341,8 @@ function ReservationPageContent() {
       }
 
       // Get the Convex user ID (not the Clerk user ID)
-      const convexUser = await ensureUserMutation({});
-      
       const reservationId = await createReservationMutation({
-        userId: convexUser._id,
+        userId: currentUser ? currentUser._id : undefined,
         vehicleId: vehicleId as Id<"vehicles">,
         startDate: pickupDate.getTime(),
         endDate: returnDate.getTime(),
@@ -369,19 +363,71 @@ function ReservationPageContent() {
         additionalCharges: additionalCharges.length > 0 ? additionalCharges : undefined,
       });
 
-      // Success notification
-              toast("Reservation created successfully!", {
-          description: "You will receive a confirmation email shortly.",
-          action: {
-            label: "View Reservation",
-            onClick: () => router.push(`/reservation/confirmation?reservationId=${reservationId}`),
+      // Send confirmation email
+      try {
+        const emailResponse = await fetch('/api/send/request-confirmation', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
+          body: JSON.stringify({
+            reservationId: reservationId,
+            startDate: pickupDate.getTime() / 1000, // Convert to Unix timestamp
+            endDate: returnDate.getTime() / 1000, // Convert to Unix timestamp
+            pickupTime: pickupTime || "00:00",
+            restitutionTime: returnTime || "00:00",
+            pickupLocation: deliveryLocation.trim(),
+            restitutionLocation: restitutionLocation.trim(),
+            paymentMethod: paymentMethod,
+            status: "pending",
+            totalPrice: totalPrice,
+            vehicle: {
+              make: vehicle.make,
+              model: vehicle.model,
+              year: vehicle.year,
+              type: vehicle.type,
+              seats: vehicle.seats,
+              transmission: vehicle.transmission,
+              fuelType: vehicle.fuelType,
+              pricePerDay: vehicle.pricePerDay,
+              features: vehicle.features || [],
+            },
+            customerInfo: {
+              name: personalInfo.name.trim(),
+              email: personalInfo.email.trim(),
+              phone: personalInfo.phone.trim(),
+              message: personalInfo.message && personalInfo.message.trim() ? personalInfo.message.trim() : undefined,
+              flightNumber: personalInfo.flightNumber && personalInfo.flightNumber.trim() ? personalInfo.flightNumber.trim() : undefined,
+            },
+            promoCode: undefined,
+            additionalCharges: additionalCharges.length > 0 ? additionalCharges : undefined,
+          }),
         });
-        console.log("Reservation created successfully!");
+
+        if (!emailResponse.ok) {
+          console.error('Failed to send confirmation email:', await emailResponse.text());
+          // Don't throw error - reservation was successful, just email failed
+        } else {
+          console.log('Confirmation email sent successfully');
+        }
+      } catch (emailError) {
+        console.error('Error sending confirmation email:', emailError);
+        // Don't throw error - reservation was successful, just email failed
+      }
+
+      // Success notification
+      toast("Reservation created successfully!", {
+        description: "You will receive a confirmation email shortly.",
+        action: {
+          label: "View Reservation",
+          onClick: () => router.push(`/reservation/confirmation?reservationId=${reservationId}`),
+        },
+      });
+      console.log("Reservation created successfully!");
         
-        // Clear localStorage and redirect
-        searchStorage.clear();
-        router.push(`/reservation/confirmation?reservationId=${reservationId}`);
+      // Clear localStorage and redirect
+      searchStorage.clear();
+      router.push(`/reservation/confirmation?reservationId=${reservationId}`);
 
     } catch (error) {
       console.error("Error creating reservation:", error);
@@ -504,6 +550,7 @@ function ReservationPageContent() {
                         id="res-pickup-datetime"
                         label="Pick-up Date & Time"
                         dateState={pickupDate}
+                        disabledDateRanges={{ before: today }}
                         setDateState={(date) => {
                           setPickupDate(date);
                           // Auto-adjust return date if needed

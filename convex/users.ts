@@ -1,4 +1,4 @@
-import { mutation, query } from "./_generated/server";
+import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { Doc } from "./_generated/dataModel";
 
@@ -8,6 +8,7 @@ const UserDocValidator = v.object({
   _creationTime: v.number(),
   name: v.string(),
   email: v.string(),
+  clerkId: v.string(),
   phone: v.optional(v.string()),
   role: v.union(v.literal("renter"), v.literal("admin")),
   preferences: v.optional(
@@ -20,8 +21,8 @@ const UserDocValidator = v.object({
 
 /**
  * Ensures a user record exists for the currently authenticated Clerk user.
- * Creates a new user if one doesn't exist using their email as the identifier.
- * Updates the user's name if it has changed in Clerk.
+ * Creates a new user if one doesn't exist using their Clerk ID as the identifier.
+ * Updates the user's name and email if they have changed in Clerk.
  * This function should be called by the client after successful Clerk authentication.
  */
 export const ensureUser = mutation({
@@ -33,6 +34,7 @@ export const ensureUser = mutation({
       throw new Error("User identity not found. Ensure user is authenticated.");
     }
 
+    const clerkId = identity.subject;
     const email = identity.email;
     if (!email) {
       throw new Error("Email not found in user identity from Clerk. Cannot ensure user.");
@@ -42,17 +44,26 @@ export const ensureUser = mutation({
     // The schema requires 'name' to be a string.
     const name = identity.name || identity.nickname || email;
 
-    // Check if user already exists by email
+    // Check if user already exists by Clerk ID (more reliable than email)
     const existingUser = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", email))
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
       .unique();
 
     if (existingUser) {
-      // User exists, check if name needs update
+      // User exists, check if name or email needs update
+      const updates: Partial<Doc<"users">> = {};
       if (existingUser.name !== name) {
-        await ctx.db.patch(existingUser._id, { name });
+        updates.name = name;
       }
+      if (existingUser.email !== email) {
+        updates.email = email;
+      }
+      
+      if (Object.keys(updates).length > 0) {
+        await ctx.db.patch(existingUser._id, updates);
+      }
+      
       // Return the (potentially updated) existing user document
       // Re-fetch to ensure we return the latest state if patched
       return (await ctx.db.get(existingUser._id))!;
@@ -61,6 +72,7 @@ export const ensureUser = mutation({
       const newUserId = await ctx.db.insert("users", {
         email,
         name,
+        clerkId,
         role: "renter", // Default role
         // phone and preferences are optional and can be set via an update operation later
       });
@@ -70,21 +82,21 @@ export const ensureUser = mutation({
 });
 
 /**
- * Retrieves the current authenticated user's profile from the database using their email.
+ * Retrieves the current authenticated user's profile from the database using their Clerk ID.
  */
 export const get = query({
   args: {},
   returns: v.union(UserDocValidator, v.null()), // Added return validator
   handler: async (ctx): Promise<Doc<"users"> | null> => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity || !identity.email) {
-      // Not authenticated or email not available, so no user profile to return
+    if (!identity) {
+      // Not authenticated, so no user profile to return
       return null;
     }
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", identity.email!))
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
       .unique();
 
     return user;
@@ -109,13 +121,13 @@ export const update = mutation({
   returns: v.null(), // Added return validator
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity || !identity.email) {
-      throw new Error("User not authenticated or email missing. Cannot update profile.");
+    if (!identity) {
+      throw new Error("User not authenticated. Cannot update profile.");
     }
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", identity.email!))
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
       .unique();
 
     if (!user) {
@@ -143,20 +155,20 @@ export const update = mutation({
 });
 
 /**
- * Deletes the current authenticated user's account based on their email.
+ * Deletes the current authenticated user's account based on their Clerk ID.
  */
 export const remove = mutation({
   args: {},
   returns: v.null(), // Added return validator
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity || !identity.email) {
-      throw new Error("User not authenticated or email missing. Cannot delete account.");
+    if (!identity) {
+      throw new Error("User not authenticated. Cannot delete account.");
     }
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", identity.email!))
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
       .unique();
 
     if (!user) {
@@ -169,3 +181,33 @@ export const remove = mutation({
     return null;
   },
 });
+
+/**
+ * Helper function to get the current authenticated user from the database.
+ * Returns null if not authenticated or user not found.
+ */
+export const getCurrentUser = async (ctx: QueryCtx | MutationCtx): Promise<Doc<"users"> | null> => {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) {
+    return null;
+  }
+
+  const user = await ctx.db
+    .query("users")
+    .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
+    .unique();
+
+  return user;
+};
+
+/**
+ * Helper function to get the current authenticated user from the database.
+ * Throws an error if not authenticated or user not found.
+ */
+export const getCurrentUserOrThrow = async (ctx: QueryCtx | MutationCtx): Promise<Doc<"users">> => {
+  const user = await getCurrentUser(ctx);
+  if (!user) {
+    throw new Error("User not authenticated or not found in database. Please ensure user is logged in and has been created.");
+  }
+  return user;
+};

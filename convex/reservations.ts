@@ -2,6 +2,7 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
+import { getCurrentUser, getCurrentUserOrThrow } from "./users";
 
 // Validator for reservation status, strictly aligned with schema.ts
 const reservationStatusValidator = v.union(
@@ -34,7 +35,7 @@ const additionalChargeValidator = v.object({
 // --- CREATE ---
 export const createReservation = mutation({
   args: {
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
     vehicleId: v.id("vehicles"),
     startDate: v.number(), // Unix timestamp
     endDate: v.number(),   // Unix timestamp
@@ -59,26 +60,8 @@ export const createReservation = mutation({
     additionalCharges: v.optional(v.array(additionalChargeValidator)),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity || !identity.email) { // Ensure email is present
-      throw new Error("User not authenticated or email missing.");
-    }
-
-    // Fetch the internal user record using the email from the identity
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", identity.email!))
-      .unique();
-
-    if (!user) {
-      // This case should ideally be handled by ensuring users are created in your system
-      // when they sign up via Clerk.
-      throw new Error("User profile not found. Please ensure user exists in the 'users' table.");
-      // Optionally, you could attempt to create a user here if your app logic allows:
-      // const userId = await ctx.runMutation(api.users.create, { email: identity.email, name: identity.name || "New User", role: "renter" });
-      // For now, we throw an error.
-    }
-    const userId = user._id;
+    // Get the current authenticated user (if any)
+    const currentUser = await getCurrentUser(ctx);
 
     // Validate flight number format if provided
     if (args.customerInfo.flightNumber && !validateFlightNumber(args.customerInfo.flightNumber)) {
@@ -98,7 +81,7 @@ export const createReservation = mutation({
     // }
 
     const newReservationData = {
-      userId: userId,
+      userId: currentUser?._id || undefined, // Use the Convex user ID if authenticated
       vehicleId: args.vehicleId,
       startDate: args.startDate,
       endDate: args.endDate,
@@ -129,44 +112,43 @@ export const createReservation = mutation({
 export const getReservationById = query({
   args: { reservationId: v.id("reservations") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity || !identity.email) {
-      throw new Error("User not authenticated or email missing.");
-    }
     const reservation = await ctx.db.get(args.reservationId);
     if (!reservation) return null;
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", identity.email!))
-      .unique();
-
-    if (!user || (reservation.userId !== user._id && user.role !== "admin")) {
-      throw new Error("User not authorized to view this reservation.");
+    // Check if user is authenticated and authorized to view this reservation
+    const currentUser = await getCurrentUser(ctx);
+    
+    // Allow access if:
+    // 1. User is an admin
+    // 2. User is the owner of the reservation
+    // 3. Reservation has no userId (guest booking) - you might want to restrict this further
+    if (currentUser) {
+      if (currentUser.role === "admin" || reservation.userId === currentUser._id) {
+        return reservation;
+      } else {
+        throw new Error("User not authorized to view this reservation.");
+      }
+    } else {
+      // For guest bookings, you might want to add additional verification
+      // For now, we'll allow access to reservations without userId
+      if (!reservation.userId) {
+        return reservation;
+      } else {
+        throw new Error("Authentication required to view this reservation.");
+      }
     }
-    return reservation;
   },
 });
 
 export const getCurrentUserReservations = query({
   args: {}, // No args needed, uses authenticated user
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity || !identity.email) {
-      throw new Error("User not authenticated or email missing.");
-    }
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", identity.email!))
-      .unique();
-    if (!user) {
-      throw new Error("User profile not found.");
-    }
+    const user = await getCurrentUserOrThrow(ctx);
 
     return await ctx.db
       .query("reservations")
-      .withIndex("by_user", (q) => q.eq("userId", user._id)) // Correct index name
-      .order("desc") // Optional: order by creation time or start date
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .order("desc")
       .collect();
   },
 });
@@ -186,16 +168,9 @@ export const getReservationsByVehicle = query({
 export const getReservationsByPickupLocation = query({
   args: { pickupLocation: v.string() },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity || !identity.email) {
-      throw new Error("User not authenticated or email missing.");
-    }
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", identity.email!))
-      .unique();
+    const user = await getCurrentUserOrThrow(ctx);
 
-    if (!user || user.role !== "admin") {
+    if (user.role !== "admin") {
       throw new Error("User not authorized (admin only).");
     }
 
@@ -215,16 +190,9 @@ export const getReservationsByPaymentMethod = query({
     ) 
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity || !identity.email) {
-      throw new Error("User not authenticated or email missing.");
-    }
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", identity.email!))
-      .unique();
+    const user = await getCurrentUserOrThrow(ctx);
 
-    if (!user || user.role !== "admin") {
+    if (user.role !== "admin") {
       throw new Error("User not authorized (admin only).");
     }
 
@@ -239,16 +207,9 @@ export const getReservationsByPaymentMethod = query({
 export const getAllReservations = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity || !identity.email) {
-      throw new Error("User not authenticated or email missing.");
-    }
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", identity.email!))
-      .unique();
+    const user = await getCurrentUserOrThrow(ctx);
 
-    if (!user || user.role !== "admin") { // Optional: use the isAuthorized query to check if the user is an admin
+    if (user.role !== "admin") {
       throw new Error("User not authorized (admin only).");
     }
     return await ctx.db.query("reservations").order("desc").collect();
@@ -262,31 +223,20 @@ export const updateReservationStatus = mutation({
     newStatus: reservationStatusValidator,
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity || !identity.email) {
-      throw new Error("User not authenticated or email missing.");
-    }
+    const user = await getCurrentUserOrThrow(ctx);
 
     const reservation = await ctx.db.get(args.reservationId);
     if (!reservation) {
       throw new Error("Reservation not found.");
     }
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", identity.email!))
-      .unique();
-
-    if (!user || (reservation.userId !== user._id && user.role !== "admin")) {
+    if (reservation.userId !== user._id && user.role !== "admin") {
       throw new Error("User not authorized to update this reservation status.");
     }
 
     await ctx.db.patch(args.reservationId, { status: args.newStatus });
 
     // TODO: Trigger emails/notifications based on status change
-    // e.g., if args.newStatus === "confirmed", send booking confirmation email.
-    // e.g., if args.newStatus === "cancelled", send cancellation email & handle refund logic.
-
     return { success: true };
   },
 });
@@ -313,15 +263,12 @@ export const updateReservationDetails = mutation({
       message: v.optional(v.string()),
       flightNumber: v.optional(v.string()),
     })),
-    status: v.optional(reservationStatusValidator), // Use the correct validator
+    status: v.optional(reservationStatusValidator),
     promoCode: v.optional(v.string()),
     additionalCharges: v.optional(v.array(additionalChargeValidator)),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity || !identity.email) {
-      throw new Error("User not authenticated or email missing.");
-    }
+    const user = await getCurrentUserOrThrow(ctx);
     const { reservationId, ...updatesIn } = args;
 
     const reservation = await ctx.db.get(reservationId);
@@ -329,11 +276,7 @@ export const updateReservationDetails = mutation({
       throw new Error("Reservation not found.");
     }
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", identity.email!))
-      .unique();
-    if (!user || (reservation.userId !== user._id && user.role !== "admin")) {
+    if (reservation.userId !== user._id && user.role !== "admin") {
       throw new Error("User not authorized to update this reservation.");
     }
 
@@ -375,22 +318,11 @@ export const updateReservationDetails = mutation({
 export const cancelReservation = mutation({
   args: { reservationId: v.id("reservations") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity || !identity.email) {
-      throw new Error("User not authenticated or email missing.");
-    }
+    const user = await getCurrentUserOrThrow(ctx);
 
     const reservation = await ctx.db.get(args.reservationId);
     if (!reservation) {
       throw new Error("Reservation not found.");
-    }
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", identity.email!))
-      .unique();
-    if (!user || (reservation.userId !== user._id && user.role !== "admin")) {
-      throw new Error("User not authorized to cancel this reservation.");
     }
 
     if (user.role !== 'admin' && (reservation.status === "completed" || reservation.status === "cancelled")) {
@@ -414,14 +346,7 @@ export const cancelReservation = mutation({
 export const deleteReservationPermanently = mutation({
   args: { reservationId: v.id("reservations") },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity || !identity.email) {
-      throw new Error("User not authenticated or email missing.");
-    }
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_email", (q) => q.eq("email", identity.email!))
-      .unique();
+    const user = await getCurrentUserOrThrow(ctx);
 
     if (!user || user.role !== "admin") {
       throw new Error("User not authorized (admin only).");

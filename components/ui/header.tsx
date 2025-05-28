@@ -7,6 +7,16 @@ import React, { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 
 interface HeaderProps {
   logo: React.ReactNode;
@@ -24,7 +34,7 @@ const menuItems = [
 
 export function Header({ logo, brandName }: HeaderProps) {
   const { user } = useUser();
-  const [menuState, setMenuState] = React.useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
   const pathname = usePathname();
 
@@ -36,6 +46,10 @@ export function Header({ logo, brandName }: HeaderProps) {
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const handleLinkClick = () => {
+    setIsDrawerOpen(false);
+  };
 
   return (
     <header
@@ -51,18 +65,18 @@ export function Header({ logo, brandName }: HeaderProps) {
           <Link
             href="/"
             className="mr-6 flex items-center space-x-2"
-            onClick={() => setMenuState(false)}
+            onClick={handleLinkClick}
           >
             {logo}
             {brandName && <span className="text-lg font-semibold hidden sm:inline">{brandName}</span>}
           </Link>
         </div>
 
-        <nav className="hidden lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:flex lg:items-center lg:gap-6 lg:text-sm">
+        <nav className="hidden lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:flex lg:items-center lg:gap-6 lg:text-base">
           <Link
             href="/"
             className={cn(
-              "transition-colors hover:text-foreground/80",
+              "transition-colors hover:text-foreground/80 font-medium",
               isScrolled
                 ? (pathname === "/" ? "text-primary" : "text-foreground/60")
                 : (pathname === "/" || pathname === "/about"
@@ -75,7 +89,7 @@ export function Header({ logo, brandName }: HeaderProps) {
           <Link
             href="/cars"
             className={cn(
-              "transition-colors hover:text-foreground/80",
+              "transition-colors hover:text-foreground/80 font-medium",
               isScrolled
                 ? (pathname === "/cars" ? "text-primary" : "text-foreground/60")
                 : (pathname === "/" || pathname === "/about"
@@ -88,7 +102,7 @@ export function Header({ logo, brandName }: HeaderProps) {
           <Link
             href="/transfers"
             className={cn(
-              "transition-colors hover:text-foreground/80",
+              "transition-colors hover:text-foreground/80 font-medium",
               isScrolled
                 ? (pathname === "/transfers" ? "text-primary" : "text-foreground/60")
                 : (pathname === "/" || pathname === "/about"
@@ -101,7 +115,7 @@ export function Header({ logo, brandName }: HeaderProps) {
           <Link
             href="/about"
             className={cn(
-              "transition-colors hover:text-foreground/80",
+              "transition-colors hover:text-foreground/80 font-medium",
               isScrolled
                 ? (pathname === "/about" ? "text-primary" : "text-foreground/60")
                 : (pathname === "/" || pathname === "/about"
@@ -114,7 +128,7 @@ export function Header({ logo, brandName }: HeaderProps) {
           <Link
             href="/contact"
             className={cn(
-              "transition-colors hover:text-foreground/80",
+              "transition-colors hover:text-foreground/80 font-medium",
               isScrolled
                 ? (pathname === "/contact" ? "text-primary" : "text-foreground/60")
                 : (pathname === "/" || pathname === "/about"
@@ -130,6 +144,18 @@ export function Header({ logo, brandName }: HeaderProps) {
           <div className="hidden lg:flex items-center space-x-4">
             <SignedIn>
               <UserButton afterSignOutUrl="/" />
+              {user && (
+                <span className={cn(
+                  "ml-2 text-sm transition-colors",
+                  isScrolled
+                    ? "text-muted-foreground"
+                    : (pathname === "/" || pathname === "/about"
+                        ? "text-background/80"
+                        : "text-muted-foreground")
+                )}>
+                  {user.fullName}
+                </span>
+              )}
             </SignedIn>
             <SignedOut>
               <SignInButton mode="modal">
@@ -152,91 +178,86 @@ export function Header({ logo, brandName }: HeaderProps) {
             </SignedOut>
           </div>
 
+          {/* Mobile Drawer */}
           <div className="lg:hidden">
-            <button
-              onClick={() => setMenuState(!menuState)}
-              aria-label={menuState ? "Close Menu" : "Open Menu"}
-              className={cn(
-                "relative -m-2.5 p-2.5",
-              )}
-            >
-              <Menu
-                className={cn(
-                  "m-auto size-6 duration-200", 
-                  menuState && "scale-0 opacity-0 rotate-180",
-                  !isScrolled && (pathname === "/" || pathname === "/about") && "text-background"
-                )}
-              />
-              <X
-                className={cn(
-                  "absolute inset-0 m-auto size-6 rotate-180 scale-0 opacity-0 duration-200", 
-                  menuState && "scale-100 opacity-100 rotate-0",
-                  !isScrolled && (pathname === "/" || pathname === "/about") && "text-background"
-                )}
-              />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div
-        data-state={menuState ? "active" : "inactive"}
-        className={cn(
-          "lg:hidden",
-          "absolute inset-x-0 top-full origin-top rounded-b-2xl border-t shadow-xl transition-all duration-300 ease-in-out",
-          menuState
-            ? "visible scale-100 opacity-100"
-            : "invisible scale-95 opacity-0",
-          isScrolled && menuState
-            ? "border-border/40 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60"
-            : "bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60", 
-        )}
-      >
-        <div className="p-6 space-y-4"> 
-          {brandName && !menuState && (
-             <div className="flex items-center space-x-2 pb-4 border-b mb-4 sm:hidden">
-                {logo}
-               <span className="text-lg font-semibold">{brandName}</span>
-             </div>
-          )}
-          <ul className="space-y-2 text-sm">
-            {menuItems.map((item, index) => (
-              <li key={index}>
-                <Link
-                  href={item.href}
+            <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+              <DrawerTrigger asChild>
+                <button
+                  aria-label="Open Menu"
                   className={cn(
-                    "hover:text-accent-foreground block duration-150 py-2",
-                    pathname === item.href ? "text-primary" : "text-muted-foreground" 
+                    "relative -m-2.5 p-2.5",
                   )}
-                  onClick={() => setMenuState(false)}
                 >
-                  <span>{item.name}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+                  <Menu
+                    className={cn(
+                      "m-auto size-6",
+                      !isScrolled && (pathname === "/" || pathname === "/about") && "text-background"
+                    )}
+                  />
+                </button>
+              </DrawerTrigger>
+              <DrawerContent>
+                <DrawerHeader className="text-left">
+                  <DrawerTitle className="flex items-center space-x-2">
+                    {logo}
+                    {brandName && <span className="text-lg font-semibold">{brandName}</span>}
+                  </DrawerTitle>
+                  <DrawerDescription>
+                    Navigate through our services
+                  </DrawerDescription>
+                </DrawerHeader>
+                
+                <div className="px-4 pb-4">
+                  <nav className="space-y-2">
+                    {menuItems.map((item, index) => (
+                      <Link
+                        key={index}
+                        href={item.href}
+                        className={cn(
+                          "block py-3 px-2 rounded-md text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                          pathname === item.href ? "text-primary bg-accent" : "text-muted-foreground"
+                        )}
+                        onClick={handleLinkClick}
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                  </nav>
+                </div>
 
-          <div className="mt-6 flex flex-col items-stretch gap-3 border-t pt-6">
-            <SignedIn>
-              <div className="flex items-center justify-start py-2">
-                <UserButton afterSignOutUrl="/" />
-                {user && (
-                  <span className="ml-2 text-sm text-muted-foreground">
-                    {user.fullName || user.primaryEmailAddress?.emailAddress || "User"}
-                  </span>
-                )}
-              </div>
-            </SignedIn>
-            <SignedOut>
-              <div className="flex flex-col gap-3">
-                <SignInButton mode="modal">
-                  <Button variant="outline" size="sm" className="w-full">Login</Button>
-                </SignInButton>
-                <SignInButton mode="modal">
-                  <Button size="sm" className="w-full">Sign Up</Button>
-                </SignInButton>
-              </div>
-            </SignedOut>
+                <DrawerFooter className="py-6">
+                  <SignedIn>
+                    <div className="flex items-center justify-start py-2 border-t">
+                      <UserButton afterSignOutUrl="/" />
+                      {user && (
+                        <span className="ml-3 pl-2 text-sm text-muted-foreground">
+                          {user.fullName || user.primaryEmailAddress?.emailAddress || "User"}
+                        </span>
+                      )}
+                    </div>
+                  </SignedIn>
+                  <SignedOut>
+                    <div className="flex flex-col gap-3 border-t pt-4">
+                      <SignInButton mode="modal">
+                        <Button variant="outline" size="sm" className="w-full" onClick={handleLinkClick}>
+                          Login
+                        </Button>
+                      </SignInButton>
+                      <SignInButton mode="modal">
+                        <Button size="sm" className="w-full" onClick={handleLinkClick}>
+                          Sign Up
+                        </Button>
+                      </SignInButton>
+                    </div>
+                  </SignedOut>
+                  <DrawerClose asChild>
+                    <Button variant="outline" className="mt-4">
+                      Close
+                    </Button>
+                  </DrawerClose>
+                </DrawerFooter>
+              </DrawerContent>
+            </Drawer>
           </div>
         </div>
       </div>

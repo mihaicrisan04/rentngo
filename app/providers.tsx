@@ -3,19 +3,22 @@
 import ConvexClientProvider from "@/components/ConvexClientProvider";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "next-themes";
+import { UserEnsurer } from "@/components/UserEnsurer";
 
 export function Providers({children}: { children: React.ReactNode }) {
   return (
     <ClerkProvider>
       <ConvexClientProvider>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange={false}
-        >
-          {children}
-        </ThemeProvider>
+        <UserEnsurer>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange={false}
+          >
+            {children}
+          </ThemeProvider>
+        </UserEnsurer>
       </ConvexClientProvider>
     </ClerkProvider>
   )
