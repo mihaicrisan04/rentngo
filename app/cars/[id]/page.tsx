@@ -13,6 +13,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Header } from "@/components/ui/header";
 import { Footer } from "@/components/ui/footer";
 import { 
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { 
   Carousel,
   CarouselContent,
   CarouselItem,
@@ -423,14 +431,29 @@ export default function CarDetailPage() {
 
       <main className="flex-grow p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
-          {/* Back button */}
+          {/* Breadcrumb navigation */}
           <div className="mb-6">
-            <Link href="/cars">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Cars
-              </Button>
-            </Link>
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link href="/">Home</Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink asChild>
+                    <Link href="/cars">Cars</Link>
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage>
+                    {vehicle.make} {vehicle.model}
+                  </BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -504,10 +527,80 @@ export default function CarDetailPage() {
                   </Carousel>
                 </div>
               )}
+
+              {/* Vehicle Specifications */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Specifications</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    {vehicle.year && (
+                      <div className="flex items-center space-x-2">
+                        <CarFront className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">Year: {vehicle.year}</span>
+                      </div>
+                    )}
+                    {vehicle.seats && (
+                      <div className="flex items-center space-x-2">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">Seats: {vehicle.seats}</span>
+                      </div>
+                    )}
+                    {vehicle.engineCapacity && (
+                      <div className="flex items-center space-x-2">
+                        <Cog className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">
+                          Engine: {vehicle.engineCapacity.toFixed(1)}L {vehicle.engineType || ''}
+                        </span>
+                      </div>
+                    )}
+                    {vehicle.fuelType && (
+                      <div className="flex items-center space-x-2">
+                        <Fuel className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">Fuel: {vehicle.fuelType}</span>
+                      </div>
+                    )}
+                    {vehicle.transmission && (
+                      <div className="flex items-center space-x-2">
+                        <Gauge className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">
+                          Transmission: {vehicle.transmission}
+                        </span>
+                      </div>
+                    )}
+                    {vehicle.location && (
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">Location: {vehicle.location}</span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Features */}
+              {vehicle.features && vehicle.features.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Features</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {vehicle.features.map((feature, index) => (
+                        <Badge key={index} variant="secondary">
+                          {feature}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             {/* Vehicle Details */}
             <div className="space-y-6">
+              {/* Vehicle Title */}
               <div>
                 <h1 className="text-3xl font-bold">
                   {vehicle.make} {vehicle.model}
@@ -608,75 +701,6 @@ export default function CarDetailPage() {
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Vehicle Specifications */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Specifications</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    {vehicle.year && (
-                      <div className="flex items-center space-x-2">
-                        <CarFront className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">Year: {vehicle.year}</span>
-                      </div>
-                    )}
-                    {vehicle.seats && (
-                      <div className="flex items-center space-x-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">Seats: {vehicle.seats}</span>
-                      </div>
-                    )}
-                    {vehicle.engineCapacity && (
-                      <div className="flex items-center space-x-2">
-                        <Cog className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">
-                          Engine: {vehicle.engineCapacity.toFixed(1)}L {vehicle.engineType || ''}
-                        </span>
-                      </div>
-                    )}
-                    {vehicle.fuelType && (
-                      <div className="flex items-center space-x-2">
-                        <Fuel className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">Fuel: {vehicle.fuelType}</span>
-                      </div>
-                    )}
-                    {vehicle.transmission && (
-                      <div className="flex items-center space-x-2">
-                        <Gauge className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">
-                          Transmission: {vehicle.transmission}
-                        </span>
-                      </div>
-                    )}
-                    {vehicle.location && (
-                      <div className="flex items-center space-x-2">
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">Location: {vehicle.location}</span>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Features */}
-              {vehicle.features && vehicle.features.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Features</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-2">
-                      {vehicle.features.map((feature, index) => (
-                        <Badge key={index} variant="secondary">
-                          {feature}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
 
               {/* Reserve Button */}
               <div className="space-y-4">

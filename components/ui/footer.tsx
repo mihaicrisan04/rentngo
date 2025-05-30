@@ -101,9 +101,7 @@ export function Footer({ logo, brandName }: FooterProps) {
             <div>{copyright.text}</div>
             {copyright.license && <div>{copyright.license}</div>}
             <div className="flex items-center gap-1 mt-2">
-              <span>Built with</span>
-              <Heart className="h-4 w-4 text-red-500 fill-current" />
-              <span>by</span>
+              <span>Built by</span>
               <Link 
                 href="https://mihaicrisan-com.vercel.app/" 
                 target="_blank" 
