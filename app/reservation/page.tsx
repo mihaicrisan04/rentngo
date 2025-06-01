@@ -89,6 +89,11 @@ function ReservationPageContent() {
   const [termsAccepted, setTermsAccepted] = React.useState(false);
   const [scdwSelected, setScdwSelected] = React.useState(false);
   
+  // Additional features state
+  const [snowChainsSelected, setSnowChainsSelected] = React.useState(false);
+  const [childSeat1to4Count, setChildSeat1to4Count] = React.useState(0);
+  const [childSeat5to12Count, setChildSeat5to12Count] = React.useState(0);
+  
   // Form state
   const [isHydrated, setIsHydrated] = React.useState(false);
   const [errors, setErrors] = React.useState<FormErrors>({});
@@ -188,14 +193,24 @@ function ReservationPageContent() {
       // Add SCDW if selected
       const scdwPrice = scdwSelected ? calculateSCDW(calculatedDays, vehicle.pricePerDay) : 0;
       
+      // Add additional features
+      const snowChainsPrice = snowChainsSelected ? calculatedDays * 3 : 0;
+      const childSeat1to4Price = childSeat1to4Count * calculatedDays * 3;
+      const childSeat5to12Price = childSeat5to12Count * calculatedDays * 3;
+      const totalAdditionalFeatures = snowChainsPrice + childSeat1to4Price + childSeat5to12Price;
+      
       return { 
         basePrice,
-        totalPrice: basePrice + totalLocationFees + scdwPrice, 
+        totalPrice: basePrice + totalLocationFees + scdwPrice + totalAdditionalFeatures, 
         days: calculatedDays,
         deliveryFee,
         returnFee,
         totalLocationFees,
-        scdwPrice
+        scdwPrice,
+        snowChainsPrice,
+        childSeat1to4Price,
+        childSeat5to12Price,
+        totalAdditionalFeatures
       };
     }
     return { 
@@ -205,11 +220,15 @@ function ReservationPageContent() {
       deliveryFee: 0, 
       returnFee: 0, 
       totalLocationFees: 0,
-      scdwPrice: 0
+      scdwPrice: 0,
+      snowChainsPrice: 0,
+      childSeat1to4Price: 0,
+      childSeat5to12Price: 0,
+      totalAdditionalFeatures: 0
     };
   };
 
-  const { basePrice, totalPrice, days, deliveryFee, returnFee, totalLocationFees, scdwPrice } = calculateTotalPrice();
+  const { basePrice, totalPrice, days, deliveryFee, returnFee, totalLocationFees, scdwPrice, snowChainsPrice, childSeat1to4Price, childSeat5to12Price, totalAdditionalFeatures } = calculateTotalPrice();
 
   // Calculate form completion progress
   const calculateFormProgress = (): number => {
@@ -337,6 +356,28 @@ function ReservationPageContent() {
         additionalCharges.push({
           description: "SCDW Insurance",
           amount: scdwPrice,
+        });
+      }
+
+      // Add additional features
+      if (snowChainsSelected && snowChainsPrice > 0) {
+        additionalCharges.push({
+          description: `Snow chains - ${days} day${days === 1 ? "" : "s"} × 3 EUR = ${snowChainsPrice} EUR`,
+          amount: snowChainsPrice,
+        });
+      }
+
+      if (childSeat1to4Count > 0 && childSeat1to4Price > 0) {
+        additionalCharges.push({
+          description: `${childSeat1to4Count}x Chair 1-4 years - ${childSeat1to4Count} × ${days} day${days === 1 ? "" : "s"} × 3 EUR = ${childSeat1to4Price} EUR`,
+          amount: childSeat1to4Price,
+        });
+      }
+
+      if (childSeat5to12Count > 0 && childSeat5to12Price > 0) {
+        additionalCharges.push({
+          description: `${childSeat5to12Count}x Chair 5-12 years - ${childSeat5to12Count} × ${days} day${days === 1 ? "" : "s"} × 3 EUR = ${childSeat5to12Price} EUR`,
+          amount: childSeat5to12Price,
         });
       }
 
@@ -680,6 +721,172 @@ function ReservationPageContent() {
                 </CardContent>
               </Card>
 
+              {/* Additional Features Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Additional Features</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {/* SCDW Insurance Option */}
+                    <div className="space-y-3">
+                      <div className="flex items-start space-x-2">
+                        <Checkbox
+                          id="scdw-insurance"
+                          checked={scdwSelected}
+                          onCheckedChange={(checked) => setScdwSelected(checked === true)}
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-1">
+                            <Label htmlFor="scdw-insurance" className="text-sm font-medium cursor-pointer">
+                              SCDW Insurance
+                            </Label>
+                            <HoverCard>
+                              <HoverCardTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
+                              </HoverCardTrigger>
+                              <HoverCardContent className="w-80">
+                                <div className="space-y-2">
+                                  <h4 className="text-sm font-semibold">SCDW Insurance Details</h4>
+                                  <p className="text-xs text-muted-foreground">
+                                    Super Collision Damage Waiver (SCDW) provides additional protection for your rental.
+                                  </p>
+                                  <div className="text-xs text-muted-foreground space-y-1">
+                                    <p><strong>Calculation:</strong></p>
+                                    <p>• Base cost: 2 × daily rate (covers 1-3 days)</p>
+                                    <p>• For each 3-day block after first 3 days:</p>
+                                    <p>  - First additional block: +6 EUR</p>
+                                    <p>  - Each subsequent block: +5 EUR</p>
+                                  </div>
+                                  {days && vehicle?.pricePerDay && (
+                                    <div className="text-xs border-t pt-2 mt-2">
+                                      <p><strong>Your calculation:</strong></p>
+                                      <p>Days: {days} | Daily rate: {vehicle.pricePerDay} EUR</p>
+                                      <p>SCDW cost: {calculateSCDW(days, vehicle.pricePerDay)} EUR</p>
+                                    </div>
+                                  )}
+                                </div>
+                              </HoverCardContent>
+                            </HoverCard>
+                          </div>
+                          <div className="flex justify-between text-sm mt-1">
+                            <span className="text-muted-foreground">Additional protection coverage</span>
+                            <span className="font-medium">
+                              {days && vehicle?.pricePerDay ? `${calculateSCDW(days, vehicle.pricePerDay)} EUR` : '0 EUR'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Snow Chains */}
+                    <div className="space-y-3 border-t pt-4">
+                      <div className="flex items-start space-x-2">
+                        <Checkbox
+                          id="snow-chains"
+                          checked={snowChainsSelected}
+                          onCheckedChange={(checked) => setSnowChainsSelected(checked === true)}
+                        />
+                        <div className="flex-1">
+                          <Label htmlFor="snow-chains" className="text-sm font-medium cursor-pointer">
+                            Snow Chains
+                          </Label>
+                          <div className="flex justify-between text-sm mt-1">
+                            <span className="text-muted-foreground">3 EUR per day</span>
+                            <span className="font-medium">
+                              {snowChainsSelected && days ? `${days * 3} EUR` : '0 EUR'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Child Seat 1-4 years */}
+                    <div className="space-y-3 border-t pt-4">
+                      <div className="flex items-start space-x-2">
+                        <div className="flex-1">
+                          <Label className="text-sm font-medium">
+                            Child Seat (1-4 years)
+                          </Label>
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setChildSeat1to4Count(Math.max(0, childSeat1to4Count - 1))}
+                                disabled={childSeat1to4Count === 0}
+                              >
+                                -
+                              </Button>
+                              <span className="min-w-[2rem] text-center">{childSeat1to4Count}</span>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setChildSeat1to4Count(Math.min(2, childSeat1to4Count + 1))}
+                                disabled={childSeat1to4Count === 2}
+                              >
+                                +
+                              </Button>
+                            </div>
+                            <span className="font-medium">
+                              {childSeat1to4Count > 0 && days ? `${childSeat1to4Count * days * 3} EUR` : '0 EUR'}
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            3 EUR per seat per day (max 2 seats)
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Child Seat 5-12 years */}
+                    <div className="space-y-3 border-t pt-4">
+                      <div className="flex items-start space-x-2">
+                        <div className="flex-1">
+                          <Label className="text-sm font-medium">
+                            Child Seat (5-12 years)
+                          </Label>
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setChildSeat5to12Count(Math.max(0, childSeat5to12Count - 1))}
+                                disabled={childSeat5to12Count === 0}
+                              >
+                                -
+                              </Button>
+                              <span className="min-w-[2rem] text-center">{childSeat5to12Count}</span>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setChildSeat5to12Count(Math.min(2, childSeat5to12Count + 1))}
+                                disabled={childSeat5to12Count === 2}
+                              >
+                                +
+                              </Button>
+                            </div>
+                            <span className="font-medium">
+                              {childSeat5to12Count > 0 && days ? `${childSeat5to12Count * days * 3} EUR` : '0 EUR'}
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            3 EUR per seat per day (max 2 seats)
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-6">
               {/* Personal Information Card */}
               <Card>
                 <CardHeader>
@@ -797,10 +1004,7 @@ function ReservationPageContent() {
                   </div>
                 </CardContent>
               </Card>
-            </div>
 
-            {/* Right Column */}
-            <div className="space-y-6">
               {/* Payment Method Card */}
               <Card>
                 <CardHeader>
@@ -864,162 +1068,146 @@ function ReservationPageContent() {
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Reservation Summary Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Send className="h-5 w-5" />
-                    <span>Reservation Summary</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {/* Summary Details */}
-                    <div className="space-y-3 text-sm">
-                      <div className="grid grid-cols-2 gap-2">
-                        <span className="font-medium text-muted-foreground">Vehicle:</span>
-                        <span>{vehicle.make} {vehicle.model} ({vehicle.year})</span>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-2">
-                        <span className="font-medium text-muted-foreground">Pick-up:</span>
-                        <span>{deliveryLocation || "Not selected"}</span>
-                      </div>
-                      
-                      {pickupDate && pickupTime && (
-                        <div className="grid grid-cols-2 gap-2">
-                          <span className="font-medium text-muted-foreground">Pick-up Date:</span>
-                          <span>{pickupDate.toLocaleDateString()} at {pickupTime}</span>
-                        </div>
-                      )}
-                      
-                      <div className="grid grid-cols-2 gap-2">
-                        <span className="font-medium text-muted-foreground">Return:</span>
-                        <span>{restitutionLocation || "Not selected"}</span>
-                      </div>
-                      
-                      {returnDate && returnTime && (
-                        <div className="grid grid-cols-2 gap-2">
-                          <span className="font-medium text-muted-foreground">Return Date:</span>
-                          <span>{returnDate.toLocaleDateString()} at {returnTime}</span>
-                        </div>
-                      )}
-                      
-                      <div className="grid grid-cols-2 gap-2">
-                        <span className="font-medium text-muted-foreground">Duration:</span>
-                        <span>{days ? `${days} day${days === 1 ? "" : "s"}` : "Not calculated"}</span>
-                      </div>
-                      
-                      {personalInfo.flightNumber && (
-                        <div className="grid grid-cols-2 gap-2">
-                          <span className="font-medium text-muted-foreground">Flight:</span>
-                          <span>{personalInfo.flightNumber}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Pricing Summary */}
-                    <div className="border-t pt-4 space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Base price ({days || 0} day{days === 1 ? "" : "s"}):</span>
-                        <span>{basePrice || 0} EUR</span>
-                      </div>
-                      
-                      {deliveryFee > 0 && (
-                        <div className="flex justify-between text-sm">
-                          <span>Pick-up location fee:</span>
-                          <span>{deliveryFee} EUR</span>
-                        </div>
-                      )}
-                      
-                      {returnFee > 0 && (
-                        <div className="flex justify-between text-sm">
-                          <span>Return location fee:</span>
-                          <span>{returnFee} EUR</span>
-                        </div>
-                      )}
-                      
-                      {totalLocationFees > 0 && (
-                        <div className="flex justify-between text-sm text-muted-foreground/60">
-                          <span>Total location fees:</span>
-                          <span>{totalLocationFees} EUR</span>
-                        </div>
-                      )}
-                      
-                      {/* SCDW Insurance Option */}
-                      <div className="border-t pt-3 space-y-3">
-                        <div className="flex items-start space-x-2">
-                          <Checkbox
-                            id="scdw-insurance"
-                            checked={scdwSelected}
-                            onCheckedChange={(checked) => setScdwSelected(checked === true)}
-                          />
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-1">
-                              <Label htmlFor="scdw-insurance" className="text-sm font-medium cursor-pointer">
-                                SCDW Insurance
-                              </Label>
-                              <HoverCard>
-                                <HoverCardTrigger asChild>
-                                  <Info className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
-                                </HoverCardTrigger>
-                                <HoverCardContent className="w-80">
-                                  <div className="space-y-2">
-                                    <h4 className="text-sm font-semibold">SCDW Insurance Details</h4>
-                                    <p className="text-xs text-muted-foreground">
-                                      Super Collision Damage Waiver (SCDW) provides additional protection for your rental.
-                                    </p>
-                                    <div className="text-xs text-muted-foreground space-y-1">
-                                      <p><strong>Calculation:</strong></p>
-                                      <p>• Base cost: 2 × daily rate (covers 1-3 days)</p>
-                                      <p>• For each 3-day block after first 3 days:</p>
-                                      <p>  - First additional block: +6 EUR</p>
-                                      <p>  - Each subsequent block: +5 EUR</p>
-                                    </div>
-                                    {days && vehicle?.pricePerDay && (
-                                      <div className="text-xs border-t pt-2 mt-2">
-                                        <p><strong>Your calculation:</strong></p>
-                                        <p>Days: {days} | Daily rate: {vehicle.pricePerDay} EUR</p>
-                                        <p>SCDW cost: {calculateSCDW(days, vehicle.pricePerDay)} EUR</p>
-                                      </div>
-                                    )}
-                                  </div>
-                                </HoverCardContent>
-                              </HoverCard>
-                            </div>
-                            <div className="flex justify-between text-sm mt-1">
-                              <span className="text-muted-foreground">Additional protection coverage</span>
-                              <span className="font-medium">
-                                {days && vehicle?.pricePerDay ? `${calculateSCDW(days, vehicle.pricePerDay)} EUR` : '0 EUR'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="border-t pt-2">
-                        <div className="flex justify-between font-semibold">
-                          <span>Total Price:</span>
-                          <span className="text-green-600">{totalPrice || 0} EUR</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <Button 
-                      onClick={handleSendReservation}
-                      size="lg" 
-                      className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 text-lg"
-                      disabled={isSubmitting}
-                    >
-                      <Send className="mr-2 h-4 w-4" />
-                      {isSubmitting ? "Processing..." : "Send Reservation Request"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
           </div>
+
+          {/* Reservation Summary Card - Full Width */}
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Send className="h-5 w-5" />
+                <span>Reservation Summary</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Summary Details */}
+                <div className="space-y-3 text-sm">
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="font-medium text-muted-foreground">Vehicle:</span>
+                    <span>{vehicle.make} {vehicle.model} ({vehicle.year})</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="font-medium text-muted-foreground">Pick-up:</span>
+                    <span>{deliveryLocation || "Not selected"}</span>
+                  </div>
+                  
+                  {pickupDate && pickupTime && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <span className="font-medium text-muted-foreground">Pick-up Date:</span>
+                      <span>{pickupDate.toLocaleDateString()} at {pickupTime}</span>
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="font-medium text-muted-foreground">Return:</span>
+                    <span>{restitutionLocation || "Not selected"}</span>
+                  </div>
+                  
+                  {returnDate && returnTime && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <span className="font-medium text-muted-foreground">Return Date:</span>
+                      <span>{returnDate.toLocaleDateString()} at {returnTime}</span>
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <span className="font-medium text-muted-foreground">Duration:</span>
+                    <span>{days ? `${days} day${days === 1 ? "" : "s"}` : "Not calculated"}</span>
+                  </div>
+                  
+                  {personalInfo.flightNumber && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <span className="font-medium text-muted-foreground">Flight:</span>
+                      <span>{personalInfo.flightNumber}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Pricing Summary */}
+                <div className="border-t pt-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Base price ({days || 0} day{days === 1 ? "" : "s"}):</span>
+                    <span>{basePrice || 0} EUR</span>
+                  </div>
+                  
+                  {deliveryFee > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span>Pick-up location fee:</span>
+                      <span>{deliveryFee} EUR</span>
+                    </div>
+                  )}
+                  
+                  {returnFee > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span>Return location fee:</span>
+                      <span>{returnFee} EUR</span>
+                    </div>
+                  )}
+                  
+                  {totalLocationFees > 0 && (
+                    <div className="flex justify-between text-sm text-muted-foreground/60">
+                      <span>Total location fees:</span>
+                      <span>{totalLocationFees} EUR</span>
+                    </div>
+                  )}
+                  
+                  {scdwSelected && scdwPrice > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span>SCDW Insurance:</span>
+                      <span>{scdwPrice} EUR</span>
+                    </div>
+                  )}
+                  
+                  {snowChainsSelected && snowChainsPrice > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span>Snow chains:</span>
+                      <span>{snowChainsPrice} EUR</span>
+                    </div>
+                  )}
+                  
+                  {childSeat1to4Count > 0 && childSeat1to4Price > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span>{childSeat1to4Count}x Child seat (1-4 years):</span>
+                      <span>{childSeat1to4Price} EUR</span>
+                    </div>
+                  )}
+                  
+                  {childSeat5to12Count > 0 && childSeat5to12Price > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span>{childSeat5to12Count}x Child seat (5-12 years):</span>
+                      <span>{childSeat5to12Price} EUR</span>
+                    </div>
+                  )}
+                  
+                  {totalAdditionalFeatures > 0 && (
+                    <div className="flex justify-between text-sm text-muted-foreground/60">
+                      <span>Total additional features:</span>
+                      <span>{totalAdditionalFeatures} EUR</span>
+                    </div>
+                  )}
+                  
+                  <div className="border-t pt-2">
+                    <div className="flex justify-between font-semibold">
+                      <span>Total Price:</span>
+                      <span className="text-green-600">{totalPrice || 0} EUR</span>
+                    </div>
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={handleSendReservation}
+                  size="lg" 
+                  className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 text-lg"
+                  disabled={isSubmitting}
+                >
+                  <Send className="mr-2 h-4 w-4" />
+                  {isSubmitting ? "Processing..." : "Send Reservation Request"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
 

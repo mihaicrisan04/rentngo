@@ -13,7 +13,7 @@ export const EmailFooter: React.FC<EmailFooterProps> = ({
   customMessage = "This is an automated notification from Rent'n Go reservation system."
 }) => {
   return (
-    <Section className="bg-gray-50 py-[24px] rounded-b-[8px] text-center">
+    <Section className="bg-gray-50 py-[24px] text-center m-0">
       <Text className="text-[14px] text-gray-600 m-0">
         {customMessage}
       </Text>
