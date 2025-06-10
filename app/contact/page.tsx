@@ -9,44 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AnimatedGroup } from '@/components/ui/animated-group';
 import { Phone, Mail, MapPin, MessageCircle, Instagram, Facebook, ExternalLink } from 'lucide-react';
-import { Variants } from 'framer-motion';
-
-// Define animation variants
-const sectionAnimationVariants: {
-  container: Variants;
-  item: Variants;
-} = {
-  container: {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.1,
-      },
-    },
-  },
-  item: {
-    hidden: {
-      opacity: 0,
-      scale: 0.95,
-      filter: "blur(4px)",
-      y: 20,
-    },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      filter: "blur(0px)",
-      y: 0,
-      transition: {
-        type: "spring",
-        stiffness: 100,
-        damping: 15,
-        duration: 0.6,
-      },
-    },
-  },
-};
+import { contactAnimationVariants, sectionAnimationVariants } from '@/lib/animations';
 
 const ContactPage = () => {
   const handleMapClick = () => {
@@ -69,7 +32,7 @@ const ContactPage = () => {
         {/* Hero Section */}
         <section className="py-16 px-4">
           <div className="container mx-auto text-center">
-            <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
+            <AnimatedGroup variants={contactAnimationVariants} threshold={0.2} triggerOnce={true}>
               <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
                 Get in Touch
               </h1>
@@ -84,7 +47,7 @@ const ContactPage = () => {
         <section className="py-16 px-4 bg-card/50">
           <div className="container mx-auto">
             <div className="max-w-4xl mx-auto">
-              <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
+              <AnimatedGroup variants={contactAnimationVariants} threshold={0.2} triggerOnce={true}>
                 <div className="text-center mb-12">
                   <Badge variant="outline" className="mb-4 px-4 py-2 text-lg">
                     Meet the Man
@@ -140,7 +103,7 @@ const ContactPage = () => {
         <section className="py-16 px-4">
           <div className="container mx-auto">
             <div className="max-w-6xl mx-auto">
-              <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
+              <AnimatedGroup variants={contactAnimationVariants} threshold={0.2} triggerOnce={true}>
                 <div className="text-center mb-12">
                   <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
                     Let's Connect

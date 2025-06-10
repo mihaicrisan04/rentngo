@@ -31,30 +31,9 @@ import { FaqSection } from "@/components/blocks/faq"; // Re-added import for Faq
 import { BackgroundImage } from "@/components/ui/BackgroundImage"; // Import the new BackgroundImage component
 import { AnimatedGroup } from "@/components/ui/animated-group"; // Import AnimatedGroup
 import { Slideshow } from "@/components/ui/slideshow"; // Import the new Slideshow component
-import { Variants } from "framer-motion"; // Import Variants for typing
-
-// Define the expected shape of a vehicle object from the backend
-interface Vehicle {
-  _id: Id<"vehicles">;
-  make: string;
-  model: string;
-  year: number;
-  type: string;
-  pricePerDay: number;
-  currency?: string; // Optional, will default in Card
-  location: string;
-  features: string[];
-  status: string;
-  images: Id<"_storage">[];
-  mainImageId?: Id<"_storage">;
-  title?: string;
-  desc?: string;
-  engineCapacity?: number; // Optional
-  engineType?: string; // Optional
-  fuelType?: string; // Optional
-}
-
-
+import { Vehicle } from "@/types/vehicle"; // Import centralized Vehicle type
+import { useHomepageFeaturedVehicles } from "@/hooks/useHomepageFeaturedVehicles";
+import { sectionAnimationVariants } from "@/lib/animations";
 
 // Updated VehicleList to accept search dates and pass them to VehicleCard
 function VehicleList({
@@ -98,42 +77,7 @@ function VehicleList({
   );
 }
 
-// Define the animation variants
-const sectionAnimationVariants: {
-  container: Variants;
-  item: Variants;
-} = {
-  container: {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.3, // Adjust stagger timing as needed
-        delayChildren: 0.2, // Optional delay before children start animating
-      },
-    },
-  },
-  item: {
-    hidden: {
-      opacity: 0,
-      scale: 0.9,
-      filter: "blur(8px)",
-      y: 20, // Slight upward movement
-    },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      filter: "blur(0px)",
-      y: 0,
-      transition: {
-        type: "spring",
-        stiffness: 100,
-        damping: 15,
-        duration: 0.8, // Adjust duration as needed
-      },
-    },
-  },
-};
+
 
 export default function Home() {
   // const ensureUserMutation = useMutation(api.users.ensureUser);
@@ -143,10 +87,7 @@ export default function Home() {
   //   ensureUserMutation({});
   // }, [ensureUserMutation]);
 
-  const featuredVehiclesQuery = useQuery(api.vehicles.getAll, { paginationOpts: { numItems: 3, cursor: null }});
-
-  const vehiclesToDisplay = featuredVehiclesQuery?.page || [];
-  const currentTitle = featuredVehiclesQuery === undefined ? "Loading..." : (vehiclesToDisplay.length > 0 ? "Featured Cars" : "No Featured Cars");
+  const { vehiclesToDisplay, currentTitle, isLoading } = useHomepageFeaturedVehicles();
 
   const isAuthorized = useQuery(api.auth.isAuthorized);
 
@@ -180,8 +121,8 @@ export default function Home() {
                   {currentTitle}
                 </h2>
                 <VehicleList
-                  vehicles={vehiclesToDisplay as Vehicle[]}
-                  isLoading={featuredVehiclesQuery === undefined}
+                  vehicles={vehiclesToDisplay}
+                  isLoading={isLoading}
                 />
                 <div className="flex justify-center mt-12">
                   <Button
@@ -199,7 +140,7 @@ export default function Home() {
           
           </div>
         
-        <AnimatedGroup variants={sectionAnimationVariants} threshold={0.3} triggerOnce={true}>
+        <AnimatedGroup variants={sectionAnimationVariants} threshold={0.1} triggerOnce={true}>
           <div className="w-full">
             <Slideshow className="mb-8" />
           </div>

@@ -21,8 +21,8 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { ArrowLeft, Calendar, Send, User, CreditCard, AlertCircle, Info } from "lucide-react";
 import { LocationPicker, getLocationPrice } from "@/components/LocationPicker";
 import { DateTimePicker } from "@/components/DateTimePicker";
-import { differenceInDays } from "date-fns";
 import { searchStorage } from "@/lib/searchStorage";
+import { calculateVehiclePricing } from "@/lib/vehicleUtils";
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -178,31 +178,51 @@ function ReservationPageContent() {
     return base + 6 + 5 * (blocks - 1);
   };
 
-  // Calculate pricing including location fees
+  // Calculate pricing using enhanced vehicle pricing utility
   const calculateTotalPrice = () => {
     if (pickupDate && returnDate && vehicle?.pricePerDay) {
-      const days = differenceInDays(returnDate, pickupDate);
-      const calculatedDays = days === 0 ? 1 : days;
-      const basePrice = calculatedDays * vehicle.pricePerDay;
+      // Use the enhanced pricing calculation from vehicleUtils
+      const vehiclePricing = calculateVehiclePricing(
+        vehicle.pricePerDay,
+        pickupDate,
+        returnDate,
+        deliveryLocation || undefined,
+        restitutionLocation || undefined,
+        pickupTime,
+        returnTime
+      );
       
-      // Add location fees
-      const deliveryFee = getLocationPrice(deliveryLocation);
-      const returnFee = getLocationPrice(restitutionLocation);
-      const totalLocationFees = deliveryFee + returnFee;
+      const { basePrice, days, deliveryFee, returnFee, totalLocationFees } = vehiclePricing;
+      
+      if (basePrice === null || days === null) {
+        return { 
+          basePrice: null, 
+          totalPrice: null, 
+          days: null, 
+          deliveryFee: 0, 
+          returnFee: 0, 
+          totalLocationFees: 0,
+          scdwPrice: 0,
+          snowChainsPrice: 0,
+          childSeat1to4Price: 0,
+          childSeat5to12Price: 0,
+          totalAdditionalFeatures: 0
+        };
+      }
       
       // Add SCDW if selected
-      const scdwPrice = scdwSelected ? calculateSCDW(calculatedDays, vehicle.pricePerDay) : 0;
+      const scdwPrice = scdwSelected ? calculateSCDW(days, vehicle.pricePerDay) : 0;
       
       // Add additional features
-      const snowChainsPrice = snowChainsSelected ? calculatedDays * 3 : 0;
-      const childSeat1to4Price = childSeat1to4Count * calculatedDays * 3;
-      const childSeat5to12Price = childSeat5to12Count * calculatedDays * 3;
+      const snowChainsPrice = snowChainsSelected ? days * 3 : 0;
+      const childSeat1to4Price = childSeat1to4Count * days * 3;
+      const childSeat5to12Price = childSeat5to12Count * days * 3;
       const totalAdditionalFeatures = snowChainsPrice + childSeat1to4Price + childSeat5to12Price;
       
       return { 
         basePrice,
         totalPrice: basePrice + totalLocationFees + scdwPrice + totalAdditionalFeatures, 
-        days: calculatedDays,
+        days,
         deliveryFee,
         returnFee,
         totalLocationFees,
@@ -298,6 +318,25 @@ function ReservationPageContent() {
     }
     if (!returnTime) {
       newErrors.rentalDetails = { ...newErrors.rentalDetails, returnTime: "Return time is required" };
+    }
+
+    // Check if pickup and return are on same day and validate times
+    if (pickupDate && returnDate && pickupTime && returnTime) {
+      const isSameDay = pickupDate.getFullYear() === returnDate.getFullYear() &&
+                       pickupDate.getMonth() === returnDate.getMonth() &&
+                       pickupDate.getDate() === returnDate.getDate();
+
+      if (isSameDay) {
+        const [pickupHour, pickupMinute] = pickupTime.split(':').map(Number);
+        const [returnHour, returnMinute] = returnTime.split(':').map(Number);
+        
+        if (returnHour < pickupHour || (returnHour === pickupHour && returnMinute <= pickupMinute)) {
+          newErrors.rentalDetails = { 
+            ...newErrors.rentalDetails, 
+            returnTime: "Return time must be after pick-up time when returning on the same day" 
+          };
+        }
+      }
     }
 
     // Payment validation
@@ -1096,7 +1135,7 @@ function ReservationPageContent() {
                   {pickupDate && pickupTime && (
                     <div className="grid grid-cols-2 gap-2">
                       <span className="font-medium text-muted-foreground">Pick-up Date:</span>
-                      <span>{pickupDate.toLocaleDateString()} at {pickupTime}</span>
+                      <span>{pickupDate.toLocaleDateString('ro')} at {pickupTime}</span>
                     </div>
                   )}
                   
@@ -1108,7 +1147,7 @@ function ReservationPageContent() {
                   {returnDate && returnTime && (
                     <div className="grid grid-cols-2 gap-2">
                       <span className="font-medium text-muted-foreground">Return Date:</span>
-                      <span>{returnDate.toLocaleDateString()} at {returnTime}</span>
+                      <span>{returnDate.toLocaleDateString('ro')} at {returnTime}</span>
                     </div>
                   )}
                   

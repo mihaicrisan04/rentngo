@@ -8,28 +8,9 @@ import { api } from "../convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { differenceInDays } from "date-fns";
 import { Cog, Fuel, CarFront } from "lucide-react";
-
-interface Vehicle {
-  _id: Id<"vehicles">;
-  make: string;
-  model: string;
-  year: number;
-  type: string;
-  pricePerDay: number;
-  currency?: string;
-  location: string;
-  features: string[];
-  status: string;
-  images: Id<"_storage">[];
-  mainImageId?: Id<"_storage">;
-  title?: string;
-  desc?: string;
-  engineCapacity?: number;
-  engineType?: string;
-  fuelType?: string;
-}
+import { Vehicle } from "@/types/vehicle";
+import { calculateVehiclePricing, buildReservationUrl } from "@/lib/vehicleUtils";
 
 interface VehicleCardProps {
   vehicle: Vehicle;
@@ -39,25 +20,6 @@ interface VehicleCardProps {
   restitutionLocation?: string | null;
   pickupTime?: string | null;
   returnTime?: string | null;
-}
-
-function calculatePriceDetails(
-  pricePerDay: number,
-  pickup?: Date | null,
-  restitution?: Date | null
-): { totalPrice: number | null; days: number | null } {
-  if (pickup && restitution && restitution > pickup) {
-    const days = differenceInDays(restitution, pickup);
-    const calculatedDays = days === 0 ? 1 : days;
-    return { totalPrice: calculatedDays * pricePerDay, days: calculatedDays };
-  }
-  return { totalPrice: null, days: null };
-}
-
-function buildReservationUrl(vehicleId: string): string {
-  const params = new URLSearchParams();
-  params.append("vehicleId", vehicleId);
-  return `/reservation?${params.toString()}`;
 }
 
 function buildCarDetailsUrl(vehicleId: string): string {
@@ -82,11 +44,16 @@ export function VehicleCard({
     return <div className="p-4 border rounded-lg shadow-md bg-card text-card-foreground">Invalid vehicle data</div>;
   }
 
-  const { totalPrice, days } = calculatePriceDetails(
+  const priceDetails = calculateVehiclePricing(
     vehicle.pricePerDay,
     pickupDate,
-    returnDate
+    returnDate,
+    deliveryLocation || undefined,
+    restitutionLocation || undefined,
+    pickupTime,
+    returnTime
   );
+
   const currency = "EUR";
 
   const reservationUrl = buildReservationUrl(vehicle._id);
@@ -109,7 +76,7 @@ export function VehicleCard({
         {imageUrl ? (
           <Image
             src={imageUrl}
-            alt={vehicle.title || `${vehicle.make} ${vehicle.model}`}
+            alt={`${vehicle.make} ${vehicle.model}`}
             fill
             style={{ objectFit: "cover" }}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -135,14 +102,19 @@ export function VehicleCard({
               </span>
               <span className="text-sm text-muted-foreground"> {currency} / Day</span>
             </div>
-            {totalPrice !== null && days !== null && (
+            {priceDetails.totalPrice !== null && priceDetails.days !== null && (
               <div>
                 <span className="text-xl font-semibold text-yellow-600">
-                  {totalPrice}
+                  {priceDetails.totalPrice}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {" "}{currency} / {days} Day{days === 1 ? "" : "s"}
+                  {" "}{currency} / {priceDetails.days} Day{priceDetails.days === 1 ? "" : "s"}
                 </span>
+                {priceDetails.totalLocationFees > 0 && (
+                  <div className="text-xs text-muted-foreground/60">
+                    +{priceDetails.totalLocationFees} {currency} fees
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -162,7 +134,7 @@ export function VehicleCard({
         <div className="flex justify-around items-center w-full text-xs text-muted-foreground">
           <div className="flex items-center space-x-1">
             <CarFront className="h-4 w-4" />
-            <span>{vehicle.year}</span>
+            <span>{vehicle.year || "N/A"}</span>
           </div>
           <div className="flex items-center self-stretch px-1.5">
             <Separator orientation="vertical" />
