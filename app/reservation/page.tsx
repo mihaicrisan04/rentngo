@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Calendar, Send, User, CreditCard, AlertCircle, Info } from "lucide-react";
 import { LocationPicker, getLocationPrice } from "@/components/LocationPicker";
 import { DateTimePicker } from "@/components/DateTimePicker";
@@ -32,9 +33,9 @@ import { before } from "node:test";
 
 // Payment method options
 const paymentMethods = [
-  { id: "cash_on_delivery", label: "Cash on delivery", description: "Pay when you pick up the vehicle" },
-  { id: "card_on_delivery", label: "Card payment on delivery", description: "Pay with card when you pick up the vehicle" },
-  { id: "card_online", label: "Card payment online", description: "Pay now with your card" }
+  { id: "cash_on_delivery", label: "Cash on delivery", description: "Pay when you pick up the vehicle", disabled: false },
+  { id: "card_on_delivery", label: "Card payment on delivery", description: "Pay with card when you pick up the vehicle", disabled: false },
+  { id: "card_online", label: "Card payment online (coming soon)", description: "Pay now with your card", disabled: true }
 ];
 
 // Form validation errors interface
@@ -88,6 +89,9 @@ function ReservationPageContent() {
   const [paymentMethod, setPaymentMethod] = React.useState<string>("");
   const [termsAccepted, setTermsAccepted] = React.useState(false);
   const [scdwSelected, setScdwSelected] = React.useState(false);
+  
+  // Protection state (guarantee vs SCDW)
+  const [useGuarantee, setUseGuarantee] = React.useState(true); // Default to guarantee
   
   // Additional features state
   const [snowChainsSelected, setSnowChainsSelected] = React.useState(false);
@@ -178,6 +182,29 @@ function ReservationPageContent() {
     return base + 6 + 5 * (blocks - 1);
   };
 
+  // Guarantee calculation function (hardcoded by vehicle type for now)
+  const calculateGuarantee = (vehicleType: string): number => {
+    switch (vehicleType.toLowerCase()) {
+      case 'economy':
+        return 300;
+      case 'compact':
+        return 400;
+      case 'midsize':
+      case 'intermediate':
+        return 500;
+      case 'standard':
+      case 'fullsize':
+        return 600;
+      case 'suv':
+      case 'premium':
+        return 800;
+      case 'luxury':
+        return 1000;
+      default:
+        return 500; // Default guarantee amount
+    }
+  };
+
   // Calculate pricing using enhanced vehicle pricing utility
   const calculateTotalPrice = () => {
     if (pickupDate && returnDate && vehicle?.pricePerDay) {
@@ -210,8 +237,13 @@ function ReservationPageContent() {
         };
       }
       
-      // Add SCDW if selected
-      const scdwPrice = scdwSelected ? calculateSCDW(days, vehicle.pricePerDay) : 0;
+      // Calculate protection costs (guarantee or SCDW)
+      const guaranteeAmount = calculateGuarantee(vehicle.type || 'standard');
+      const scdwPrice = calculateSCDW(days, vehicle.pricePerDay);
+      
+      // If using guarantee, it's included in total but refundable
+      // If using SCDW, it's included in total and non-refundable
+      const protectionCost = useGuarantee ? guaranteeAmount : scdwPrice;
       
       // Add additional features
       const snowChainsPrice = snowChainsSelected ? days * 3 : 0;
@@ -221,12 +253,14 @@ function ReservationPageContent() {
       
       return { 
         basePrice,
-        totalPrice: basePrice + totalLocationFees + scdwPrice + totalAdditionalFeatures, 
+        totalPrice: basePrice + totalLocationFees + protectionCost + totalAdditionalFeatures, 
         days,
         deliveryFee,
         returnFee,
         totalLocationFees,
+        guaranteeAmount,
         scdwPrice,
+        protectionCost,
         snowChainsPrice,
         childSeat1to4Price,
         childSeat5to12Price,
@@ -240,7 +274,9 @@ function ReservationPageContent() {
       deliveryFee: 0, 
       returnFee: 0, 
       totalLocationFees: 0,
+      guaranteeAmount: 0,
       scdwPrice: 0,
+      protectionCost: 0,
       snowChainsPrice: 0,
       childSeat1to4Price: 0,
       childSeat5to12Price: 0,
@@ -248,7 +284,7 @@ function ReservationPageContent() {
     };
   };
 
-  const { basePrice, totalPrice, days, deliveryFee, returnFee, totalLocationFees, scdwPrice, snowChainsPrice, childSeat1to4Price, childSeat5to12Price, totalAdditionalFeatures } = calculateTotalPrice();
+  const { basePrice, totalPrice, days, deliveryFee, returnFee, totalLocationFees, guaranteeAmount, scdwPrice, protectionCost, snowChainsPrice, childSeat1to4Price, childSeat5to12Price, totalAdditionalFeatures } = calculateTotalPrice();
 
   // Calculate form completion progress
   const calculateFormProgress = (): number => {
@@ -390,10 +426,15 @@ function ReservationPageContent() {
         });
       }
       
-      // Add SCDW insurance if selected
-      if (scdwSelected && scdwPrice > 0) {
+      // Add protection option (guarantee or SCDW)
+      if (useGuarantee && guaranteeAmount > 0) {
         additionalCharges.push({
-          description: "SCDW Insurance",
+          description: `Guarantee (refundable) - ${vehicle.type || 'Standard'} vehicle`,
+          amount: guaranteeAmount,
+        });
+      } else if (!useGuarantee && scdwPrice > 0) {
+        additionalCharges.push({
+          description: "SCDW Insurance (non-refundable)",
           amount: scdwPrice,
         });
       }
@@ -767,59 +808,8 @@ function ReservationPageContent() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
-                    {/* SCDW Insurance Option */}
-                    <div className="space-y-3">
-                      <div className="flex items-start space-x-2">
-                        <Checkbox
-                          id="scdw-insurance"
-                          checked={scdwSelected}
-                          onCheckedChange={(checked) => setScdwSelected(checked === true)}
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-1">
-                            <Label htmlFor="scdw-insurance" className="text-sm font-medium cursor-pointer">
-                              SCDW Insurance
-                            </Label>
-                            <HoverCard>
-                              <HoverCardTrigger asChild>
-                                <Info className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
-                              </HoverCardTrigger>
-                              <HoverCardContent className="w-80">
-                                <div className="space-y-2">
-                                  <h4 className="text-sm font-semibold">SCDW Insurance Details</h4>
-                                  <p className="text-xs text-muted-foreground">
-                                    Super Collision Damage Waiver (SCDW) provides additional protection for your rental.
-                                  </p>
-                                  <div className="text-xs text-muted-foreground space-y-1">
-                                    <p><strong>Calculation:</strong></p>
-                                    <p>• Base cost: 2 × daily rate (covers 1-3 days)</p>
-                                    <p>• For each 3-day block after first 3 days:</p>
-                                    <p>  - First additional block: +6 EUR</p>
-                                    <p>  - Each subsequent block: +5 EUR</p>
-                                  </div>
-                                  {days && vehicle?.pricePerDay && (
-                                    <div className="text-xs border-t pt-2 mt-2">
-                                      <p><strong>Your calculation:</strong></p>
-                                      <p>Days: {days} | Daily rate: {vehicle.pricePerDay} EUR</p>
-                                      <p>SCDW cost: {calculateSCDW(days, vehicle.pricePerDay)} EUR</p>
-                                    </div>
-                                  )}
-                                </div>
-                              </HoverCardContent>
-                            </HoverCard>
-                          </div>
-                          <div className="flex justify-between text-sm mt-1">
-                            <span className="text-muted-foreground">Additional protection coverage</span>
-                            <span className="font-medium">
-                              {days && vehicle?.pricePerDay ? `${calculateSCDW(days, vehicle.pricePerDay)} EUR` : '0 EUR'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
                     {/* Snow Chains */}
-                    <div className="space-y-3 border-t pt-4">
+                    <div className="space-y-3">
                       <div className="flex items-start space-x-2">
                         <Checkbox
                           id="snow-chains"
@@ -1060,10 +1050,15 @@ function ReservationPageContent() {
                       className="space-y-3"
                     >
                       {paymentMethods.map((method) => (
-                        <div key={method.id} className="flex items-start space-x-3">
-                          <RadioGroupItem value={method.id} id={method.id} className="mt-1" />
+                        <div key={method.id} className={`flex items-start space-x-3 ${method.disabled ? 'opacity-50' : ''}`}>
+                          <RadioGroupItem 
+                            value={method.id} 
+                            id={method.id} 
+                            className="mt-1" 
+                            disabled={method.disabled}
+                          />
                           <div className="flex-1">
-                            <Label htmlFor={method.id} className="cursor-pointer">
+                            <Label htmlFor={method.id} className={`${method.disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                               <div className="font-medium">{method.label}</div>
                               <div className="text-sm text-muted-foreground">{method.description}</div>
                             </Label>
@@ -1164,6 +1159,67 @@ function ReservationPageContent() {
                   )}
                 </div>
 
+                {/* Protection Toggle */}
+                <div className="border-t pt-4 space-y-4">
+                  <div className="space-y-3">
+                    <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                      Protection Options
+                    </h4>
+                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <div className="flex-1 pr-4">
+                        <div className="flex items-center space-x-2">
+                          <Label htmlFor="protection-toggle" className="font-medium">
+                            {useGuarantee ? "Guarantee (Refundable)" : "SCDW Insurance (Non-refundable)"}
+                          </Label>
+                          <HoverCard>
+                            <HoverCardTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
+                            </HoverCardTrigger>
+                            <HoverCardContent className="w-80">
+                              <div className="space-y-2">
+                                <h4 className="text-sm font-semibold">Protection Options</h4>
+                                <div className="text-xs text-muted-foreground space-y-2">
+                                  <div>
+                                    <p className="font-medium">Guarantee (Default):</p>
+                                    <p>• Refundable deposit based on vehicle type</p>
+                                    <p>• Returned at end of rental if no damages</p>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">SCDW Insurance:</p>
+                                    <p>• Super Collision Damage Waiver</p>
+                                    <p>• Non-refundable but provides additional protection</p>
+                                    <p>• No deposit required</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </HoverCardContent>
+                          </HoverCard>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {useGuarantee 
+                            ? `${guaranteeAmount} EUR refundable guarantee` 
+                            : `${scdwPrice} EUR non-refundable insurance`}
+                        </p>
+                        {useGuarantee && (
+                          <p className="text-xs text-green-600 mt-1">
+                            ✓ Refunded at end of rental (if no damages)
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-muted-foreground">
+                          {useGuarantee ? "Guarantee" : "SCDW"}
+                        </span>
+                        <Switch
+                          id="protection-toggle"
+                          checked={!useGuarantee}
+                          onCheckedChange={(checked) => setUseGuarantee(!checked)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Pricing Summary */}
                 <div className="border-t pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
@@ -1192,9 +1248,14 @@ function ReservationPageContent() {
                     </div>
                   )}
                   
-                  {scdwSelected && scdwPrice > 0 && (
+                  {useGuarantee ? (
                     <div className="flex justify-between text-sm">
-                      <span>SCDW Insurance:</span>
+                      <span>Guarantee (refundable):</span>
+                      <span>{guaranteeAmount} EUR</span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between text-sm">
+                      <span>SCDW Insurance (non-refundable):</span>
                       <span>{scdwPrice} EUR</span>
                     </div>
                   )}
