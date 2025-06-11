@@ -121,7 +121,8 @@ export function VehicleCard({
         </div>
 
         <Button 
-          className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-md text-sm" 
+          // #055E3B
+          className="w-full bg-[#055E3B] hover:bg-[#055E3B]/80 text-white font-bold py-3 rounded-md text-sm" 
           asChild
         >
           <Link href={reservationUrl}>

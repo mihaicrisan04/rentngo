@@ -33,20 +33,18 @@ export function calculateVehiclePricing(
     
     let calculatedDays = days;
     
-    // If same day or next day, check hours
-    if (days <= 1) {
-      // If restitution is within 2 hours after pickup time, count as 1 day
-      if (restitutionHour <= pickupHour + 2) {
-        calculatedDays = 1;
-      }
-      // If restitution is more than 2 hours after pickup time, count as 2 days  
-      else if (restitutionHour > pickupHour + 2) {
-        calculatedDays = 2;
-      }
-      // If restitution is before pickup time, count as 1 day
-      else if (restitutionHour < pickupHour) {
-        calculatedDays = 1;
-      }
+    // Check hours for any rental period
+    // If restitution is within 2 hours after pickup time, count as same number of days
+    if (restitutionHour <= pickupHour + 2) {
+      calculatedDays = days;
+    }
+    // If restitution is more than 2 hours after pickup time, add an extra day
+    else if (restitutionHour > pickupHour + 2) {
+      calculatedDays = days + 1;
+    }
+    // If restitution is before pickup time, count as same number of days
+    else if (restitutionHour < pickupHour) {
+      calculatedDays = days;
     }
 
     const basePrice = calculatedDays * pricePerDay;

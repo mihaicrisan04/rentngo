@@ -1165,10 +1165,10 @@ function ReservationPageContent() {
                     <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
                       Protection Options
                     </h4>
-                    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                      <div className="flex-1 pr-4">
+                    <div className="p-3 bg-muted/50 rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
-                          <Label htmlFor="protection-toggle" className="font-medium">
+                          <Label className="font-medium">
                             {useGuarantee ? "Guarantee (Refundable)" : "SCDW Insurance (Non-refundable)"}
                           </Label>
                           <HoverCard>
@@ -1195,27 +1195,32 @@ function ReservationPageContent() {
                             </HoverCardContent>
                           </HoverCard>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-sm font-medium">
                           {useGuarantee 
-                            ? `${guaranteeAmount} EUR refundable guarantee` 
-                            : `${scdwPrice} EUR non-refundable insurance`}
+                            ? `${guaranteeAmount} EUR` 
+                            : `${scdwPrice} EUR`}
                         </p>
-                        {useGuarantee && (
-                          <p className="text-xs text-green-600 mt-1">
-                            ✓ Refunded at end of rental (if no damages)
-                          </p>
-                        )}
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-muted-foreground">
-                          {useGuarantee ? "Guarantee" : "SCDW"}
-                        </span>
+                      
+                      <div className="flex items-center justify-center space-x-4">
+                        <Label className={`text-sm font-medium ${useGuarantee ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          Guarantee
+                        </Label>
                         <Switch
                           id="protection-toggle"
                           checked={!useGuarantee}
                           onCheckedChange={(checked) => setUseGuarantee(!checked)}
                         />
+                        <Label className={`text-sm font-medium ${!useGuarantee ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          SCDW
+                        </Label>
                       </div>
+                      
+                      <p className="text-xs text-center text-muted-foreground">
+                        {useGuarantee 
+                          ? "Refundable if no damages" 
+                          : "Non-refundable insurance"}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -1299,7 +1304,7 @@ function ReservationPageContent() {
                 <Button 
                   onClick={handleSendReservation}
                   size="lg" 
-                  className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 text-lg"
+                  className="w-full bg-[#055E3B] hover:bg-[#055E3B]/80 text-white font-bold py-4 text-lg"
                   disabled={isSubmitting}
                 >
                   <Send className="mr-2 h-4 w-4" />
