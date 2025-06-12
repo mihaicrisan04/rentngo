@@ -1,5 +1,6 @@
 import { differenceInDays } from "date-fns";
 import { getLocationPrice } from "@/components/LocationPicker";
+import { Vehicle, getPriceForDuration } from "@/types/vehicle";
 
 // Pricing calculation types
 export interface PriceDetails {
@@ -12,10 +13,10 @@ export interface PriceDetails {
 }
 
 /**
- * Calculate pricing details for a vehicle rental
+ * Calculate pricing details for a vehicle rental using tiered pricing
  */
 export function calculateVehiclePricing(
-  pricePerDay: number,
+  vehicle: Vehicle,
   pickup?: Date | null,
   restitution?: Date | null,
   deliveryLocation?: string,
@@ -33,20 +34,23 @@ export function calculateVehiclePricing(
     
     let calculatedDays = days;
     
-    // Check hours for any rental period
-    // If restitution is within 2 hours after pickup time, count as same number of days
-    if (restitutionHour <= pickupHour + 2) {
-      calculatedDays = days;
-    }
-    // If restitution is more than 2 hours after pickup time, add an extra day
-    else if (restitutionHour > pickupHour + 2) {
-      calculatedDays = days + 1;
-    }
-    // If restitution is before pickup time, count as same number of days
-    else if (restitutionHour < pickupHour) {
-      calculatedDays = days;
+    // If it's same day rental (days = 0) or different days
+    if (days === 0) {
+      // For same day rentals, always count as 1 day
+      calculatedDays = 1;
+    } else {
+      // For multi-day rentals, check hours
+      if (restitutionHour <= pickupHour + 2) {
+        calculatedDays = days;
+      } else if (restitutionHour > pickupHour + 2) {
+        calculatedDays = days + 1;
+      } else if (restitutionHour < pickupHour) {
+        calculatedDays = days;
+      }
     }
 
+    // Get the appropriate price per day based on rental duration using pricing tiers
+    const pricePerDay = getPriceForDuration(vehicle, calculatedDays);
     const basePrice = calculatedDays * pricePerDay;
     
     // Add location fees

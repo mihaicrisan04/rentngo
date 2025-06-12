@@ -18,6 +18,7 @@ import { PageLayout } from "@/components/layout/PageLayout";
 import { VehicleImageCarousel } from "@/components/vehicle/VehicleImageCarousel";
 import { VehicleSpecifications } from "@/components/vehicle/VehicleSpecifications";
 import { VehiclePricingCard } from "@/components/vehicle/VehiclePricingCard";
+import { PricingTiersTable } from "@/components/vehicle/PricingTiersTable";
 import { useVehicleDetails } from "@/hooks/useVehicleDetails";
 import { formatVehicleName, getVehicleTypeLabel } from "@/lib/vehicleUtils";
 import { RentalDetails } from "@/components/RentalDetails";
@@ -131,7 +132,7 @@ export default function CarDetailPage() {
 
             {/* Pricing */}
             <VehiclePricingCard
-              pricePerDay={vehicle.pricePerDay}
+              vehicle={vehicle}
               priceDetails={priceDetails}
               currency={currency}
               deliveryLocation={rentalState.deliveryLocation}
@@ -142,7 +143,7 @@ export default function CarDetailPage() {
             <div className="space-y-4">
               <Button 
                 size="lg" 
-                className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 text-lg"
+                className="w-full bg-[#055E3B] hover:bg-[#055E3B]/80 text-white font-bold py-4 text-lg"
                 asChild
               >
                 <Link href={reservationUrl}>
@@ -155,6 +156,17 @@ export default function CarDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Pricing Tiers Table - Full Width Below Main Content */}
+        {vehicle.pricingTiers && vehicle.pricingTiers.length > 0 && (
+          <div className="mt-12">
+            <PricingTiersTable 
+              pricingTiers={vehicle.pricingTiers}
+              currency={currency}
+              currentDays={priceDetails.days}
+            />
+          </div>
+        )}
       </div>
     </PageLayout>
   );

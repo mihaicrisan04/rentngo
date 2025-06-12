@@ -40,6 +40,9 @@ interface DateTimePickerProps {
   contentAlign?: 'start' | 'end';
   isLoading?: boolean;
   onDateChange?: (newDate: Date | undefined) => void; // Optional: To handle side effects like updating return date
+  // New props for pickup date-time reference
+  pickupDate?: Date;
+  pickupTime?: string | null;
 }
 
 export function DateTimePicker({
@@ -55,7 +58,35 @@ export function DateTimePicker({
   contentAlign = 'start',
   isLoading = false,
   onDateChange,
+  pickupDate,
+  pickupTime,
 }: DateTimePickerProps) {
+
+  // Function to check if a time slot should be disabled
+  const isTimeSlotDisabled = (timeSlot: string) => {
+    // If no pickup date/time or no current date selected, don't disable any slots
+    if (!pickupDate || !pickupTime || !dateState) {
+      return false;
+    }
+
+    // Only restrict times if the selected date is the same as pickup date
+    const isSameDate = dateState.toDateString() === pickupDate.toDateString();
+    if (!isSameDate) {
+      return false;
+    }
+
+    // Convert times to comparable format (minutes since midnight)
+    const timeToMinutes = (time: string) => {
+      const [hours, minutes] = time.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+
+    const currentSlotMinutes = timeToMinutes(timeSlot);
+    const pickupTimeMinutes = timeToMinutes(pickupTime);
+
+    // Disable if current slot is before or equal to pickup time
+    return currentSlotMinutes <= pickupTimeMinutes;
+  };
 
   const handleDateChange = (newDate: Date | undefined) => {
     if (newDate) {
@@ -94,6 +125,20 @@ export function DateTimePicker({
     }
   };
 
+  // Effect to clear return time if it becomes invalid due to pickup time change
+  React.useEffect(() => {
+    if (timeState && dateState && pickupDate && pickupTime) {
+      const isSameDate = dateState.toDateString() === pickupDate.toDateString();
+      if (isSameDate && isTimeSlotDisabled(timeState)) {
+        // Clear the invalid time
+        setTimeState('');
+        if (id.includes('return')) {
+          searchStorage.updateField('returnTime', '');
+        }
+      }
+    }
+  }, [pickupDate, pickupTime, dateState, timeState, id, setTimeState]);
+
   return (
     <div className={cn("grid gap-1.5 w-full", contentAlign === 'end' && "justify-items-end")}>
       <Label htmlFor={id} className={cn("text-sm font-medium", contentAlign === 'end' && "text-right")}>{label}</Label>
@@ -103,7 +148,7 @@ export function DateTimePicker({
             id={id}
             variant={"outline"}
             className={cn(
-              "justify-start text-left font-normal text-base py-2.5 pl-3 pr-3 h-10 w-full",
+              "justify-start text-left font-normal text-base w-full",
               !dateState && "text-muted-foreground"
             )}
             disabled={isLoading}
@@ -140,7 +185,7 @@ export function DateTimePicker({
                       size="sm"
                       className="w-full text-xs h-8"
                       onClick={() => handleTimeChange(timeSlot)}
-                      disabled={!available || isLoading || !dateState}
+                      disabled={!available || isLoading || !dateState || isTimeSlotDisabled(timeSlot)}
                     >
                       {timeSlot}
                     </Button>

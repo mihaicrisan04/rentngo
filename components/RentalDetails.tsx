@@ -166,6 +166,8 @@ export function RentalDetails({
                 minDate={localPickupDate || today}
                 disabledDateRanges={localPickupDate ? { before: localPickupDate } : { before: today }}
                 isLoading={!localPickupDate}
+                pickupDate={localPickupDate}
+                pickupTime={localPickupTime}
               />
             </div>
           </div>

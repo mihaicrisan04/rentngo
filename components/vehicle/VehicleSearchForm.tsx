@@ -69,6 +69,8 @@ export function VehicleSearchForm({
                minDate={searchState.pickupDate || today}
                disabledDateRanges={searchState.pickupDate ? { before: searchState.pickupDate } : { before: today }}
                isLoading={isLoading || !searchState.pickupDate}
+               pickupDate={searchState.pickupDate}
+               pickupTime={searchState.pickupTime || null}
              />
           </div>
         </CardContent>

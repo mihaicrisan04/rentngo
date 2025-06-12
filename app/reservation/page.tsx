@@ -24,6 +24,7 @@ import { LocationPicker, getLocationPrice } from "@/components/LocationPicker";
 import { DateTimePicker } from "@/components/DateTimePicker";
 import { searchStorage } from "@/lib/searchStorage";
 import { calculateVehiclePricing } from "@/lib/vehicleUtils";
+import { getPriceForDuration } from "@/types/vehicle";
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -90,8 +91,8 @@ function ReservationPageContent() {
   const [termsAccepted, setTermsAccepted] = React.useState(false);
   const [scdwSelected, setScdwSelected] = React.useState(false);
   
-  // Protection state (guarantee vs SCDW)
-  const [useGuarantee, setUseGuarantee] = React.useState(true); // Default to guarantee
+  // Protection state (warranty vs SCDW)
+  const [useWarranty, setUseWarranty] = React.useState(true); // Default to warranty
   
   // Additional features state
   const [snowChainsSelected, setSnowChainsSelected] = React.useState(false);
@@ -182,8 +183,15 @@ function ReservationPageContent() {
     return base + 6 + 5 * (blocks - 1);
   };
 
-  // Guarantee calculation function (hardcoded by vehicle type for now)
-  const calculateGuarantee = (vehicleType: string): number => {
+  // Warranty calculation function - use vehicle warranty or fallback based on type
+  const calculateWarranty = (vehicle: any): number => {
+    // If vehicle has warranty field, use it
+    if (vehicle?.warranty) {
+      return vehicle.warranty;
+    }
+    
+    // Fallback to type-based calculation for backward compatibility
+    const vehicleType = vehicle?.type || 'standard';
     switch (vehicleType.toLowerCase()) {
       case 'economy':
         return 300;
@@ -201,16 +209,16 @@ function ReservationPageContent() {
       case 'luxury':
         return 1000;
       default:
-        return 500; // Default guarantee amount
+        return 500; // Default warranty amount
     }
   };
 
   // Calculate pricing using enhanced vehicle pricing utility
   const calculateTotalPrice = () => {
-    if (pickupDate && returnDate && vehicle?.pricePerDay) {
+    if (pickupDate && returnDate && vehicle) {
       // Use the enhanced pricing calculation from vehicleUtils
       const vehiclePricing = calculateVehiclePricing(
-        vehicle.pricePerDay,
+        vehicle,
         pickupDate,
         returnDate,
         deliveryLocation || undefined,
@@ -237,13 +245,13 @@ function ReservationPageContent() {
         };
       }
       
-      // Calculate protection costs (guarantee or SCDW)
-      const guaranteeAmount = calculateGuarantee(vehicle.type || 'standard');
-      const scdwPrice = calculateSCDW(days, vehicle.pricePerDay);
+      // Calculate protection costs (warranty or SCDW)
+      const warrantyAmount = calculateWarranty(vehicle);
+      const currentPricePerDay = getPriceForDuration(vehicle, days);
+      const scdwPrice = calculateSCDW(days, currentPricePerDay);
       
-      // If using guarantee, it's included in total but refundable
-      // If using SCDW, it's included in total and non-refundable
-      const protectionCost = useGuarantee ? guaranteeAmount : scdwPrice;
+      // SCDW is added to total price, warranty is separate
+      const protectionCost = useWarranty ? 0 : scdwPrice;
       
       // Add additional features
       const snowChainsPrice = snowChainsSelected ? days * 3 : 0;
@@ -258,7 +266,7 @@ function ReservationPageContent() {
         deliveryFee,
         returnFee,
         totalLocationFees,
-        guaranteeAmount,
+        warrantyAmount,
         scdwPrice,
         protectionCost,
         snowChainsPrice,
@@ -274,7 +282,7 @@ function ReservationPageContent() {
       deliveryFee: 0, 
       returnFee: 0, 
       totalLocationFees: 0,
-      guaranteeAmount: 0,
+      warrantyAmount: 0,
       scdwPrice: 0,
       protectionCost: 0,
       snowChainsPrice: 0,
@@ -284,7 +292,7 @@ function ReservationPageContent() {
     };
   };
 
-  const { basePrice, totalPrice, days, deliveryFee, returnFee, totalLocationFees, guaranteeAmount, scdwPrice, protectionCost, snowChainsPrice, childSeat1to4Price, childSeat5to12Price, totalAdditionalFeatures } = calculateTotalPrice();
+  const { basePrice, totalPrice, days, deliveryFee, returnFee, totalLocationFees, warrantyAmount, scdwPrice, protectionCost, snowChainsPrice, childSeat1to4Price, childSeat5to12Price, totalAdditionalFeatures } = calculateTotalPrice();
 
   // Calculate form completion progress
   const calculateFormProgress = (): number => {
@@ -426,13 +434,13 @@ function ReservationPageContent() {
         });
       }
       
-      // Add protection option (guarantee or SCDW)
-      if (useGuarantee && guaranteeAmount > 0) {
+      // Add protection option (warranty or SCDW)
+      if (useWarranty && warrantyAmount > 0) {
         additionalCharges.push({
-          description: `Guarantee (refundable) - ${vehicle.type || 'Standard'} vehicle`,
-          amount: guaranteeAmount,
+          description: `Warranty (refundable) - ${vehicle.type || 'Standard'} vehicle`,
+          amount: warrantyAmount,
         });
-      } else if (!useGuarantee && scdwPrice > 0) {
+      } else if (!useWarranty && scdwPrice > 0) {
         additionalCharges.push({
           description: "SCDW Insurance (non-refundable)",
           amount: scdwPrice,
@@ -743,6 +751,8 @@ function ReservationPageContent() {
                         minDate={pickupDate || today}
                         disabledDateRanges={pickupDate ? { before: pickupDate } : { before: today }}
                         isLoading={!pickupDate}
+                        pickupDate={pickupDate}
+                        pickupTime={pickupTime}
                       />
                       {errors.rentalDetails?.returnDate && (
                         <p className="text-sm text-red-500 mt-1 flex items-center">
@@ -793,9 +803,16 @@ function ReservationPageContent() {
                         {vehicle.make} {vehicle.model}
                       </h3>
                       <p className="text-muted-foreground">{vehicle.year}</p>
-                      <p className="text-lg font-bold text-yellow-500">
-                        {vehicle.pricePerDay} EUR / Day
-                      </p>
+                      <div>
+                        <p className="text-lg font-bold text-yellow-500">
+                          {days ? getPriceForDuration(vehicle, days) : vehicle.pricePerDay} EUR / Day
+                        </p>
+                        {days && vehicle.pricingTiers && vehicle.pricingTiers.length > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            Rate for {days} day{days === 1 ? '' : 's'} rental
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -1168,9 +1185,9 @@ function ReservationPageContent() {
                     <div className="p-3 bg-muted/50 rounded-lg space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
-                          <Label className="font-medium">
-                            {useGuarantee ? "Guarantee (Refundable)" : "SCDW Insurance (Non-refundable)"}
-                          </Label>
+                                                  <Label className="font-medium">
+                          {useWarranty ? "Warranty (Refundable)" : "SCDW Insurance (Non-refundable)"}
+                        </Label>
                           <HoverCard>
                             <HoverCardTrigger asChild>
                               <Info className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
@@ -1180,8 +1197,8 @@ function ReservationPageContent() {
                                 <h4 className="text-sm font-semibold">Protection Options</h4>
                                 <div className="text-xs text-muted-foreground space-y-2">
                                   <div>
-                                    <p className="font-medium">Guarantee (Default):</p>
-                                    <p>• Refundable deposit based on vehicle type</p>
+                                    <p className="font-medium">Warranty (Default):</p>
+                                    <p>• Refundable deposit based on vehicle warranty</p>
                                     <p>• Returned at end of rental if no damages</p>
                                   </div>
                                   <div>
@@ -1196,28 +1213,28 @@ function ReservationPageContent() {
                           </HoverCard>
                         </div>
                         <p className="text-sm font-medium">
-                          {useGuarantee 
-                            ? `${guaranteeAmount} EUR` 
-                            : `${scdwPrice} EUR`}
+                          {useWarranty 
+                            ? `${warrantyAmount || 0} EUR (separate)` 
+                            : `${scdwPrice || 0} EUR (included)`}
                         </p>
                       </div>
                       
                       <div className="flex items-center justify-center space-x-4">
-                        <Label className={`text-sm font-medium ${useGuarantee ? 'text-foreground' : 'text-muted-foreground'}`}>
-                          Guarantee
+                        <Label className={`text-sm font-medium ${useWarranty ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          Warranty
                         </Label>
                         <Switch
                           id="protection-toggle"
-                          checked={!useGuarantee}
-                          onCheckedChange={(checked) => setUseGuarantee(!checked)}
+                          checked={!useWarranty}
+                          onCheckedChange={(checked) => setUseWarranty(!checked)}
                         />
-                        <Label className={`text-sm font-medium ${!useGuarantee ? 'text-foreground' : 'text-muted-foreground'}`}>
+                        <Label className={`text-sm font-medium ${!useWarranty ? 'text-foreground' : 'text-muted-foreground'}`}>
                           SCDW
                         </Label>
                       </div>
                       
                       <p className="text-xs text-center text-muted-foreground">
-                        {useGuarantee 
+                        {useWarranty 
                           ? "Refundable if no damages" 
                           : "Non-refundable insurance"}
                       </p>
@@ -1253,12 +1270,7 @@ function ReservationPageContent() {
                     </div>
                   )}
                   
-                  {useGuarantee ? (
-                    <div className="flex justify-between text-sm">
-                      <span>Guarantee (refundable):</span>
-                      <span>{guaranteeAmount} EUR</span>
-                    </div>
-                  ) : (
+                  {!useWarranty && scdwPrice > 0 && (
                     <div className="flex justify-between text-sm">
                       <span>SCDW Insurance (non-refundable):</span>
                       <span>{scdwPrice} EUR</span>
@@ -1296,8 +1308,20 @@ function ReservationPageContent() {
                   <div className="border-t pt-2">
                     <div className="flex justify-between font-semibold">
                       <span>Total Price:</span>
-                      <span className="text-green-600">{totalPrice || 0} EUR</span>
+                      <span className="text-green-600">
+                        {totalPrice || 0} EUR
+                        {useWarranty && warrantyAmount && warrantyAmount > 0 && (
+                          <span className="text-sm font-normal text-muted-foreground ml-2">
+                            + {warrantyAmount} EUR warranty
+                          </span>
+                        )}
+                      </span>
                     </div>
+                    {useWarranty && warrantyAmount && warrantyAmount > 0 && (
+                      <div className="text-right text-xs text-muted-foreground mt-1">
+                        Warranty is refundable if no damages
+                      </div>
+                    )}
                   </div>
                 </div>
 

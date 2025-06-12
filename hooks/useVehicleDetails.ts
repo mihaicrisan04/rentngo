@@ -1,19 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "convex/react";
-import { differenceInDays } from "date-fns";
 import { api } from "../convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
 import { searchStorage, SearchData } from "@/lib/searchStorage";
-import { getLocationPrice } from "@/components/LocationPicker";
-
-interface PriceDetails {
-  basePrice: number | null;
-  totalPrice: number | null;
-  days: number | null;
-  deliveryFee: number;
-  returnFee: number;
-  totalLocationFees: number;
-}
+import { calculateVehiclePricing, PriceDetails } from "@/lib/vehicleUtils";
 
 interface RentalState extends SearchData {
   isHydrated: boolean;
@@ -43,48 +33,15 @@ export function useVehicleDetails(vehicleId: string) {
     }));
   }, []);
 
-  // Calculate pricing details
-  const calculatePricing = useCallback((
-    pricePerDay: number,
-    pickup?: Date | null,
-    restitution?: Date | null,
-    deliveryLocation?: string,
-    restitutionLocation?: string
-  ): PriceDetails => {
-    if (pickup && restitution && restitution > pickup) {
-      const days = differenceInDays(restitution, pickup);
-      const calculatedDays = days === 0 ? 1 : days;
-      const basePrice = calculatedDays * pricePerDay;
-      
-      const deliveryFee = deliveryLocation ? getLocationPrice(deliveryLocation) : 0;
-      const returnFee = restitutionLocation ? getLocationPrice(restitutionLocation) : 0;
-      const totalLocationFees = deliveryFee + returnFee;
-      
-      return { 
-        basePrice,
-        totalPrice: basePrice + totalLocationFees, 
-        days: calculatedDays,
-        deliveryFee,
-        returnFee,
-        totalLocationFees
-      };
-    }
-    return { 
-      basePrice: null, 
-      totalPrice: null, 
-      days: null, 
-      deliveryFee: 0, 
-      returnFee: 0, 
-      totalLocationFees: 0 
-    };
-  }, []);
-
-  const priceDetails = calculatePricing(
-    vehicle?.pricePerDay || 0,
+  // Calculate pricing details using the enhanced vehicleUtils function
+  const priceDetails = calculateVehiclePricing(
+    vehicle || { pricePerDay: 0 } as any, // fallback if vehicle is loading
     rentalState.pickupDate,
     rentalState.returnDate,
     rentalState.deliveryLocation,
-    rentalState.restitutionLocation
+    rentalState.restitutionLocation,
+    rentalState.pickupTime,
+    rentalState.returnTime
   );
 
   // Handle rental details updates

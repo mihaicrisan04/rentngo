@@ -28,6 +28,12 @@ export default defineSchema({
     engineCapacity: v.optional(v.number()),
     engineType: v.optional(v.string()),
     pricePerDay: v.number(),
+    pricingTiers: v.optional(v.array(v.object({
+      minDays: v.number(),
+      maxDays: v.number(),
+      pricePerDay: v.number(),
+    }))),
+    warranty: v.optional(v.number()), // Warranty amount for the vehicle
     location: v.optional(v.string()),
     features: v.optional(v.array(v.string())),
     status: v.union(v.literal("available"), v.literal("rented"), v.literal("maintenance")),

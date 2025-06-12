@@ -9,7 +9,7 @@ import { Id } from "../convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Cog, Fuel, CarFront } from "lucide-react";
-import { Vehicle } from "@/types/vehicle";
+import { Vehicle, getPriceForDuration } from "@/types/vehicle";
 import { calculateVehiclePricing, buildReservationUrl } from "@/lib/vehicleUtils";
 
 interface VehicleCardProps {
@@ -45,7 +45,7 @@ export function VehicleCard({
   }
 
   const priceDetails = calculateVehiclePricing(
-    vehicle.pricePerDay,
+    vehicle,
     pickupDate,
     returnDate,
     deliveryLocation || undefined,
@@ -53,6 +53,14 @@ export function VehicleCard({
     pickupTime,
     returnTime
   );
+
+  // Calculate the current price per day based on rental duration
+  const currentPricePerDay = React.useMemo(() => {
+    if (priceDetails.days) {
+      return getPriceForDuration(vehicle, priceDetails.days);
+    }
+    return vehicle.pricePerDay; // fallback to legacy price
+  }, [vehicle, priceDetails.days]);
 
   const currency = "EUR";
 
@@ -98,7 +106,7 @@ export function VehicleCard({
           <div className="flex justify-between items-baseline">
             <div>
               <span className="text-2xl font-bold text-yellow-500">
-                {vehicle.pricePerDay}
+                {currentPricePerDay}
               </span>
               <span className="text-sm text-muted-foreground"> {currency} / Day</span>
             </div>
