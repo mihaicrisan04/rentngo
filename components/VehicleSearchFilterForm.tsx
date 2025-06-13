@@ -146,11 +146,7 @@ export function VehicleSearchFilterForm({
         setIsLoading(false);
         return;
       }
-      if (returnDateState.getTime() === pickupDateState.getTime() && returnTime && pickupTime && returnTime <= pickupTime) {
-        alert("Return time must be after pick-up time if dates are the same.");
-        setIsLoading(false);
-        return;
-      }
+      // Time validation is now handled automatically by DateTimePicker component
     }
 
     // Navigate to cars page regardless of completeness - the cars page will handle partial data
@@ -225,6 +221,8 @@ export function VehicleSearchFilterForm({
                 popoverAlign="end"
                 contentAlign="start"
                 isLoading={isLoading}
+                pickupDate={pickupDateState}
+                pickupTime={pickupTime}
               />
             </div>
           </div>

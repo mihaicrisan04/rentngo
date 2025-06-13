@@ -28,6 +28,12 @@ export default defineSchema({
     engineCapacity: v.optional(v.number()),
     engineType: v.optional(v.string()),
     pricePerDay: v.number(),
+    pricingTiers: v.optional(v.array(v.object({
+      minDays: v.number(),
+      maxDays: v.number(),
+      pricePerDay: v.number(),
+    }))),
+    warranty: v.optional(v.number()), // Warranty amount for the vehicle
     location: v.optional(v.string()),
     features: v.optional(v.array(v.string())),
     status: v.union(v.literal("available"), v.literal("rented"), v.literal("maintenance")),
@@ -124,4 +130,24 @@ export default defineSchema({
     error: v.optional(v.string()),
   }).index("by_user", ["userId"])
     .index("by_reservation", ["reservationId"]),
+
+  // Seasons table - defines seasonal pricing multipliers and their periods
+  seasons: defineTable({
+    name: v.string(), // "High Season", "Low Season", "Holiday Season", "Extra Season"
+    description: v.optional(v.string()), // "Summer and holiday pricing"
+    multiplier: v.number(), // 1.35, 1.5, 0.8, etc.
+    periods: v.array(v.object({
+      startDate: v.string(), // ISO date string "2024-06-01" 
+      endDate: v.string(), // ISO date string "2024-07-30"
+      description: v.optional(v.string()) // "Summer period", "Easter week", "New Year period"
+    })),
+    isActive: v.boolean(), // whether this season type is enabled for selection
+  }).index("by_active", ["isActive"]),
+
+  // Current season table - tracks the currently active season
+  currentSeason: defineTable({
+    seasonId: v.id("seasons"),
+    setAt: v.number(), // timestamp when this season was activated
+    setBy: v.optional(v.string()), // admin user ID or name who set it (for tracking)
+  }),
 });

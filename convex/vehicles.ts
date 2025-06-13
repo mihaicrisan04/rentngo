@@ -4,14 +4,21 @@ import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { paginationOptsValidator } from "convex/server";
 
+// Pricing tier validator
+const pricingTierValidator = v.object({
+  minDays: v.number(),
+  maxDays: v.number(),
+  pricePerDay: v.number(),
+});
+
 // Get all vehicles with pagination and filters
 export const getAll = query({
   args: { 
     paginationOpts: paginationOptsValidator,
     filters: v.optional(v.object({
-      type: v.optional(v.union(v.literal("sedan"), v.literal("suv"), v.literal("hatchback"), v.literal("sports"))),
+      type: v.optional(v.union(v.literal("sedan"), v.literal("suv"), v.literal("hatchback"), v.literal("sports"), v.literal("truck"), v.literal("van"))),
       transmission: v.optional(v.union(v.literal("automatic"), v.literal("manual"))),
-      fuelType: v.optional(v.union(v.literal("petrol"), v.literal("diesel"), v.literal("electric"), v.literal("hybrid"))),
+      fuelType: v.optional(v.union(v.literal("petrol"), v.literal("diesel"), v.literal("electric"), v.literal("hybrid"), v.literal("benzina"))),
       minPrice: v.optional(v.number()),
       maxPrice: v.optional(v.number()),
       status: v.optional(v.union(v.literal("available"), v.literal("rented"), v.literal("maintenance"))),
@@ -69,16 +76,18 @@ export const create = mutation({
   args: {
     make: v.string(),
     model: v.string(),
-    year: v.number(),
-    type: v.union(v.literal("sedan"), v.literal("suv"), v.literal("hatchback"), v.literal("sports")),
-    seats: v.number(),
-    transmission: v.union(v.literal("automatic"), v.literal("manual")),
-    fuelType: v.union(v.literal("petrol"), v.literal("diesel"), v.literal("electric"), v.literal("hybrid")),
-    engineCapacity: v.number(),
-    engineType: v.string(),
+    year: v.optional(v.number()),
+    type: v.optional(v.union(v.literal("sedan"), v.literal("suv"), v.literal("hatchback"), v.literal("sports"), v.literal("truck"), v.literal("van"))),
+    seats: v.optional(v.number()),
+    transmission: v.optional(v.union(v.literal("automatic"), v.literal("manual"))),
+    fuelType: v.optional(v.union(v.literal("petrol"), v.literal("diesel"), v.literal("electric"), v.literal("hybrid"), v.literal("benzina"))),
+    engineCapacity: v.optional(v.number()),
+    engineType: v.optional(v.string()),
     pricePerDay: v.number(),
-    location: v.string(),
-    features: v.array(v.string()),
+    pricingTiers: v.optional(v.array(pricingTierValidator)),
+    warranty: v.optional(v.number()),
+    location: v.optional(v.string()),
+    features: v.optional(v.array(v.string())),
     status: v.union(v.literal("available"), v.literal("rented"), v.literal("maintenance")),
   },
   handler: async (ctx, args) => {
@@ -96,13 +105,15 @@ export const update = mutation({
     make: v.optional(v.string()),
     model: v.optional(v.string()),
     year: v.optional(v.number()),
-    type: v.optional(v.union(v.literal("sedan"), v.literal("suv"), v.literal("hatchback"), v.literal("sports"))),
+    type: v.optional(v.union(v.literal("sedan"), v.literal("suv"), v.literal("hatchback"), v.literal("sports"), v.literal("truck"), v.literal("van"))),
     seats: v.optional(v.number()),
     transmission: v.optional(v.union(v.literal("automatic"), v.literal("manual"))),
-    fuelType: v.optional(v.union(v.literal("petrol"), v.literal("diesel"), v.literal("electric"), v.literal("hybrid"))),
+    fuelType: v.optional(v.union(v.literal("petrol"), v.literal("diesel"), v.literal("electric"), v.literal("hybrid"), v.literal("benzina"))),
     engineCapacity: v.optional(v.number()),
     engineType: v.optional(v.string()),
     pricePerDay: v.optional(v.number()),
+    pricingTiers: v.optional(v.array(pricingTierValidator)),
+    warranty: v.optional(v.number()),
     location: v.optional(v.string()),
     features: v.optional(v.array(v.string())),
     status: v.optional(v.union(v.literal("available"), v.literal("rented"), v.literal("maintenance"))),
@@ -209,29 +220,23 @@ export const getImageUrl = query({
 // Query to search for available vehicles based on date range and location
 export const searchAvailableVehicles = query({
   args: {
-    startDate: v.number(), // Unix timestamp - Will be accepted but not used for reservation checking in this version
-    endDate: v.number(),   // Unix timestamp - Will be accepted but not used for reservation checking in this version
-    deliveryLocation: v.optional(v.string()), // Retained as optional, not used for filtering here
+    startDate: v.number(), // Unix timestamp
+    endDate: v.number(),   // Unix timestamp
+    deliveryLocation: v.optional(v.string()),
     
-    // Optional filters (similar to getAll)
-    type: v.optional(v.union(v.literal("sedan"), v.literal("suv"), v.literal("hatchback"), v.literal("sports"))),
+    // Optional filters
+    type: v.optional(v.union(v.literal("sedan"), v.literal("suv"), v.literal("hatchback"), v.literal("sports"), v.literal("truck"), v.literal("van"))),
     transmission: v.optional(v.union(v.literal("automatic"), v.literal("manual"))),
-    fuelType: v.optional(v.union(v.literal("petrol"), v.literal("diesel"), v.literal("electric"), v.literal("hybrid"))),
+    fuelType: v.optional(v.union(v.literal("petrol"), v.literal("diesel"), v.literal("electric"), v.literal("hybrid"), v.literal("benzina"))),
     minPrice: v.optional(v.number()),
     maxPrice: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const { /* startDate, endDate, */ deliveryLocation, type, transmission, fuelType, minPrice, maxPrice } = args;
+    const { type, transmission, fuelType, minPrice, maxPrice } = args;
 
-    // 1. Remove logic for querying reservations table and finding unavailableVehicleIds
-    // const overlappingReservations = await ctx.db ... .collect();
-    // const unavailableVehicleIds = new Set(...);
-
-    // 2. Query vehicles, filtering by status: "available" and other optional filters.
-    // deliveryLocation is not used for filtering vehicle results in this version.
     let vehicleQuery = ctx.db
       .query("vehicles")
-      .filter((q) => q.eq(q.field("status"), "available")); // Only consider vehicles marked as 'available'
+      .filter((q) => q.eq(q.field("status"), "available"));
 
     // Apply optional filters
     if (type) {
@@ -250,12 +255,7 @@ export const searchAvailableVehicles = query({
       vehicleQuery = vehicleQuery.filter((q) => q.lte(q.field("pricePerDay"), maxPrice));
     }
 
-    const potentiallyAvailableVehicles = await vehicleQuery.collect();
-
-    // 3. Filtering based on unavailableVehicleIds is removed.
-    // const availableVehicles = potentiallyAvailableVehicles.filter(...);
-
-    return potentiallyAvailableVehicles; // Return all vehicles with status:"available" that match filters
+    return await vehicleQuery.collect();
   },
 });
 

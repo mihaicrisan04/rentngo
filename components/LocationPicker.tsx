@@ -1,21 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { MapPin, Check, ChevronsUpDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { MapPin } from "lucide-react";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { searchStorage } from "@/lib/searchStorage";
@@ -59,8 +52,6 @@ interface LocationComboboxProps {
 }
 
 const LocationCombobox = ({ id, value, onValueChange, placeholder, disabled, locations }: LocationComboboxProps) => {
-  const [open, setOpen] = React.useState(false);
-
   const handleLocationChange = (selectedLocationName: string) => {
     const newValue = selectedLocationName === value ? "" : selectedLocationName;
     onValueChange(newValue);
@@ -82,61 +73,39 @@ const LocationCombobox = ({ id, value, onValueChange, placeholder, disabled, loc
     }
   };
 
+  const selectedLocation = locations.find((loc) => loc.name === value);
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="text-base py-2.5 pl-3 pr-3 data-[placeholder]:text-muted-foreground h-10 w-full justify-between"
-          disabled={disabled}
-          id={id}
-        >
-          <div className="flex items-center">
-            <MapPin className="mr-2 h-5 w-5 text-muted-foreground" />
-            {value
-              ? locations.find((loc) => loc.name === value)?.name + (typeof locations.find((loc) => loc.name === value)?.price === 'number' ? ` - ${locations.find((loc) => loc.name === value)?.price} €` : "")
+    <Select
+      value={value}
+      onValueChange={handleLocationChange}
+      disabled={disabled}
+    >
+      <SelectTrigger
+        className="text-base w-full"
+        id={id}
+      >
+        <div className="flex items-center w-full">
+          <MapPin className="mr-2 h-5 w-5 text-muted-foreground" />
+          <SelectValue placeholder={placeholder}>
+            {selectedLocation
+              ? `${selectedLocation.name} - ${selectedLocation.price} €`
               : placeholder}
-          </div>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-full max-w-full p-0">
-        <Command>
-          <CommandInput placeholder="Search location..." />
-          <CommandList>
-            <CommandEmpty>No location found.</CommandEmpty>
-            <CommandGroup>
-              {locations.map((loc) => (
-                <CommandItem
-                  key={loc.name}
-                  value={loc.name}
-                  onSelect={(currentValue) => {
-                    const selectedLocation = locations.find(l => l.name.toLowerCase() === currentValue.toLowerCase());
-                    if (selectedLocation) {
-                      handleLocationChange(selectedLocation.name);
-                    } else {
-                      handleLocationChange(""); // Or handle as an error/clear
-                    }
-                    setOpen(false);
-                  }}
-                  className="text-base"
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === loc.name ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  {loc.name} - {loc.price} €
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+          </SelectValue>
+        </div>
+      </SelectTrigger>
+      <SelectContent>
+        {locations.map((loc) => (
+          <SelectItem
+            key={loc.name}
+            value={loc.name}
+            className="text-base"
+          >
+            {loc.name} - {loc.price} €
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 };
 

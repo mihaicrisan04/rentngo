@@ -18,23 +18,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Calendar, Send, User, CreditCard, AlertCircle, Info } from "lucide-react";
 import { LocationPicker, getLocationPrice } from "@/components/LocationPicker";
 import { DateTimePicker } from "@/components/DateTimePicker";
-import { differenceInDays } from "date-fns";
 import { searchStorage } from "@/lib/searchStorage";
+import { calculateVehiclePricing, calculateVehiclePricingWithSeason, getPriceForDurationWithSeason } from "@/lib/vehicleUtils";
+import { getPriceForDuration } from "@/types/vehicle";
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { validateFlightNumber, formatFlightNumber } from "@/lib/flightValidation";
 import { Progress } from "@/components/ui/progress";
+import { useSeasonalPricing } from "@/hooks/useSeasonalPricing";
 import { before } from "node:test";
 
 // Payment method options
 const paymentMethods = [
-  { id: "cash_on_delivery", label: "Cash on delivery", description: "Pay when you pick up the vehicle" },
-  { id: "card_on_delivery", label: "Card payment on delivery", description: "Pay with card when you pick up the vehicle" },
-  { id: "card_online", label: "Card payment online", description: "Pay now with your card" }
+  { id: "cash_on_delivery", label: "Cash on delivery", description: "Pay when you pick up the vehicle", disabled: false },
+  { id: "card_on_delivery", label: "Card payment on delivery", description: "Pay with card when you pick up the vehicle", disabled: false },
+  { id: "card_online", label: "Card payment online (coming soon)", description: "Pay now with your card", disabled: true }
 ];
 
 // Form validation errors interface
@@ -67,6 +70,9 @@ function ReservationPageContent() {
   // Only get vehicleId from URL - all form data comes from localStorage
   const vehicleId = searchParams.get("vehicleId");
   
+  // Add seasonal pricing
+  const { multiplier: seasonalMultiplier, hasActiveSeason, currentSeason } = useSeasonalPricing();
+  
   // Rental details state
   const [deliveryLocation, setDeliveryLocation] = React.useState<string>("");
   const [pickupDate, setPickupDate] = React.useState<Date | undefined>(undefined);
@@ -88,6 +94,9 @@ function ReservationPageContent() {
   const [paymentMethod, setPaymentMethod] = React.useState<string>("");
   const [termsAccepted, setTermsAccepted] = React.useState(false);
   const [scdwSelected, setScdwSelected] = React.useState(false);
+  
+  // Protection state (warranty vs SCDW)
+  const [useWarranty, setUseWarranty] = React.useState(true); // Default to warranty
   
   // Additional features state
   const [snowChainsSelected, setSnowChainsSelected] = React.useState(false);
@@ -178,39 +187,103 @@ function ReservationPageContent() {
     return base + 6 + 5 * (blocks - 1);
   };
 
-  // Calculate pricing including location fees
+  // Warranty calculation function - use vehicle warranty or fallback based on type
+  const calculateWarranty = (vehicle: any): number => {
+    // If vehicle has warranty field, use it
+    if (vehicle?.warranty) {
+      return vehicle.warranty;
+    }
+    
+    // Fallback to type-based calculation for backward compatibility
+    const vehicleType = vehicle?.type || 'standard';
+    switch (vehicleType.toLowerCase()) {
+      case 'economy':
+        return 300;
+      case 'compact':
+        return 400;
+      case 'midsize':
+      case 'intermediate':
+        return 500;
+      case 'standard':
+      case 'fullsize':
+        return 600;
+      case 'suv':
+      case 'premium':
+        return 800;
+      case 'luxury':
+        return 1000;
+      default:
+        return 500; // Default warranty amount
+    }
+  };
+
+  // Calculate pricing using enhanced vehicle pricing utility with seasonal adjustments
   const calculateTotalPrice = () => {
-    if (pickupDate && returnDate && vehicle?.pricePerDay) {
-      const days = differenceInDays(returnDate, pickupDate);
-      const calculatedDays = days === 0 ? 1 : days;
-      const basePrice = calculatedDays * vehicle.pricePerDay;
+    if (pickupDate && returnDate && vehicle) {
+      // Use the enhanced pricing calculation with seasonal adjustment
+      const vehiclePricing = calculateVehiclePricingWithSeason(
+        vehicle,
+        seasonalMultiplier,
+        pickupDate,
+        returnDate,
+        deliveryLocation || undefined,
+        restitutionLocation || undefined,
+        pickupTime,
+        returnTime
+      );
       
-      // Add location fees
-      const deliveryFee = getLocationPrice(deliveryLocation);
-      const returnFee = getLocationPrice(restitutionLocation);
-      const totalLocationFees = deliveryFee + returnFee;
+      const { basePrice, days, deliveryFee, returnFee, totalLocationFees, seasonalAdjustment, basePriceBeforeSeason } = vehiclePricing;
       
-      // Add SCDW if selected
-      const scdwPrice = scdwSelected ? calculateSCDW(calculatedDays, vehicle.pricePerDay) : 0;
+      if (basePrice === null || days === null) {
+        return { 
+          basePrice: null, 
+          totalPrice: null, 
+          days: null, 
+          deliveryFee: 0, 
+          returnFee: 0, 
+          totalLocationFees: 0,
+          scdwPrice: 0,
+          snowChainsPrice: 0,
+          childSeat1to4Price: 0,
+          childSeat5to12Price: 0,
+          totalAdditionalFeatures: 0,
+          seasonalMultiplier,
+          seasonalAdjustment: 0,
+          basePriceBeforeSeason: null,
+        };
+      }
+      
+      // Calculate protection costs (warranty or SCDW) using seasonal-adjusted price
+      const warrantyAmount = calculateWarranty(vehicle);
+      const currentPricePerDay = getPriceForDurationWithSeason(vehicle, days, seasonalMultiplier);
+      const scdwPrice = calculateSCDW(days, currentPricePerDay);
+      
+      // SCDW is added to total price, warranty is separate
+      const protectionCost = useWarranty ? 0 : scdwPrice;
       
       // Add additional features
-      const snowChainsPrice = snowChainsSelected ? calculatedDays * 3 : 0;
-      const childSeat1to4Price = childSeat1to4Count * calculatedDays * 3;
-      const childSeat5to12Price = childSeat5to12Count * calculatedDays * 3;
+      const snowChainsPrice = snowChainsSelected ? days * 3 : 0;
+      const childSeat1to4Price = childSeat1to4Count * days * 3;
+      const childSeat5to12Price = childSeat5to12Count * days * 3;
       const totalAdditionalFeatures = snowChainsPrice + childSeat1to4Price + childSeat5to12Price;
       
       return { 
         basePrice,
-        totalPrice: basePrice + totalLocationFees + scdwPrice + totalAdditionalFeatures, 
-        days: calculatedDays,
+        totalPrice: basePrice + totalLocationFees + protectionCost + totalAdditionalFeatures, 
+        days,
         deliveryFee,
         returnFee,
         totalLocationFees,
+        warrantyAmount,
         scdwPrice,
+        protectionCost,
         snowChainsPrice,
         childSeat1to4Price,
         childSeat5to12Price,
-        totalAdditionalFeatures
+        totalAdditionalFeatures,
+        seasonalMultiplier,
+        seasonalAdjustment,
+        basePriceBeforeSeason,
       };
     }
     return { 
@@ -220,15 +293,36 @@ function ReservationPageContent() {
       deliveryFee: 0, 
       returnFee: 0, 
       totalLocationFees: 0,
+      warrantyAmount: 0,
       scdwPrice: 0,
+      protectionCost: 0,
       snowChainsPrice: 0,
       childSeat1to4Price: 0,
       childSeat5to12Price: 0,
-      totalAdditionalFeatures: 0
+      totalAdditionalFeatures: 0,
+      seasonalMultiplier: 1.0,
+      seasonalAdjustment: 0,
+      basePriceBeforeSeason: null,
     };
   };
 
-  const { basePrice, totalPrice, days, deliveryFee, returnFee, totalLocationFees, scdwPrice, snowChainsPrice, childSeat1to4Price, childSeat5to12Price, totalAdditionalFeatures } = calculateTotalPrice();
+  const { 
+    basePrice, 
+    totalPrice, 
+    days, 
+    deliveryFee, 
+    returnFee, 
+    totalLocationFees, 
+    warrantyAmount, 
+    scdwPrice, 
+    protectionCost, 
+    snowChainsPrice, 
+    childSeat1to4Price, 
+    childSeat5to12Price, 
+    totalAdditionalFeatures,
+    seasonalAdjustment,
+    basePriceBeforeSeason
+  } = calculateTotalPrice();
 
   // Calculate form completion progress
   const calculateFormProgress = (): number => {
@@ -300,6 +394,25 @@ function ReservationPageContent() {
       newErrors.rentalDetails = { ...newErrors.rentalDetails, returnTime: "Return time is required" };
     }
 
+    // Check if pickup and return are on same day and validate times
+    if (pickupDate && returnDate && pickupTime && returnTime) {
+      const isSameDay = pickupDate.getFullYear() === returnDate.getFullYear() &&
+                       pickupDate.getMonth() === returnDate.getMonth() &&
+                       pickupDate.getDate() === returnDate.getDate();
+
+      if (isSameDay) {
+        const [pickupHour, pickupMinute] = pickupTime.split(':').map(Number);
+        const [returnHour, returnMinute] = returnTime.split(':').map(Number);
+        
+        if (returnHour < pickupHour || (returnHour === pickupHour && returnMinute <= pickupMinute)) {
+          newErrors.rentalDetails = { 
+            ...newErrors.rentalDetails, 
+            returnTime: "Return time must be after pick-up time when returning on the same day" 
+          };
+        }
+      }
+    }
+
     // Payment validation
     if (!paymentMethod) {
       newErrors.payment = { ...newErrors.payment, method: "Payment method is required" };
@@ -351,10 +464,15 @@ function ReservationPageContent() {
         });
       }
       
-      // Add SCDW insurance if selected
-      if (scdwSelected && scdwPrice > 0) {
+      // Add protection option (warranty or SCDW)
+      if (useWarranty && warrantyAmount > 0) {
         additionalCharges.push({
-          description: "SCDW Insurance",
+          description: `Warranty (refundable) - ${vehicle.type || 'Standard'} vehicle`,
+          amount: warrantyAmount,
+        });
+      } else if (!useWarranty && scdwPrice > 0) {
+        additionalCharges.push({
+          description: "SCDW Insurance (non-refundable)",
           amount: scdwPrice,
         });
       }
@@ -663,6 +781,8 @@ function ReservationPageContent() {
                         minDate={pickupDate || today}
                         disabledDateRanges={pickupDate ? { before: pickupDate } : { before: today }}
                         isLoading={!pickupDate}
+                        pickupDate={pickupDate}
+                        pickupTime={pickupTime}
                       />
                       {errors.rentalDetails?.returnDate && (
                         <p className="text-sm text-red-500 mt-1 flex items-center">
@@ -713,9 +833,16 @@ function ReservationPageContent() {
                         {vehicle.make} {vehicle.model}
                       </h3>
                       <p className="text-muted-foreground">{vehicle.year}</p>
-                      <p className="text-lg font-bold text-yellow-500">
-                        {vehicle.pricePerDay} EUR / Day
-                      </p>
+                      <div>
+                        <p className="text-lg font-bold text-yellow-500">
+                          {days ? getPriceForDurationWithSeason(vehicle, days, seasonalMultiplier) : Math.round(vehicle.pricePerDay * seasonalMultiplier)} EUR / Day
+                        </p>
+                        {days && vehicle.pricingTiers && vehicle.pricingTiers.length > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            Rate for {days} day{days === 1 ? '' : 's'} rental
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -728,59 +855,8 @@ function ReservationPageContent() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-6">
-                    {/* SCDW Insurance Option */}
-                    <div className="space-y-3">
-                      <div className="flex items-start space-x-2">
-                        <Checkbox
-                          id="scdw-insurance"
-                          checked={scdwSelected}
-                          onCheckedChange={(checked) => setScdwSelected(checked === true)}
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-1">
-                            <Label htmlFor="scdw-insurance" className="text-sm font-medium cursor-pointer">
-                              SCDW Insurance
-                            </Label>
-                            <HoverCard>
-                              <HoverCardTrigger asChild>
-                                <Info className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
-                              </HoverCardTrigger>
-                              <HoverCardContent className="w-80">
-                                <div className="space-y-2">
-                                  <h4 className="text-sm font-semibold">SCDW Insurance Details</h4>
-                                  <p className="text-xs text-muted-foreground">
-                                    Super Collision Damage Waiver (SCDW) provides additional protection for your rental.
-                                  </p>
-                                  <div className="text-xs text-muted-foreground space-y-1">
-                                    <p><strong>Calculation:</strong></p>
-                                    <p>• Base cost: 2 × daily rate (covers 1-3 days)</p>
-                                    <p>• For each 3-day block after first 3 days:</p>
-                                    <p>  - First additional block: +6 EUR</p>
-                                    <p>  - Each subsequent block: +5 EUR</p>
-                                  </div>
-                                  {days && vehicle?.pricePerDay && (
-                                    <div className="text-xs border-t pt-2 mt-2">
-                                      <p><strong>Your calculation:</strong></p>
-                                      <p>Days: {days} | Daily rate: {vehicle.pricePerDay} EUR</p>
-                                      <p>SCDW cost: {calculateSCDW(days, vehicle.pricePerDay)} EUR</p>
-                                    </div>
-                                  )}
-                                </div>
-                              </HoverCardContent>
-                            </HoverCard>
-                          </div>
-                          <div className="flex justify-between text-sm mt-1">
-                            <span className="text-muted-foreground">Additional protection coverage</span>
-                            <span className="font-medium">
-                              {days && vehicle?.pricePerDay ? `${calculateSCDW(days, vehicle.pricePerDay)} EUR` : '0 EUR'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
                     {/* Snow Chains */}
-                    <div className="space-y-3 border-t pt-4">
+                    <div className="space-y-3">
                       <div className="flex items-start space-x-2">
                         <Checkbox
                           id="snow-chains"
@@ -1021,10 +1097,15 @@ function ReservationPageContent() {
                       className="space-y-3"
                     >
                       {paymentMethods.map((method) => (
-                        <div key={method.id} className="flex items-start space-x-3">
-                          <RadioGroupItem value={method.id} id={method.id} className="mt-1" />
+                        <div key={method.id} className={`flex items-start space-x-3 ${method.disabled ? 'opacity-50' : ''}`}>
+                          <RadioGroupItem 
+                            value={method.id} 
+                            id={method.id} 
+                            className="mt-1" 
+                            disabled={method.disabled}
+                          />
                           <div className="flex-1">
-                            <Label htmlFor={method.id} className="cursor-pointer">
+                            <Label htmlFor={method.id} className={`${method.disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
                               <div className="font-medium">{method.label}</div>
                               <div className="text-sm text-muted-foreground">{method.description}</div>
                             </Label>
@@ -1096,7 +1177,7 @@ function ReservationPageContent() {
                   {pickupDate && pickupTime && (
                     <div className="grid grid-cols-2 gap-2">
                       <span className="font-medium text-muted-foreground">Pick-up Date:</span>
-                      <span>{pickupDate.toLocaleDateString()} at {pickupTime}</span>
+                      <span>{pickupDate.toLocaleDateString('ro')} at {pickupTime}</span>
                     </div>
                   )}
                   
@@ -1108,7 +1189,7 @@ function ReservationPageContent() {
                   {returnDate && returnTime && (
                     <div className="grid grid-cols-2 gap-2">
                       <span className="font-medium text-muted-foreground">Return Date:</span>
-                      <span>{returnDate.toLocaleDateString()} at {returnTime}</span>
+                      <span>{returnDate.toLocaleDateString('ro')} at {returnTime}</span>
                     </div>
                   )}
                   
@@ -1125,13 +1206,79 @@ function ReservationPageContent() {
                   )}
                 </div>
 
+                {/* Protection Toggle */}
+                <div className="border-t pt-4 space-y-4">
+                  <div className="space-y-3">
+                    <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                      Protection Options
+                    </h4>
+                    <div className="p-3 bg-muted/50 rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                                                  <Label className="font-medium">
+                          {useWarranty ? "Warranty (Refundable)" : "SCDW Insurance (Non-refundable)"}
+                        </Label>
+                          <HoverCard>
+                            <HoverCardTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
+                            </HoverCardTrigger>
+                            <HoverCardContent className="w-80">
+                              <div className="space-y-2">
+                                <h4 className="text-sm font-semibold">Protection Options</h4>
+                                <div className="text-xs text-muted-foreground space-y-2">
+                                  <div>
+                                    <p className="font-medium">Warranty (Default):</p>
+                                    <p>• Refundable deposit based on vehicle warranty</p>
+                                    <p>• Returned at end of rental if no damages</p>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">SCDW Insurance:</p>
+                                    <p>• Super Collision Damage Waiver</p>
+                                    <p>• Non-refundable but provides additional protection</p>
+                                    <p>• No deposit required</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </HoverCardContent>
+                          </HoverCard>
+                        </div>
+                        <p className="text-sm font-medium">
+                          {useWarranty 
+                            ? `${warrantyAmount || 0} EUR (separate)` 
+                            : `${scdwPrice || 0} EUR (included)`}
+                        </p>
+                      </div>
+                      
+                      <div className="flex items-center justify-center space-x-4">
+                        <Label className={`text-sm font-medium ${useWarranty ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          Warranty
+                        </Label>
+                        <Switch
+                          id="protection-toggle"
+                          checked={!useWarranty}
+                          onCheckedChange={(checked) => setUseWarranty(!checked)}
+                        />
+                        <Label className={`text-sm font-medium ${!useWarranty ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          SCDW
+                        </Label>
+                      </div>
+                      
+                      <p className="text-xs text-center text-muted-foreground">
+                        {useWarranty 
+                          ? "Refundable if no damages" 
+                          : "Non-refundable insurance"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Pricing Summary */}
                 <div className="border-t pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Base price ({days || 0} day{days === 1 ? "" : "s"}):</span>
                     <span>{basePrice || 0} EUR</span>
                   </div>
-                  
+
                   {deliveryFee > 0 && (
                     <div className="flex justify-between text-sm">
                       <span>Pick-up location fee:</span>
@@ -1153,9 +1300,9 @@ function ReservationPageContent() {
                     </div>
                   )}
                   
-                  {scdwSelected && scdwPrice > 0 && (
+                  {!useWarranty && scdwPrice > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span>SCDW Insurance:</span>
+                      <span>SCDW Insurance (non-refundable):</span>
                       <span>{scdwPrice} EUR</span>
                     </div>
                   )}
@@ -1191,15 +1338,27 @@ function ReservationPageContent() {
                   <div className="border-t pt-2">
                     <div className="flex justify-between font-semibold">
                       <span>Total Price:</span>
-                      <span className="text-green-600">{totalPrice || 0} EUR</span>
+                      <span className="text-green-600">
+                        {totalPrice || 0} EUR
+                        {useWarranty && warrantyAmount && warrantyAmount > 0 && (
+                          <span className="text-sm font-normal text-muted-foreground ml-2">
+                            + {warrantyAmount} EUR warranty
+                          </span>
+                        )}
+                      </span>
                     </div>
+                    {useWarranty && warrantyAmount && warrantyAmount > 0 && (
+                      <div className="text-right text-xs text-muted-foreground mt-1">
+                        Warranty is refundable if no damages
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <Button 
                   onClick={handleSendReservation}
                   size="lg" 
-                  className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-4 text-lg"
+                  className="w-full bg-[#055E3B] hover:bg-[#055E3B]/80 text-white font-bold py-4 text-lg"
                   disabled={isSubmitting}
                 >
                   <Send className="mr-2 h-4 w-4" />

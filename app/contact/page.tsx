@@ -9,49 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AnimatedGroup } from '@/components/ui/animated-group';
 import { Phone, Mail, MapPin, MessageCircle, Instagram, Facebook, ExternalLink } from 'lucide-react';
-import { Variants } from 'framer-motion';
-
-// Define animation variants
-const sectionAnimationVariants: {
-  container: Variants;
-  item: Variants;
-} = {
-  container: {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.1,
-      },
-    },
-  },
-  item: {
-    hidden: {
-      opacity: 0,
-      scale: 0.95,
-      filter: "blur(4px)",
-      y: 20,
-    },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      filter: "blur(0px)",
-      y: 0,
-      transition: {
-        type: "spring",
-        stiffness: 100,
-        damping: 15,
-        duration: 0.6,
-      },
-    },
-  },
-};
+import { contactAnimationVariants, sectionAnimationVariants } from '@/lib/animations';
+import { SocialIcon } from 'react-social-icons';
 
 const ContactPage = () => {
   const handleMapClick = () => {
     // Replace with your actual Google Maps coordinates
-    const mapsUrl = "https://maps.google.com/?q=Rent'n+Go+Office,+Bucharest,+Romania";
+    const mapsUrl = "https://maps.app.goo.gl/2Qe38GZo9WzhDsh46";
     window.open(mapsUrl, '_blank');
   };
 
@@ -69,7 +33,7 @@ const ContactPage = () => {
         {/* Hero Section */}
         <section className="py-16 px-4">
           <div className="container mx-auto text-center">
-            <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
+            <AnimatedGroup variants={contactAnimationVariants} threshold={0.2} triggerOnce={true}>
               <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
                 Get in Touch
               </h1>
@@ -84,7 +48,7 @@ const ContactPage = () => {
         <section className="py-16 px-4 bg-card/50">
           <div className="container mx-auto">
             <div className="max-w-4xl mx-auto">
-              <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
+              <AnimatedGroup variants={contactAnimationVariants} threshold={0.2} triggerOnce={true}>
                 <div className="text-center mb-12">
                   <Badge variant="outline" className="mb-4 px-4 py-2 text-lg">
                     Meet the Man
@@ -140,7 +104,7 @@ const ContactPage = () => {
         <section className="py-16 px-4">
           <div className="container mx-auto">
             <div className="max-w-6xl mx-auto">
-              <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
+              <AnimatedGroup variants={contactAnimationVariants} threshold={0.2} triggerOnce={true}>
                 <div className="text-center mb-12">
                   <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
                     Let's Connect
@@ -205,12 +169,9 @@ const ContactPage = () => {
                 <div className="mt-12 text-center">
                   <h3 className="text-xl font-semibold text-foreground mb-6">Follow Us</h3>
                   <div className="flex justify-center gap-4">
-                    <Button variant="outline" size="lg" className="rounded-full">
-                      <Instagram className="w-5 h-5" />
-                    </Button>
-                    <Button variant="outline" size="lg" className="rounded-full">
-                      <Facebook className="w-5 h-5" />
-                    </Button>
+                    <SocialIcon url="https://www.tiktok.com/@rentn.go" style={{ height: 36, width: 36 }} borderRadius={"0.5rem"}/>
+                    <SocialIcon url="https://www.instagram.com/rentn_go.ro" style={{ height: 36, width: 36 }} borderRadius={"0.5rem"}/>
+                    <SocialIcon url="https://www.facebook.com/share/1Ad82uMtP3/?mibextid=wwXIfr" style={{ height: 36, width: 36 }} borderRadius={"0.5rem"}/>
                   </div>
                 </div>
               </AnimatedGroup>
@@ -224,30 +185,23 @@ const ContactPage = () => {
             <div className="max-w-4xl mx-auto">
               <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
                 <div className="text-center mb-12">
-                  <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                    Visit Our Office
-                  </h2>
                   <p className="text-muted-foreground text-lg">
-                    Located in the heart of Cluj-Napoca for your convenience
+                    Located in the most convenient location for you
                   </p>
                 </div>
 
                 <Card className="overflow-hidden shadow-xl">
                   <CardContent className="p-0">
                     <div className="relative">
-                      {/* Static Map Image Placeholder */}
-                      <div className="h-80 bg-muted/50 flex items-center justify-center relative">
-                        <div className="text-center">
-                          <MapPin className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                          <p className="text-foreground text-lg font-medium">
-                            Rent'n Go Office
-                          </p>
-                          <p className="text-muted-foreground">
-                            Cluj-Napoca, Romania
-                          </p>
-                        </div>
-                        {/* You can replace this with an actual static map image */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10 opacity-40"></div>
+                      {/* Map Image */}
+                      <div className="h-80 relative">
+                        <Image
+                          src="/maps.png"
+                          alt="Rent'n Go Office Location Map"
+                          fill
+                          className="object-cover"
+                          priority
+                        />
                       </div>
                       
                       <div className="p-6 bg-card">
@@ -258,7 +212,8 @@ const ContactPage = () => {
                             </h3>
                             <p className="text-muted-foreground flex items-center">
                               <MapPin className="w-4 h-4 mr-2" />
-                              Calea Turzii, Cluj-Napoca, Romania
+                              Cluj "Avram Iancu" International Airport
+                              Strada Traian Vuia 149-151, Cluj-Napoca 400397
                             </p>
                           </div>
                           <Button 
@@ -290,12 +245,8 @@ const ContactPage = () => {
                     </h3>
                     <div className="space-y-4">
                       <div className="flex justify-between items-center py-2 border-b border-border">
-                        <span className="font-medium text-foreground">Monday - Friday</span>
-                        <span className="text-muted-foreground">9:00 AM - 7:00 PM</span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 border-b border-border">
-                        <span className="font-medium text-foreground">Saturday</span>
-                        <span className="text-muted-foreground">9:00 AM - 5:00 PM</span>
+                        <span className="font-medium text-foreground">Monday - Saturday</span>
+                        <span className="text-muted-foreground">24/7</span>
                       </div>
                       <div className="flex justify-between items-center py-2">
                         <span className="font-medium text-foreground">Sunday</span>

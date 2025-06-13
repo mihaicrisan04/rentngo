@@ -173,8 +173,6 @@ const AboutPage = () => {
           </div>
         </section>
 
-        <Separator className="my-0" />
-
         {/* Values Section */}
         <section className="py-16 px-4 bg-muted/20">
           <div className="container mx-auto">
@@ -214,8 +212,6 @@ const AboutPage = () => {
             </div>
           </div>
         </section>
-
-        <Separator className="my-0" />
 
         {/* Mission Section */}
         <section className="py-16 px-4">

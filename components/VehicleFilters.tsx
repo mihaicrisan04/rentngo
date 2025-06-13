@@ -13,28 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { XIcon } from "lucide-react";
-
-// Updated Vehicle interface to match app/cars/page.tsx
-interface Vehicle {
-  _id: Id<"vehicles">;
-  make: string;
-  model: string;
-  year: number;
-  type: string;
-  pricePerDay: number;
-  currency?: string;
-  location: string;
-  features: string[];
-  status: string;
-  images: Id<"_storage">[];
-  mainImageId?: Id<"_storage">;
-  title?: string;
-  desc?: string;
-  engineCapacity?: number;
-  engineType?: string; 
-  fuelType?: string;
-  transmission?: string;
-}
+import { Vehicle } from "@/types/vehicle";
 
 interface VehicleFiltersProps {
   allVehicles: Vehicle[] | null;
