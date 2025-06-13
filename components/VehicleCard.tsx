@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Cog, Fuel, CarFront } from "lucide-react";
 import { Vehicle, getPriceForDuration } from "@/types/vehicle";
-import { calculateVehiclePricing, buildReservationUrl } from "@/lib/vehicleUtils";
+import { calculateVehiclePricing, buildReservationUrl, calculateVehiclePricingWithSeason, getPriceForDurationWithSeason } from "@/lib/vehicleUtils";
+import { useSeasonalPricing } from "@/hooks/useSeasonalPricing";
 
 interface VehicleCardProps {
   vehicle: Vehicle;
@@ -40,12 +41,16 @@ export function VehicleCard({
     vehicle?.mainImageId ? { imageId: vehicle.mainImageId } : "skip"
   );
 
+  const { multiplier: currentMultiplier, currentSeason } = useSeasonalPricing();
+
+
   if (!vehicle || typeof vehicle._id !== "string") {
     return <div className="p-4 border rounded-lg shadow-md bg-card text-card-foreground">Invalid vehicle data</div>;
   }
 
-  const priceDetails = calculateVehiclePricing(
+  const priceDetails = calculateVehiclePricingWithSeason(
     vehicle,
+    currentMultiplier,
     pickupDate,
     returnDate,
     deliveryLocation || undefined,
@@ -57,7 +62,7 @@ export function VehicleCard({
   // Calculate the current price per day based on rental duration
   const currentPricePerDay = React.useMemo(() => {
     if (priceDetails.days) {
-      return getPriceForDuration(vehicle, priceDetails.days);
+      return getPriceForDurationWithSeason(vehicle, priceDetails.days, currentMultiplier);
     }
     return vehicle.pricePerDay; // fallback to legacy price
   }, [vehicle, priceDetails.days]);

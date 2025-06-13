@@ -10,6 +10,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PricingTier } from "@/types/vehicle";
+import { useSeasonalPricing } from "@/hooks/useSeasonalPricing";
 
 interface PricingTiersTableProps {
   pricingTiers?: PricingTier[];
@@ -22,6 +23,8 @@ export function PricingTiersTable({
   currency = "EUR",
   currentDays 
 }: PricingTiersTableProps) {
+  const { multiplier: seasonalMultiplier } = useSeasonalPricing();
+
   // Don't render if no pricing tiers
   if (!pricingTiers || pricingTiers.length === 0) {
     return null;
@@ -47,10 +50,16 @@ export function PricingTiersTable({
     return currentDays >= tier.minDays && currentDays <= tier.maxDays;
   };
 
-  // Calculate potential savings compared to shortest tier
-  const basePrice = sortedTiers[0]?.pricePerDay || 0;
-  const calculateSavings = (pricePerDay: number): number => {
-    return basePrice - pricePerDay;
+  // Apply seasonal multiplier to pricing tier (final price user pays)
+  const getFinalPrice = (basePrice: number): number => {
+    return Math.round(basePrice * seasonalMultiplier);
+  };
+
+  // Calculate potential savings compared to shortest tier (with final pricing)
+  const basePrice = sortedTiers[0] ? getFinalPrice(sortedTiers[0].pricePerDay) : 0;
+  const calculateSavings = (tier: PricingTier): number => {
+    const finalPrice = getFinalPrice(tier.pricePerDay);
+    return basePrice - finalPrice;
   };
 
   return (
@@ -72,7 +81,8 @@ export function PricingTiersTable({
           </TableHeader>
           <TableBody>
             {sortedTiers.map((tier, index) => {
-              const savings = calculateSavings(tier.pricePerDay);
+              const finalPrice = getFinalPrice(tier.pricePerDay);
+              const savings = calculateSavings(tier);
               const isActive = isActiveTier(tier);
               
               return (
@@ -91,7 +101,7 @@ export function PricingTiersTable({
                     </div>
                   </TableCell>
                   <TableCell className="font-semibold">
-                    €{tier.pricePerDay.toFixed(2)}/{currency === "EUR" ? "day" : "zi"}
+                    €{finalPrice.toFixed(2)}/{currency === "EUR" ? "day" : "zi"}
                   </TableCell>
                   <TableCell>
                     {savings > 0 ? (
@@ -119,10 +129,11 @@ export function PricingTiersTable({
                   currentDays >= tier.minDays && currentDays <= tier.maxDays
                 );
                 if (activeTier) {
-                  const savings = calculateSavings(activeTier.pricePerDay);
+                  const finalPrice = getFinalPrice(activeTier.pricePerDay);
+                  const savings = calculateSavings(activeTier);
                   return (
                     <>
-                      €{activeTier.pricePerDay.toFixed(2)}/day
+                      €{finalPrice.toFixed(2)}/day
                       {savings > 0 && (
                         <span className="text-green-600 ml-2">
                           (Save €{savings.toFixed(2)}/day)

@@ -23,13 +23,14 @@ import { ArrowLeft, Calendar, Send, User, CreditCard, AlertCircle, Info } from "
 import { LocationPicker, getLocationPrice } from "@/components/LocationPicker";
 import { DateTimePicker } from "@/components/DateTimePicker";
 import { searchStorage } from "@/lib/searchStorage";
-import { calculateVehiclePricing } from "@/lib/vehicleUtils";
+import { calculateVehiclePricing, calculateVehiclePricingWithSeason, getPriceForDurationWithSeason } from "@/lib/vehicleUtils";
 import { getPriceForDuration } from "@/types/vehicle";
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { validateFlightNumber, formatFlightNumber } from "@/lib/flightValidation";
 import { Progress } from "@/components/ui/progress";
+import { useSeasonalPricing } from "@/hooks/useSeasonalPricing";
 import { before } from "node:test";
 
 // Payment method options
@@ -68,6 +69,9 @@ function ReservationPageContent() {
   
   // Only get vehicleId from URL - all form data comes from localStorage
   const vehicleId = searchParams.get("vehicleId");
+  
+  // Add seasonal pricing
+  const { multiplier: seasonalMultiplier, hasActiveSeason, currentSeason } = useSeasonalPricing();
   
   // Rental details state
   const [deliveryLocation, setDeliveryLocation] = React.useState<string>("");
@@ -213,12 +217,13 @@ function ReservationPageContent() {
     }
   };
 
-  // Calculate pricing using enhanced vehicle pricing utility
+  // Calculate pricing using enhanced vehicle pricing utility with seasonal adjustments
   const calculateTotalPrice = () => {
     if (pickupDate && returnDate && vehicle) {
-      // Use the enhanced pricing calculation from vehicleUtils
-      const vehiclePricing = calculateVehiclePricing(
+      // Use the enhanced pricing calculation with seasonal adjustment
+      const vehiclePricing = calculateVehiclePricingWithSeason(
         vehicle,
+        seasonalMultiplier,
         pickupDate,
         returnDate,
         deliveryLocation || undefined,
@@ -227,7 +232,7 @@ function ReservationPageContent() {
         returnTime
       );
       
-      const { basePrice, days, deliveryFee, returnFee, totalLocationFees } = vehiclePricing;
+      const { basePrice, days, deliveryFee, returnFee, totalLocationFees, seasonalAdjustment, basePriceBeforeSeason } = vehiclePricing;
       
       if (basePrice === null || days === null) {
         return { 
@@ -241,13 +246,16 @@ function ReservationPageContent() {
           snowChainsPrice: 0,
           childSeat1to4Price: 0,
           childSeat5to12Price: 0,
-          totalAdditionalFeatures: 0
+          totalAdditionalFeatures: 0,
+          seasonalMultiplier,
+          seasonalAdjustment: 0,
+          basePriceBeforeSeason: null,
         };
       }
       
-      // Calculate protection costs (warranty or SCDW)
+      // Calculate protection costs (warranty or SCDW) using seasonal-adjusted price
       const warrantyAmount = calculateWarranty(vehicle);
-      const currentPricePerDay = getPriceForDuration(vehicle, days);
+      const currentPricePerDay = getPriceForDurationWithSeason(vehicle, days, seasonalMultiplier);
       const scdwPrice = calculateSCDW(days, currentPricePerDay);
       
       // SCDW is added to total price, warranty is separate
@@ -272,7 +280,10 @@ function ReservationPageContent() {
         snowChainsPrice,
         childSeat1to4Price,
         childSeat5to12Price,
-        totalAdditionalFeatures
+        totalAdditionalFeatures,
+        seasonalMultiplier,
+        seasonalAdjustment,
+        basePriceBeforeSeason,
       };
     }
     return { 
@@ -288,11 +299,30 @@ function ReservationPageContent() {
       snowChainsPrice: 0,
       childSeat1to4Price: 0,
       childSeat5to12Price: 0,
-      totalAdditionalFeatures: 0
+      totalAdditionalFeatures: 0,
+      seasonalMultiplier: 1.0,
+      seasonalAdjustment: 0,
+      basePriceBeforeSeason: null,
     };
   };
 
-  const { basePrice, totalPrice, days, deliveryFee, returnFee, totalLocationFees, warrantyAmount, scdwPrice, protectionCost, snowChainsPrice, childSeat1to4Price, childSeat5to12Price, totalAdditionalFeatures } = calculateTotalPrice();
+  const { 
+    basePrice, 
+    totalPrice, 
+    days, 
+    deliveryFee, 
+    returnFee, 
+    totalLocationFees, 
+    warrantyAmount, 
+    scdwPrice, 
+    protectionCost, 
+    snowChainsPrice, 
+    childSeat1to4Price, 
+    childSeat5to12Price, 
+    totalAdditionalFeatures,
+    seasonalAdjustment,
+    basePriceBeforeSeason
+  } = calculateTotalPrice();
 
   // Calculate form completion progress
   const calculateFormProgress = (): number => {
@@ -805,7 +835,7 @@ function ReservationPageContent() {
                       <p className="text-muted-foreground">{vehicle.year}</p>
                       <div>
                         <p className="text-lg font-bold text-yellow-500">
-                          {days ? getPriceForDuration(vehicle, days) : vehicle.pricePerDay} EUR / Day
+                          {days ? getPriceForDurationWithSeason(vehicle, days, seasonalMultiplier) : Math.round(vehicle.pricePerDay * seasonalMultiplier)} EUR / Day
                         </p>
                         {days && vehicle.pricingTiers && vehicle.pricingTiers.length > 0 && (
                           <p className="text-xs text-muted-foreground">
@@ -1248,7 +1278,7 @@ function ReservationPageContent() {
                     <span>Base price ({days || 0} day{days === 1 ? "" : "s"}):</span>
                     <span>{basePrice || 0} EUR</span>
                   </div>
-                  
+
                   {deliveryFee > 0 && (
                     <div className="flex justify-between text-sm">
                       <span>Pick-up location fee:</span>

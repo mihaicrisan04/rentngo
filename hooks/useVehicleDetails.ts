@@ -3,7 +3,8 @@ import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
 import { searchStorage, SearchData } from "@/lib/searchStorage";
-import { calculateVehiclePricing, PriceDetails } from "@/lib/vehicleUtils";
+import { calculateVehiclePricing, calculateVehiclePricingWithSeason, getPriceForDurationWithSeason, PriceDetails } from "@/lib/vehicleUtils";
+import { useSeasonalPricing } from "./useSeasonalPricing";
 
 interface RentalState extends SearchData {
   isHydrated: boolean;
@@ -11,7 +12,7 @@ interface RentalState extends SearchData {
 
 export function useVehicleDetails(vehicleId: string) {
   const vehicle = useQuery(api.vehicles.getById, { id: vehicleId as Id<"vehicles"> });
-  
+  const { multiplier: currentMultiplier, currentSeason } = useSeasonalPricing();
   // Rental state management
   const [rentalState, setRentalState] = useState<RentalState>({
     deliveryLocation: "",
@@ -34,8 +35,9 @@ export function useVehicleDetails(vehicleId: string) {
   }, []);
 
   // Calculate pricing details using the enhanced vehicleUtils function
-  const priceDetails = calculateVehiclePricing(
+  const priceDetails = calculateVehiclePricingWithSeason(
     vehicle || { pricePerDay: 0 } as any, // fallback if vehicle is loading
+    currentMultiplier,
     rentalState.pickupDate,
     rentalState.returnDate,
     rentalState.deliveryLocation,
@@ -43,6 +45,7 @@ export function useVehicleDetails(vehicleId: string) {
     rentalState.pickupTime,
     rentalState.returnTime
   );
+
 
   // Handle rental details updates
   const updateRentalDetails = useCallback((updates: Partial<SearchData>) => {

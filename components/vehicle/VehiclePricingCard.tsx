@@ -1,7 +1,8 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PriceDetails } from "@/lib/vehicleUtils";
+import { useSeasonalPricing } from "@/hooks/useSeasonalPricing";
+import { PriceDetails, getPriceForDurationWithSeason } from "@/lib/vehicleUtils";
 import { Vehicle, getPriceForDuration } from "@/types/vehicle";
 
 interface VehiclePricingCardProps {
@@ -19,10 +20,11 @@ export function VehiclePricingCard({
   deliveryLocation,
   restitutionLocation
 }: VehiclePricingCardProps) {
+  const { multiplier: currentMultiplier, currentSeason } = useSeasonalPricing();
   const { basePrice, totalPrice, days, deliveryFee, returnFee, totalLocationFees } = priceDetails;
 
   // Get the appropriate price per day based on rental duration
-  const currentPricePerDay = days ? getPriceForDuration(vehicle, days) : 
+  const currentPricePerDay = days ? getPriceForDurationWithSeason(vehicle, days, currentMultiplier) : 
     (vehicle.pricingTiers && vehicle.pricingTiers.length > 0 ? 
       Math.max(...vehicle.pricingTiers.map(tier => tier.pricePerDay)) : 
       vehicle.pricePerDay);
@@ -30,15 +32,17 @@ export function VehiclePricingCard({
   // Calculate potential savings for longer rentals
   const getPricingTip = () => {
     if (!vehicle.pricingTiers || vehicle.pricingTiers.length <= 1) return null;
-    
-    const prices = vehicle.pricingTiers.map(tier => tier.pricePerDay);
+    const prices = vehicle.pricingTiers.map(tier => getPriceForDurationWithSeason(vehicle, tier.minDays, currentMultiplier));
     const highestPrice = Math.max(...prices);
     const lowestPrice = Math.min(...prices);
-    const savings = highestPrice - lowestPrice;
+
+    const savings = currentPricePerDay - lowestPrice;
     
     if (savings > 0) {
-      // Find the tier with the lowest price to show the minimum days needed
-      const bestTier = vehicle.pricingTiers.find(tier => tier.pricePerDay === lowestPrice);
+      // Find the tier with the lowest seasonally-adjusted price to show the minimum days needed
+      const bestTier = vehicle.pricingTiers.find(tier => 
+        getPriceForDurationWithSeason(vehicle, tier.minDays, currentMultiplier) === lowestPrice
+      );
       return {
         savings,
         minDaysForBest: bestTier?.minDays || 1,

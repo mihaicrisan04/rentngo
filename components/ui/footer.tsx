@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
-import { Instagram, Facebook, Heart } from "lucide-react"
 import Link from "next/link"
+import { SocialIcon } from 'react-social-icons'
+
 
 interface FooterProps {
   logo: React.ReactNode
@@ -10,12 +11,17 @@ interface FooterProps {
 
 const socialLinks = [
   {
-    icon: <Instagram className="h-5 w-5" />,
+    icon: <SocialIcon url="https://www.tiktok.com/@rentn.go" style={{ height: 36, width: 36 }} borderRadius={"0.5rem"}/>,
+    href: "https://www.tiktok.com/@rentngo",
+    label: "TikTok",
+  },
+  {
+    icon: <SocialIcon url="https://www.instagram.com/rentn_go.ro" style={{ height: 36, width: 36 }} borderRadius={"0.5rem"}/>,
     href: "https://www.instagram.com/rentn_go.ro",
     label: "Instagram",
   },
   {
-    icon: <Facebook className="h-5 w-5" />,
+    icon: <SocialIcon url="https://www.facebook.com/share/1Ad82uMtP3/?mibextid=wwXIfr" style={{ height: 36, width: 36 }} borderRadius={"0.5rem"}/>,
     href: "https://www.facebook.com/share/1Ad82uMtP3/?mibextid=wwXIfr",
     label: "Facebook",
   },
@@ -35,7 +41,7 @@ const legalLinks = [
 ]
 
 const copyright = {
-  text: "© 2024 RentNGo Cluj",
+  text: "© 2025 Rent'n Go Cluj",
   license: "All rights reserved",
 }
 
@@ -51,17 +57,8 @@ export function Footer({ logo, brandName }: FooterProps) {
           <div className="flex items-center gap-3 mt-6 md:mt-0">
             <ul className="flex list-none space-x-3">
               {socialLinks.map((link, i) => (
-                <li key={i}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10 rounded-full"
-                    asChild
-                  >
-                    <a href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.label}>
-                      {link.icon}
-                    </a>
-                  </Button>
+                <li key={i} className="h-9 w-9 rounded-full">
+                  {link.icon}
                 </li>
               ))}
             </ul>
