@@ -58,6 +58,11 @@ export const createReservation = mutation({
     }),
     promoCode: v.optional(v.string()),
     additionalCharges: v.optional(v.array(additionalChargeValidator)),
+    isSCDWSelected: v.boolean(),
+    deductibleAmount: v.number(),
+    protectionCost: v.optional(v.number()),
+    seasonId: v.optional(v.id("seasons")),
+    seasonalMultiplier: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     // Get the current authenticated user (if any)
@@ -95,6 +100,11 @@ export const createReservation = mutation({
       customerInfo: args.customerInfo,
       promoCode: args.promoCode,
       additionalCharges: args.additionalCharges,
+      isSCDWSelected: args.isSCDWSelected,
+      deductibleAmount: args.deductibleAmount,
+      protectionCost: args.protectionCost,
+      seasonId: args.seasonId,
+      seasonalMultiplier: args.seasonalMultiplier,
     };
 
     const reservationId = await ctx.db.insert("reservations", newReservationData);
@@ -244,6 +254,7 @@ export const updateReservationStatus = mutation({
 export const updateReservationDetails = mutation({
   args: {
     reservationId: v.id("reservations"),
+    vehicleId: v.optional(v.id("vehicles")),
     startDate: v.optional(v.number()),
     endDate: v.optional(v.number()),
     pickupTime: v.optional(v.string()),
@@ -266,6 +277,11 @@ export const updateReservationDetails = mutation({
     status: v.optional(reservationStatusValidator),
     promoCode: v.optional(v.string()),
     additionalCharges: v.optional(v.array(additionalChargeValidator)),
+    isSCDWSelected: v.optional(v.boolean()),
+    deductibleAmount: v.optional(v.number()),
+    protectionCost: v.optional(v.number()),
+    seasonId: v.optional(v.id("seasons")),
+    seasonalMultiplier: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
@@ -289,6 +305,7 @@ export const updateReservationDetails = mutation({
 
     // Construct the updates object carefully to pass to patch
     const updatesToApply: Partial<typeof reservation> = {};
+    if (updatesIn.vehicleId !== undefined) updatesToApply.vehicleId = updatesIn.vehicleId;
     if (updatesIn.startDate !== undefined) updatesToApply.startDate = updatesIn.startDate;
     if (updatesIn.endDate !== undefined) updatesToApply.endDate = updatesIn.endDate;
     if (updatesIn.pickupTime !== undefined) updatesToApply.pickupTime = updatesIn.pickupTime;
@@ -301,6 +318,11 @@ export const updateReservationDetails = mutation({
     if (updatesIn.status !== undefined) updatesToApply.status = updatesIn.status; // status is already validated by args
     if (updatesIn.promoCode !== undefined) updatesToApply.promoCode = updatesIn.promoCode;
     if (updatesIn.additionalCharges !== undefined) updatesToApply.additionalCharges = updatesIn.additionalCharges;
+    if (updatesIn.isSCDWSelected !== undefined) updatesToApply.isSCDWSelected = updatesIn.isSCDWSelected;
+    if (updatesIn.deductibleAmount !== undefined) updatesToApply.deductibleAmount = updatesIn.deductibleAmount;
+    if (updatesIn.protectionCost !== undefined) updatesToApply.protectionCost = updatesIn.protectionCost;
+    if (updatesIn.seasonId !== undefined) updatesToApply.seasonId = updatesIn.seasonId;
+    if (updatesIn.seasonalMultiplier !== undefined) updatesToApply.seasonalMultiplier = updatesIn.seasonalMultiplier;
 
 
     if (Object.keys(updatesToApply).length === 0) {

@@ -16,6 +16,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { usePathname } from "next/navigation"
+import React from "react"
 
 export default function AdminLayout({
   children,
@@ -46,16 +47,14 @@ export default function AdminLayout({
             <Breadcrumb>
               <BreadcrumbList>
                 {breadcrumbItems.map((item, index) => (
-                  <>
-                    <BreadcrumbItem key={item.href}>
+                  <React.Fragment key={item.href}>
+                    <BreadcrumbItem>
                       <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
                     </BreadcrumbItem>
-                  {index < breadcrumbItems.length - 1 && (
-                    <>
+                    {index < breadcrumbItems.length - 1 && (
                       <BreadcrumbSeparator className="hidden md:block" />
-                    </>
-                  )}
-                  </>
+                    )}
+                  </React.Fragment>
                 ))}
               </BreadcrumbList>
             </Breadcrumb>

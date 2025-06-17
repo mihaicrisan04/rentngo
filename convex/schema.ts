@@ -79,6 +79,19 @@ export default defineSchema({
       description: v.string(),
       amount: v.number(),
     }))),
+    // Simple protection fields
+    // True if SCDW is selected (zero deductible). False if standard warranty (non-zero deductible).
+    isSCDWSelected: v.boolean(), 
+    // The deductible amount applicable to this reservation. 
+    // If isSCDWSelected is true, this should be 0. Otherwise, it's the warranty deductible.
+    deductibleAmount: v.number(), 
+    // The cost added to the totalPrice specifically for the chosen protection (warranty or SCDW)
+    protectionCost: v.optional(v.number()),
+    // Seasonal pricing tracking
+    // Store the season ID that was active when this reservation was created
+    seasonId: v.optional(v.id("seasons")),
+    // Store the multiplier that was applied (for historical accuracy even if season changes)
+    seasonalMultiplier: v.optional(v.number()),
   }).index("by_user", ["userId"])
     .index("by_vehicle", ["vehicleId"])
     .index("by_dates", ["startDate", "endDate"])

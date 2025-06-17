@@ -31,7 +31,7 @@ import { toast } from "sonner";
 import { validateFlightNumber, formatFlightNumber } from "@/lib/flightValidation";
 import { Progress } from "@/components/ui/progress";
 import { useSeasonalPricing } from "@/hooks/useSeasonalPricing";
-import { before } from "node:test";
+import { z } from "zod";
 
 // Payment method options
 const paymentMethods = [
@@ -39,6 +39,33 @@ const paymentMethods = [
   { id: "card_on_delivery", label: "Card payment on delivery", description: "Pay with card when you pick up the vehicle", disabled: false },
   { id: "card_online", label: "Card payment online (coming soon)", description: "Pay now with your card", disabled: true }
 ];
+
+// Validation schema for reservation form
+const reservationSchema = z.object({
+  // Personal info
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Please enter a valid email"),
+  phone: z.string().min(1, "Phone number is required"),
+  flightNumber: z.string().optional().refine((val) => {
+    if (!val || !val.trim()) return true; // Optional field
+    return validateFlightNumber(val);
+  }, "Flight number must be in format 'XX 1234' (e.g., 'AA 1234')"),
+  message: z.string().optional(),
+  
+  // Rental details
+  deliveryLocation: z.string().min(1, "Pick-up location is required"),
+  pickupDate: z.date({ required_error: "Pick-up date is required" }),
+  pickupTime: z.string().min(1, "Pick-up time is required"),
+  restitutionLocation: z.string().min(1, "Return location is required"),
+  returnDate: z.date({ required_error: "Return date is required" }),
+  returnTime: z.string().min(1, "Return time is required"),
+  
+  // Payment
+  paymentMethod: z.enum(["cash_on_delivery", "card_on_delivery", "card_online"], {
+    required_error: "Payment method is required",
+  }),
+  termsAccepted: z.boolean().refine((val) => val === true, "You must accept the terms and conditions"),
+});
 
 // Form validation errors interface
 interface FormErrors {
@@ -95,8 +122,8 @@ function ReservationPageContent() {
   const [termsAccepted, setTermsAccepted] = React.useState(false);
   const [scdwSelected, setScdwSelected] = React.useState(false);
   
-  // Protection state (warranty vs SCDW)
-  const [useWarranty, setUseWarranty] = React.useState(true); // Default to warranty
+  // Protection state (SCDW vs Standard warranty)
+  const [isSCDWSelected, setIsSCDWSelected] = React.useState(false); // Default to standard warranty
   
   // Additional features state
   const [snowChainsSelected, setSnowChainsSelected] = React.useState(false);
@@ -258,8 +285,9 @@ function ReservationPageContent() {
       const currentPricePerDay = getPriceForDurationWithSeason(vehicle, days, seasonalMultiplier);
       const scdwPrice = calculateSCDW(days, currentPricePerDay);
       
-      // SCDW is added to total price, warranty is separate
-      const protectionCost = useWarranty ? 0 : scdwPrice;
+      // Calculate protection cost and deductible based on selection
+      const protectionCost = isSCDWSelected ? scdwPrice : 0;
+      const deductibleAmount = isSCDWSelected ? 0 : (warrantyAmount || 0);
       
       // Add additional features
       const snowChainsPrice = snowChainsSelected ? days * 3 : 0;
@@ -277,6 +305,7 @@ function ReservationPageContent() {
         warrantyAmount,
         scdwPrice,
         protectionCost,
+        deductibleAmount,
         snowChainsPrice,
         childSeat1to4Price,
         childSeat5to12Price,
@@ -296,6 +325,7 @@ function ReservationPageContent() {
       warrantyAmount: 0,
       scdwPrice: 0,
       protectionCost: 0,
+      deductibleAmount: 0,
       snowChainsPrice: 0,
       childSeat1to4Price: 0,
       childSeat5to12Price: 0,
@@ -315,7 +345,8 @@ function ReservationPageContent() {
     totalLocationFees, 
     warrantyAmount, 
     scdwPrice, 
-    protectionCost, 
+    protectionCost,
+    deductibleAmount, 
     snowChainsPrice, 
     childSeat1to4Price, 
     childSeat5to12Price, 
@@ -354,47 +385,45 @@ function ReservationPageContent() {
 
   const formProgress = calculateFormProgress();
 
-  // Form validation
+  // Form validation using Zod
   const validateForm = (): FormErrors => {
+    const formData = {
+      name: personalInfo.name.trim(),
+      email: personalInfo.email.trim(),
+      phone: personalInfo.phone.trim(),
+      flightNumber: personalInfo.flightNumber?.trim() || undefined,
+      message: personalInfo.message?.trim() || undefined,
+      deliveryLocation,
+      pickupDate,
+      pickupTime,
+      restitutionLocation,
+      returnDate,
+      returnTime,
+      paymentMethod,
+      termsAccepted,
+    };
+
+    const result = reservationSchema.safeParse(formData);
     const newErrors: FormErrors = {};
 
-    // Personal info validation
-    if (!personalInfo.name.trim()) {
-      newErrors.personalInfo = { ...newErrors.personalInfo, name: "Name is required" };
-    }
-    if (!personalInfo.email.trim()) {
-      newErrors.personalInfo = { ...newErrors.personalInfo, email: "Email is required" };
-    } else if (!/\S+@\S+\.\S+/.test(personalInfo.email)) {
-      newErrors.personalInfo = { ...newErrors.personalInfo, email: "Email is not valid" };
-    }
-    if (!personalInfo.phone.trim()) {
-      newErrors.personalInfo = { ...newErrors.personalInfo, phone: "Phone number is required" };
-    }
-    if (personalInfo.flightNumber.trim() && !validateFlightNumber(personalInfo.flightNumber)) {
-      newErrors.personalInfo = { ...newErrors.personalInfo, flightNumber: "Flight number must be in format 'XX 1234' (e.g., 'AA 1234')" };
-    }
-
-    // Rental details validation
-    if (!deliveryLocation) {
-      newErrors.rentalDetails = { ...newErrors.rentalDetails, deliveryLocation: "Pick-up location is required" };
-    }
-    if (!pickupDate) {
-      newErrors.rentalDetails = { ...newErrors.rentalDetails, pickupDate: "Pick-up date is required" };
-    }
-    if (!pickupTime) {
-      newErrors.rentalDetails = { ...newErrors.rentalDetails, pickupTime: "Pick-up time is required" };
-    }
-    if (!restitutionLocation) {
-      newErrors.rentalDetails = { ...newErrors.rentalDetails, restitutionLocation: "Return location is required" };
-    }
-    if (!returnDate) {
-      newErrors.rentalDetails = { ...newErrors.rentalDetails, returnDate: "Return date is required" };
-    }
-    if (!returnTime) {
-      newErrors.rentalDetails = { ...newErrors.rentalDetails, returnTime: "Return time is required" };
+    if (!result.success) {
+      result.error.errors.forEach((error) => {
+        const path = error.path[0] as string;
+        
+        // Map field names to error structure
+        if (['name', 'email', 'phone', 'flightNumber'].includes(path)) {
+          newErrors.personalInfo = { ...newErrors.personalInfo, [path]: error.message };
+        } else if (['deliveryLocation', 'pickupDate', 'pickupTime', 'restitutionLocation', 'returnDate', 'returnTime'].includes(path)) {
+          newErrors.rentalDetails = { ...newErrors.rentalDetails, [path]: error.message };
+        } else if (['paymentMethod'].includes(path)) {
+          newErrors.payment = { ...newErrors.payment, method: error.message };
+        } else if (['termsAccepted'].includes(path)) {
+          newErrors.payment = { ...newErrors.payment, termsAccepted: error.message };
+        }
+      });
     }
 
-    // Check if pickup and return are on same day and validate times
+    // Additional validation for same-day time logic
     if (pickupDate && returnDate && pickupTime && returnTime) {
       const isSameDay = pickupDate.getFullYear() === returnDate.getFullYear() &&
                        pickupDate.getMonth() === returnDate.getMonth() &&
@@ -411,14 +440,6 @@ function ReservationPageContent() {
           };
         }
       }
-    }
-
-    // Payment validation
-    if (!paymentMethod) {
-      newErrors.payment = { ...newErrors.payment, method: "Payment method is required" };
-    }
-    if (!termsAccepted) {
-      newErrors.payment = { ...newErrors.payment, termsAccepted: "You must accept the terms and conditions" };
     }
 
     return newErrors;
@@ -445,7 +466,7 @@ function ReservationPageContent() {
 
     setIsSubmitting(true);
 
-    try {
+    try {      
       // Prepare additional charges for location fees and SCDW (core info is now in dedicated fields)
       const additionalCharges = [];
       
@@ -464,18 +485,8 @@ function ReservationPageContent() {
         });
       }
       
-      // Add protection option (warranty or SCDW)
-      if (useWarranty && warrantyAmount > 0) {
-        additionalCharges.push({
-          description: `Warranty (refundable) - ${vehicle.type || 'Standard'} vehicle`,
-          amount: warrantyAmount,
-        });
-      } else if (!useWarranty && scdwPrice > 0) {
-        additionalCharges.push({
-          description: "SCDW Insurance (non-refundable)",
-          amount: scdwPrice,
-        });
-      }
+      // Protection cost is now handled via dedicated fields, no need to add as additional charge
+      // Note: Warranty is now handled via deductibleAmount field, not as additional charge
 
       // Add additional features
       if (snowChainsSelected && snowChainsPrice > 0) {
@@ -499,6 +510,14 @@ function ReservationPageContent() {
         });
       }
 
+      // Calculate protection values for the mutation
+      const currentWarrantyAmount = calculateWarranty(vehicle);
+      const currentDays = days || 0;
+      const currentPricePerDay = currentDays > 0 ? getPriceForDurationWithSeason(vehicle, currentDays, seasonalMultiplier) : vehicle.pricePerDay;
+      const currentScdwPrice = currentDays > 0 ? calculateSCDW(currentDays, currentPricePerDay) : 0;
+      const currentProtectionCost = isSCDWSelected ? currentScdwPrice : 0;
+      const currentDeductibleAmount = isSCDWSelected ? 0 : currentWarrantyAmount;
+
       // Get the Convex user ID (not the Clerk user ID)
       const reservationId = await createReservationMutation({
         userId: currentUser ? currentUser._id : undefined,
@@ -520,6 +539,11 @@ function ReservationPageContent() {
         },
         promoCode: undefined, // TODO: Add promo code functionality
         additionalCharges: additionalCharges.length > 0 ? additionalCharges : undefined,
+        isSCDWSelected: isSCDWSelected,
+        deductibleAmount: currentDeductibleAmount,
+        protectionCost: currentProtectionCost > 0 ? currentProtectionCost : undefined,
+        seasonId: currentSeason?.seasonId,
+        seasonalMultiplier: seasonalMultiplier,
       });
 
       // Send confirmation email
@@ -1216,7 +1240,7 @@ function ReservationPageContent() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                                                   <Label className="font-medium">
-                          {useWarranty ? "Warranty (Refundable)" : "SCDW Insurance (Non-refundable)"}
+                          {isSCDWSelected ? "SCDW Insurance (Non-refundable)" : "Standard Warranty (Refundable)"}
                         </Label>
                           <HoverCard>
                             <HoverCardTrigger asChild>
@@ -1243,30 +1267,30 @@ function ReservationPageContent() {
                           </HoverCard>
                         </div>
                         <p className="text-sm font-medium">
-                          {useWarranty 
-                            ? `${warrantyAmount || 0} EUR (separate)` 
-                            : `${scdwPrice || 0} EUR (included)`}
+                          {isSCDWSelected 
+                            ? `${scdwPrice || 0} EUR (included)` 
+                            : `${warrantyAmount || 0} EUR (separate)`}
                         </p>
                       </div>
                       
                       <div className="flex items-center justify-center space-x-4">
-                        <Label className={`text-sm font-medium ${useWarranty ? 'text-foreground' : 'text-muted-foreground'}`}>
-                          Warranty
+                        <Label className={`text-sm font-medium ${!isSCDWSelected ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          Standard Warranty
                         </Label>
                         <Switch
                           id="protection-toggle"
-                          checked={!useWarranty}
-                          onCheckedChange={(checked) => setUseWarranty(!checked)}
+                          checked={isSCDWSelected}
+                          onCheckedChange={(checked) => setIsSCDWSelected(checked)}
                         />
-                        <Label className={`text-sm font-medium ${!useWarranty ? 'text-foreground' : 'text-muted-foreground'}`}>
+                        <Label className={`text-sm font-medium ${isSCDWSelected ? 'text-foreground' : 'text-muted-foreground'}`}>
                           SCDW
                         </Label>
                       </div>
                       
                       <p className="text-xs text-center text-muted-foreground">
-                        {useWarranty 
-                          ? "Refundable if no damages" 
-                          : "Non-refundable insurance"}
+                        {isSCDWSelected 
+                          ? "Non-refundable insurance" 
+                          : "Refundable if no damages"}
                       </p>
                     </div>
                   </div>
@@ -1300,7 +1324,7 @@ function ReservationPageContent() {
                     </div>
                   )}
                   
-                  {!useWarranty && scdwPrice > 0 && (
+                  {isSCDWSelected && scdwPrice > 0 && (
                     <div className="flex justify-between text-sm">
                       <span>SCDW Insurance (non-refundable):</span>
                       <span>{scdwPrice} EUR</span>
@@ -1340,14 +1364,14 @@ function ReservationPageContent() {
                       <span>Total Price:</span>
                       <span className="text-green-600">
                         {totalPrice || 0} EUR
-                        {useWarranty && warrantyAmount && warrantyAmount > 0 && (
+                        {!isSCDWSelected && warrantyAmount && warrantyAmount > 0 && (
                           <span className="text-sm font-normal text-muted-foreground ml-2">
                             + {warrantyAmount} EUR warranty
                           </span>
                         )}
                       </span>
                     </div>
-                    {useWarranty && warrantyAmount && warrantyAmount > 0 && (
+                    {!isSCDWSelected && warrantyAmount && warrantyAmount > 0 && (
                       <div className="text-right text-xs text-muted-foreground mt-1">
                         Warranty is refundable if no damages
                       </div>
