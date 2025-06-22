@@ -1,9 +1,32 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
-const isProtectedRoute = createRouteMatcher(["/dashboard(.*)"]);
+
+// Admin routes that require admin role
+const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
+
+const ADMIN_USER_IDS = [
+  "user_2wrgqldXONHGnBJvkeLqTMisRiZ", // Add your admin user IDs here
+  // "user_another_admin_id",
+];
 
 export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) await auth.protect();
+  // Then check admin routes specifically
+  if (isAdminRoute(req)) {
+    const { userId } = await auth();
+    
+    // If no user is authenticated, redirect to sign-in
+    if (!userId) {
+      const homeUrl = new URL("/", req.url);
+      return NextResponse.redirect(homeUrl);
+    }
+    
+    // If user is authenticated but not an admin, redirect to home
+    if (!ADMIN_USER_IDS.includes(userId)) {
+      const homeUrl = new URL("/", req.url);
+      return NextResponse.redirect(homeUrl);
+    }
+  }
 });
 
 export const config = {

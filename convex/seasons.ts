@@ -23,6 +23,30 @@ export const getAll = query({
   },
 });
 
+// Get season by ID
+export const getById = query({
+  args: { id: v.id("seasons") },
+  returns: v.union(
+    v.null(),
+    v.object({
+      _id: v.id("seasons"),
+      _creationTime: v.number(),
+      name: v.string(),
+      description: v.optional(v.string()),
+      multiplier: v.number(),
+      periods: v.array(v.object({
+        startDate: v.string(),
+        endDate: v.string(),
+        description: v.optional(v.string())
+      })),
+      isActive: v.boolean(),
+    })
+  ),
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.id);
+  },
+});
+
 // Get active seasons only
 export const getActive = query({
   args: {},

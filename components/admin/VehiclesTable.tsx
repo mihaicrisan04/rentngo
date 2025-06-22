@@ -1,0 +1,279 @@
+"use client";
+
+import { useState } from "react";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { Id } from "@/convex/_generated/dataModel";
+import { Vehicle } from "@/types/vehicle";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { Edit, Trash2, MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { EditVehicleDialog } from "@/components/admin/EditVehicleDialog";
+import { toast } from "sonner";
+
+const ITEMS_PER_PAGE = 10;
+
+export function VehiclesTable() {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [editingVehicle, setEditingVehicle] = useState<Id<"vehicles"> | null>(null);
+  
+  const paginationOpts = {
+    numItems: ITEMS_PER_PAGE,
+    cursor: null,
+  };
+
+  const vehiclesData = useQuery(api.vehicles.getAll, {
+    paginationOpts,
+    filters: undefined,
+  });
+
+  const deleteVehicle = useMutation(api.vehicles.remove);
+
+  const handleEdit = (vehicleId: Id<"vehicles">) => {
+    setEditingVehicle(vehicleId);
+  };
+
+  const handleDelete = async (vehicleId: Id<"vehicles">, vehicleName: string) => {
+    if (confirm(`Are you sure you want to delete ${vehicleName}? This action cannot be undone.`)) {
+      try {
+        await deleteVehicle({ id: vehicleId });
+        toast.success("Vehicle deleted successfully", {
+          description: `${vehicleName} has been removed from your fleet.`,
+          position: "bottom-right",
+        });
+      } catch (error) {
+        toast.error("Failed to delete vehicle", {
+          description: "Please try again later.",
+          position: "bottom-right",
+        });
+        console.error("Delete error:", error);
+      }
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      available: { color: "bg-green-100 text-green-800", label: "Available" },
+      rented: { color: "bg-blue-100 text-blue-800", label: "Rented" },
+      maintenance: { color: "bg-orange-100 text-orange-800", label: "Maintenance" },
+    };
+    
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.available;
+    
+    return (
+      <Badge variant="secondary" className={config.color}>
+        {config.label}
+      </Badge>
+    );
+  };
+
+  const VehicleImage = ({ vehicle }: { vehicle: Vehicle }) => {
+    const imageUrl = useQuery(
+      api.vehicles.getImageUrl,
+      vehicle.mainImageId ? { imageId: vehicle.mainImageId } : "skip"
+    );
+
+    return (
+      <div className="w-16 h-12 relative rounded-md overflow-hidden bg-muted">
+        {imageUrl ? (
+          <Image
+            src={imageUrl}
+            alt={`${vehicle.make} ${vehicle.model}`}
+            fill
+            className="object-cover"
+            sizes="64px"
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full text-xs text-muted-foreground">
+            No Image
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  if (!vehiclesData) {
+    return <div className="flex justify-center py-8">Loading vehicles...</div>;
+  }
+
+  const { page: vehicles, isDone } = vehiclesData;
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-20">Image</TableHead>
+              <TableHead>Vehicle</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Year</TableHead>
+              <TableHead>Engine</TableHead>
+              <TableHead>Transmission</TableHead>
+              <TableHead>Fuel</TableHead>
+              <TableHead>Price/Day</TableHead>
+              <TableHead>Location</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="w-16">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {vehicles.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
+                  No vehicles found. Add your first vehicle to get started.
+                </TableCell>
+              </TableRow>
+            ) : (
+              vehicles.map((vehicle) => (
+                <TableRow key={vehicle._id}>
+                  <TableCell>
+                    <VehicleImage vehicle={vehicle} />
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">
+                        {vehicle.make} {vehicle.model}
+                      </div>
+                      {vehicle.seats && (
+                        <div className="text-sm text-muted-foreground">
+                          {vehicle.seats} seats
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {vehicle.type ? (
+                      <span className="capitalize">{vehicle.type}</span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>{vehicle.year || "-"}</TableCell>
+                  <TableCell>
+                    {vehicle.engineCapacity && vehicle.engineType ? (
+                      <div className="text-sm">
+                        <div>{vehicle.engineCapacity}L</div>
+                        <div className="text-muted-foreground">{vehicle.engineType}</div>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {vehicle.transmission ? (
+                      <span className="capitalize">{vehicle.transmission}</span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {vehicle.fuelType ? (
+                      <span className="capitalize">{vehicle.fuelType}</span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium">{vehicle.pricePerDay} EUR</div>
+                    {vehicle.warranty && (
+                      <div className="text-xs text-muted-foreground">
+                        Warranty: {vehicle.warranty} EUR
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {vehicle.location || (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>{getStatusBadge(vehicle.status)}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => handleEdit(vehicle._id)}
+                          className="cursor-pointer"
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleDelete(vehicle._id, `${vehicle.make} ${vehicle.model}`)}
+                          className="cursor-pointer text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {vehicles.length > 0 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Showing {vehicles.length} vehicles
+          </div>
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious 
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
+              <PaginationItem>
+                <PaginationLink className="cursor-default">
+                  {currentPage}
+                </PaginationLink>
+              </PaginationItem>
+              {!isDone && (
+                <PaginationItem>
+                  <PaginationNext 
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    className="cursor-pointer"
+                  />
+                </PaginationItem>
+              )}
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
+
+      {editingVehicle && (
+        <EditVehicleDialog
+          open={!!editingVehicle}
+          onOpenChange={(open: boolean) => !open && setEditingVehicle(null)}
+          vehicleId={editingVehicle}
+        />
+      )}
+    </div>
+  );
+} 

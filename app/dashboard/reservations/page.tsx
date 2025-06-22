@@ -238,6 +238,9 @@ function CreateReservationDialog({ open, onOpenChange, onSuccess }: CreateReserv
     customerPhone: "", // Customer phone
     customerMessage: "", // Optional customer message
     promoCode: "",
+    isSCDWSelected: false,
+    deductibleAmount: 0,
+    protectionCost: 0,
     // additionalCharges: [], // For simplicity, not adding complex fields initially
   };
 
@@ -290,6 +293,9 @@ function CreateReservationDialog({ open, onOpenChange, onSuccess }: CreateReserv
         },
         promoCode: formData.promoCode || undefined,
         additionalCharges: undefined,
+        isSCDWSelected: formData.isSCDWSelected,
+        deductibleAmount: formData.deductibleAmount,
+        protectionCost: formData.protectionCost,
       };
 
       // TODO: Add more robust validation, e.g., endDate > startDate, totalPrice > 0
@@ -531,6 +537,57 @@ function CreateReservationDialog({ open, onOpenChange, onSuccess }: CreateReserv
                   className="mt-1"
                   disabled={isSubmitting}
                 />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="font-medium">Protection & Insurance</h4>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="isSCDWSelected"
+                  checked={formData.isSCDWSelected}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    isSCDWSelected: e.target.checked,
+                    // If SCDW is selected, set deductible to 0
+                    deductibleAmount: e.target.checked ? 0 : formData.deductibleAmount
+                  })}
+                  disabled={isSubmitting}
+                  className="rounded border-gray-300"
+                />
+                <Label htmlFor="isSCDWSelected" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Super Collision Damage Waiver (SCDW) - Zero deductible protection
+                </Label>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="deductibleAmount">Deductible Amount (EUR)</Label>
+                  <Input
+                    id="deductibleAmount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.deductibleAmount}
+                    onChange={(e) => setFormData({ ...formData, deductibleAmount: parseFloat(e.target.value) || 0 })}
+                    className="mt-1"
+                    disabled={isSubmitting || formData.isSCDWSelected}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="protectionCost">Protection Cost (EUR)</Label>
+                  <Input
+                    id="protectionCost"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.protectionCost}
+                    onChange={(e) => setFormData({ ...formData, protectionCost: parseFloat(e.target.value) || 0 })}
+                    className="mt-1"
+                    disabled={isSubmitting}
+                  />
+                </div>
               </div>
             </div>
 
