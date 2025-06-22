@@ -6,8 +6,9 @@ import { NextResponse } from "next/server";
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 
 const ADMIN_USER_IDS = [
-  "user_2wrgqldXONHGnBJvkeLqTMisRiZ", // Add your admin user IDs here
-  // "user_another_admin_id",
+  "user_2wrgqldXONHGnBJvkeLqTMisRiZ", // mihai dev env
+  "user_2ysDX4oi6GmtJ9xKYVBSFFFjflH", // tudor prod env
+  "user_2xbWHVNoaZTbon4ptfxvjwet6lT", // mihai prod env
 ];
 
 export default clerkMiddleware(async (auth, req) => {
