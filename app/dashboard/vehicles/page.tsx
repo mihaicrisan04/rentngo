@@ -4,8 +4,8 @@ import { usePaginatedQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import Link from "next/link";
 import { useState, useRef, useCallback } from "react";
-import { CreateVehicleForm } from "@/components/CreateVehicleForm";
-import { VehicleImage } from "@/components/VehicleImage";
+import { CreateVehicleForm } from "@/components/create-vehicle-form";
+import { VehicleImage } from "@/components/vehicle-image";
 import { Button } from "@/components/ui/button";
 import {
   Select,

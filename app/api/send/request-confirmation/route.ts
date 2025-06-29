@@ -1,4 +1,4 @@
-import RentalRequestEmail from '@/components/EmailRequestReservation';
+import RentalRequestEmail from '@/components/email-request-reservation';
 import { Resend } from 'resend';
 import type * as React from 'react';
 import { NextResponse } from 'next/server';

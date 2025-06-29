@@ -1,9 +1,9 @@
 "use client";
 
-import { VehicleFilters } from "@/components/VehicleFilters";
-import { PageLayout } from "@/components/layout/PageLayout";
-import { VehicleSearchForm } from "@/components/vehicle/VehicleSearchForm";
-import { VehicleListDisplay } from "@/components/vehicle/VehicleListDisplay";
+import { VehicleFilters } from "@/components/vehicle-filters";
+import { PageLayout } from "@/components/layout/page-layout";
+import { VehicleSearchForm } from "@/components/vehicle/vehicle-search-form";
+import { VehicleListDisplay } from "@/components/vehicle/vehicle-list-display";
 import { useVehicleSearch } from "@/hooks/useVehicleSearch";
 import { useVehicleList } from "@/hooks/useVehicleList";
 import { Vehicle } from "@/types/vehicle";

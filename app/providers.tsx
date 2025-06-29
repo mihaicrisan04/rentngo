@@ -1,9 +1,9 @@
 'use client'
 
-import ConvexClientProvider from "@/components/ConvexClientProvider";
+import ConvexClientProvider from "@/components/convex-client-provider";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "next-themes";
-import { UserEnsurer } from "@/components/UserEnsurer";
+import { UserEnsurer } from "@/components/user-ensurer";
 import { Toaster } from "@/components/ui/sonner";
 
 export function Providers({children}: { children: React.ReactNode }) {

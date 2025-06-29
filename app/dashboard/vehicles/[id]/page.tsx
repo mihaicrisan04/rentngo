@@ -6,7 +6,7 @@ import { api } from "../../../../convex/_generated/api";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { Id } from "../../../../convex/_generated/dataModel";
-import { VehicleImage } from "@/components/VehicleImage";
+import { VehicleImage } from "@/components/vehicle-image";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { EditVehicleForm } from "@/components/EditVehicleForm";
+import { EditVehicleForm } from "@/components/edit-vehicle-form";
 
 export default function CarDetailPage() {
   const params = useParams();

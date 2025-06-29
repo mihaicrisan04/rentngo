@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { ReservationsTable } from "@/components/admin/ReservationsTable";
-import { CreateReservationDialog } from "@/components/admin/CreateReservationDialog";
+import { ReservationsTable } from "@/components/admin/reservation-table";
+import { CreateReservationDialog } from "@/components/admin/create-reservation-dialog";
 
 export default function ReservationsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);

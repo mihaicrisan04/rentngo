@@ -14,14 +14,14 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { ArrowLeft } from "lucide-react";
-import { PageLayout } from "@/components/layout/PageLayout";
-import { VehicleImageCarousel } from "@/components/vehicle/VehicleImageCarousel";
-import { VehicleSpecifications } from "@/components/vehicle/VehicleSpecifications";
-import { VehiclePricingCard } from "@/components/vehicle/VehiclePricingCard";
-import { PricingTiersTable } from "@/components/vehicle/PricingTiersTable";
+import { PageLayout } from "@/components/layout/page-layout";
+import { VehicleImageCarousel } from "@/components/vehicle/vehicle-image-carrousel";
+import { VehicleSpecifications } from "@/components/vehicle/vehicle-specifications";
+import { VehiclePricingCard } from "@/components/vehicle/vehicle-pricing-card";
+import { PricingTiersTable } from "@/components/vehicle/pricing-tiers-table";
 import { useVehicleDetails } from "@/hooks/useVehicleDetails";
 import { formatVehicleName, getVehicleTypeLabel } from "@/lib/vehicleUtils";
-import { RentalDetails } from "@/components/RentalDetails";
+import { RentalDetails } from "@/components/rental-details";
 
 export default function CarDetailPage() {
   const params = useParams();

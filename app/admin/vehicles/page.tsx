@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { VehiclesTable } from "@/components/admin/VehiclesTable";
-import { CreateVehicleDialog } from "@/components/admin/CreateVehicleDialog";
+import { VehiclesTable } from "@/components/admin/vehicles-table";
+import { CreateVehicleDialog } from "@/components/admin/create-vehicle-dialog";
 
 export default function VehiclesPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);

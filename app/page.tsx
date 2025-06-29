@@ -25,8 +25,8 @@ import {
 import DisplayCards from "@/components/ui/display-cards";
 import { TestimonialsSection } from "@/components/blocks/testimonials-with-marquee";
 import { Header } from "@/components/ui/header";
-import { VehicleSearchFilterForm } from "@/components/VehicleSearchFilterForm"; // Import the new form
-import { VehicleCard } from "@/components/VehicleCard"; // Import the new VehicleCard
+import { VehicleSearchFilterForm } from "@/components/vehicle-search-filter-form"; // Import the new form
+import { VehicleCard } from "@/components/vehicle-card"; // Import the new VehicleCard
 import { FaqSection } from "@/components/blocks/faq"; // Re-added import for FaqSection
 import { BackgroundImage } from "@/components/ui/BackgroundImage"; // Import the new BackgroundImage component
 import { AnimatedGroup } from "@/components/ui/animated-group"; // Import AnimatedGroup

@@ -14,6 +14,7 @@
   "dependencies": {
     "@clerk/clerk-react": "^5.25.0",
     "@clerk/nextjs": "^6.19.1",
+    "@googlemaps/google-maps-services-js": "^3.4.1",
     "@heroui/autocomplete": "^2.3.20",
     "@heroui/react": "^2.7.8",
     "@heroui/system": "^2.4.15",
