@@ -21,7 +21,37 @@ import {
 export default function TransfersPage() {
   return (
     <div className="relative flex flex-col min-h-screen">
-      <BackgroundImage bottomGradient={true} />
+      <Header logo={<Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} />} />
+
+      <main className="relative z-10 flex flex-col gap-8">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-secondary tracking-tight">
+            Coming Soon
+          </h1>
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl px-4">
+            Our transfer service is currently under development. We're working hard to bring you reliable airport and city transfers.
+          </p>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <CheckCircle className="w-4 h-4" />
+            <span>Professional drivers</span>
+            <span>•</span>
+            <span>24/7 availability</span>
+            <span>•</span>
+            <span>Fixed pricing</span>
+          </div>
+        </div>
+      </main>
+
+      <Footer
+        logo={<Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} />}
+        brandName=""
+      />
+    </div>
+  )
+
+  return (
+    <div className="relative flex flex-col min-h-screen">
+      {/* <BackgroundImage bottomGradient={true} /> */}
 
       <Header logo={<Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} />} />
 
