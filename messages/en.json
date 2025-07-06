@@ -1,0 +1,144 @@
+{
+  "homepage": {
+    "title": "Find Your Perfect Ride",
+    "subtitle": "Explore Cluj-Napoca with our wide range of rental cars. Easy booking, great prices.",
+    "viewAllCars": "View All Cars",
+    "ourStory": {
+      "title": "Our Story",
+      "subtitle": "Your trusted partner for exploring Cluj-Napoca and beyond",
+      "description1": "At Rent'n Go, we believe that every journey should be memorable. Founded with a passion for travel and a commitment to excellence, we've been serving the Cluj-Napoca community with reliable, affordable car rental solutions.",
+      "description2": "Whether you're exploring the historic streets of Cluj-Napoca, venturing into the beautiful Transylvanian countryside, or need a reliable vehicle for business, we're here to make your journey smooth and enjoyable.",
+      "description3": "Our carefully curated fleet of modern vehicles, combined with transparent pricing and exceptional customer service, ensures that your rental experience exceeds expectations every time."
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "description": "Find answers to common questions about renting a car with us.",
+      "cta": {
+        "title": "Ready to Hit the Road?",
+        "description": "Browse our extensive fleet of vehicles and find the perfect car for your next adventure in Cluj-Napoca.",
+        "buttonText": "Browse Our Cars"
+      }
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "noResults": "No results found",
+    "loadingFeaturedCars": "Loading featured cars...",
+    "couldNotLoadFeaturedCars": "Could not load featured cars.",
+    "noFeaturedCarsAvailable": "No featured cars available at the moment."
+  },
+  "navigation": {
+    "home": "Home",
+    "cars": "Cars",
+    "transfers": "Transfers",
+    "about": "About",
+    "contact": "Contact",
+    "login": "Login",
+    "signUp": "Sign Up",
+    "language": "Language"
+  },
+  "footer": {
+    "home": "Home",
+    "cars": "Cars",
+    "transfers": "Transfers",
+    "about": "About",
+    "contact": "Contact",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "copyright": "© 2025 Rent'n Go Cluj",
+    "allRightsReserved": "All rights reserved",
+    "builtBy": "Built by"
+  },
+  "search": {
+    "pickupLocation": "Pick-up Location",
+    "returnLocation": "Return Location",
+    "pickupDateTime": "Pick-up Date & Time",
+    "returnDateTime": "Return Date & Time",
+    "selectPickupLocation": "Select pick-up location",
+    "selectReturnLocation": "Select return location",
+    "pickDateTime": "Pick a date & time",
+    "selectTime": "Select time",
+    "searchCars": "Search Cars",
+    "searchingCars": "Searching Cars...",
+    "returnDateAfterPickup": "Return date must be after or the same as pick-up date.",
+    "selectDateFirst": "Select a date first"
+  },
+  "features": {
+    "wideVehicleSelection": {
+      "title": "Wide Vehicle Selection",
+      "description": "From compact cars for city trips to spacious SUVs for family adventures, find the perfect ride."
+    },
+    "transparentPricing": {
+      "title": "Transparent Pricing",
+      "description": "No hidden fees, ever. Enjoy competitive rates and clear billing for your rental."
+    },
+    "effortlessBooking": {
+      "title": "Effortless Online Booking",
+      "description": "Book your car in minutes through our user-friendly website or mobile app."
+    },
+    "flexibleRental": {
+      "title": "Flexible Rental Options",
+      "description": "Choose daily, weekly, or monthly rentals. We offer plans that fit your schedule."
+    },
+    "convenientLocations": {
+      "title": "Convenient Locations",
+      "description": "Pick up and drop off your vehicle at numerous locations, including airports and city centers."
+    },
+    "roadsideSupport": {
+      "title": "24/7 Roadside Support",
+      "description": "Drive with confidence. Our dedicated support team is always ready to assist you."
+    },
+    "comprehensiveInsurance": {
+      "title": "Comprehensive Insurance",
+      "description": "Select from a range of insurance options for complete peace of mind on the road."
+    },
+    "memberPerks": {
+      "title": "Exclusive Member Perks",
+      "description": "Join our loyalty program to unlock special discounts, upgrades, and more."
+    }
+  },
+  "testimonials": {
+    "title": "What Our Customers Say",
+    "description": "Read what our customers have to say about us."
+  },
+  "faq": {
+    "questions": {
+      "0": {
+        "question": "What documents do I need to rent a car?",
+        "answer": "You'll need a valid driver's license (held for at least 2 years), a credit card in your name, and a valid ID or passport. International visitors may need an International Driving Permit."
+      },
+      "1": {
+        "question": "What is the minimum age to rent a car?",
+        "answer": "The minimum age is 21 years old. Drivers under 25 may be subject to a young driver surcharge and have restrictions on certain vehicle categories."
+      },
+      "2": {
+        "question": "Can I modify or cancel my reservation?",
+        "answer": "Yes, you can modify or cancel your reservation up to 24 hours before your pickup time without any fees. Changes made within 24 hours may incur additional charges."
+      },
+      "3": {
+        "question": "Is fuel included in the rental price?",
+        "answer": "No, fuel is not included. You'll receive the car with a full tank and should return it with a full tank to avoid refueling charges."
+      },
+      "4": {
+        "question": "Can I add an additional driver?",
+        "answer": "Yes, additional drivers can be added for a daily fee. They must meet the same requirements as the primary driver and be present during pickup with valid documentation."
+      },
+      "5": {
+        "question": "What happens if I return the car late?",
+        "answer": "Late returns may incur additional daily charges. If you're more than 29 minutes late, you'll be charged for an additional day. Please contact us if you need to extend your rental."
+      },
+      "6": {
+        "question": "Is insurance included in the rental price?",
+        "answer": "Basic Collision Damage Waiver (CDW) and Theft Protection (TP) with an excess amount are typically included. We also offer optional insurance packages to reduce the excess or provide more comprehensive coverage."
+      }
+    }
+  },
+  "email": {
+    "companyName": "Rent'n Go",
+    "address": "Calea Turzii 23, Cluj-Napoca, Romania",
+    "automatedMessage": "This is an automated notification from Rent'n Go reservation system.",
+    "carRentalServices": "Car Rental Services",
+    "copyright": "© 2025 {companyName}. All rights reserved."
+  }
+}

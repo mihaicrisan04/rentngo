@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils"
 import { TestimonialCard, TestimonialAuthor } from "@/components/ui/testimonial-card"
+import { useTranslations } from 'next-intl'
 
 // Default testimonials data
 const DEFAULT_TESTIMONIALS = [

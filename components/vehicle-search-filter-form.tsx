@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { Search } from "lucide-react";
 import { Id } from "../convex/_generated/dataModel";
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -80,6 +81,7 @@ export function VehicleSearchFilterForm({
   const [isLoading, setIsLoading] = React.useState(false);
   const [isHydrated, setIsHydrated] = React.useState(false);
   const router = useRouter();
+  const t = useTranslations('search');
 
   // Load data from localStorage after hydration to prevent SSR mismatch
   React.useEffect(() => {
@@ -142,7 +144,7 @@ export function VehicleSearchFilterForm({
     // Validate dates if both are provided
     if (pickupDateState && returnDateState) {
       if (returnDateState < pickupDateState) {
-        alert("Return date must be after or the same as pick-up date.");
+        alert(t('returnDateAfterPickup'));
         setIsLoading(false);
         return;
       }
@@ -166,16 +168,16 @@ export function VehicleSearchFilterForm({
             <div className="flex flex-col gap-4 w-full lg:w-1/2">
               <LocationPicker
                 id="deliveryLocation"
-                label="Pick-up Location"
+                label={t('pickupLocation')}
                 value={deliveryLocation}
                 onValueChange={setDeliveryLocation}
-                placeholder="Select pick-up location"
+                placeholder={t('selectPickupLocation')}
                 disabled={isLoading}
                 contentAlign="start"
               />
               <DateTimePicker
                 id="pickupDate"
-                label="Pick-up Date & Time"
+                label={t('pickupDateTime')}
                 dateState={pickupDateState}
                 setDateState={setPickupDateState}
                 timeState={pickupTime}
@@ -202,16 +204,16 @@ export function VehicleSearchFilterForm({
             <div className="flex flex-col gap-4 w-full lg:w-1/2">
               <LocationPicker
                 id="restitutionLocation"
-                label="Return Location"
+                label={t('returnLocation')}
                 value={restitutionLocation}
                 onValueChange={setRestitutionLocation}
-                placeholder="Select return location"
+                placeholder={t('selectReturnLocation')}
                 disabled={isLoading}
                 contentAlign="start"
               />
               <DateTimePicker
                 id="returnDate"
-                label="Return Date & Time"
+                label={t('returnDateTime')}
                 dateState={returnDateState}
                 setDateState={setReturnDateState}
                 timeState={returnTime}
@@ -230,7 +232,7 @@ export function VehicleSearchFilterForm({
         <CardFooter className="flex justify-center pt-4 lg:pt-8 sm:pt-6 lg:p-6 md:pt-8">
           <Button type="submit" size="lg" className="w-full lg:w-auto lg:px-12 text-base py-3" disabled={isLoading}>
             <Search className="mr-2 h-5 w-5" />
-            {isLoading ? "Searching Cars..." : "Search Cars"}
+            {isLoading ? t('searchingCars') : t('searchCars')}
           </Button>
         </CardFooter>
       </form>

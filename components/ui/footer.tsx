@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 import Link from "next/link"
 import { SocialIcon } from 'react-social-icons'
+import { useTranslations } from 'next-intl'
 
 
 interface FooterProps {
@@ -27,25 +28,21 @@ const socialLinks = [
   },
 ]
 
-const mainLinks = [
-  { href: "/", label: "Home" },
-  { href: "/cars", label: "Cars" },
-  { href: "/transfers", label: "Transfers" },
-  { href: "/about", label: "About" },
-  { href: "/contact", label: "Contact" },
-]
-
-const legalLinks = [
-  { href: "/privacy-policy", label: "Privacy" },
-  { href: "/terms-and-conditions", label: "Terms" },
-]
-
-const copyright = {
-  text: "© 2025 Rent'n Go Cluj",
-  license: "All rights reserved",
-}
-
 export function Footer({ logo, brandName }: FooterProps) {
+  const t = useTranslations('footer');
+
+  const mainLinks = [
+    { href: "/", label: t('home') },
+    { href: "/cars", label: t('cars') },
+    { href: "/transfers", label: t('transfers') },
+    { href: "/about", label: t('about') },
+    { href: "/contact", label: t('contact') },
+  ]
+
+  const legalLinks = [
+    { href: "/privacy-policy", label: t('privacy') },
+    { href: "/terms-and-conditions", label: t('terms') },
+  ]
   return (
     <footer className="pb-6 pt-16 lg:pb-8 px-4 lg:pt-24 bg-muted border-t">
       <div className="container mx-auto lg:px-8">
@@ -95,10 +92,10 @@ export function Footer({ logo, brandName }: FooterProps) {
             </ul>
           </div>
           <div className="mt-6 text-sm leading-6 text-muted-foreground whitespace-nowrap lg:mt-0 lg:row-start-1 lg:col-span-4 xl:col-span-5">
-            <div>{copyright.text}</div>
-            {copyright.license && <div>{copyright.license}</div>}
+            <div>{t('copyright')}</div>
+            <div>{t('allRightsReserved')}</div>
             <div className="flex items-center gap-1 mt-2">
-              <span>Built by</span>
+              <span>{t('builtBy')}</span>
               <Link 
                 href="https://mihaicrisan-com.vercel.app/" 
                 target="_blank" 

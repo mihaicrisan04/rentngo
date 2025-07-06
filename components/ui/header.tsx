@@ -7,6 +7,8 @@ import React, { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
+import { LanguageSelector } from "@/components/language-selector";
+import { useTranslations } from 'next-intl';
 import {
   Drawer,
   DrawerClose,
@@ -23,20 +25,21 @@ interface HeaderProps {
   brandName?: string;
 }
 
-// menuItems will be used for the mobile navigation
-const menuItems = [
-  { name: "Home", href: "/" },
-  { name: "Cars", href: "/cars" },
-  { name: "Transfers", href: "/transfers" },
-  { name: "About", href: "/about" },
-  { name: "Contact", href: "/contact" },
-];
-
 export function Header({ logo, brandName }: HeaderProps) {
   const { user } = useUser();
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
   const pathname = usePathname();
+  const t = useTranslations('navigation');
+
+  // menuItems will be used for the mobile navigation
+  const menuItems = [
+    { name: t('home'), href: "/" },
+    { name: t('cars'), href: "/cars" },
+    { name: t('transfers'), href: "/transfers" },
+    { name: t('about'), href: "/about" },
+    { name: t('contact'), href: "/contact" },
+  ];
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -84,7 +87,7 @@ export function Header({ logo, brandName }: HeaderProps) {
                     : (pathname === "/" ? "text-primary" : "text-foreground/60"))
             )}
           >
-            Home
+            {t('home')}
           </Link>
           <Link
             href="/cars"
@@ -97,7 +100,7 @@ export function Header({ logo, brandName }: HeaderProps) {
                     : (pathname === "/cars" ? "text-primary" : "text-foreground/60"))
             )}
           >
-            Cars
+            {t('cars')}
           </Link>
           <Link
             href="/transfers"
@@ -110,7 +113,7 @@ export function Header({ logo, brandName }: HeaderProps) {
                     : (pathname === "/transfers" ? "text-primary" : "text-foreground/60"))
             )}
           >
-            Transfers
+            {t('transfers')}
           </Link>
           <Link
             href="/about"
@@ -123,7 +126,7 @@ export function Header({ logo, brandName }: HeaderProps) {
                     : (pathname === "/about" ? "text-primary" : "text-foreground/60"))
             )}
           >
-            About
+            {t('about')}
           </Link>
           <Link
             href="/contact"
@@ -136,12 +139,13 @@ export function Header({ logo, brandName }: HeaderProps) {
                     : (pathname === "/contact" ? "text-primary" : "text-foreground/60"))
             )}
           >
-            Contact
+            {t('contact')}
           </Link>
         </nav>
 
         <div className="flex items-center space-x-2">
           <div className="hidden lg:flex items-center space-x-4">
+            <LanguageSelector />
             <SignedIn>
               <UserButton afterSignOutUrl="/" />
               {user && (
@@ -169,11 +173,11 @@ export function Header({ logo, brandName }: HeaderProps) {
                       : (pathname === "/" ? "text-foreground" : "text-primary")
                   )}
                 >
-                  Login
+                  {t('login')}
                 </Button>
               </SignInButton>
               <SignInButton mode="modal">
-                <Button size="sm">Sign Up</Button>
+                <Button size="sm">{t('signUp')}</Button>
               </SignInButton>
             </SignedOut>
           </div>
@@ -223,6 +227,12 @@ export function Header({ logo, brandName }: HeaderProps) {
                       </Link>
                     ))}
                   </nav>
+                  
+                  {/* Language selector in mobile drawer */}
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="mb-2 text-sm font-medium text-muted-foreground">{t('language')}</div>
+                    <LanguageSelector />
+                  </div>
                 </div>
 
                 <DrawerFooter className="py-6">
@@ -240,12 +250,12 @@ export function Header({ logo, brandName }: HeaderProps) {
                     <div className="flex flex-col gap-3 border-t pt-4">
                       <SignInButton mode="modal">
                         <Button variant="outline" size="sm" className="w-full" onClick={handleLinkClick}>
-                          Login
+                          {t('login')}
                         </Button>
                       </SignInButton>
                       <SignInButton mode="modal">
                         <Button size="sm" className="w-full" onClick={handleLinkClick}>
-                          Sign Up
+                          {t('signUp')}
                         </Button>
                       </SignInButton>
                     </div>

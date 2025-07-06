@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { searchStorage } from "@/lib/searchStorage";
+import { useTranslations } from 'next-intl';
 
 const generateTimeSlots = () => {
   const slots = [];
@@ -61,6 +62,7 @@ export function DateTimePicker({
   pickupDate,
   pickupTime,
 }: DateTimePickerProps) {
+  const t = useTranslations('search');
 
   // Function to check if a time slot should be disabled
   const isTimeSlotDisabled = (timeSlot: string) => {
@@ -155,8 +157,8 @@ export function DateTimePicker({
           >
             <CalendarIcon className="mr-2 h-5 w-5 text-muted-foreground" />
             {dateState ?
-              `${format(dateState, "EEE, MMM d")} at ${timeState || "Select time"}` :
-              <span>Pick a date & time</span>}
+              `${format(dateState, "EEE, MMM d")} at ${timeState || t('selectTime')}` :
+              <span>{t('pickDateTime')}</span>}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto max-w-full p-0 flex max-sm:flex-col bg-card shadow-xl border-border" align={popoverAlign}>
@@ -174,7 +176,7 @@ export function DateTimePicker({
               <div className="space-y-2 px-3">
                 <div className="flex h-5 shrink-0 items-center">
                   <p className="text-xs font-medium text-muted-foreground">
-                    {dateState ? format(dateState, "EEEE, MMM d") : "Select a date first"}
+                    {dateState ? format(dateState, "EEEE, MMM d") : t('selectDateFirst')}
                   </p>
                 </div>
                 <div className="grid gap-1.5 max-sm:grid-cols-3 sm:grid-cols-2">

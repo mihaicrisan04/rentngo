@@ -1,0 +1,144 @@
+{
+  "homepage": {
+    "title": "Găsește-ți Mașina Perfectă",
+    "subtitle": "Explorează Cluj-Napoca cu gama noastră largă de mașini de închiriat. Rezervare ușoară, prețuri excelente.",
+    "viewAllCars": "Vezi Toate Mașinile",
+    "ourStory": {
+      "title": "Povestea Noastră",
+      "subtitle": "Partenerul tău de încredere pentru explorarea Cluj-Napoca și nu numai",
+      "description1": "La Rent'n Go, credem că fiecare călătorie ar trebui să fie memorabilă. Fondată cu o pasiune pentru călătorii și un angajament pentru excelență, servim comunitatea din Cluj-Napoca cu soluții de închiriere auto fiabile și accesibile.",
+      "description2": "Indiferent dacă explorezi străzile istorice ale Cluj-Napoca, te aventurezi în frumoasa țară transilvăneană sau ai nevoie de un vehicul de încredere pentru afaceri, suntem aici să-ți facem călătoria lină și plăcută.",
+      "description3": "Flota noastră atent selectată de vehicule moderne, combinată cu prețuri transparente și servicii excepționale pentru clienți, asigură că experiența ta de închiriere depășește așteptările de fiecare dată."
+    },
+    "faq": {
+      "title": "Întrebări Frecvente",
+      "description": "Găsește răspunsuri la întrebări comune despre închirierea unei mașini cu noi.",
+      "cta": {
+        "title": "Gata să Pleci la Drum?",
+        "description": "Răsfoiește flota noastră extinsă de vehicule și găsește mașina perfectă pentru următoarea ta aventură în Cluj-Napoca.",
+        "buttonText": "Răsfoiește Mașinile Noastre"
+      }
+    }
+  },
+  "common": {
+    "loading": "Se încarcă...",
+    "error": "Eroare",
+    "noResults": "Nu s-au găsit rezultate",
+    "loadingFeaturedCars": "Se încarcă mașinile recomandate...",
+    "couldNotLoadFeaturedCars": "Nu s-au putut încărca mașinile recomandate.",
+    "noFeaturedCarsAvailable": "Nu sunt disponibile mașini recomandate momentan."
+  },
+  "navigation": {
+    "home": "Acasă",
+    "cars": "Mașini",
+    "transfers": "Transferuri",
+    "about": "Despre",
+    "contact": "Contact",
+    "login": "Conectare",
+    "signUp": "Înregistrare",
+    "language": "Limba"
+  },
+  "footer": {
+    "home": "Acasă",
+    "cars": "Mașini",
+    "transfers": "Transferuri",
+    "about": "Despre",
+    "contact": "Contact",
+    "privacy": "Confidențialitate",
+    "terms": "Termeni",
+    "copyright": "© 2025 Rent'n Go Cluj",
+    "allRightsReserved": "Toate drepturile rezervate",
+    "builtBy": "Creat de"
+  },
+  "search": {
+    "pickupLocation": "Locația de Ridicare",
+    "returnLocation": "Locația de Returnare",
+    "pickupDateTime": "Data și Ora de Ridicare",
+    "returnDateTime": "Data și Ora de Returnare",
+    "selectPickupLocation": "Selectează locația de ridicare",
+    "selectReturnLocation": "Selectează locația de returnare",
+    "pickDateTime": "Alege o dată și oră",
+    "selectTime": "Selectează ora",
+    "searchCars": "Caută Mașini",
+    "searchingCars": "Se caută mașini...",
+    "returnDateAfterPickup": "Data de returnare trebuie să fie după sau aceeași cu data de ridicare.",
+    "selectDateFirst": "Selectează mai întâi o dată"
+  },
+  "features": {
+    "wideVehicleSelection": {
+      "title": "Selecție Largă de Vehicule",
+      "description": "De la mașini compacte pentru călătorii în oraș la SUV-uri spațioase pentru aventuri în familie, găsește vehiculul perfect."
+    },
+    "transparentPricing": {
+      "title": "Prețuri Transparente",
+      "description": "Niciodată taxe ascunse. Bucură-te de tarife competitive și facturare clară pentru închiriere."
+    },
+    "effortlessBooking": {
+      "title": "Rezervare Online Ușoară",
+      "description": "Rezervă-ți mașina în câteva minute prin site-ul nostru ușor de folosit sau aplicația mobilă."
+    },
+    "flexibleRental": {
+      "title": "Opțiuni Flexibile de Închiriere",
+      "description": "Alege închirieri zilnice, săptămânale sau lunare. Oferim planuri care se potrivesc programului tău."
+    },
+    "convenientLocations": {
+      "title": "Locații Convenabile",
+      "description": "Ridică și returnează vehiculul la numeroase locații, inclusiv aeroporturi și centre ale orașului."
+    },
+    "roadsideSupport": {
+      "title": "Asistență Rutieră 24/7",
+      "description": "Conduci cu încredere. Echipa noastră dedicată de suport este întotdeauna gata să te ajute."
+    },
+    "comprehensiveInsurance": {
+      "title": "Asigurare Completă",
+      "description": "Alege dintr-o gamă de opțiuni de asigurare pentru liniște completă pe drum."
+    },
+    "memberPerks": {
+      "title": "Beneficii Exclusive pentru Membri",
+      "description": "Alătură-te programului nostru de loialitate pentru a debloca reduceri speciale, upgrade-uri și multe altele."
+    }
+  },
+  "testimonials": {
+    "title": "Ce Spun Clienții Noștri",
+    "description": "Citește ce au de spus clienții noștri despre noi."
+  },
+  "faq": {
+    "questions": {
+      "0": {
+        "question": "Ce documente am nevoie pentru a închiria o mașină?",
+        "answer": "Vei avea nevoie de un permis de conducere valabil (deținut pentru cel puțin 2 ani), un card de credit pe numele tău și un ID sau pașaport valabil. Vizitatorii internaționali pot avea nevoie de un Permis Internațional de Conducere."
+      },
+      "1": {
+        "question": "Care este vârsta minimă pentru a închiria o mașină?",
+        "answer": "Vârsta minimă este de 21 de ani. Șoferii sub 25 de ani pot fi supuși unei taxe pentru șofer tânăr și pot avea restricții pentru anumite categorii de vehicule."
+      },
+      "2": {
+        "question": "Pot modifica sau anula rezervarea?",
+        "answer": "Da, poți modifica sau anula rezervarea cu până la 24 de ore înainte de ora de ridicare fără taxe. Modificările făcute în 24 de ore pot atrage taxe suplimentare."
+      },
+      "3": {
+        "question": "Este combustibilul inclus în prețul închirierii?",
+        "answer": "Nu, combustibilul nu este inclus. Vei primi mașina cu rezervorul plin și ar trebui să o returnezi cu rezervorul plin pentru a evita taxele de realimentare."
+      },
+      "4": {
+        "question": "Pot adăuga un șofer suplimentar?",
+        "answer": "Da, șoferii suplimentari pot fi adăugați contra unei taxe zilnice. Aceștia trebuie să îndeplinească aceleași cerințe ca și șoferul principal și să fie prezenți la ridicare cu documentația validă."
+      },
+      "5": {
+        "question": "Ce se întâmplă dacă returnez mașina târziu?",
+        "answer": "Retururile târzii pot atrage taxe zilnice suplimentare. Dacă întârzii mai mult de 29 de minute, vei fi taxat pentru o zi suplimentară. Te rugăm să ne contactezi dacă trebuie să prelungești închirierea."
+      },
+      "6": {
+        "question": "Este asigurarea inclusă în prețul închirierii?",
+        "answer": "Asigurarea de bază pentru daune de coliziune (CDW) și protecția împotriva furtului (TP) cu o sumă de franciză sunt de obicei incluse. Oferim de asemenea pachete de asigurare opționale pentru a reduce franciza sau a oferi o acoperire mai cuprinzătoare."
+      }
+    }
+  },
+  "email": {
+    "companyName": "Rent'n Go",
+    "address": "Calea Turzii 23, Cluj-Napoca, România",
+    "automatedMessage": "Aceasta este o notificare automată de la sistemul de rezervări Rent'n Go.",
+    "carRentalServices": "Servicii de Închiriere Auto",
+    "copyright": "© 2025 {companyName}. Toate drepturile rezervate."
+  }
+}
