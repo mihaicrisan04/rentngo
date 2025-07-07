@@ -7,32 +7,44 @@ import { UserEnsurer } from "@/components/user-ensurer";
 import { Toaster } from "@/components/ui/sonner";
 import { NextIntlClientProvider } from 'next-intl';
 
+// Root providers without locale-specific features
 export function Providers({
   children,
-  locale = 'ro',
-  messages = {}
 }: { 
   children: React.ReactNode;
-  locale?: string;
-  messages?: any;
 }) {
   return (
     <ClerkProvider>
       <ConvexClientProvider>
         <UserEnsurer>
-          <NextIntlClientProvider locale={locale} messages={messages}>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="dark"
-              enableSystem
-              disableTransitionOnChange={false}
-            >
-              {children}
-              <Toaster />
-            </ThemeProvider>
-          </NextIntlClientProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange={false}
+          >
+            {children}
+            <Toaster />
+          </ThemeProvider>
         </UserEnsurer>
       </ConvexClientProvider>
     </ClerkProvider>
+  )
+}
+
+// Locale-specific providers
+export function LocaleProviders({
+  children,
+  locale,
+  messages
+}: { 
+  children: React.ReactNode;
+  locale: string;
+  messages: any;
+}) {
+  return (
+    <NextIntlClientProvider locale={locale} messages={messages}>
+      {children}
+    </NextIntlClientProvider>
   )
 }

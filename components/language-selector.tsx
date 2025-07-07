@@ -26,7 +26,7 @@ export function LanguageSelector() {
   
   return (
     <Select value={locale} onValueChange={handleLanguageChange}>
-      <SelectTrigger className="w-[60px]">
+      <SelectTrigger className="w-[70px]">
         <SelectValue>
           {languages[locale as keyof typeof languages]?.flag}
         </SelectValue>

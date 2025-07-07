@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getMessages } from 'next-intl/server';
-import { Providers } from '../providers';
+import { LocaleProviders } from '../providers';
 
 const locales = ['ro', 'en'];
 
@@ -25,8 +25,8 @@ export default async function LocaleLayout({
   const messages = await getMessages({ locale });
 
   return (
-    <Providers locale={locale} messages={messages}>
+    <LocaleProviders locale={locale} messages={messages}>
       {children}
-    </Providers>
+    </LocaleProviders>
   );
 } 

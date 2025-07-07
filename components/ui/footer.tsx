@@ -40,9 +40,10 @@ export function Footer({ logo, brandName }: FooterProps) {
   ]
 
   const legalLinks = [
-    { href: "/privacy-policy", label: t('privacy') },
-    { href: "/terms-and-conditions", label: t('terms') },
+    { href: "/privacy", label: t('privacy') },
+    { href: "/terms", label: t('terms') },
   ]
+
   return (
     <footer className="pb-6 pt-16 lg:pb-8 px-4 lg:pt-24 bg-muted border-t">
       <div className="container mx-auto lg:px-8">
