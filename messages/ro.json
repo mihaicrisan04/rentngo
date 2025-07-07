@@ -20,13 +20,336 @@
       }
     }
   },
+  "aboutPage": {
+    "title": "Despre Rent'n Go",
+    "heroTitle": "Călătoria Ta, Pasiunea Noastră",
+    "heroDescription": "Din 2024, ne-am dedicat furnizării de experiențe excepționale de închiriere auto în Cluj-Napoca, combinând vehicule de calitate cu servicii pentru clienți de excepție.",
+    "stats": {
+      "vehicles": "Vehicule",
+      "customers": "Clienți Mulțumiți",
+      "experience": "Ani de Experiență",
+      "rating": "Rating Mediu"
+    },
+    "values": {
+      "title": "Valorile Noastre",
+      "subtitle": "Principiile care ne ghidează în tot ceea ce facem",
+      "safetyFirst": {
+        "title": "Siguranța pe Primul Loc",
+        "description": "Toate vehiculele noastre trec prin inspecții riguroase de siguranță și întreținere pentru a vă asigura liniștea la fiecare călătorie."
+      },
+      "customerCare": {
+        "title": "Grija pentru Client",
+        "description": "Credem în construirea de relații durabile cu clienții noștri prin servicii excepționale și atenție personalizată."
+      },
+      "reliability": {
+        "title": "Fiabilitate",
+        "description": "Contați pe noi pentru servicii punctuale, vehicule bine întreținute și prețuri transparente fără taxe ascunse."
+      },
+      "localExpertise": {
+        "title": "Expertiză Locală",
+        "description": "Ca localnici din Cluj-Napoca, cunoaștem cele mai bune rute și vă putem oferi sfaturi din interior pentru călătoriile voastre."
+      }
+    },
+    "mission": {
+      "title": "Misiunea Noastră",
+      "description": "Să oferim experiențe excepționale de închiriere auto care să permită clienților noștri să exploreze cu încredere, confort și liniște. Ne străduim să fim mai mult decât doar un serviciu de închiriere auto – suntem partenerul vostru de călătorie de încredere.",
+      "buttonText": "Intră în Contact"
+    },
+    "ourStory": {
+      "title": "Povestea Noastră",
+      "subtitle": "Partenerul tău de încredere pentru explorarea Cluj-Napoca și nu numai",
+      "description1": "La Rent'n Go, credem că fiecare călătorie ar trebui să fie memorabilă. Fondată cu o pasiune pentru călătorii și un angajament pentru excelență, servim comunitatea din Cluj-Napoca cu soluții de închiriere auto fiabile și accesibile.",
+      "description2": "Indiferent dacă explorezi străzile istorice ale Cluj-Napoca, te aventurezi în frumoasa țară transilvăneană sau ai nevoie de un vehicul de încredere pentru afaceri, suntem aici să-ți facem călătoria lină și plăcută.",
+      "description3": "Flota noastră atent selectată de vehicule moderne, combinată cu prețuri transparente și servicii excepționale pentru clienți, asigură că experiența ta de închiriere depășește așteptările de fiecare dată."
+    },
+    "whyChoose": {
+      "title": "De Ce să Alegeți Rent'n Go?",
+      "subtitle": "Experimentați diferența care ne face să ieșim în evidență",
+      "transparentPricing": {
+        "title": "Prețuri Transparente",
+        "description": "Fără taxe ascunse, fără surprize. Ce vedeți este ce plătiți, cu tarife competitive și pachete flexibile."
+      },
+      "qualityFleet": {
+        "title": "Flotă de Calitate",
+        "description": "Vehicule moderne, bine întreținute de la mărci de încredere, service regulate și curățate temeinic pentru confortul vostru."
+      },
+      "support247": {
+        "title": "Suport 24/7",
+        "description": "Asistență non-stop ori de câte ori aveți nevoie, asigurându-vă că călătoria voastră este lină de la început până la sfârșit."
+      }
+    }
+  },
+  "contactPage": {
+    "title": "Intră în Contact",
+    "subtitle": "Gata să pleci la drum? Suntem aici să-ți facem experiența de închiriere lină și memorabilă.",
+    "meetTheMan": "Cunoaște Omul",
+    "visionaryTitle": "Vizionarul din Spatele Volanului",
+    "visionarySubtitle": "Mânat de pasiune",
+    "founder": {
+      "name": "Tudor",
+      "title": "Fondator și CEO",
+      "description": "Cu peste un deceniu de experiență în industria auto, Tudor a fondat Rent'n Go cu o misiune simplă: să ofere vehicule premium și servicii excepționale care să depășească așteptările. Atenția sa la detalii și angajamentul față de satisfacția clienților conduce fiecare aspect al afacerii noastre.",
+      "badges": {
+        "expert": "Expert Auto",
+        "customerFirst": "Clientul pe Primul Loc"
+      }
+    },
+    "letsConnect": {
+      "title": "Să Ne Conectăm",
+      "subtitle": "Multiple modalități de a ne contacta - alegeți ce funcționează cel mai bine pentru voi"
+    },
+    "contactMethods": {
+      "phone": {
+        "title": "Telefon",
+        "description": "Sunați-ne direct",
+        "buttonText": "+40 773 932 961"
+      },
+      "whatsapp": {
+        "title": "WhatsApp",
+        "description": "Mesagerie rapidă și ușoară",
+        "buttonText": "Trimite Mesaj"
+      },
+      "email": {
+        "title": "Email",
+        "description": "Întrebări detaliate",
+        "buttonText": "office@rngo.com"
+      }
+    },
+    "followUs": "Urmărește-ne",
+    "ourLocation": "Locația Noastră",
+    "locationDescription": "Situat în cea mai convenabilă locație pentru tine",
+    "openInMaps": "Deschide în Google Maps",
+    "businessHours": {
+      "title": "Program de Lucru",
+      "mondayToSaturday": "Luni - Sâmbătă",
+      "sunday": "Duminică",
+      "mondayToSaturdayTime": "24/7",
+      "sundayTime": "10:00 - 16:00"
+    }
+  },
+  "reservationPage": {
+    "backToVehicleDetails": "Înapoi la Detaliile Vehiculului",
+    "formProgress": "Progresul Formularului",
+    "reservation": {
+      "invalid": {
+        "title": "Rezervare Invalidă",
+        "description": "Nu a fost selectat niciun vehicul pentru rezervare.",
+        "browseCars": "Răsfoiește Mașinile"
+      },
+      "vehicleNotFound": {
+        "title": "Vehicul Negăsit",
+        "description": "Vehiculul selectat nu mai este disponibil.",
+        "browseCars": "Răsfoiește Mașinile"
+      },
+      "loadingDetails": "Se încarcă detaliile rezervării...",
+      "success": "Rezervarea a fost creată cu succes!",
+      "successDescription": "Veți primi un email de confirmare în scurt timp.",
+      "viewReservation": "Vezi Rezervarea",
+      "error": "Nu s-a putut crea rezervarea. Vă rugăm să încercați din nou sau să contactați suportul."
+    },
+    "rentalDetails": {
+      "title": "Detalii Închiriere",
+      "pickupDetails": "Detalii Ridicare",
+      "returnDetails": "Detalii Returnare",
+      "pickupLocation": "Locația de Ridicare",
+      "pickupDateTime": "Data și Ora de Ridicare",
+      "returnLocation": "Locația de Returnare",
+      "returnDateTime": "Data și Ora de Returnare",
+      "selectPickupLocation": "Selectează locația de ridicare",
+      "selectReturnLocation": "Selectează locația de returnare",
+      "returnTimeAfterPickup": "Ora de returnare trebuie să fie după ora de ridicare când returnezi în aceeași zi"
+    },
+    "vehicleDetails": {
+      "title": "Detalii Vehicul",
+      "noImage": "Fără Imagine",
+      "rateFor": "Tarif pentru",
+      "rental": "închiriere"
+    },
+    "additionalFeatures": {
+      "title": "Caracteristici Suplimentare",
+      "snowChains": "Lanțuri de Zăpadă",
+      "pricePerDay": "3 EUR pe zi",
+      "childSeat1to4": "Scaun Copil (1-4 ani)",
+      "childSeat5to12": "Scaun Copil (5-12 ani)",
+      "pricePerSeat": "3 EUR pe scaun pe zi (max 2 scaune)"
+    },
+    "personalInfo": {
+      "title": "Informații Personale",
+      "signInPrompt": "Conectați-vă pentru a completa automat informațiile și a face rezervarea mai ușoară!",
+      "signInButton": "Conectare / Înregistrare",
+      "fullName": "Nume Complet",
+      "fullNamePlaceholder": "Introduceți numele complet",
+      "emailAddress": "Adresa de Email",
+      "emailPlaceholder": "Introduceți adresa de email",
+      "phoneNumber": "Numărul de Telefon",
+      "phonePlaceholder": "Introduceți numărul de telefon",
+      "flightNumber": "Numărul Zborului (Opțional)",
+      "flightPlaceholder": "ex: AA 1234, LH 456, BA 2847",
+      "flightFormat": "Format: Cod companie aeriană de două litere + numărul zborului (ex: \"AA 1234, LH 456, BA 2847\")",
+      "additionalMessage": "Mesaj Suplimentar (Opțional)",
+      "messagePlaceholder": "Orice cereri speciale sau informații suplimentare..."
+    },
+    "paymentMethod": {
+      "title": "Metoda de Plată",
+      "termsAcceptance": "Accept Termenii și Condițiile și Politica de Confidențialitate"
+    },
+    "protectionOptions": {
+      "title": "Opțiuni de Protecție",
+      "scdwInsurance": "Asigurare SCDW (nerestituibilă)",
+      "standardWarranty": "Garanție Standard",
+      "warrantyDefault": "Garanție (Implicit)",
+      "refundableDeposit": "Depozit restituibil bazat pe garanția vehiculului",
+      "returnedEndRental": "Returnat la sfârșitul închirierii dacă nu sunt daune",
+      "superCollisionDamageWaiver": "• Super Collision Damage Waiver",
+      "nonRefundableButProvidesAdditionalProtection": "• Nerestituibilă dar oferă protecție suplimentară",
+      "noDepositRequired": "• Nu este necesar depozit",
+      "included": "inclusă",
+      "separate": "separată",
+      "scdw": "SCDW",
+      "nonRefundableInsurance": "Asigurare nerestituibilă",
+      "refundableIfNoDamages": "Restituibilă dacă nu sunt daune"
+    },
+    "reservationSummary": {
+      "title": "Rezumatul Rezervării",
+      "vehicle": "Vehicul",
+      "pickup": "Ridicare",
+      "pickupDate": "Data de Ridicare",
+      "return": "Returnare",
+      "returnDate": "Data de Returnare",
+      "duration": "Durata",
+      "flight": "Zbor",
+      "notSelected": "Nu este selectată",
+      "notCalculated": "Nu este calculată",
+      "daysCount": "{days} zi{plural}",
+      "basePrice": "Preț de bază ({days} zi{plural})",
+      "pickupLocationFee": "Taxa pentru locația de ridicare",
+      "returnLocationFee": "Taxa pentru locația de returnare",
+      "totalLocationFees": "Total taxe pentru locații",
+      "totalAdditionalFeatures": "Total caracteristici suplimentare",
+      "totalPrice": "Preț Total",
+      "warranty": "garanție",
+      "warrantyRefundable": "Garanția este restituibilă dacă nu sunt daune",
+      "sendReservationRequest": "Trimite Cererea de Rezervare",
+      "processing": "Se procesează..."
+    },
+    "payment": {
+      "methods": {
+        "cashOnDelivery": {
+          "label": "Plata cash la livrare",
+          "description": "Plătești când ridici vehiculul"
+        },
+        "cardOnDelivery": {
+          "label": "Plata cu cardul la livrare",
+          "description": "Plătești cu cardul când ridici vehiculul"
+        },
+        "cardOnline": {
+          "label": "Plata cu cardul online (în curând)",
+          "description": "Plătește acum cu cardul"
+        }
+      },
+      "additionalCharges": {
+        "pickupLocationFee": "Taxa pentru locația de ridicare ({location})",
+        "returnLocationFee": "Taxa pentru locația de returnare ({location})",
+        "snowChains": "Lanțuri de zăpadă - {days} zi × 3 EUR = {price} EUR",
+        "childSeat1to4": "{count}x Scaun copil 1-4 ani - {count} × {days} zi × 3 EUR = {price} EUR",
+        "childSeat5to12": "{count}x Scaun copil 5-12 ani - {count} × {days} zi × 3 EUR = {price} EUR"
+      }
+    },
+    "validation": {
+      "nameRequired": "Numele este obligatoriu",
+      "emailRequired": "Vă rugăm să introduceți un email valid",
+      "phoneRequired": "Numărul de telefon este obligatoriu",
+      "flightNumberInvalid": "Numărul zborului trebuie să fie în formatul 'XX 1234' (ex: 'AA 1234')",
+      "pickupLocationRequired": "Locația de ridicare este obligatorie",
+      "pickupDateRequired": "Data de ridicare este obligatorie",
+      "pickupTimeRequired": "Ora de ridicare este obligatorie",
+      "returnLocationRequired": "Locația de returnare este obligatorie",
+      "returnDateRequired": "Data de returnare este obligatorie",
+      "returnTimeRequired": "Ora de returnare este obligatorie",
+      "paymentMethodRequired": "Metoda de plată este obligatorie",
+      "termsAcceptanceRequired": "Trebuie să acceptați termenii și condițiile",
+      "fixErrorsBeforeSubmitting": "Vă rugăm să corectați erorile din formular înainte de a trimite.",
+      "returnTimeSameDay": "Ora de returnare trebuie să fie după ora de ridicare când returnezi în aceeași zi",
+      "formErrors": "Vă rugăm să corectați erorile din formular înainte de a trimite."
+    }
+  },
+  "confirmationPage": {
+    "noReservationFound": "Nu s-a Găsit Rezervarea",
+    "noReservationDescription": "Nu am putut găsi un ID de rezervare în URL. Vă rugăm să verificați emailul de confirmare sau să contactați suportul.",
+    "reservationNotFound": "Rezervare Negăsită",
+    "reservationNotFoundDescription": "Rezervarea nu a putut fi găsită sau poate a fost anulată. Vă rugăm să contactați suportul dacă credeți că aceasta este o eroare.",
+    "loadingReservation": "Se încarcă detaliile rezervării...",
+    "title": "Cererea de Rezervare a Fost Trimisă!",
+    "subtitle": "Cererea voastră de rezervare a fost trimisă cu succes. Vom examina cererea și vă vom trimite un email cu starea confirmării și detalii în termen de 24 ore.",
+    "reservationId": "ID Rezervare",
+    "vehicleDetails": "Detalii Vehicul",
+    "customerInformation": "Informații Client",
+    "name": "Nume",
+    "email": "Email",
+    "phone": "Telefon",
+    "flightNumber": "Numărul Zborului",
+    "message": "Mesaj",
+    "rentalDetails": "Detalii Închiriere",
+    "pickup": "Ridicare",
+    "return": "Returnare",
+    "paymentSummary": "Rezumat Plată",
+    "paymentMethod": "Metoda de Plată:",
+    "additionalCharges": "Taxe Suplimentare:",
+    "totalAmount": "Suma Totală:",
+    "bookAnotherCar": "Rezervă O Altă Mașină",
+    "whatHappensNext": "Ce Se Întâmplă Acum",
+    "requestReview": "Examinarea Cererii",
+    "requestReviewDescription": "Vom examina cererea voastră de rezervare în termen de 24 ore",
+    "emailConfirmation": "Confirmare prin Email",
+    "emailConfirmationDescription": "Veți primi un email cu confirmarea finală și instrucțiunile de plată",
+    "prepareDocuments": "Pregătiți Documentele",
+    "prepareDocumentsDescription": "Aveți permisul de conducere valid și cardul de credit pregătite pentru ridicare",
+    "needHelp": "Aveți Nevoie de Ajutor?",
+    "customerSupport": "Suport Clienți",
+    "emailSupport": "Suport Email",
+    "supportHours": "Orele de Suport",
+    "supportAvailable": "Disponibil 24/7",
+    "questionsAboutReservation": "Întrebări despre cererea voastră de rezervare?",
+    "viewTermsConditions": "Vezi Termenii și Condițiile",
+    "paymentMethods": {
+      "cashOnDelivery": "Plata Cash la Livrare",
+      "cardOnDelivery": "Plata cu Cardul la Livrare",
+      "cardOnline": "Plata cu Cardul Online"
+    },
+    "status": {
+      "confirmed": "Confirmată",
+      "pending": "În Așteptare",
+      "cancelled": "Anulată"
+    }
+  },
+  "transfersPage": {
+    "comingSoon": "În Curând",
+    "description": "Pagina noastră de transferuri este în construcție. Rămâneți aproape!"
+  },
   "common": {
     "loading": "Se încarcă...",
     "error": "Eroare",
     "noResults": "Nu s-au găsit rezultate",
     "loadingFeaturedCars": "Se încarcă mașinile recomandate...",
     "couldNotLoadFeaturedCars": "Nu s-au putut încărca mașinile recomandate.",
-    "noFeaturedCarsAvailable": "Nu sunt disponibile mașini recomandate momentan."
+    "noFeaturedCarsAvailable": "Nu sunt disponibile mașini recomandate momentan.",
+    "browseCars": "Răsfoiește Mașinile",
+    "home": "Acasă",
+    "goBack": "Înapoi",
+    "cancel": "Anulează",
+    "save": "Salvează",
+    "delete": "Șterge",
+    "edit": "Editează",
+    "create": "Creează",
+    "close": "Închide",
+    "yes": "Da",
+    "no": "Nu",
+    "or": "sau",
+    "and": "și",
+    "required": "Obligatoriu",
+    "optional": "Opțional",
+    "noImage": "Fără Imagine",
+    "invalidData": "Date invalide"
   },
   "navigation": {
     "home": "Acasă",
@@ -63,6 +386,32 @@
     "searchingCars": "Se caută mașini...",
     "returnDateAfterPickup": "Data de returnare trebuie să fie după sau aceeași cu data de ridicare.",
     "selectDateFirst": "Selectează mai întâi o dată"
+  },
+  "vehicleCard": {
+    "or": "sau",
+    "perDay": "/ zi",
+    "features": "Caracteristici",
+    "viewDetails": "Vezi Detalii",
+    "bookNow": "Rezervă Acum",
+    "totalFor": "{days} zi{plural}",
+    "fees": "taxe",
+    "notAvailable": "N/A"
+  },
+  "filters": {
+    "title": "Opțiuni de Filtrare",
+    "resetFilters": "Resetează Filtrele",
+    "brand": "Marcă",
+    "selectBrand": "Selectează Marca",
+    "allBrands": "Toate Mărcile",
+    "fuelType": "Tip Combustibil",
+    "selectFuelType": "Selectează Tipul de Combustibil",
+    "allFuelTypes": "Toate Tipurile de Combustibil",
+    "transmission": "Transmisie",
+    "selectTransmission": "Selectează Transmisia",
+    "allTransmissions": "Toate Transmisiile",
+    "type": "Tip",
+    "selectType": "Selectează Tipul",
+    "allTypes": "Toate Tipurile"
   },
   "features": {
     "wideVehicleSelection": {
@@ -134,11 +483,165 @@
       }
     }
   },
+  "admin": {
+    "reservationsManagement": "Gestionarea Rezervărilor",
+    "reservationsDescription": "Vizualizează și gestionează toate cererile de rezervare și rezervările",
+    "addReservation": "Adaugă Rezervare",
+    "createReservation": "Creează Rezervare",
+    "editReservation": "Editează Rezervare",
+    "vehicleDetails": "Detalii Vehicul",
+    "customerInformation": "Informații Client",
+    "rentalPeriod": "Perioada de Închiriere",
+    "pricing": "Prețuri",
+    "tabs": {
+      "basic": "Info de Bază",
+      "customer": "Client",
+      "rental": "Închiriere",
+      "pricing": "Prețuri"
+    },
+    "form": {
+      "selectVehicle": "Selectează Vehicul",
+      "customerName": "Numele Clientului",
+      "customerEmail": "Email Client",
+      "customerPhone": "Telefon Client",
+      "flightNumber": "Numărul Zborului (Opțional)",
+      "flightPlaceholder": "ex: RO 123",
+      "customerMessage": "Mesajul Clientului (Opțional)",
+      "customerMessagePlaceholder": "Orice cereri speciale sau note...",
+      "pickupDate": "Data de Ridicare",
+      "pickupTime": "Ora de Ridicare",
+      "pickupLocation": "Locația de Ridicare",
+      "returnDate": "Data de Returnare",
+      "returnTime": "Ora de Returnare",
+      "returnLocation": "Locația de Returnare",
+      "paymentMethod": "Metoda de Plată",
+      "totalPrice": "Preț Total (EUR)",
+      "totalPricePlaceholder": "ex: 250.00",
+      "autoCalculate": "Auto",
+      "recalculate": "Recalculează",
+      "creating": "Se creează...",
+      "updating": "Se actualizează...",
+      "autoUpdates": "Se actualizează automat când se schimbă factorii de preț"
+    },
+    "pricing": {
+      "baseRental": "Închiriere de bază ({days} zi{plural})",
+      "protection": "Protecție ({type})",
+      "scdw": "SCDW",
+      "standard": "Standard",
+      "total": "Total",
+      "zeroDeductible": "Franciză zero",
+      "standardWarranty": "Garanție Standard ({amount} EUR franciză)"
+    },
+    "emailDialog": {
+      "title": "Trimite Email către Client",
+      "subject": "Subiect",
+      "message": "Mesaj",
+      "messagePlaceholder": "Introduceți mesajul aici... (detaliile rezervării vor fi incluse automat)",
+      "templateNote": "Un șablon de email profesional cu detaliile rezervării va fi generat automat.",
+      "sending": "Se trimite...",
+      "sendEmail": "Trimite Email"
+    }
+  },
+  "transfersPage": {
+    "title": "În Curând",
+    "subtitle": "Pagina noastră de transferuri este în construcție. Rămâneți aproape!"
+  },
   "email": {
     "companyName": "Rent'n Go",
     "address": "Calea Turzii 23, Cluj-Napoca, România",
     "automatedMessage": "Aceasta este o notificare automată de la sistemul de rezervări Rent'n Go.",
     "carRentalServices": "Servicii de Închiriere Auto",
     "copyright": "© 2025 {companyName}. Toate drepturile rezervate."
+  },
+  "carDetailPage": {
+    "loading": "Se încarcă detaliile vehiculului...",
+    "vehicleNotFound": {
+      "title": "Vehicul Negăsit",
+      "description": "Vehiculul pe care îl cauți nu există sau a fost eliminat.",
+      "backToCars": "Înapoi la Mașini"
+    },
+    "breadcrumb": {
+      "home": "Acasă",
+      "cars": "Mașini"
+    },
+    "reserveThisCar": "Rezervă Această Mașină",
+    "reserveDescription": "Apasă pentru a continua cu rezervarea"
+  },
+  "vehicleSpecifications": {
+    "specificationsTitle": "Specificații",
+    "featuresTitle": "Caracteristici",
+    "year": "An",
+    "seats": "Locuri",
+    "engine": "Motor",
+    "fuel": "Combustibil",
+    "transmission": "Transmisie",
+    "location": "Locație"
+  },
+  "vehiclePricing": {
+    "title": "Prețuri",
+    "day": "Zi",
+    "rateFor": "Tarif pentru închiriere de {days} zi{plural}",
+    "startingRate": "Începând cu acest tarif",
+    "savingsTitle": "Economisește până la {savings} {currency}/zi la închirieri mai lungi!",
+    "savingsDescription": "Închiriază pentru {minDays}+ zile și plătește doar {lowestPrice} {currency}/zi",
+    "extendSavingsTitle": "Extinde închirierea pentru a economisi {savings} {currency}/zi!",
+    "extendSavingsDescription": "Închiriază pentru {minDays}+ zile și plătește doar {lowestPrice} {currency}/zi în loc de {currentPrice} {currency}/zi",
+    "basePrice": "Preț de bază ({days} zi{plural} @ {currentPrice} {currency}/zi)",
+    "pickupLocationFee": "Taxa pentru locația de ridicare ({location})",
+    "returnLocationFee": "Taxa pentru locația de returnare ({location})",
+    "totalLocationFees": "Total taxe pentru locații",
+    "totalPrice": "Preț Total",
+    "forDays": "pentru {days} zi{plural}",
+    "selectDatesMessage": "Selectează datele de ridicare și returnare pentru a vedea prețul total"
+  },
+  "vehicleImageCarousel": {
+    "noImageAvailable": "Fără Imagine Disponibilă",
+    "loadingImage": "Se încarcă imaginea...",
+    "loading": "Se încarcă..."
+  },
+  "pricingTiersTable": {
+    "title": "Niveluri de Prețuri",
+    "subtitle": "Închirierile mai lungi beneficiază de tarife mai bune!",
+    "rentalPeriod": "Perioada de Închiriere",
+    "pricePerDay": "Preț pe Zi",
+    "savings": "Economie",
+    "current": "Curent",
+    "dayRangePlus": "{minDays}+ zi{plural}",
+    "exactDays": "{days} zi{plural}",
+    "dayRange": "{minDays}-{maxDays} zi{plural}",
+    "savingsAmount": "-€{amount}/{day}",
+    "baseRate": "Tarif de bază",
+    "yourRental": "Închirierea ta ({days} zi{plural})",
+    "saveAmount": "Economisești €{amount}/{day}",
+    "rateNotAvailable": "Tarif indisponibil pentru această durată"
+  },
+  "rentalDetails": {
+    "title": "Detaliile Închirierii Tale",
+    "pickupDetails": "Detalii Ridicare",
+    "returnDetails": "Detalii Returnare",
+    "pickupLocation": "Locația de Ridicare",
+    "pickupDateTime": "Data și Ora de Ridicare",
+    "returnLocation": "Locația de Returnare",
+    "returnDateTime": "Data și Ora de Returnare",
+    "selectPickupLocation": "Selectează locația de ridicare",
+    "selectReturnLocation": "Selectează locația de returnare"
+  },
+  "vehicleSearchForm": {
+    "title": "Găsește-ți Vehiculul",
+    "subtitle": "Selectează detaliile închirierii de mai jos.",
+    "pickupLocation": "Locația de Ridicare",
+    "pickupDateTime": "Data și Ora de Ridicare",
+    "returnLocation": "Locația de Returnare",
+    "returnDateTime": "Data și Ora de Returnare",
+    "selectPickup": "Selectează ridicarea",
+    "selectReturn": "Selectează returnarea"
+  },
+  "vehicleListDisplay": {
+    "loadingVehicles": "Se încarcă vehiculele...",
+    "errorLoadingVehicles": "Eroare la încărcarea vehiculelor",
+    "noCarsFound": "Nu s-au găsit mașini",
+    "availableCars": "Mașini disponibile",
+    "couldNotLoadVehicles": "Nu s-au putut încărca vehiculele. Încercați să căutați din nou.",
+    "noVehiclesFoundMessage": "Nu s-au găsit vehicule care să corespundă criteriilor. Încercați să extindeți căutarea sau verificați mai târziu."
   }
 }

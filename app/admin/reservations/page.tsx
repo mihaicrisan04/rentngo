@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from 'next-intl';
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { ReservationsTable } from "@/components/admin/reservation-table";
@@ -8,14 +9,15 @@ import { CreateReservationDialog } from "@/components/admin/create-reservation-d
 
 export default function ReservationsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const t = useTranslations('admin');
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Reservations Management</h1>
+          <h1 className="text-3xl font-bold">{t('reservationsManagement')}</h1>
           <p className="text-muted-foreground">
-            View and manage all reservation requests and bookings
+            {t('reservationsDescription')}
           </p>
         </div>
         <Button 
@@ -23,7 +25,7 @@ export default function ReservationsPage() {
           className="bg-primary hover:bg-primary/80"
         >
           <Plus className="h-4 w-4 mr-2" />
-          Add Reservation
+          {t('addReservation')}
         </Button>
       </div>
       

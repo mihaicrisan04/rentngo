@@ -291,7 +291,7 @@ export function CreateReservationDialog({
                           const days = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
 
                           const seasonalPricePerDay = getPriceForDurationWithSeason(selectedVehicle, days, seasonalMultiplier);
-                          return `${days} day${days !== 1 ? 's' : ''} × ${seasonalPricePerDay} EUR = ${days * seasonalPricePerDay} EUR`;
+                          return `${days} ${days !== 1 ? 'days' : 'day'} × ${seasonalPricePerDay} EUR = ${days * seasonalPricePerDay} EUR`;
                         })()}
                       </div>
                     </div>
@@ -675,7 +675,7 @@ export function CreateReservationDialog({
                       return (
                         <div className="text-sm space-y-1">
                           <div className="flex justify-between">
-                            <span>Base rental ({days} day{days !== 1 ? 's' : ''})</span>
+                            <span>Base rental ({days} {days !== 1 ? 'days' : 'day'})</span>
                             <span>{basePrice.toFixed(2)} EUR</span>
                           </div>
                           {protectionCost > 0 && (

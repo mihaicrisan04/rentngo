@@ -22,10 +22,12 @@ import { PricingTiersTable } from "@/components/vehicle/pricing-tiers-table";
 import { useVehicleDetails } from "@/hooks/useVehicleDetails";
 import { formatVehicleName, getVehicleTypeLabel } from "@/lib/vehicleUtils";
 import { RentalDetails } from "@/components/rental-details";
+import { useTranslations } from 'next-intl';
 
 export default function CarDetailPage() {
   const params = useParams();
   const vehicleId = params.id as string;
+  const t = useTranslations('carDetailPage');
 
   // Use custom hook for vehicle details and state management
   const {
@@ -42,7 +44,7 @@ export default function CarDetailPage() {
   if (vehicle === undefined) {
     return (
       <PageLayout className="flex items-center justify-center">
-        <p className="text-muted-foreground">Loading vehicle details...</p>
+        <p className="text-muted-foreground">{t('loading')}</p>
       </PageLayout>
     );
   }
@@ -51,12 +53,12 @@ export default function CarDetailPage() {
     return (
       <PageLayout className="flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Vehicle Not Found</h1>
-          <p className="text-muted-foreground mb-6">The vehicle you&apos;re looking for doesn&apos;t exist or has been removed.</p>
+          <h1 className="text-2xl font-bold mb-4">{t('vehicleNotFound.title')}</h1>
+          <p className="text-muted-foreground mb-6">{t('vehicleNotFound.description')}</p>
           <Link href="/cars">
             <Button>
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Cars
+              {t('vehicleNotFound.backToCars')}
             </Button>
           </Link>
         </div>
@@ -75,13 +77,13 @@ export default function CarDetailPage() {
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link href="/">Home</Link>
+                  <Link href="/">{t('breadcrumb.home')}</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link href="/cars">Cars</Link>
+                  <Link href="/cars">{t('breadcrumb.cars')}</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
@@ -147,11 +149,11 @@ export default function CarDetailPage() {
                 asChild
               >
                 <Link href={reservationUrl}>
-                  Reserve This Car
+                  {t('reserveThisCar')}
                 </Link>
               </Button>
               <p className="text-sm text-muted-foreground text-center">
-                Click to proceed with your reservation
+                {t('reserveDescription')}
               </p>
             </div>
           </div>

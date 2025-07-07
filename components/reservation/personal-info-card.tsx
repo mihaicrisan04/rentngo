@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,13 +23,14 @@ export function PersonalInfoCard({
   errors
 }: PersonalInfoCardProps) {
   const { user } = useUser();
+  const t = useTranslations('reservationPage');
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
           <User className="h-5 w-5" />
-          <span>Personal Information</span>
+          <span>{t('personalInfo.title')}</span>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -36,11 +38,11 @@ export function PersonalInfoCard({
           {!user && (
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-800 mb-3">
-                Sign in to auto-fill your information and make booking easier!
+                {t('personalInfo.signInPrompt')}
               </p>
               <SignInButton mode="modal">
                 <Button variant="outline" size="sm" className="w-full">
-                  Sign In / Sign Up
+                  {t('personalInfo.signInButton')}
                 </Button>
               </SignInButton>
             </div>
@@ -48,11 +50,11 @@ export function PersonalInfoCard({
           
           <div className="space-y-4">
             <div>
-              <Label htmlFor="customer-name" className="pb-2">Full Name *</Label>
+              <Label htmlFor="customer-name" className="pb-2">{t('personalInfo.fullName')}</Label>
               <Input
                 id="customer-name"
                 type="text"
-                placeholder="Enter your full name"
+                placeholder={t('personalInfo.fullNamePlaceholder')}
                 value={personalInfo.name}
                 onChange={(e) => setPersonalInfo(prev => ({ ...prev, name: e.target.value }))}
                 className={cn(errors.personalInfo?.name && "border-red-500")}
@@ -66,11 +68,11 @@ export function PersonalInfoCard({
             </div>
             
             <div>
-              <Label htmlFor="customer-email" className="pb-2">Email Address *</Label>
+              <Label htmlFor="customer-email" className="pb-2">{t('personalInfo.emailAddress')}</Label>
               <Input
                 id="customer-email"
                 type="email"
-                placeholder="Enter your email address"
+                placeholder={t('personalInfo.emailPlaceholder')}
                 value={personalInfo.email}
                 onChange={(e) => setPersonalInfo(prev => ({ ...prev, email: e.target.value }))}
                 className={cn(errors.personalInfo?.email && "border-red-500")}
@@ -84,11 +86,11 @@ export function PersonalInfoCard({
             </div>
             
             <div>
-              <Label htmlFor="customer-phone" className="pb-2">Phone Number *</Label>
+              <Label htmlFor="customer-phone" className="pb-2">{t('personalInfo.phoneNumber')}</Label>
               <Input
                 id="customer-phone"
                 type="tel"
-                placeholder="Enter your phone number"
+                placeholder={t('personalInfo.phonePlaceholder')}
                 value={personalInfo.phone}
                 onChange={(e) => setPersonalInfo(prev => ({ ...prev, phone: e.target.value }))}
                 className={cn(errors.personalInfo?.phone && "border-red-500")}
@@ -102,11 +104,11 @@ export function PersonalInfoCard({
             </div>
             
             <div>
-              <Label htmlFor="customer-flight" className="pb-2">Flight Number (Optional)</Label>
+              <Label htmlFor="customer-flight" className="pb-2">{t('personalInfo.flightNumber')}</Label>
               <Input
                 id="customer-flight"
                 type="text"
-                placeholder="e.g., AA 1234, LH 456, BA 2847"
+                placeholder={t('personalInfo.flightPlaceholder')}
                 value={personalInfo.flightNumber}
                 onChange={(e) => {
                   const formattedValue = formatFlightNumber(e.target.value);
@@ -122,15 +124,15 @@ export function PersonalInfoCard({
                 </p>
               )}
               <p className="text-xs text-muted-foreground mt-1">
-                Format: Two letter airline code + flight number (e.g., "AA 1234, LH 456, BA 2847")
+                {t('personalInfo.flightFormat')}
               </p>
             </div>
             
             <div>
-              <Label htmlFor="customer-message" className="pb-2">Additional Message (Optional)</Label>
+              <Label htmlFor="customer-message" className="pb-2">{t('personalInfo.additionalMessage')}</Label>
               <Textarea
                 id="customer-message"
-                placeholder="Any special requests or additional information..."
+                placeholder={t('personalInfo.messagePlaceholder')}
                 value={personalInfo.message}
                 onChange={(e) => setPersonalInfo(prev => ({ ...prev, message: e.target.value }))}
                 rows={3}

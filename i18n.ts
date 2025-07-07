@@ -13,6 +13,7 @@ export default getRequestConfig(async ({ locale }) => {
 
   return {
     locale: validLocale,
-    messages: (await import(`./messages/${validLocale}.json`)).default
+    messages: (await import(`./messages/${validLocale}.json`)).default,
+    timeZone: 'Europe/Bucharest' // Add timezone for Romania
   };
 }); 

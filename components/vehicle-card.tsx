@@ -12,6 +12,7 @@ import { Cog, Fuel, CarFront } from "lucide-react";
 import { Vehicle, getPriceForDuration } from "@/types/vehicle";
 import { calculateVehiclePricing, buildReservationUrl, calculateVehiclePricingWithSeason, getPriceForDurationWithSeason } from "@/lib/vehicleUtils";
 import { useSeasonalPricing } from "@/hooks/useSeasonalPricing";
+import { useTranslations, useLocale } from 'next-intl';
 
 interface VehicleCardProps {
   vehicle: Vehicle;
@@ -37,6 +38,10 @@ export function VehicleCard({
   returnTime 
 }: VehicleCardProps) {
   // Always call hooks at the top level, before any early returns
+  const t = useTranslations('vehicleCard');
+  const tCommon = useTranslations('common');
+  const locale = useLocale();
+  
   const imageUrl = useQuery(api.vehicles.getImageUrl, 
     vehicle?.mainImageId ? { imageId: vehicle.mainImageId } : "skip"
   );
@@ -45,7 +50,7 @@ export function VehicleCard({
 
 
   if (!vehicle || typeof vehicle._id !== "string") {
-    return <div className="p-4 border rounded-lg shadow-md bg-card text-card-foreground">Invalid vehicle data</div>;
+    return <div className="p-4 border rounded-lg shadow-md bg-card text-card-foreground">{tCommon('invalidData')}</div>;
   }
 
   const priceDetails = calculateVehiclePricingWithSeason(
@@ -97,7 +102,7 @@ export function VehicleCard({
           />
         ) : (
           <div className="flex items-center justify-center h-full text-muted-foreground">
-            <span className="text-sm">No Image Available</span>
+            <span className="text-sm">{tCommon('noImage')}</span>
           </div>
         )}
       </div>
@@ -113,7 +118,7 @@ export function VehicleCard({
               <span className="text-2xl font-bold text-yellow-500">
                 {currentPricePerDay}
               </span>
-              <span className="text-sm text-muted-foreground"> {currency} / Day</span>
+              <span className="text-sm text-muted-foreground"> {currency} {t('perDay')}</span>
             </div>
             {priceDetails.totalPrice !== null && priceDetails.days !== null && (
               <div>
@@ -121,11 +126,14 @@ export function VehicleCard({
                   {priceDetails.totalPrice}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {" "}{currency} / {priceDetails.days} Day{priceDetails.days === 1 ? "" : "s"}
+                  {" "}{currency} / {t('totalFor', { 
+                    days: priceDetails.days, 
+                    plural: locale === 'ro' ? ((priceDetails.days === 1) ? "" : "le") : ((priceDetails.days === 1) ? "" : "s") 
+                  })}
                 </span>
                 {priceDetails.totalLocationFees > 0 && (
                   <div className="text-xs text-muted-foreground/60">
-                    +{priceDetails.totalLocationFees} {currency} fees
+                    +{priceDetails.totalLocationFees} {currency} {t('fees')}
                   </div>
                 )}
               </div>
@@ -139,7 +147,7 @@ export function VehicleCard({
           asChild
         >
           <Link href={reservationUrl}>
-            RESERVE NOW
+            {t('bookNow')}
           </Link>
         </Button>
       </div>
@@ -148,21 +156,21 @@ export function VehicleCard({
         <div className="flex justify-around items-center w-full text-xs text-muted-foreground">
           <div className="flex items-center space-x-1">
             <CarFront className="h-4 w-4" />
-            <span>{vehicle.year || "N/A"}</span>
+            <span>{vehicle.year || t('notAvailable')}</span>
           </div>
           <div className="flex items-center self-stretch px-1.5">
             <Separator orientation="vertical" />
           </div>
           <div className="flex items-center space-x-1">
             <Cog className="h-4 w-4" />
-            <span>{vehicle.engineCapacity ? `${vehicle.engineCapacity.toFixed(1)} ${vehicle.engineType || ''}` : "N/A"}</span>
+            <span>{vehicle.engineCapacity ? `${vehicle.engineCapacity.toFixed(1)} ${vehicle.engineType || ''}` : t('notAvailable')}</span>
           </div>
           <div className="flex items-center self-stretch px-1.5">
             <Separator orientation="vertical" />
           </div>
           <div className="flex items-center space-x-1">
             <Fuel className="h-4 w-4" />
-            <span>{vehicle.fuelType || "N/A"}</span>
+            <span>{vehicle.fuelType || t('notAvailable')}</span>
           </div>
         </div>
       </div>

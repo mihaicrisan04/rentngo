@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -37,10 +38,12 @@ export function AdditionalFeaturesCard({
     childSeat5to12Count
   } = additionalFeatures;
 
+  const t = useTranslations('reservationPage');
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Additional Features</CardTitle>
+        <CardTitle>{t('additionalFeatures.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
@@ -57,7 +60,7 @@ export function AdditionalFeaturesCard({
               <div className="flex-1">
                 <div className="flex items-center space-x-1">
                   <Label htmlFor="scdw-insurance" className="text-sm font-medium cursor-pointer">
-                    SCDW Insurance
+                    SCDW Insurance (Non-refundable)
                   </Label>
                   <HoverCard>
                     <HoverCardTrigger asChild>
@@ -67,13 +70,13 @@ export function AdditionalFeaturesCard({
                       <div className="space-y-2">
                         <h4 className="text-sm font-semibold">SCDW Insurance Details</h4>
                         <p className="text-xs text-muted-foreground">
-                          Super Collision Damage Waiver (SCDW) provides additional protection for your rental.
+                          Super Collision Damage Waiver - provides additional protection for your rental.
                         </p>
                         <div className="text-xs text-muted-foreground space-y-1">
                           <p><strong>Calculation:</strong></p>
-                          <p>• Base cost: 2 × daily rate (covers 1-3 days)</p>
-                          <p>• For each 3-day block after first 3 days:</p>
-                          <p>  - First additional block: +6 EUR</p>
+                          <p>• Base cost: 2x daily rate</p>
+                          <p>• Additional blocks (3+ days):</p>
+                          <p>  - First block: +6 EUR</p>
                           <p>  - Each subsequent block: +5 EUR</p>
                         </div>
                         {days && pricePerDay && (
@@ -88,7 +91,7 @@ export function AdditionalFeaturesCard({
                   </HoverCard>
                 </div>
                 <div className="flex justify-between text-sm mt-1">
-                  <span className="text-muted-foreground">Additional protection coverage</span>
+                  <span className="text-muted-foreground">Non-refundable insurance</span>
                   <span className="font-medium">
                     {days && pricePerDay ? `${calculateSCDW(days, pricePerDay)} EUR` : '0 EUR'}
                   </span>
@@ -109,10 +112,10 @@ export function AdditionalFeaturesCard({
               />
               <div className="flex-1">
                 <Label htmlFor="snow-chains" className="text-sm font-medium cursor-pointer">
-                  Snow Chains
+                  {t('additionalFeatures.snowChains')}
                 </Label>
                 <div className="flex justify-between text-sm mt-1">
-                  <span className="text-muted-foreground">3 EUR per day</span>
+                                      <span className="text-muted-foreground">{t('additionalFeatures.pricePerDay')}</span>
                   <span className="font-medium">
                     {snowChainsSelected && days ? `${days * 3} EUR` : '0 EUR'}
                   </span>
@@ -126,7 +129,7 @@ export function AdditionalFeaturesCard({
             <div className="flex items-start space-x-2">
               <div className="flex-1">
                 <Label className="text-sm font-medium">
-                  Child Seat (1-4 years)
+                  {t('additionalFeatures.childSeat1to4')}
                 </Label>
                 <div className="flex items-center justify-between mt-2">
                   <div className="flex items-center space-x-2">
@@ -161,7 +164,7 @@ export function AdditionalFeaturesCard({
                   </span>
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  3 EUR per seat per day (max 2 seats)
+                  {t('additionalFeatures.pricePerSeat')}
                 </div>
               </div>
             </div>
@@ -172,7 +175,7 @@ export function AdditionalFeaturesCard({
             <div className="flex items-start space-x-2">
               <div className="flex-1">
                 <Label className="text-sm font-medium">
-                  Child Seat (5-12 years)
+                  {t('additionalFeatures.childSeat5to12')}
                 </Label>
                 <div className="flex items-center justify-between mt-2">
                   <div className="flex items-center space-x-2">
@@ -207,7 +210,7 @@ export function AdditionalFeaturesCard({
                   </span>
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  3 EUR per seat per day (max 2 seats)
+                  {t('additionalFeatures.pricePerSeat')}
                 </div>
               </div>
             </div>

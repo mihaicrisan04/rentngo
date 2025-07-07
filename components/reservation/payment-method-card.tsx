@@ -1,5 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
+import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -23,12 +24,14 @@ export function PaymentMethodCard({
   setTermsAccepted,
   errors
 }: PaymentMethodCardProps) {
+  const t = useTranslations('reservationPage');
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
           <CreditCard className="h-5 w-5" />
-          <span>Payment Method</span>
+          <span>{t('paymentMethod.title')}</span>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -43,8 +46,8 @@ export function PaymentMethodCard({
                 <RadioGroupItem value={method.id} id={method.id} className="mt-1" />
                 <div className="flex-1">
                   <Label htmlFor={method.id} className="cursor-pointer">
-                    <div className="font-medium">{method.label}</div>
-                    <div className="text-sm text-muted-foreground">{method.description}</div>
+                    <div className="font-medium">{t(`payment.methods.${method.id}.label`)}</div>
+                    <div className="text-sm text-muted-foreground">{t(`payment.methods.${method.id}.description`)}</div>
                   </Label>
                 </div>
               </div>
@@ -66,14 +69,7 @@ export function PaymentMethodCard({
                 onCheckedChange={(checked) => setTermsAccepted(checked === true)}
               />
               <Label htmlFor="terms-conditions" className="text-sm cursor-pointer">
-                I accept the{" "}
-                <Link href="/terms-and-conditions" className="text-blue-600 hover:underline" target="_blank">
-                  Terms and Conditions
-                </Link>
-                {" "}and{" "}
-                <Link href="/privacy-policy" className="text-blue-600 hover:underline" target="_blank">
-                  Privacy Policy
-                </Link>
+                {t('paymentMethod.termsAcceptance')}
               </Label>
             </div>
             {errors.payment?.termsAccepted && (

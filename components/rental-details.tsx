@@ -6,6 +6,7 @@ import { Calendar } from "lucide-react";
 import { LocationPicker } from "@/components/location-picker";
 import { DateTimePicker } from "@/components/date-time-picker";
 import { SearchData } from "@/lib/searchStorage";
+import { useTranslations } from 'next-intl';
 
 interface RentalDetailsProps {
   deliveryLocation?: string;
@@ -26,6 +27,8 @@ export function RentalDetails({
   returnTime,
   onUpdateDetails,
 }: RentalDetailsProps) {
+  const t = useTranslations('rentalDetails');
+  
   // Local state for the components
   const [localDeliveryLocation, setLocalDeliveryLocation] = React.useState(deliveryLocation || "");
   const [localPickupDate, setLocalPickupDate] = React.useState<Date | undefined>(pickupDate);
@@ -76,7 +79,7 @@ export function RentalDetails({
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
           <Calendar className="h-5 w-5" />
-          <span>Your Rental Details</span>
+          <span>{t('title')}</span>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -84,23 +87,23 @@ export function RentalDetails({
           {/* Pickup Details */}
           <div className="space-y-4">
             <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-              Pick-up Details
+              {t('pickupDetails')}
             </h4>
             <div className="space-y-4">
               <LocationPicker
                 id="pickup-location"
-                label="Pick-up Location"
+                label={t('pickupLocation')}
                 value={localDeliveryLocation}
                 onValueChange={(value) => {
                   setLocalDeliveryLocation(value);
                   handleUpdate('deliveryLocation', value);
                 }}
-                placeholder="Select pick-up location"
+                placeholder={t('selectPickupLocation')}
                 disabled={false}
               />
               <DateTimePicker
                 id="pickup-datetime"
-                label="Pick-up Date & Time"
+                label={t('pickupDateTime')}
                 dateState={localPickupDate}
                 disabledDateRanges={{ before: today }}
                 setDateState={(date) => {
@@ -126,23 +129,23 @@ export function RentalDetails({
           {/* Return Details */}
           <div className="space-y-4">
             <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-              Return Details
+              {t('returnDetails')}
             </h4>
             <div className="space-y-4">
               <LocationPicker
                 id="return-location"
-                label="Return Location"
+                label={t('returnLocation')}
                 value={localRestitutionLocation}
                 onValueChange={(value) => {
                   setLocalRestitutionLocation(value);
                   handleUpdate('restitutionLocation', value);
                 }}
-                placeholder="Select return location"
+                placeholder={t('selectReturnLocation')}
                 disabled={false}
               />
               <DateTimePicker
                 id="return-datetime"
-                label="Return Date & Time"
+                label={t('returnDateTime')}
                 dateState={localReturnDate}
                 setDateState={(date) => {
                   if (date) {

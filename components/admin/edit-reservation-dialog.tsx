@@ -493,7 +493,7 @@ export function EditReservationDialog({
                           const effectiveMultiplier = reservation?.seasonalMultiplier || currentSeasonalMultiplier;
                           const seasonalPricePerDay = getPriceForDurationWithSeason(selectedVehicle, priceDetails.days, effectiveMultiplier);
 
-                          return `${priceDetails.days} day${priceDetails.days !== 1 ? 's' : ''} × ${seasonalPricePerDay} EUR = ${priceDetails.days * seasonalPricePerDay} EUR`;
+                          return `${priceDetails.days} ${priceDetails.days !== 1 ? 'days' : 'day'} × ${seasonalPricePerDay} EUR = ${priceDetails.days * seasonalPricePerDay} EUR`;
                         })()}
                       </div>
                     </div>
@@ -984,7 +984,7 @@ export function EditReservationDialog({
                       return (
                         <div className="text-sm space-y-1">
                           <div className="flex justify-between">
-                            <span>Base rental ({priceDetails.days} day{priceDetails.days !== 1 ? 's' : ''})</span>
+                            <span>Base rental ({priceDetails.days} {priceDetails.days !== 1 ? 'days' : 'day'})</span>
                             <span>{basePrice.toFixed(2)} EUR</span>
                           </div>
                           {protectionCost > 0 && (

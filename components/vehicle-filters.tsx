@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { XIcon } from "lucide-react";
 import { Vehicle } from "@/types/vehicle";
+import { useTranslations } from 'next-intl';
 
 interface VehicleFiltersProps {
   allVehicles: Vehicle[] | null;
@@ -21,6 +22,8 @@ interface VehicleFiltersProps {
 }
 
 export function VehicleFilters({ allVehicles, onFilterChange }: VehicleFiltersProps) {
+  const t = useTranslations('filters');
+
   const [brandFilter, setBrandFilter] = React.useState<string>("all");
   const [fuelTypeFilter, setFuelTypeFilter] = React.useState<string>("all");
   const [transmissionFilter, setTransmissionFilter] = React.useState<string>("all");
@@ -96,26 +99,26 @@ export function VehicleFilters({ allVehicles, onFilterChange }: VehicleFiltersPr
       <CardHeader className="pb-4">
         <div className="flex justify-between items-center">
           <CardTitle className="text-xl md:text-2xl">
-            Filter Options
+            {t('title')}
           </CardTitle>
           {hasActiveFilters && (
             <Button variant="secondary" size="sm" onClick={resetFilters} className="text-sm">
-              <XIcon className="mr-1 h-4 w-4" /> Reset Filters
+              <XIcon className="mr-1 h-4 w-4" /> {t('resetFilters')}
             </Button>
           )}
         </div>
       </CardHeader>
       <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <div>
-          <Label htmlFor="brand-filter" className="text-sm font-medium">Brand</Label>
+          <Label htmlFor="brand-filter" className="text-sm font-medium">{t('brand')}</Label>
           <Select value={brandFilter} onValueChange={setBrandFilter}>
             <SelectTrigger id="brand-filter" className="mt-1">
-              <SelectValue placeholder="Select Brand" />
+              <SelectValue placeholder={t('selectBrand')} />
             </SelectTrigger>
             <SelectContent>
               {brands.map(brand => (
                 <SelectItem key={brand} value={brand} className="capitalize">
-                  {brand === "all" ? "All Brands" : brand}
+                  {brand === "all" ? t('allBrands') : brand}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -123,15 +126,15 @@ export function VehicleFilters({ allVehicles, onFilterChange }: VehicleFiltersPr
         </div>
 
         <div>
-          <Label htmlFor="fuel-type-filter" className="text-sm font-medium">Fuel Type</Label>
+          <Label htmlFor="fuel-type-filter" className="text-sm font-medium">{t('fuelType')}</Label>
           <Select value={fuelTypeFilter} onValueChange={setFuelTypeFilter}>
             <SelectTrigger id="fuel-type-filter" className="mt-1">
-              <SelectValue placeholder="Select Fuel Type" />
+              <SelectValue placeholder={t('selectFuelType')} />
             </SelectTrigger>
             <SelectContent>
               {fuelTypes.map(fuel => (
                 <SelectItem key={fuel} value={fuel} className="capitalize">
-                  {fuel === "all" ? "All Fuel Types" : fuel}
+                  {fuel === "all" ? t('allFuelTypes') : fuel}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -139,15 +142,15 @@ export function VehicleFilters({ allVehicles, onFilterChange }: VehicleFiltersPr
         </div>
 
         <div>
-          <Label htmlFor="transmission-filter" className="text-sm font-medium">Transmission</Label>
+          <Label htmlFor="transmission-filter" className="text-sm font-medium">{t('transmission')}</Label>
           <Select value={transmissionFilter} onValueChange={setTransmissionFilter}>
             <SelectTrigger id="transmission-filter" className="mt-1">
-              <SelectValue placeholder="Select Transmission" />
+              <SelectValue placeholder={t('selectTransmission')} />
             </SelectTrigger>
             <SelectContent>
               {transmissions.map(trans => (
                 <SelectItem key={trans} value={trans} className="capitalize">
-                  {trans === "all" ? "All Transmissions" : trans}
+                  {trans === "all" ? t('allTransmissions') : trans}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -156,15 +159,15 @@ export function VehicleFilters({ allVehicles, onFilterChange }: VehicleFiltersPr
 
         {/* Vehicle Type Filter */}
         <div>
-          <Label htmlFor="type-filter" className="text-sm font-medium">Type</Label>
+          <Label htmlFor="type-filter" className="text-sm font-medium">{t('type')}</Label>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger id="type-filter" className="mt-1">
-              <SelectValue placeholder="Select Type" />
+              <SelectValue placeholder={t('selectType')} />
             </SelectTrigger>
             <SelectContent>
               {vehicleTypes.map(type => (
                 <SelectItem key={type} value={type} className="capitalize">
-                  {type === "all" ? "All Types" : type}
+                  {type === "all" ? t('allTypes') : type}
                 </SelectItem>
               ))}
             </SelectContent>

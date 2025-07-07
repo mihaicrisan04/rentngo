@@ -4,6 +4,7 @@ import { VehicleCard } from "@/components/vehicle-card";
 import { VehicleCardSkeleton } from "@/components/vehicle-card-skeleton";
 import { Vehicle } from "@/types/vehicle";
 import { SearchData } from "@/lib/searchStorage";
+import { useTranslations } from 'next-intl';
 
 interface VehicleListDisplayProps {
   vehicles: Vehicle[] | null;
@@ -54,11 +55,11 @@ function LoadingSkeleton() {
   );
 }
 
-function getDisplayTitle(vehicles: Vehicle[] | null, isLoading: boolean, error: string | null): string {
-  if (isLoading) return "Loading Vehicles...";
-  if (error) return "Error Loading Vehicles";
-  if (!vehicles || vehicles.length === 0) return "No Cars Found";
-  return "Available Cars";
+function getDisplayTitle(vehicles: Vehicle[] | null, isLoading: boolean, error: string | null, t: any): string {
+  if (isLoading) return t('loadingVehicles');
+  if (error) return t('errorLoadingVehicles');
+  if (!vehicles || vehicles.length === 0) return t('noCarsFound');
+  return t('availableCars');
 }
 
 export function VehicleListDisplay({
@@ -68,7 +69,8 @@ export function VehicleListDisplay({
   error,
   searchState,
 }: VehicleListDisplayProps) {
-  const displayTitle = getDisplayTitle(vehicles, isLoading, error);
+  const t = useTranslations('vehicleListDisplay');
+  const displayTitle = getDisplayTitle(vehicles, isLoading, error, t);
 
   return (
     <div>
@@ -88,14 +90,14 @@ export function VehicleListDisplay({
       {/* Show error state */}
       {isHydrated && !isLoading && vehicles === null && error && (
         <p className="text-center text-destructive">
-          Could not load vehicles. Please try searching again.
+          {t('couldNotLoadVehicles')}
         </p>
       )}
 
       {/* Show empty state */}
       {isHydrated && !isLoading && vehicles !== null && vehicles.length === 0 && (
         <p className="text-center text-muted-foreground">
-          No vehicles found matching your criteria. Try broadening your search or check back later.
+          {t('noVehiclesFoundMessage')}
         </p>
       )}
 

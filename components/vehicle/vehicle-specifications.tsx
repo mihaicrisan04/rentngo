@@ -11,28 +11,31 @@ import {
   Gauge
 } from "lucide-react";
 import { Vehicle } from "@/types/vehicle";
+import { useTranslations } from 'next-intl';
 
 interface VehicleSpecificationsProps {
   vehicle: Vehicle;
 }
 
 export function VehicleSpecifications({ vehicle }: VehicleSpecificationsProps) {
+  const t = useTranslations('vehicleSpecifications');
+  
   const specifications = [
     {
       icon: CarFront,
-      label: "Year",
+      label: t('year'),
       value: vehicle.year?.toString(),
       show: !!vehicle.year
     },
     {
       icon: Users,
-      label: "Seats",
+      label: t('seats'),
       value: vehicle.seats?.toString(),
       show: !!vehicle.seats
     },
     {
       icon: Cog,
-      label: "Engine",
+      label: t('engine'),
       value: vehicle.engineCapacity 
         ? `${vehicle.engineCapacity.toFixed(1)}L ${vehicle.engineType || ''}`.trim()
         : undefined,
@@ -40,19 +43,19 @@ export function VehicleSpecifications({ vehicle }: VehicleSpecificationsProps) {
     },
     {
       icon: Fuel,
-      label: "Fuel",
+      label: t('fuel'),
       value: vehicle.fuelType,
       show: !!vehicle.fuelType
     },
     {
       icon: Gauge,
-      label: "Transmission",
+      label: t('transmission'),
       value: vehicle.transmission,
       show: !!vehicle.transmission
     },
     {
       icon: MapPin,
-      label: "Location",
+      label: t('location'),
       value: vehicle.location,
       show: !!vehicle.location
     }
@@ -65,7 +68,7 @@ export function VehicleSpecifications({ vehicle }: VehicleSpecificationsProps) {
       {/* Specifications */}
       <Card>
         <CardHeader>
-          <CardTitle>Specifications</CardTitle>
+          <CardTitle>{t('specificationsTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4">
@@ -86,7 +89,7 @@ export function VehicleSpecifications({ vehicle }: VehicleSpecificationsProps) {
       {vehicle.features && vehicle.features.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Features</CardTitle>
+            <CardTitle>{t('featuresTitle')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">

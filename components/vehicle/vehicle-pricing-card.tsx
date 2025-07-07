@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSeasonalPricing } from "@/hooks/useSeasonalPricing";
 import { PriceDetails, getPriceForDurationWithSeason } from "@/lib/vehicleUtils";
 import { Vehicle, getPriceForDuration } from "@/types/vehicle";
+import { useTranslations, useLocale } from 'next-intl';
 
 interface VehiclePricingCardProps {
   vehicle: Vehicle;
@@ -20,6 +21,8 @@ export function VehiclePricingCard({
   deliveryLocation,
   restitutionLocation
 }: VehiclePricingCardProps) {
+  const t = useTranslations('vehiclePricing');
+  const locale = useLocale();
   const { multiplier: currentMultiplier, currentSeason } = useSeasonalPricing();
   const { basePrice, totalPrice, days, deliveryFee, returnFee, totalLocationFees } = priceDetails;
 
@@ -57,7 +60,7 @@ export function VehiclePricingCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Pricing</CardTitle>
+        <CardTitle>{t('title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
@@ -67,15 +70,18 @@ export function VehiclePricingCard({
               {currentPricePerDay}
             </span>
             <span className="text-lg text-muted-foreground ml-2">
-              {currency} / Day
+              {currency} / {t('day')}
             </span>
             {days && vehicle.pricingTiers && vehicle.pricingTiers.length > 0 ? (
               <div className="text-sm text-muted-foreground mt-1">
-                Rate for {days} day{days === 1 ? "" : "s"} rental
+                {t('rateFor', { 
+                  days, 
+                  plural: locale === 'ro' ? ((days === 1) ? "" : "le") : ((days === 1) ? "" : "s") 
+                })}
               </div>
             ) : (
               <div className="text-sm text-muted-foreground mt-1">
-                Starting from this rate
+                {t('startingRate')}
               </div>
             )}
           </div>
@@ -89,10 +95,14 @@ export function VehiclePricingCard({
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-blue-800 font-medium">
-                    Save up to {pricingTip.savings} {currency}/day on longer rentals!
+                    {t('savingsTitle', { savings: pricingTip.savings, currency })}
                   </p>
                   <p className="text-xs text-blue-600 mt-1">
-                    Rent for {pricingTip.minDaysForBest}+ days and pay only {pricingTip.lowestPrice} {currency}/day
+                    {t('savingsDescription', { 
+                      minDays: pricingTip.minDaysForBest, 
+                      lowestPrice: pricingTip.lowestPrice, 
+                      currency 
+                    })}
                   </p>
                 </div>
               </div>
@@ -108,10 +118,15 @@ export function VehiclePricingCard({
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-green-800 font-medium">
-                    Extend your rental to save {pricingTip.savings} {currency}/day!
+                    {t('extendSavingsTitle', { savings: pricingTip.savings, currency })}
                   </p>
                   <p className="text-xs text-green-600 mt-1">
-                    Rent for {pricingTip.minDaysForBest}+ days and pay only {pricingTip.lowestPrice} {currency}/day instead of {currentPricePerDay} {currency}/day
+                    {t('extendSavingsDescription', { 
+                      minDays: pricingTip.minDaysForBest, 
+                      lowestPrice: pricingTip.lowestPrice, 
+                      currentPrice: currentPricePerDay,
+                      currency 
+                    })}
                   </p>
                 </div>
               </div>
@@ -124,7 +139,12 @@ export function VehiclePricingCard({
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-muted-foreground">
-                    Base price ({days} day{days === 1 ? "" : "s"} @ {currentPricePerDay} {currency}/day):
+                    {t('basePrice', { 
+                      days, 
+                      plural: locale === 'ro' ? ((days === 1) ? "" : "le") : ((days === 1) ? "" : "s"),
+                      currentPrice: currentPricePerDay,
+                      currency
+                    })}:
                   </span>
                   <span className="text-muted-foreground">
                     {basePrice} {currency}
@@ -134,7 +154,7 @@ export function VehiclePricingCard({
                 {deliveryFee > 0 && deliveryLocation && (
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">
-                      Pick-up location fee ({deliveryLocation}):
+                      {t('pickupLocationFee', { location: deliveryLocation })}:
                     </span>
                     <span className="text-muted-foreground">
                       +{deliveryFee} {currency}
@@ -145,7 +165,7 @@ export function VehiclePricingCard({
                 {returnFee > 0 && restitutionLocation && (
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">
-                      Return location fee ({restitutionLocation}):
+                      {t('returnLocationFee', { location: restitutionLocation })}:
                     </span>
                     <span className="text-muted-foreground">
                       +{returnFee} {currency}
@@ -156,7 +176,7 @@ export function VehiclePricingCard({
                 {totalLocationFees > 0 && (
                   <div className="flex justify-between items-center text-sm font-medium">
                     <span className="text-muted-foreground">
-                      Total location fees:
+                      {t('totalLocationFees')}:
                     </span>
                     <span className="text-muted-foreground">
                       +{totalLocationFees} {currency}
@@ -166,14 +186,17 @@ export function VehiclePricingCard({
 
                 <div className="border-t pt-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold">Total Price:</span>
+                    <span className="text-lg font-semibold">{t('totalPrice')}:</span>
                     <span className="text-2xl font-bold text-green-600">
                       {totalPrice} {currency}
                     </span>
                   </div>
                   {days && (
                     <div className="text-right text-sm text-muted-foreground">
-                      for {days} day{days === 1 ? "" : "s"}
+                      {t('forDays', { 
+                        days, 
+                        plural: locale === 'ro' ? ((days === 1) ? "" : "le") : ((days === 1) ? "" : "s") 
+                      })}
                     </div>
                   )}
                 </div>
@@ -184,7 +207,7 @@ export function VehiclePricingCard({
           {/* Show message when no dates are selected */}
           {totalPrice === null && (
             <div className="text-center text-sm text-muted-foreground py-4">
-              Select pickup and return dates to see total pricing
+              {t('selectDatesMessage')}
             </div>
           )}
         </div>

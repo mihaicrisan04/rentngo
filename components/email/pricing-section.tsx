@@ -27,7 +27,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
       <Row className="mb-[12px]">
         <Column className="w-2/3">
           <Text className="text-[16px] text-gray-800 m-0">
-            Rental ({rentalDetails.numberOfDays} days × {formatCurrency(pricingDetails.pricePerDay)}/day):
+            Rental ({rentalDetails.numberOfDays} {rentalDetails.numberOfDays === 1 ? 'day' : 'days'} × {formatCurrency(pricingDetails.pricePerDay)}/day):
           </Text>
         </Column>
         <Column className="w-1/3 text-right">

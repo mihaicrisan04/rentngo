@@ -11,8 +11,11 @@ import { AnimatedGroup } from '@/components/ui/animated-group';
 import { Phone, Mail, MapPin, MessageCircle, Instagram, Facebook, ExternalLink } from 'lucide-react';
 import { contactAnimationVariants, sectionAnimationVariants } from '@/lib/animations';
 import { SocialIcon } from 'react-social-icons';
+import { useTranslations } from 'next-intl';
 
 const ContactPage = () => {
+  const t = useTranslations('contactPage');
+
   const handleMapClick = () => {
     // Replace with your actual Google Maps coordinates
     const mapsUrl = "https://maps.app.goo.gl/2Qe38GZo9WzhDsh46";
@@ -35,10 +38,10 @@ const ContactPage = () => {
           <div className="container mx-auto text-center">
             <AnimatedGroup variants={contactAnimationVariants} threshold={0.2} triggerOnce={true}>
               <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-                Get in Touch
+                {t('title')}
               </h1>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Ready to hit the road? We're here to make your rental experience smooth and memorable.
+                {t('subtitle')}
               </p>
             </AnimatedGroup>
           </div>
@@ -51,13 +54,13 @@ const ContactPage = () => {
               <AnimatedGroup variants={contactAnimationVariants} threshold={0.2} triggerOnce={true}>
                 <div className="text-center mb-12">
                   <Badge variant="outline" className="mb-4 px-4 py-2 text-lg">
-                    Meet the Man
+                    {t('meetTheMan')}
                   </Badge>
                   <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                    The Visionary Behind the Wheels
+                    {t('visionaryTitle')}
                   </h2>
                   <p className="text-muted-foreground text-lg">
-                    Driven by passion
+                    {t('visionarySubtitle')}
                   </p>
                 </div>
                 
@@ -76,20 +79,17 @@ const ContactPage = () => {
                       </div>
                       <div className="p-8 md:p-12 flex flex-col justify-center">
                         <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
-                          Tudor
+                          {t('founder.name')}
                         </h3>
                         <p className="text-lg text-primary font-semibold mb-6">
-                          Founder & CEO
+                          {t('founder.title')}
                         </p>
                         <p className="text-muted-foreground leading-relaxed mb-6">
-                          With over a decade of experience in the automotive industry, Tudor founded Rent'n Go 
-                          with a simple mission: to provide premium vehicles and exceptional service that exceeds 
-                          expectations. His attention to detail and commitment to customer satisfaction drives 
-                          every aspect of our business.
+                          {t('founder.description')}
                         </p>
                         <div className="flex flex-wrap gap-2">
-                          <Badge variant="secondary">Automotive Expert</Badge>
-                          <Badge variant="secondary">Customer-First</Badge>
+                          <Badge variant="secondary">{t('founder.badges.expert')}</Badge>
+                          <Badge variant="secondary">{t('founder.badges.customerFirst')}</Badge>
                         </div>
                       </div>
                     </div>
@@ -107,10 +107,10 @@ const ContactPage = () => {
               <AnimatedGroup variants={contactAnimationVariants} threshold={0.2} triggerOnce={true}>
                 <div className="text-center mb-12">
                   <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                    Let's Connect
+                    {t('letsConnect.title')}
                   </h2>
                   <p className="text-muted-foreground text-lg">
-                    Multiple ways to reach us - choose what works best for you
+                    {t('letsConnect.subtitle')}
                   </p>
                 </div>
 
@@ -121,11 +121,11 @@ const ContactPage = () => {
                       <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Phone className="w-8 h-8 text-primary" />
                       </div>
-                      <h3 className="text-xl font-semibold text-foreground mb-2">Phone</h3>
-                      <p className="text-muted-foreground mb-4">Call us directly</p>
+                      <h3 className="text-xl font-semibold text-foreground mb-2">{t('contactMethods.phone.title')}</h3>
+                      <p className="text-muted-foreground mb-4">{t('contactMethods.phone.description')}</p>
                       <Button variant="outline" className="w-full">
                         <Phone className="w-4 h-4 mr-2" />
-                        +40 773 932 961
+                        {t('contactMethods.phone.buttonText')}
                       </Button>
                     </CardContent>
                   </Card>
@@ -136,15 +136,15 @@ const ContactPage = () => {
                       <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                         <MessageCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
                       </div>
-                      <h3 className="text-xl font-semibold text-foreground mb-2">WhatsApp</h3>
-                      <p className="text-muted-foreground mb-4">Quick & easy messaging</p>
+                      <h3 className="text-xl font-semibold text-foreground mb-2">{t('contactMethods.whatsapp.title')}</h3>
+                      <p className="text-muted-foreground mb-4">{t('contactMethods.whatsapp.description')}</p>
                       <Button 
                         variant="outline" 
                         className="w-full"
                         onClick={handleWhatsAppClick}
                       >
                         <MessageCircle className="w-4 h-4 mr-2" />
-                        Message Us
+                        {t('contactMethods.whatsapp.buttonText')}
                       </Button>
                     </CardContent>
                   </Card>
@@ -155,11 +155,11 @@ const ContactPage = () => {
                       <div className="w-16 h-16 bg-purple-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                         <Mail className="w-8 h-8 text-purple-600 dark:text-purple-400" />
                       </div>
-                      <h3 className="text-xl font-semibold text-foreground mb-2">Email</h3>
-                      <p className="text-muted-foreground mb-4">Detailed inquiries</p>
+                      <h3 className="text-xl font-semibold text-foreground mb-2">{t('contactMethods.email.title')}</h3>
+                      <p className="text-muted-foreground mb-4">{t('contactMethods.email.description')}</p>
                       <Button variant="outline" className="w-full">
                         <Mail className="w-4 h-4 mr-2" />
-                        office@rngo.com
+                        {t('contactMethods.email.buttonText')}
                       </Button>
                     </CardContent>
                   </Card>
@@ -167,7 +167,7 @@ const ContactPage = () => {
 
                 {/* Social Media */}
                 <div className="mt-12 text-center">
-                  <h3 className="text-xl font-semibold text-foreground mb-6">Follow Us</h3>
+                  <h3 className="text-xl font-semibold text-foreground mb-6">{t('followUs')}</h3>
                   <div className="flex justify-center gap-4">
                     <SocialIcon url="https://www.tiktok.com/@rentn.go" style={{ height: 36, width: 36 }} borderRadius={"0.5rem"}/>
                     <SocialIcon url="https://www.instagram.com/rentn_go.ro" style={{ height: 36, width: 36 }} borderRadius={"0.5rem"}/>
@@ -185,8 +185,11 @@ const ContactPage = () => {
             <div className="max-w-4xl mx-auto">
               <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
                 <div className="text-center mb-12">
+                  <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                    {t('ourLocation')}
+                  </h2>
                   <p className="text-muted-foreground text-lg">
-                    Located in the most convenient location for you
+                    {t('locationDescription')}
                   </p>
                 </div>
 
@@ -221,7 +224,7 @@ const ContactPage = () => {
                             className="bg-primary hover:bg-primary/90 text-primary-foreground"
                           >
                             <ExternalLink className="w-4 h-4 mr-2" />
-                            Open in Google Maps
+                            {t('openInMaps')}
                           </Button>
                         </div>
                       </div>
@@ -241,16 +244,16 @@ const ContactPage = () => {
                 <Card>
                   <CardContent className="p-8">
                     <h3 className="text-2xl font-bold text-foreground mb-6 text-center">
-                      Business Hours
+                      {t('businessHours.title')}
                     </h3>
                     <div className="space-y-4">
                       <div className="flex justify-between items-center py-2 border-b border-border">
-                        <span className="font-medium text-foreground">Monday - Saturday</span>
-                        <span className="text-muted-foreground">24/7</span>
+                        <span className="font-medium text-foreground">{t('businessHours.mondayToSaturday')}</span>
+                        <span className="text-muted-foreground">{t('businessHours.mondayToSaturdayTime')}</span>
                       </div>
                       <div className="flex justify-between items-center py-2">
-                        <span className="font-medium text-foreground">Sunday</span>
-                        <span className="text-muted-foreground">10:00 AM - 4:00 PM</span>
+                        <span className="font-medium text-foreground">{t('businessHours.sunday')}</span>
+                        <span className="text-muted-foreground">{t('businessHours.sundayTime')}</span>
                       </div>
                     </div>
                   </CardContent>

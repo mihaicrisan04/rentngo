@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PricingTier } from "@/types/vehicle";
 import { useSeasonalPricing } from "@/hooks/useSeasonalPricing";
+import { useTranslations, useLocale } from 'next-intl';
 
 interface PricingTiersTableProps {
   pricingTiers?: PricingTier[];
@@ -23,6 +24,8 @@ export function PricingTiersTable({
   currency = "EUR",
   currentDays 
 }: PricingTiersTableProps) {
+  const t = useTranslations('pricingTiersTable');
+  const locale = useLocale();
   const { multiplier: seasonalMultiplier } = useSeasonalPricing();
 
   // Don't render if no pricing tiers
@@ -36,12 +39,22 @@ export function PricingTiersTable({
   // Helper function to format day range
   const formatDayRange = (minDays: number, maxDays: number): string => {
     if (maxDays >= 999) {
-      return `${minDays}+ days`;
+      return t('dayRangePlus', { 
+        minDays, 
+        plural: locale === 'ro' ? ((minDays === 1) ? "" : "le") : ((minDays === 1) ? "" : "s") 
+      });
     }
     if (minDays === maxDays) {
-      return `${minDays} day${minDays === 1 ? '' : 's'}`;
+      return t('exactDays', { 
+        days: minDays, 
+        plural: locale === 'ro' ? ((minDays === 1) ? "" : "le") : ((minDays === 1) ? "" : "s") 
+      });
     }
-    return `${minDays}-${maxDays} days`;
+    return t('dayRange', { 
+      minDays, 
+      maxDays, 
+      plural: locale === 'ro' ? "le" : "s" 
+    });
   };
 
   // Helper function to determine if tier is currently active
@@ -65,18 +78,18 @@ export function PricingTiersTable({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Pricing Tiers</CardTitle>
+        <CardTitle className="text-lg">{t('title')}</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Longer rentals get better rates!
+          {t('subtitle')}
         </p>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Rental Period</TableHead>
-              <TableHead>Price per Day</TableHead>
-              <TableHead>Savings</TableHead>
+              <TableHead>{t('rentalPeriod')}</TableHead>
+              <TableHead>{t('pricePerDay')}</TableHead>
+              <TableHead>{t('savings')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -95,22 +108,22 @@ export function PricingTiersTable({
                       {formatDayRange(tier.minDays, tier.maxDays)}
                       {isActive && (
                         <Badge variant="default" className="text-xs">
-                          Current
+                          {t('current')}
                         </Badge>
                       )}
                     </div>
                   </TableCell>
                   <TableCell className="font-semibold">
-                    €{finalPrice.toFixed(2)}/{currency === "EUR" ? "day" : "zi"}
+                    €{finalPrice.toFixed(2)}/{locale === 'ro' ? 'zi' : 'day'}
                   </TableCell>
                   <TableCell>
                     {savings > 0 ? (
                       <span className="text-green-600 font-medium">
-                        -€{savings.toFixed(2)}/day
+                        {t('savingsAmount', { amount: savings.toFixed(2), day: locale === 'ro' ? 'zi' : 'day' })}
                       </span>
                     ) : (
                       <span className="text-muted-foreground">
-                        Base rate
+                        {t('baseRate')}
                       </span>
                     )}
                   </TableCell>
@@ -123,7 +136,10 @@ export function PricingTiersTable({
         {currentDays && (
           <div className="mt-4 p-3 bg-muted/50 rounded-lg">
             <p className="text-sm">
-              <span className="font-medium">Your rental ({currentDays} day{currentDays === 1 ? '' : 's'}):</span>{' '}
+              <span className="font-medium">{t('yourRental', { 
+                days: currentDays, 
+                plural: locale === 'ro' ? ((currentDays === 1) ? "" : "le") : ((currentDays === 1) ? "" : "s") 
+              })}:</span>{' '}
               {(() => {
                 const activeTier = sortedTiers.find(tier => 
                   currentDays >= tier.minDays && currentDays <= tier.maxDays
@@ -133,16 +149,16 @@ export function PricingTiersTable({
                   const savings = calculateSavings(activeTier);
                   return (
                     <>
-                      €{finalPrice.toFixed(2)}/day
+                      €{finalPrice.toFixed(2)}/{locale === 'ro' ? 'zi' : 'day'}
                       {savings > 0 && (
                         <span className="text-green-600 ml-2">
-                          (Save €{savings.toFixed(2)}/day)
+                          ({t('saveAmount', { amount: savings.toFixed(2), day: locale === 'ro' ? 'zi' : 'day' })})
                         </span>
                       )}
                     </>
                   );
                 }
-                return "Rate not available for this duration";
+                return t('rateNotAvailable');
               })()}
             </p>
           </div>

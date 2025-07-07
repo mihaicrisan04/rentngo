@@ -12,6 +12,7 @@ import { AnimatedGroup } from '@/components/ui/animated-group';
 import { BackgroundImage } from '@/components/ui/BackgroundImage';
 import { Car, Users, Shield, Award, Clock, MapPin, Heart, Star } from 'lucide-react';
 import { Variants } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 
 // Define animation variants
 const sectionAnimationVariants: {
@@ -51,33 +52,35 @@ const sectionAnimationVariants: {
 };
 
 const AboutPage = () => {
+  const t = useTranslations('aboutPage');
+
   const stats = [
-    { icon: Car, label: "Vehicles", value: "20+" },
-    { icon: Users, label: "Happy Customers", value: "200+" },
-    { icon: Award, label: "Years Experience", value: "5+" },
-    { icon: Star, label: "Average Rating", value: "4.9" },
+    { icon: Car, label: t('stats.vehicles'), value: "20+" },
+    { icon: Users, label: t('stats.customers'), value: "200+" },
+    { icon: Award, label: t('stats.experience'), value: "5+" },
+    { icon: Star, label: t('stats.rating'), value: "4.9" },
   ];
 
   const values = [
     {
       icon: Shield,
-      title: "Safety First",
-      description: "All our vehicles undergo rigorous safety inspections and maintenance to ensure your peace of mind on every journey."
+      title: t('values.safetyFirst.title'),
+      description: t('values.safetyFirst.description')
     },
     {
       icon: Heart,
-      title: "Customer Care",
-      description: "We believe in building lasting relationships with our customers through exceptional service and personalized attention."
+      title: t('values.customerCare.title'),
+      description: t('values.customerCare.description')
     },
     {
       icon: Clock,
-      title: "Reliability",
-      description: "Count on us for punctual service, well-maintained vehicles, and transparent pricing with no hidden fees."
+      title: t('values.reliability.title'),
+      description: t('values.reliability.description')
     },
     {
       icon: MapPin,
-      title: "Local Expertise",
-      description: "As Cluj-Napoca locals, we know the best routes and can provide insider tips for your travels."
+      title: t('values.localExpertise.title'),
+      description: t('values.localExpertise.description')
     }
   ];
 
@@ -93,14 +96,13 @@ const AboutPage = () => {
           <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
             <div className="text-center">
               <Badge variant="outline" className="mb-4 px-4 py-2 text-lg text-primary">
-                About Rent'n Go
+                {t('title')}
               </Badge>
               <h1 className="text-4xl md:text-5xl font-bold text-secondary mb-6">
-                Your Journey, Our Passion
+                {t('heroTitle')}
               </h1>
               <p className="text-xl text-primary-foreground max-w-3xl mx-auto leading-relaxed">
-                Since 2024, we've been dedicated to providing exceptional car rental experiences 
-                in Cluj-Napoca, combining quality vehicles with outstanding customer service.
+                {t('heroDescription')}
               </p>
             </div>
           </AnimatedGroup>
@@ -134,28 +136,23 @@ const AboutPage = () => {
               <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
                 <div className="text-center mb-12">
                   <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                    Our Story
+                    {t('ourStory.title')}
                   </h2>
                   <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                    Born from a passion for travel and a commitment to excellence
+                    {t('ourStory.subtitle')}
                   </p>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-12 items-center">
                   <div className="space-y-6">
                     <p className="text-lg text-muted-foreground leading-relaxed">
-                      Rent'n Go was founded with a simple yet powerful vision: to make car rental 
-                      accessible, reliable, and enjoyable for everyone exploring Cluj-Napoca and beyond.
+                      {t('ourStory.description1')}
                     </p>
                     <p className="text-lg text-muted-foreground leading-relaxed">
-                      What started as a small family business has grown into one of the most trusted 
-                      car rental services in the region, thanks to our unwavering commitment to quality 
-                      and customer satisfaction.
+                      {t('ourStory.description2')}
                     </p>
                     <p className="text-lg text-muted-foreground leading-relaxed">
-                      Today, we're proud to offer a diverse fleet of well-maintained vehicles, 
-                      from compact city cars to spacious SUVs, ensuring there's a perfect match 
-                      for every journey and budget.
+                      {t('ourStory.description3')}
                     </p>
                   </div>
                   <div className="relative">
@@ -180,10 +177,10 @@ const AboutPage = () => {
               <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
                 <div className="text-center mb-12">
                   <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                    Our Values
+                    {t('values.title')}
                   </h2>
                   <p className="text-muted-foreground text-lg">
-                    The principles that guide everything we do
+                    {t('values.subtitle')}
                   </p>
                 </div>
 
@@ -221,19 +218,17 @@ const AboutPage = () => {
                 <Card className="bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">
                   <CardContent className="p-8 md:p-12 text-center">
                     <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-                      Our Mission
+                      {t('mission.title')}
                     </h2>
                     <p className="text-xl text-muted-foreground leading-relaxed mb-8">
-                      To provide exceptional car rental experiences that empower our customers 
-                      to explore with confidence, comfort, and peace of mind. We strive to be 
-                      more than just a car rental service – we're your trusted travel partner.
+                      {t('mission.description')}
                     </p>
                     <Button 
                       size="lg" 
                       className="bg-primary hover:bg-primary/90 text-primary-foreground"
                       onClick={() => window.location.href = '/contact'}
                     >
-                      Get in Touch
+                      {t('mission.buttonText')}
                     </Button>
                   </CardContent>
                 </Card>
@@ -251,10 +246,10 @@ const AboutPage = () => {
               <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
                 <div className="text-center mb-12">
                   <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                    Why Choose Rent'n Go?
+                    {t('whyChoose.title')}
                   </h2>
                   <p className="text-muted-foreground text-lg">
-                    Experience the difference that sets us apart
+                    {t('whyChoose.subtitle')}
                   </p>
                 </div>
 
@@ -265,11 +260,10 @@ const AboutPage = () => {
                         <Shield className="w-8 h-8 text-green-600 dark:text-green-400" />
                       </div>
                       <h3 className="text-xl font-semibold text-foreground mb-3">
-                        Transparent Pricing
+                        {t('whyChoose.transparentPricing.title')}
                       </h3>
                       <p className="text-muted-foreground">
-                        No hidden fees, no surprises. What you see is what you pay, 
-                        with competitive rates and flexible packages.
+                        {t('whyChoose.transparentPricing.description')}
                       </p>
                     </CardContent>
                   </Card>
@@ -280,11 +274,10 @@ const AboutPage = () => {
                         <Car className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                       </div>
                       <h3 className="text-xl font-semibold text-foreground mb-3">
-                        Quality Fleet
+                        {t('whyChoose.qualityFleet.title')}
                       </h3>
                       <p className="text-muted-foreground">
-                        Modern, well-maintained vehicles from trusted brands, 
-                        regularly serviced and thoroughly cleaned for your comfort.
+                        {t('whyChoose.qualityFleet.description')}
                       </p>
                     </CardContent>
                   </Card>
@@ -295,11 +288,10 @@ const AboutPage = () => {
                         <Clock className="w-8 h-8 text-purple-600 dark:text-purple-400" />
                       </div>
                       <h3 className="text-xl font-semibold text-foreground mb-3">
-                        24/7 Support
+                        {t('whyChoose.support247.title')}
                       </h3>
                       <p className="text-muted-foreground">
-                        Round-the-clock assistance whenever you need it, 
-                        ensuring your journey is smooth from start to finish.
+                        {t('whyChoose.support247.description')}
                       </p>
                     </CardContent>
                   </Card>

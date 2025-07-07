@@ -5,6 +5,7 @@ import { useQuery } from "convex/react";
 import Image from "next/image";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
+import { useTranslations } from 'next-intl';
 import { 
   Carousel,
   CarouselContent,
@@ -25,6 +26,7 @@ export function VehicleImageCarousel({
   mainImageId, 
   vehicleName 
 }: VehicleImageCarouselProps) {
+  const t = useTranslations('vehicleImageCarousel');
   const [mainApi, setMainApi] = React.useState<CarouselApi>();
   const [thumbApi, setThumbApi] = React.useState<CarouselApi>();
   const [current, setCurrent] = React.useState(0);
@@ -79,6 +81,7 @@ export function VehicleImageCarousel({
                     <VehicleMainImage 
                       imageId={imageId}
                       alt={`${vehicleName} - Image ${index + 1}`}
+                      loadingText={t('loadingImage')}
                     />
                   </div>
                 </CarouselItem>
@@ -86,7 +89,7 @@ export function VehicleImageCarousel({
             ) : (
               <CarouselItem>
                 <div className="aspect-[4/3] relative w-full bg-muted overflow-hidden rounded-lg flex items-center justify-center">
-                  <span className="text-muted-foreground">No Image Available</span>
+                  <span className="text-muted-foreground">{t('noImageAvailable')}</span>
                 </div>
               </CarouselItem>
             )}
@@ -128,6 +131,7 @@ export function VehicleImageCarousel({
                     <VehicleThumbnailImage 
                       imageId={imageId}
                       alt={`${vehicleName} thumbnail ${index + 1}`}
+                      loadingText={t('loading')}
                     />
                   </div>
                 </CarouselItem>
@@ -143,17 +147,19 @@ export function VehicleImageCarousel({
 // Component for main carousel images
 function VehicleMainImage({ 
   imageId, 
-  alt 
+  alt,
+  loadingText
 }: { 
   imageId: Id<"_storage">; 
-  alt: string; 
+  alt: string;
+  loadingText: string;
 }) {
   const imageUrl = useQuery(api.vehicles.getImageUrl, { imageId });
 
   if (!imageUrl) {
     return (
       <div className="flex items-center justify-center h-full text-muted-foreground">
-        <span>Loading image...</span>
+        <span>{loadingText}</span>
       </div>
     );
   }
@@ -173,17 +179,19 @@ function VehicleMainImage({
 // Component for thumbnail carousel images
 function VehicleThumbnailImage({ 
   imageId, 
-  alt 
+  alt,
+  loadingText
 }: { 
   imageId: Id<"_storage">; 
-  alt: string; 
+  alt: string;
+  loadingText: string;
 }) {
   const imageUrl = useQuery(api.vehicles.getImageUrl, { imageId });
 
   if (!imageUrl) {
     return (
       <div className="flex items-center justify-center h-full bg-muted text-muted-foreground text-xs">
-        <span>Loading...</span>
+        <span>{loadingText}</span>
       </div>
     );
   }

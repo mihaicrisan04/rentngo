@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { LocationPicker } from "@/components/location-picker";
 import { DateTimePicker } from "@/components/date-time-picker";
 import { SearchData } from "@/lib/searchStorage";
+import { useTranslations } from 'next-intl';
 
 interface VehicleSearchFormProps {
   searchState: SearchData & { isHydrated: boolean };
@@ -16,14 +17,15 @@ export function VehicleSearchForm({
   updateSearchField,
   isLoading = false,
 }: VehicleSearchFormProps) {
+  const t = useTranslations('vehicleSearchForm');
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   return (
     <div className="mb-8">
       <div className="mb-8 text-center">
-        <h1 className="text-2xl font-semibold">Find Your Vehicle</h1>
-        <p className="text-muted-foreground">Select your rental details below.</p>
+        <h1 className="text-2xl font-semibold">{t('title')}</h1>
+        <p className="text-muted-foreground">{t('subtitle')}</p>
       </div>
       
       <Card className="shadow-md">
@@ -31,16 +33,16 @@ export function VehicleSearchForm({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <LocationPicker
               id="deliveryLocation"
-              label="Pick-up Location"
+              label={t('pickupLocation')}
               value={searchState.deliveryLocation || ""}
               onValueChange={(value) => updateSearchField('deliveryLocation', value)}
-              placeholder="Select pick-up"
+              placeholder={t('selectPickup')}
               disabled={isLoading}
             />
             
                          <DateTimePicker
                id="pickupDate"
-               label="Pick-up Date & Time"
+               label={t('pickupDateTime')}
                disabledDateRanges={{ before: today }}
                dateState={searchState.pickupDate}
                setDateState={(date) => updateSearchField('pickupDate', date)}
@@ -52,16 +54,16 @@ export function VehicleSearchForm({
              
              <LocationPicker
                id="restitutionLocation"
-               label="Return Location"
+               label={t('returnLocation')}
                value={searchState.restitutionLocation || ""}
                onValueChange={(value) => updateSearchField('restitutionLocation', value)}
-               placeholder="Select return"
+               placeholder={t('selectReturn')}
                disabled={isLoading}
              />
              
              <DateTimePicker
                id="returnDate"
-               label="Return Date & Time"
+               label={t('returnDateTime')}
                dateState={searchState.returnDate}
                setDateState={(date) => updateSearchField('returnDate', date)}
                timeState={searchState.returnTime || null}
