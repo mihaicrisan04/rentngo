@@ -157,11 +157,11 @@ export default function Home() {
           
           </div>
         
-        <AnimatedGroup variants={sectionAnimationVariants} threshold={0.1} triggerOnce={true}>
+        {/* <AnimatedGroup variants={sectionAnimationVariants} threshold={0.1} triggerOnce={true}> */}
           <div className="w-full">
             <Slideshow className="mb-8" />
           </div>
-        </AnimatedGroup>
+        {/* </AnimatedGroup> */}
 
         {/* Our Story Section */}
         <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
