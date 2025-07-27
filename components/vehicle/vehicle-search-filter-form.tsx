@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { Search } from "lucide-react";
-import { Id } from "../../convex/_generated/dataModel";
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 

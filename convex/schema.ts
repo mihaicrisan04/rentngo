@@ -5,6 +5,8 @@ export default defineSchema({
   // Users table - stores user profiles
   users: defineTable({
     name: v.string(),
+    firstName: v.optional(v.string()),
+    lastName: v.optional(v.string()),
     email: v.string(),
     clerkId: v.string(), // Clerk user ID from the JWT subject
     phone: v.optional(v.string()),

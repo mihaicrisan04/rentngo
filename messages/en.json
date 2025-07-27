@@ -373,7 +373,47 @@
     "contact": "Contact",
     "login": "Login",
     "signUp": "Sign Up",
-    "language": "Language"
+    "language": "Language",
+    "profile": "Profile",
+    "logout": "Logout"
+  },
+  "profile": {
+    "title": "My Profile",
+    "subtitle": "Manage your account settings and view your reservations",
+    "userDetails": "User Details",
+    "userDetailsDescription": "Your account information and settings",
+    "editProfile": "Edit Profile",
+    "editProfileDescription": "Update your personal information",
+    "firstName": "First Name",
+    "firstNamePlaceholder": "Enter your first name",
+    "lastName": "Last Name",
+    "lastNamePlaceholder": "Enter your last name",
+    "phoneNumber": "Phone Number",
+    "phoneNumberPlaceholder": "Enter your phone number",
+    "saveChanges": "Save Changes",
+    "updateSuccess": "Profile Updated",
+    "updateSuccessDescription": "Your profile has been successfully updated",
+    "updateError": "Update Failed",
+    "updateErrorDescription": "There was an error updating your profile. Please try again.",
+    "reservations": "My Reservations",
+    "reservationsDescription": "View and manage your rental history",
+    "noReservations": "No reservations found",
+    "noReservationsDescription": "You haven't made any reservations yet. Start by browsing our available cars.",
+    "pleaseSignIn": "Please sign in to view your profile",
+    "signInButton": "Sign In",
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled",
+      "completed": "Completed"
+    },
+    "table": {
+      "vehicle": "Vehicle",
+      "dates": "Rental Period",
+      "locations": "Pickup & Return",
+      "totalPrice": "Total Price",
+      "status": "Status"
+    }
   },
   "footer": {
     "home": "Home",

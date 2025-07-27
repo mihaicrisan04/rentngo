@@ -373,7 +373,47 @@
     "contact": "Contact",
     "login": "Conectare",
     "signUp": "Înregistrare",
-    "language": "Limba"
+    "language": "Limba",
+    "profile": "Profil",
+    "logout": "Deconectare"
+  },
+  "profile": {
+    "title": "Profilul Meu",
+    "subtitle": "Gestionează setările contului și vezi rezervările tale",
+    "userDetails": "Detalii Utilizator",
+    "userDetailsDescription": "Informațiile și setările contului tău",
+    "editProfile": "Editează Profilul",
+    "editProfileDescription": "Actualizează informațiile tale personale",
+    "firstName": "Prenume",
+    "firstNamePlaceholder": "Introdu prenumele tău",
+    "lastName": "Nume de Familie",
+    "lastNamePlaceholder": "Introdu numele tău de familie",
+    "phoneNumber": "Număr de Telefon",
+    "phoneNumberPlaceholder": "Introdu numărul tău de telefon",
+    "saveChanges": "Salvează Modificările",
+    "updateSuccess": "Profil Actualizat",
+    "updateSuccessDescription": "Profilul tău a fost actualizat cu succes",
+    "updateError": "Actualizare Eșuată",
+    "updateErrorDescription": "A apărut o eroare la actualizarea profilului. Te rugăm să încerci din nou.",
+    "reservations": "Rezervările Mele",
+    "reservationsDescription": "Vezi și gestionează istoricul închirierilor",
+    "noReservations": "Nu s-au găsit rezervări",
+    "noReservationsDescription": "Nu ai făcut încă nicio rezervare. Începe prin a răsfoi mașinile noastre disponibile.",
+    "pleaseSignIn": "Te rugăm să te conectezi pentru a-ți vedea profilul",
+    "signInButton": "Conectează-te",
+    "status": {
+      "pending": "În Așteptare",
+      "confirmed": "Confirmată",
+      "cancelled": "Anulată",
+      "completed": "Finalizată"
+    },
+    "table": {
+      "vehicle": "Vehicul",
+      "dates": "Perioada Închirierii",
+      "locations": "Ridicare și Returnare",
+      "totalPrice": "Preț Total",
+      "status": "Status"
+    }
   },
   "footer": {
     "home": "Acasă",
