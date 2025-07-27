@@ -45,8 +45,8 @@ function groupVehiclesByClass(vehicles: Vehicle[]): Record<string, Vehicle[]> {
   return grouped;
 }
 
-// Define the order of vehicle classes for consistent display
-const classOrder: (VehicleClass | 'unclassified')[] = [
+// Define the order of vehicle classes for consistent display (hardcoded from schema)
+const classOrder = [
   'economy',
   'compact', 
   'intermediate',
@@ -63,14 +63,14 @@ const classOrder: (VehicleClass | 'unclassified')[] = [
   'convertible',
   'van',
   'unclassified'
-];
+] as const;
 
 function VehicleClassSection({
   className,
   vehicles,
   searchState,
 }: {
-  className: VehicleClass | 'unclassified';
+  className: string;
   vehicles: Vehicle[];
   searchState: SearchData;
 }) {
@@ -115,20 +115,24 @@ function VehiclesByClass({
   const groupedVehicles = groupVehiclesByClass(vehicles);
   
   // Sort classes according to our defined order and only show classes that have vehicles
-  const availableClasses = classOrder.filter(className => 
-    groupedVehicles[className] && groupedVehicles[className].length > 0
-  );
+  const availableClasses = classOrder.filter(className => {
+    const vehiclesInClass = groupedVehicles[className];
+    return vehiclesInClass && vehiclesInClass.length > 0;
+  });
   
   return (
     <div>
-      {availableClasses.map((className) => (
-        <VehicleClassSection
-          key={className}
-          className={className}
-          vehicles={groupedVehicles[className]}
-          searchState={searchState}
-        />
-      ))}
+      {availableClasses.map((className) => {
+        const vehiclesInClass = groupedVehicles[className];
+        return (
+          <VehicleClassSection
+            key={className}
+            className={className}
+            vehicles={vehiclesInClass || []}
+            searchState={searchState}
+          />
+        );
+      })}
     </div>
   );
 }
