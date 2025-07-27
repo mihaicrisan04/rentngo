@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Info } from "lucide-react";
 import { AdditionalFeatures } from "@/hooks/useReservationForm";
+import { calculateIncludedKilometers, calculateExtraKilometersPrice, getMaxExtraKilometers } from "@/lib/vehicleUtils";
 
 interface AdditionalFeaturesCardProps {
   additionalFeatures: AdditionalFeatures;
@@ -35,7 +36,8 @@ export function AdditionalFeaturesCard({
     scdwSelected,
     snowChainsSelected,
     childSeat1to4Count,
-    childSeat5to12Count
+    childSeat5to12Count,
+    extraKilometersCount
   } = additionalFeatures;
 
   const t = useTranslations('reservationPage');
@@ -211,6 +213,76 @@ export function AdditionalFeaturesCard({
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
                   {t('additionalFeatures.pricePerSeat')}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Extra Kilometers */}
+          <div className="space-y-3 border-t pt-4">
+            <div className="flex items-start space-x-2">
+              <div className="flex-1">
+                <div className="flex items-center space-x-1">
+                  <Label className="text-sm font-medium">
+                    {t('additionalFeatures.extraKilometers')}
+                  </Label>
+                  <HoverCard>
+                    <HoverCardTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
+                    </HoverCardTrigger>
+                    <HoverCardContent className="w-80">
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-semibold">{t('additionalFeatures.extraKilometers')}</h4>
+                        <p className="text-xs text-muted-foreground">
+                          {t('additionalFeatures.extraKmDescription')}
+                        </p>
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          <p><strong>{t('additionalFeatures.extraKmLimit')}</strong></p>
+                          {days && (
+                            <p>{t('additionalFeatures.baseKilometersIncluded', { 
+                              km: calculateIncludedKilometers(days), 
+                              days: days 
+                            })}</p>
+                          )}
+                        </div>
+                      </div>
+                    </HoverCardContent>
+                  </HoverCard>
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAdditionalFeatures(prev => ({ 
+                        ...prev, 
+                        extraKilometersCount: Math.max(0, prev.extraKilometersCount - 1) 
+                      }))}
+                      disabled={extraKilometersCount === 0}
+                    >
+                      -
+                    </Button>
+                    <span className="min-w-[2rem] text-center">{extraKilometersCount}</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAdditionalFeatures(prev => ({ 
+                        ...prev, 
+                        extraKilometersCount: Math.min(Math.floor(getMaxExtraKilometers() / 50), prev.extraKilometersCount + 1) 
+                      }))}
+                      disabled={extraKilometersCount >= Math.floor(getMaxExtraKilometers() / 50)}
+                    >
+                      +
+                    </Button>
+                  </div>
+                  <span className="font-medium">
+                    {extraKilometersCount > 0 ? `${calculateExtraKilometersPrice(extraKilometersCount * 50)} EUR` : '0 EUR'}
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  +50 km for 5 EUR each | Max: {getMaxExtraKilometers()} km extra
                 </div>
               </div>
             </div>

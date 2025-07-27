@@ -2,8 +2,8 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSeasonalPricing } from "@/hooks/useSeasonalPricing";
-import { PriceDetails, getPriceForDurationWithSeason } from "@/lib/vehicleUtils";
-import { Vehicle, getPriceForDuration } from "@/types/vehicle";
+import { PriceDetails, getPriceForDurationWithSeason, calculateIncludedKilometers } from "@/lib/vehicleUtils";
+import { Vehicle } from "@/types/vehicle";
 import { useTranslations, useLocale } from 'next-intl';
 
 interface VehiclePricingCardProps {
@@ -23,7 +23,7 @@ export function VehiclePricingCard({
 }: VehiclePricingCardProps) {
   const t = useTranslations('vehiclePricing');
   const locale = useLocale();
-  const { multiplier: currentMultiplier, currentSeason } = useSeasonalPricing();
+  const { multiplier: currentMultiplier } = useSeasonalPricing();
   const { basePrice, totalPrice, days, deliveryFee, returnFee, totalLocationFees } = priceDetails;
 
   // Get the appropriate price per day based on rental duration
@@ -36,7 +36,6 @@ export function VehiclePricingCard({
   const getPricingTip = () => {
     if (!vehicle.pricingTiers || vehicle.pricingTiers.length <= 1) return null;
     const prices = vehicle.pricingTiers.map(tier => getPriceForDurationWithSeason(vehicle, tier.minDays, currentMultiplier));
-    const highestPrice = Math.max(...prices);
     const lowestPrice = Math.min(...prices);
 
     const savings = currentPricePerDay - lowestPrice;
@@ -180,6 +179,18 @@ export function VehiclePricingCard({
                     </span>
                     <span className="text-muted-foreground">
                       +{totalLocationFees} {currency}
+                    </span>
+                  </div>
+                )}
+
+                {/* Kilometers included */}
+                {days && (
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">
+                      {t('kilometersIncluded')}:
+                    </span>
+                    <span className="text-muted-foreground">
+                      {calculateIncludedKilometers(days)} km
                     </span>
                   </div>
                 )}

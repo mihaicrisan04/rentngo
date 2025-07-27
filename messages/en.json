@@ -142,9 +142,9 @@
         "browseCars": "Browse Cars"
       },
       "loadingDetails": "Loading reservation details...",
-      "success": "Reservation created successfully!",
-      "successDescription": "You will receive a confirmation email shortly.",
-      "viewReservation": "View Reservation",
+      "success": "Reservation request sent successfully!",
+      "successDescription": "We will review your request and send you a confirmation email shortly.",
+      "viewReservation": "View Request",
       "error": "Failed to create reservation. Please try again or contact support."
     },
     "rentalDetails": {
@@ -171,7 +171,12 @@
       "pricePerDay": "3 EUR per day",
       "childSeat1to4": "Child Seat (1-4 years)",
       "childSeat5to12": "Child Seat (5-12 years)",
-      "pricePerSeat": "3 EUR per seat per day (max 2 seats)"
+      "pricePerSeat": "3 EUR per seat per day (max 2 seats)",
+      "extraKilometers": "Kilometers Package",
+      "extraKilometersPackages": "Extra Kilometers Packages",
+      "extraKmDescription": "1 package (50 km) = 5 EUR",
+      "extraKmLimit": "Maximum 5,000 km extra",
+      "baseKilometersIncluded": "Included kilometers: {km} km ({days} days × 200 km/day)"
     },
     "personalInfo": {
       "title": "Personal Information",
@@ -196,8 +201,8 @@
     "protectionOptions": {
       "title": "Protection Options",
       "scdwInsurance": "SCDW Insurance (non-refundable)",
-      "standardWarranty": "Standard Warranty",
-      "warrantyDefault": "Warranty (Default)",
+      "standardWarranty": "Standard Deposit",
+      "warrantyDefault": "Deposit (Default)",
       "refundableDeposit": "Refundable deposit based on vehicle warranty",
       "returnedEndRental": "Returned at end of rental if no damages",
       "superCollisionDamageWaiver": "• Super Collision Damage Waiver",
@@ -224,7 +229,8 @@
       "basePrice": "Base price ({days} day{plural})",
       "pickupLocationFee": "Pick-up location fee",
       "returnLocationFee": "Return location fee",
-      "totalLocationFees": "Total location fees",
+      "totalLocationFees": "Total relocation fees",
+      "totalKilometers": "Total kilometers included",
       "totalAdditionalFeatures": "Total additional features",
       "totalPrice": "Total Price",
       "warranty": "warranty",
@@ -252,7 +258,8 @@
         "returnLocationFee": "Return location fee ({location})",
         "snowChains": "Snow chains - {days} day × 3 EUR = {price} EUR",
         "childSeat1to4": "{count}x Child seat 1-4 years - {count} × {days} day × 3 EUR = {price} EUR",
-        "childSeat5to12": "{count}x Child seat 5-12 years - {count} × {days} day × 3 EUR = {price} EUR"
+        "childSeat5to12": "{count}x Child seat 5-12 years - {count} × {days} day × 3 EUR = {price} EUR",
+        "extraKilometers": "{count}x Extra kilometers - {kilometers} km (50 km × {count}) = {price} EUR"
       }
     },
     "validation": {
@@ -311,6 +318,13 @@
     "supportAvailable": "24/7 Available",
     "questionsAboutReservation": "Questions about your reservation request?",
     "viewTermsConditions": "View Terms & Conditions",
+    "noImage": "No Image",
+    "type": "Type:",
+    "seats": "Seats:",
+    "transmission": "Transmission:",
+    "fuel": "Fuel:",
+    "browseCars": "Browse Cars",
+    "goBack": "Go Back",
     "paymentMethods": {
       "cashOnDelivery": "Cash on Delivery",
       "cardOnDelivery": "Card Payment on Delivery",
@@ -530,7 +544,7 @@
       "standard": "Standard",
       "total": "Total",
       "zeroDeductible": "Zero deductible",
-      "standardWarranty": "Standard Warranty ({amount} EUR deductible)"
+      "standardWarranty": "Standard Deposit ({amount} EUR deductible)"
     },
     "emailDialog": {
       "title": "Send Email to Customer",
@@ -590,6 +604,7 @@
     "pickupLocationFee": "Pick-up location fee ({location})",
     "returnLocationFee": "Return location fee ({location})",
     "totalLocationFees": "Total location fees",
+    "kilometersIncluded": "Kilometers included",
     "totalPrice": "Total Price",
     "forDays": "for {days} day{plural}",
     "selectDatesMessage": "Select pickup and return dates to see total pricing"

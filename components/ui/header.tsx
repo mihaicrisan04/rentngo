@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { SignInButton, UserButton, SignedIn, SignedOut, useUser } from "@clerk/nextjs";
-import React, { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
+import React from "react";
+import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 import { LanguageSelector } from "@/components/language-selector";

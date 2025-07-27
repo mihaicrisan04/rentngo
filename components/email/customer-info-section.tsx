@@ -8,8 +8,7 @@ interface CustomerInfoSectionProps {
 }
 
 export const CustomerInfoSection: React.FC<CustomerInfoSectionProps> = ({ 
-  customerInfo, 
-  reservationId 
+  customerInfo 
 }) => {
   return (
     <Section className="px-[32px] py-[24px]">

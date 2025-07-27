@@ -1,6 +1,6 @@
 import { differenceInDays } from "date-fns";
 import { getLocationPrice } from "@/components/location-picker";
-import { PricingTier, Vehicle, getPriceForDuration } from "@/types/vehicle";
+import { Vehicle, getPriceForDuration } from "@/types/vehicle";
 
 // Pricing calculation types
 export interface PriceDetails {
@@ -223,4 +223,28 @@ export function getPriceForDurationWithSeason(
 ): number {
   const basePrice = getPriceForDuration(vehicle, days);
   return Math.round(basePrice * seasonalMultiplier);
+}
+
+/**
+ * Calculate total included kilometers for rental period
+ * Base allowance: 200km per day
+ */
+export function calculateIncludedKilometers(days: number): number {
+  return days * 200;
+}
+
+/**
+ * Calculate extra kilometers price
+ * Each extra 50km costs 5 EUR
+ */
+export function calculateExtraKilometersPrice(extraKilometers: number): number {
+  const extraPackages = Math.floor(extraKilometers / 50);
+  return extraPackages * 5;
+}
+
+/**
+ * Get maximum allowed extra kilometers (5000km = 100 * 50km packages)
+ */
+export function getMaxExtraKilometers(): number {
+  return 5000;
 } 

@@ -1,46 +1,31 @@
-import { Id } from "../convex/_generated/dataModel";
+import { Id, Doc } from "../convex/_generated/dataModel";
 
-// Core vehicle types from schema
-export type VehicleType = "sedan" | "suv" | "hatchback" | "sports" | "truck" | "van";
-export type TransmissionType = "automatic" | "manual";
-export type FuelType = "petrol" | "diesel" | "electric" | "hybrid" | "benzina";
-export type VehicleStatus = "available" | "rented" | "maintenance";
+// Use Convex generated vehicle type as the primary vehicle interface
+export type Vehicle = Doc<"vehicles">;
 
-// Pricing tier interface
+// Extract types from the schema for use in components (derived from Convex schema)
+// export type VehicleType = "sedan" | "suv" | "hatchback" | "sports" | "truck" | "van";
+export type VehicleType = Vehicle["type"];
+// export type VehicleClass = "economy" | "compact" | "intermediate" | "standard" | "full-size" | "premium" | "luxury" | "sport" | "executive" | "commercial" | "convertible" | "super-sport" | "supercars" | "business" | "van";
+export type VehicleClass = Vehicle["class"];
+// export type TransmissionType = "automatic" | "manual";
+export type TransmissionType = Vehicle["transmission"];
+// export type FuelType = "petrol" | "diesel" | "electric" | "hybrid" | "benzina";
+export type FuelType = Vehicle["fuelType"];
+// export type VehicleStatus = "available" | "rented" | "maintenance";
+export type VehicleStatus = Vehicle["status"];
+
+// Pricing tier interface (matches schema)
 export interface PricingTier {
   minDays: number;
   maxDays: number;
   pricePerDay: number;
 }
 
-// Complete vehicle interface
-export interface Vehicle {
-  _id: Id<"vehicles">;
-  make: string;
-  model: string;
-  year?: number;
-  type?: VehicleType;
-  seats?: number;
-  transmission?: TransmissionType;
-  fuelType?: FuelType;
-  engineCapacity?: number;
-  engineType?: string;
-  // Legacy pricing field - kept for backward compatibility
-  pricePerDay: number;
-  // New tiered pricing structure
-  pricingTiers?: PricingTier[];
-  // Warranty amount for the vehicle
-  warranty?: number;
-  location?: string;
-  features?: string[];
-  status: VehicleStatus;
-  images?: Id<"_storage">[];
-  mainImageId?: Id<"_storage">;
-}
-
 // Vehicle filters interface
 export interface VehicleFilters {
   type?: VehicleType;
+  class?: VehicleClass;
   transmission?: TransmissionType;
   fuelType?: FuelType;
   minPrice?: number;
@@ -55,6 +40,7 @@ export interface VehicleFormData {
   model: string;
   year: number;
   type: VehicleType;
+  class: VehicleClass;
   seats: number;
   transmission: TransmissionType;
   fuelType: FuelType;

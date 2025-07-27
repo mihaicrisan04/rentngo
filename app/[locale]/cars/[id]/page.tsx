@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Breadcrumb,
   BreadcrumbList,
@@ -16,12 +17,17 @@ import {
 import { ArrowLeft } from "lucide-react";
 import { PageLayout } from "@/components/layout/page-layout";
 import { VehicleImageCarousel } from "@/components/vehicle/vehicle-image-carrousel";
+import { VehicleImageCarouselSkeleton } from "@/components/vehicle/vehicle-image-carousel-skeleton";
 import { VehicleSpecifications } from "@/components/vehicle/vehicle-specifications";
+import { VehicleSpecificationsSkeleton } from "@/components/vehicle/vehicle-specifications-skeleton";
 import { VehiclePricingCard } from "@/components/vehicle/vehicle-pricing-card";
+import { VehiclePricingCardSkeleton } from "@/components/vehicle/vehicle-pricing-card-skeleton";
 import { PricingTiersTable } from "@/components/vehicle/pricing-tiers-table";
+import { PricingTiersTableSkeleton } from "@/components/vehicle/pricing-tiers-table-skeleton";
 import { useVehicleDetails } from "@/hooks/useVehicleDetails";
 import { formatVehicleName, getVehicleTypeLabel } from "@/lib/vehicleUtils";
 import { RentalDetails } from "@/components/rental-details";
+import { RentalDetailsSkeleton } from "@/components/rental-details-skeleton";
 import { useTranslations } from 'next-intl';
 
 export default function CarDetailPage() {
@@ -41,10 +47,56 @@ export default function CarDetailPage() {
   const currency = "EUR";
   const reservationUrl = buildReservationUrl();
 
+  // Show skeleton loading state
   if (vehicle === undefined) {
     return (
-      <PageLayout className="flex items-center justify-center">
-        <p className="text-muted-foreground">{t('loading')}</p>
+      <PageLayout className="p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Breadcrumb skeleton */}
+          <div className="mb-6">
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-4 w-12" />
+              <span className="text-muted-foreground">/</span>
+              <Skeleton className="h-4 w-16" />
+              <span className="text-muted-foreground">/</span>
+              <Skeleton className="h-4 w-32" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left side skeletons */}
+            <div className="space-y-4">
+              <VehicleImageCarouselSkeleton />
+              <VehicleSpecificationsSkeleton />
+            </div>
+
+            {/* Right side skeletons */}
+            <div className="space-y-6">
+              {/* Vehicle title skeleton */}
+              <div>
+                <Skeleton className="h-9 w-64 mb-2" />
+                <Skeleton className="h-6 w-20 rounded-full" />
+              </div>
+
+              {/* Rental details skeleton */}
+              <RentalDetailsSkeleton />
+
+              {/* Pricing skeleton */}
+              <VehiclePricingCardSkeleton />
+
+              {/* Reserve button skeleton */}
+              <div className="space-y-4">
+                <Skeleton className="h-14 w-full" />
+                <Skeleton className="h-4 w-48 mx-auto" />
+              </div>
+            </div>
+          </div>
+
+          {/* Pricing tiers table skeleton */}
+          <div className="mt-12">
+            <PricingTiersTableSkeleton />
+          </div>
+        </div>
       </PageLayout>
     );
   }

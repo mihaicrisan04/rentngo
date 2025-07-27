@@ -1,5 +1,5 @@
 import * as React from "react";
-import Link from "next/link";
+
 import { useTranslations } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";

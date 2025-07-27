@@ -22,6 +22,23 @@ export default defineSchema({
     model: v.string(),
     year: v.optional(v.number()),
     type: v.optional(v.union(v.literal("sedan"), v.literal("suv"), v.literal("hatchback"), v.literal("sports"), v.literal("truck"), v.literal("van"))),
+    class: v.optional(v.union(
+      v.literal("economy"), 
+      v.literal("van"), 
+      v.literal("compact"), 
+      v.literal("intermediate"), 
+      v.literal("standard"), 
+      v.literal("business"), 
+      v.literal("full-size"), 
+      v.literal("premium"), 
+      v.literal("luxury"), 
+      v.literal("sport"), 
+      v.literal("super-sport"), 
+      v.literal("supercars"), 
+      v.literal("executive"), 
+      v.literal("commercial"), 
+      v.literal("convertible")
+    )),
     seats: v.optional(v.number()),
     transmission: v.optional(v.union(v.literal("automatic"), v.literal("manual"))),
     fuelType: v.optional(v.union(v.literal("petrol"), v.literal("diesel"), v.literal("electric"), v.literal("hybrid"), v.literal("benzina"))),
@@ -41,6 +58,7 @@ export default defineSchema({
     mainImageId: v.optional(v.id("_storage")),
   }).index("by_location", ["location"])
     .index("by_type", ["type"])
+    .index("by_class", ["class"])
     .index("by_status", ["status"]),
 
   // Reservations table - stores booking records
@@ -163,4 +181,12 @@ export default defineSchema({
     setAt: v.number(), // timestamp when this season was activated
     setBy: v.optional(v.string()), // admin user ID or name who set it (for tracking)
   }),
+
+  // Featured cars table - stores the 3 featured vehicles for homepage display
+  featuredCars: defineTable({
+    slot: v.number(), // 1, 2, or 3 - the position slot for the featured car
+    vehicleId: v.id("vehicles"),
+    setAt: v.number(), // timestamp when this featured car was set
+    setBy: v.optional(v.string()), // admin user ID or name who set it (for tracking)
+  }).index("by_slot", ["slot"]),
 });

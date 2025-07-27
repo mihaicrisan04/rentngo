@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AnimatedGroup } from '@/components/ui/animated-group';
-import { Phone, Mail, MapPin, MessageCircle, Instagram, Facebook, ExternalLink } from 'lucide-react';
+import { Phone, Mail, MapPin, MessageCircle, ExternalLink } from 'lucide-react';
 import { contactAnimationVariants, sectionAnimationVariants } from '@/lib/animations';
 import { SocialIcon } from 'react-social-icons';
 import { useTranslations } from 'next-intl';

@@ -21,7 +21,6 @@ interface PricingTiersTableProps {
 
 export function PricingTiersTable({ 
   pricingTiers, 
-  currency = "EUR",
   currentDays 
 }: PricingTiersTableProps) {
   const t = useTranslations('pricingTiersTable');

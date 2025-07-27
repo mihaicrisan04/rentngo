@@ -123,12 +123,12 @@ export function VehiclesTable() {
               <TableHead className="w-20">Image</TableHead>
               <TableHead>Vehicle</TableHead>
               <TableHead>Type</TableHead>
+              <TableHead>Class</TableHead>
               <TableHead>Year</TableHead>
               <TableHead>Engine</TableHead>
               <TableHead>Transmission</TableHead>
               <TableHead>Fuel</TableHead>
               <TableHead>Price/Day</TableHead>
-              <TableHead>Location</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-16">Actions</TableHead>
             </TableRow>
@@ -165,6 +165,13 @@ export function VehiclesTable() {
                       <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
+                  <TableCell>
+                    {vehicle.class ? (
+                      <span className="capitalize">{vehicle.class.replace('-', ' ')}</span>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )}
+                  </TableCell>
                   <TableCell>{vehicle.year || "-"}</TableCell>
                   <TableCell>
                     {vehicle.engineCapacity && vehicle.engineType ? (
@@ -196,11 +203,6 @@ export function VehiclesTable() {
                       <div className="text-xs text-muted-foreground">
                         Warranty: {vehicle.warranty} EUR
                       </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {vehicle.location || (
-                      <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
                   <TableCell>{getStatusBadge(vehicle.status)}</TableCell>

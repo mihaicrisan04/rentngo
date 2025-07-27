@@ -23,7 +23,6 @@ interface VehicleImageCarouselProps {
 
 export function VehicleImageCarousel({ 
   images, 
-  mainImageId, 
   vehicleName 
 }: VehicleImageCarouselProps) {
   const t = useTranslations('vehicleImageCarousel');
@@ -58,15 +57,14 @@ export function VehicleImageCarousel({
 
   // Set initial slide based on main image
   React.useEffect(() => {
-    if (images && mainImageId && mainApi && thumbApi) {
-      const mainImageIndex = images.findIndex(id => id === mainImageId);
-      if (mainImageIndex !== -1) {
-        mainApi.scrollTo(mainImageIndex);
-        thumbApi.scrollTo(mainImageIndex);
-        setCurrent(mainImageIndex);
-      }
+    if (images && images.length > 0 && mainApi && thumbApi) {
+      // Always start from the first image (index 0) instead of jumping to main image
+      // This provides a better user experience as requested
+      mainApi.scrollTo(0);
+      thumbApi.scrollTo(0);
+      setCurrent(0);
     }
-  }, [images, mainImageId, mainApi, thumbApi]);
+  }, [images, mainApi, thumbApi]); // Removed mainImageId dependency
 
   return (
     <div className="space-y-4">

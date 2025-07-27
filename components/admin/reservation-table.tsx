@@ -22,7 +22,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-// import { EditReservationDialog } from "@/components/admin/EditReservationDialog";
 import { ReservationEmailDialog } from "@/components/admin/reservtaion-email-dialog";
 import { toast } from "sonner";
 import { EditReservationDialog } from "./edit-reservation-dialog";

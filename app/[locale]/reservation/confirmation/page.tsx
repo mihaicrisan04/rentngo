@@ -30,12 +30,14 @@ import {
   ArrowLeft,
   Plane
 } from "lucide-react";
-import { toast } from "sonner";
+import { useTranslations, useLocale } from 'next-intl';
 
 function ReservationConfirmationContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const reservationId = searchParams.get("reservationId");
+  const t = useTranslations('confirmationPage');
+  const locale = useLocale();
 
   // Get reservation details
   const reservation = useQuery(
@@ -64,15 +66,15 @@ function ReservationConfirmationContent() {
         <main className="flex-grow flex items-center justify-center">
           <div className="text-center max-w-md mx-auto p-6">
             <AlertCircle className="h-16 w-16 text-amber-500 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold mb-4">No Reservation Found</h1>
+            <h1 className="text-2xl font-bold mb-4">{t('noReservationFound')}</h1>
             <p className="text-muted-foreground mb-6">
-              We couldn&apos;t find a reservation ID in the URL. Please check your confirmation email or contact support.
+              {t('noReservationDescription')}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/cars">
                 <Button>
                   <Car className="mr-2 h-4 w-4" />
-                  Browse Cars
+                  {t('bookAnotherCar')}
                 </Button>
               </Link>
               <Link href="/">
@@ -96,7 +98,7 @@ function ReservationConfirmationContent() {
         <main className="flex-grow flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading your reservation details...</p>
+            <p className="text-muted-foreground">{t('loadingReservation')}</p>
           </div>
         </main>
         <Footer logo={<Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} />} brandName="" />
@@ -111,20 +113,20 @@ function ReservationConfirmationContent() {
         <main className="flex-grow flex items-center justify-center">
           <div className="text-center max-w-md mx-auto p-6">
             <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold mb-4">Reservation Not Found</h1>
+            <h1 className="text-2xl font-bold mb-4">{t('reservationNotFound')}</h1>
             <p className="text-muted-foreground mb-6">
-              The reservation could not be found or may have been cancelled. Please contact support if you believe this is an error.
+              {t('reservationNotFoundDescription')}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link href="/cars">
                 <Button>
                   <Car className="mr-2 h-4 w-4" />
-                  Browse Cars
+                  {t('bookAnotherCar')}
                 </Button>
               </Link>
               <Button variant="outline" onClick={() => router.back()}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Go Back
+                {t('goBack')}
               </Button>
             </div>
           </div>
@@ -150,14 +152,18 @@ function ReservationConfirmationContent() {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    return t(`status.${status}` as any) || status.charAt(0).toUpperCase() + status.slice(1);
+  };
+
   const getPaymentMethodLabel = (method: string) => {
     switch (method) {
       case "cash_on_delivery":
-        return "Cash on Delivery";
+        return t('paymentMethods.cashOnDelivery');
       case "card_on_delivery":
-        return "Card Payment on Delivery";
+        return t('paymentMethods.cardOnDelivery');
       case "card_online":
-        return "Card Payment Online";
+        return t('paymentMethods.cardOnline');
       default:
         return method;
     }
@@ -175,10 +181,10 @@ function ReservationConfirmationContent() {
               <CheckCircle className="h-12 w-12 text-green-600" />
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">
-              Reservation Request Sent!
+              {t('title')}
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Your reservation request has been successfully submitted. We will review your request and send you an email with the confirmation status and details within 24 hours.
+              {t('subtitle')}
             </p>
           </div>
 
@@ -187,11 +193,11 @@ function ReservationConfirmationContent() {
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Reservation ID</p>
+                  <p className="text-sm text-muted-foreground">{t('reservationId')}</p>
                   <p className="text-xl font-mono font-bold">{reservationId}</p>
                 </div>
                 <Badge className={`w-fit ${getStatusColor(reservation.status)}`}>
-                  {reservation.status.charAt(0).toUpperCase() + reservation.status.slice(1)}
+                  {getStatusLabel(reservation.status)}
                 </Badge>
               </div>
             </CardContent>
@@ -203,7 +209,7 @@ function ReservationConfirmationContent() {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Car className="h-5 w-5" />
-                  <span>Vehicle Details</span>
+                  <span>{t('vehicleDetails')}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -218,9 +224,9 @@ function ReservationConfirmationContent() {
                         sizes="96px"
                       />
                     ) : (
-                      <div className="flex items-center justify-center h-full text-muted-foreground text-xs">
-                        No Image
-                      </div>
+                                              <div className="flex items-center justify-center h-full text-muted-foreground text-xs">
+                          {t('noImage')}
+                        </div>
                     )}
                   </div>
                   <div className="flex-1">
@@ -230,19 +236,19 @@ function ReservationConfirmationContent() {
                     <p className="text-muted-foreground mb-2">{vehicle.year}</p>
                     <div className="flex flex-col gap-2 md:grid md:grid-cols-2 lg:gap-x-24 text-sm">
                       <div>
-                        <span className="text-muted-foreground">Type:</span>
+                        <span className="text-muted-foreground">{t('type')}</span>
                         <span className="ml-1 capitalize">{vehicle.type}</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Seats:</span>
+                        <span className="text-muted-foreground">{t('seats')}</span>
                         <span className="ml-1">{vehicle.seats}</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Transmission:</span>
+                        <span className="text-muted-foreground">{t('transmission')}</span>
                         <span className="ml-1 capitalize">{vehicle.transmission}</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Fuel:</span>
+                        <span className="text-muted-foreground">{t('fuel')}</span>
                         <span className="ml-1 capitalize">{vehicle.fuelType}</span>
                       </div>
                     </div>
@@ -256,35 +262,35 @@ function ReservationConfirmationContent() {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <User className="h-5 w-5" />
-                  <span>Customer Information</span>
+                  <span>{t('customerInformation')}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div>
-                    <p className="text-sm text-muted-foreground">Name</p>
+                    <p className="text-sm text-muted-foreground">{t('name')}</p>
                     <p className="font-medium">{reservation.customerInfo.name}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Email</p>
+                    <p className="text-sm text-muted-foreground">{t('email')}</p>
                     <p className="font-medium">{reservation.customerInfo.email}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Phone</p>
+                    <p className="text-sm text-muted-foreground">{t('phone')}</p>
                     <p className="font-medium">{reservation.customerInfo.phone}</p>
                   </div>
                   {reservation.customerInfo.flightNumber && (
                     <div>
                       <p className="text-sm text-muted-foreground flex items-center">
                         <Plane className="h-4 w-4 mr-1" />
-                        Flight Number
+                        {t('flightNumber')}
                       </p>
                       <p className="font-medium">{reservation.customerInfo.flightNumber}</p>
                     </div>
                   )}
                   {reservation.customerInfo.message && (
                     <div>
-                      <p className="text-sm text-muted-foreground">Message</p>
+                      <p className="text-sm text-muted-foreground">{t('message')}</p>
                       <p className="font-medium text-sm">{reservation.customerInfo.message}</p>
                     </div>
                   )}
@@ -296,10 +302,10 @@ function ReservationConfirmationContent() {
           {/* Rental Details */}
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Calendar className="h-5 w-5" />
-                <span>Rental Details</span>
-              </CardTitle>
+                              <CardTitle className="flex items-center space-x-2">
+                  <Calendar className="h-5 w-5" />
+                  <span>{t('rentalDetails')}</span>
+                </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -307,12 +313,12 @@ function ReservationConfirmationContent() {
                 <div className="space-y-3">
                   <h4 className="font-semibold text-green-700 flex items-center">
                     <MapPin className="h-4 w-4 mr-1" />
-                    Pickup
+                    {t('pickup')}
                   </h4>
                   <div className="pl-5 space-y-2">
                     <div className="flex items-center text-sm">
                       <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span>{startDate.toLocaleDateString('en-US', { 
+                      <span>{startDate.toLocaleDateString(locale, { 
                         weekday: 'long', 
                         year: 'numeric', 
                         month: 'long', 
@@ -334,12 +340,12 @@ function ReservationConfirmationContent() {
                 <div className="space-y-3">
                   <h4 className="font-semibold text-red-700 flex items-center">
                     <MapPin className="h-4 w-4 mr-1" />
-                    Return
+                    {t('return')}
                   </h4>
                   <div className="pl-5 space-y-2">
                     <div className="flex items-center text-sm">
                       <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                      <span>{endDate.toLocaleDateString('en-US', { 
+                      <span>{endDate.toLocaleDateString(locale, { 
                         weekday: 'long', 
                         year: 'numeric', 
                         month: 'long', 
@@ -363,20 +369,20 @@ function ReservationConfirmationContent() {
           {/* Payment & Total */}
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <CreditCard className="h-5 w-5" />
-                <span>Payment Summary</span>
-              </CardTitle>
+                              <CardTitle className="flex items-center space-x-2">
+                  <CreditCard className="h-5 w-5" />
+                  <span>{t('paymentSummary')}</span>
+                </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Payment Method:</span>
+                  <span className="text-muted-foreground">{t('paymentMethod')}</span>
                   <span className="font-medium">{getPaymentMethodLabel(reservation.paymentMethod)}</span>
                 </div>
                 {reservation.additionalCharges && reservation.additionalCharges.length > 0 && (
                   <div>
-                    <p className="text-sm text-muted-foreground mb-2">Additional Charges:</p>
+                    <p className="text-sm text-muted-foreground mb-2">{t('additionalCharges')}</p>
                     <div className="space-y-1">
                       {reservation.additionalCharges.map((charge, index) => (
                         <div key={index} className="flex justify-between text-sm">
@@ -389,7 +395,7 @@ function ReservationConfirmationContent() {
                 )}
                 <Separator />
                 <div className="flex justify-between items-center text-lg font-bold">
-                  <span>Total Amount:</span>
+                  <span>{t('totalAmount')}</span>
                   <span className="text-green-600">{reservation.totalPrice} EUR</span>
                 </div>
               </div>
@@ -401,7 +407,7 @@ function ReservationConfirmationContent() {
             <Link href="/cars">
               <Button className="px-8">
                 <Car className="mr-2 h-4 w-4" />
-                Book Another Car
+                {t('bookAnotherCar')}
               </Button>
             </Link>
           </div>
@@ -413,7 +419,7 @@ function ReservationConfirmationContent() {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <FileText className="h-5 w-5" />
-                  <span>What Happens Next</span>
+                  <span>{t('whatHappensNext')}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -423,8 +429,8 @@ function ReservationConfirmationContent() {
                       1
                     </div>
                     <div>
-                      <p className="font-medium">Request Review</p>
-                      <p className="text-sm text-muted-foreground">We'll review your reservation request within 24 hours</p>
+                      <p className="font-medium">{t('requestReview')}</p>
+                      <p className="text-sm text-muted-foreground">{t('requestReviewDescription')}</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
@@ -432,8 +438,8 @@ function ReservationConfirmationContent() {
                       2
                     </div>
                     <div>
-                      <p className="font-medium">Email Confirmation</p>
-                      <p className="text-sm text-muted-foreground">You'll receive an email with the final confirmation and payment instructions</p>
+                      <p className="font-medium">{t('emailConfirmation')}</p>
+                      <p className="text-sm text-muted-foreground">{t('emailConfirmationDescription')}</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-3">
@@ -441,8 +447,8 @@ function ReservationConfirmationContent() {
                       3
                     </div>
                     <div>
-                      <p className="font-medium">Prepare Documents</p>
-                      <p className="text-sm text-muted-foreground">Have your valid driver's license and credit card ready for pickup</p>
+                      <p className="font-medium">{t('prepareDocuments')}</p>
+                      <p className="text-sm text-muted-foreground">{t('prepareDocumentsDescription')}</p>
                     </div>
                   </div>
                 </div>
@@ -454,7 +460,7 @@ function ReservationConfirmationContent() {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Phone className="h-5 w-5" />
-                  <span>Need Help?</span>
+                  <span>{t('needHelp')}</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -462,31 +468,31 @@ function ReservationConfirmationContent() {
                   <div className="flex items-center space-x-3">
                     <Phone className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="font-medium">Customer Support</p>
+                      <p className="font-medium">{t('customerSupport')}</p>
                       <p className="text-sm text-muted-foreground">+40 773 932 961</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <Mail className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="font-medium">Email Support</p>
+                      <p className="font-medium">{t('emailSupport')}</p>
                       <p className="text-sm text-muted-foreground">office@rngo.ro</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <Clock className="h-5 w-5 text-muted-foreground" />
                     <div>
-                      <p className="font-medium">Support Hours</p>
-                      <p className="text-sm text-muted-foreground">24/7 Available</p>
+                      <p className="font-medium">{t('supportHours')}</p>
+                      <p className="text-sm text-muted-foreground">{t('supportAvailable')}</p>
                     </div>
                   </div>
                   <Separator />
                   <div className="text-center">
                     <p className="text-sm text-muted-foreground mb-2">
-                      Questions about your reservation request?
+                      {t('questionsAboutReservation')}
                     </p>
-                    <Link href="/terms-and-conditions" className="text-primary hover:underline text-sm">
-                      View Terms & Conditions
+                    <Link href="/terms" className="text-primary hover:underline text-sm">
+                      {t('viewTermsConditions')}
                     </Link>
                   </div>
                 </div>

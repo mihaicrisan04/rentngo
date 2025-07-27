@@ -142,9 +142,9 @@
         "browseCars": "Răsfoiește Mașinile"
       },
       "loadingDetails": "Se încarcă detaliile rezervării...",
-      "success": "Rezervarea a fost creată cu succes!",
-      "successDescription": "Veți primi un email de confirmare în scurt timp.",
-      "viewReservation": "Vezi Rezervarea",
+      "success": "Cererea de rezervare a fost trimisă cu succes!",
+      "successDescription": "Vom revizui cererea dumneavoastră și vă vom trimite un email de confirmare în scurt timp.",
+      "viewReservation": "Vezi Cererea",
       "error": "Nu s-a putut crea rezervarea. Vă rugăm să încercați din nou sau să contactați suportul."
     },
     "rentalDetails": {
@@ -171,7 +171,12 @@
       "pricePerDay": "3 EUR pe zi",
       "childSeat1to4": "Scaun Copil (1-4 ani)",
       "childSeat5to12": "Scaun Copil (5-12 ani)",
-      "pricePerSeat": "3 EUR pe scaun pe zi (max 2 scaune)"
+      "pricePerSeat": "3 EUR pe scaun pe zi (max 2 scaune)",
+      "extraKilometers": "Kilometri Suplimentari",
+      "extraKilometersPackages": "Numar Pachete Kilometri Suplimentari",
+      "extraKmDescription": "1 pachet (50 km) = 5 EUR",
+      "extraKmLimit": "Maxim 5.000 km suplimentari",
+      "baseKilometersIncluded": "Kilometri incluși: {km} km ({days} zile × 200 km/zi)"
     },
     "personalInfo": {
       "title": "Informații Personale",
@@ -196,7 +201,7 @@
     "protectionOptions": {
       "title": "Opțiuni de Protecție",
       "scdwInsurance": "Asigurare SCDW (nerestituibilă)",
-      "standardWarranty": "Garanție Standard",
+      "standardWarranty": "Depozit Standard",
       "warrantyDefault": "Garanție (Implicit)",
       "refundableDeposit": "Depozit restituibil bazat pe garanția vehiculului",
       "returnedEndRental": "Returnat la sfârșitul închirierii dacă nu sunt daune",
@@ -224,7 +229,8 @@
       "basePrice": "Preț de bază ({days} zi{plural})",
       "pickupLocationFee": "Taxa pentru locația de ridicare",
       "returnLocationFee": "Taxa pentru locația de returnare",
-      "totalLocationFees": "Total taxe pentru locații",
+      "totalLocationFees": "Total taxe de relocare",
+      "totalKilometers": "Total kilometri incluși",
       "totalAdditionalFeatures": "Total caracteristici suplimentare",
       "totalPrice": "Preț Total",
       "warranty": "garanție",
@@ -252,7 +258,8 @@
         "returnLocationFee": "Taxa pentru locația de returnare ({location})",
         "snowChains": "Lanțuri de zăpadă - {days} zi × 3 EUR = {price} EUR",
         "childSeat1to4": "{count}x Scaun copil 1-4 ani - {count} × {days} zi × 3 EUR = {price} EUR",
-        "childSeat5to12": "{count}x Scaun copil 5-12 ani - {count} × {days} zi × 3 EUR = {price} EUR"
+        "childSeat5to12": "{count}x Scaun copil 5-12 ani - {count} × {days} zi × 3 EUR = {price} EUR",
+        "extraKilometers": "{count}x Kilometri suplimentari - {kilometers} km (50 km × {count}) = {price} EUR"
       }
     },
     "validation": {
@@ -311,6 +318,13 @@
     "supportAvailable": "Disponibil 24/7",
     "questionsAboutReservation": "Întrebări despre cererea voastră de rezervare?",
     "viewTermsConditions": "Vezi Termenii și Condițiile",
+    "noImage": "Fără Imagine",
+    "type": "Tip:",
+    "seats": "Locuri:",
+    "transmission": "Transmisie:",
+    "fuel": "Combustibil:",
+    "browseCars": "Răsfoiește Mașinile",
+    "goBack": "Înapoi",
     "paymentMethods": {
       "cashOnDelivery": "Plata Cash la Livrare",
       "cardOnDelivery": "Plata cu Cardul la Livrare",
@@ -530,7 +544,7 @@
       "standard": "Standard",
       "total": "Total",
       "zeroDeductible": "Franciză zero",
-      "standardWarranty": "Garanție Standard ({amount} EUR franciză)"
+      "standardWarranty": "Depozit Standard ({amount} EUR franciză)"
     },
     "emailDialog": {
       "title": "Trimite Email către Client",
@@ -590,6 +604,7 @@
     "pickupLocationFee": "Taxa pentru locația de ridicare ({location})",
     "returnLocationFee": "Taxa pentru locația de returnare ({location})",
     "totalLocationFees": "Total taxe pentru locații",
+    "kilometersIncluded": "Kilometri incluși",
     "totalPrice": "Preț Total",
     "forDays": "pentru {days} zi{plural}",
     "selectDatesMessage": "Selectează datele de ridicare și returnare pentru a vedea prețul total"

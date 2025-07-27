@@ -8,7 +8,7 @@ import {
   Sun,
   ArrowRightLeft,
   LayoutDashboard,
-  Settings2,
+  // Settings2,
   Building2,
 } from "lucide-react"
 
@@ -51,11 +51,11 @@ const navItems = [
     url: "/admin/transfers",
     icon: ArrowRightLeft,
   },
-  {
-    title: "Settings",
-    url: "/admin/settings",
-    icon: Settings2,
-  },
+  // {
+  //   title: "Settings",
+  //   url: "/admin/settings",
+  //   icon: Settings2,
+  // },
 ]
 
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

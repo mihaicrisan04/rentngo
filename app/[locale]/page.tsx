@@ -1,32 +1,20 @@
 "use client";
 
 import * as React from "react";
-import {
-  useMutation,
-  useQuery,
-  useConvex,
-} from "convex/react";
-import { api } from "../../convex/_generated/api";
+
 import Image from "next/image"; // Import Next.js Image component
-import { ArrowRight, Sparkles, Car } from "lucide-react";
-import { Id } from "../../convex/_generated/dataModel";
-import Link from "next/link";
+import { ArrowRight, Car } from "lucide-react";
 import { FeaturesSectionWithHoverEffects } from "@/components/blocks/feature-section-with-hover-effects";
 import { Footer } from "@/components/ui/footer";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
-import DisplayCards from "@/components/ui/display-cards";
 import { TestimonialsSection } from "@/components/blocks/testimonials-with-marquee";
 import { Header } from "@/components/ui/header";
-import { VehicleSearchFilterForm } from "@/components/vehicle-search-filter-form"; // Import the new form
-import { VehicleCard } from "@/components/vehicle-card"; // Import the new VehicleCard
+import { VehicleSearchFilterForm } from "@/components/vehicle/vehicle-search-filter-form"; // Import the new form
+import { VehicleCard } from "@/components/vehicle/vehicle-card"; // Import the new VehicleCard
 import { FaqSection } from "@/components/blocks/faq"; // Re-added import for FaqSection
 import { BackgroundImage } from "@/components/ui/BackgroundImage"; // Import the new BackgroundImage component
 import { AnimatedGroup } from "@/components/ui/animated-group"; // Import AnimatedGroup
@@ -35,14 +23,18 @@ import { Vehicle } from "@/types/vehicle"; // Import centralized Vehicle type
 import { useHomepageFeaturedVehicles } from "@/hooks/useHomepageFeaturedVehicles";
 import { sectionAnimationVariants } from "@/lib/animations";
 import { useTranslations } from 'next-intl';
+import { useVehicleSearch } from "@/hooks/useVehicleSearch";
+import { SearchData } from "@/lib/searchStorage";
 
 // Updated VehicleList to accept search dates and pass them to VehicleCard
 function VehicleList({
   vehicles,
   isLoading,
+  searchState,
 }: {
   vehicles: Vehicle[] | null;
   isLoading: boolean;
+  searchState: SearchData & { isHydrated: boolean };
 }) {
   const t = useTranslations('common');
   
@@ -62,17 +54,17 @@ function VehicleList({
         if (!vehicle || typeof vehicle._id !== 'string') {
           return null;
         }
-        // For featured cars on homepage, we don't have search parameters
+        // Pass search state to vehicle cards for dynamic pricing
         return (
           <VehicleCard 
             key={vehicle._id} 
             vehicle={vehicle}
-            pickupDate={null}
-            returnDate={null}
-            deliveryLocation={null}
-            restitutionLocation={null}
-            pickupTime={null}
-            returnTime={null}
+            pickupDate={searchState.pickupDate}
+            returnDate={searchState.returnDate}
+            deliveryLocation={searchState.deliveryLocation}
+            restitutionLocation={searchState.restitutionLocation}
+            pickupTime={searchState.pickupTime}
+            returnTime={searchState.returnTime}
           />
         );
       })}
@@ -94,6 +86,9 @@ export default function Home() {
   const tTestimonials = useTranslations('testimonials');
   const tFaq = useTranslations('faq');
   const { vehiclesToDisplay, currentTitle, isLoading } = useHomepageFeaturedVehicles();
+  
+  // Add vehicle search hook to get search state
+  const { searchState, updateSearchField } = useVehicleSearch();
 
   // Create FAQ items array from translations
   const faqItems = [
@@ -106,7 +101,7 @@ export default function Home() {
     { question: tFaq('questions.6.question'), answer: tFaq('questions.6.answer') },
   ];
 
-  const isAuthorized = useQuery(api.auth.isAuthorized);
+
 
   return (
     <div className="relative flex flex-col min-h-screen">
@@ -117,7 +112,10 @@ export default function Home() {
       <main className="relative z-10 flex flex-col gap-8">
           <div className="flex flex-col gap-12 max-w-5xl mx-auto p-4 md:p-6 lg:p-8 w-full mt-[10%] md:mt-[15%] lg:mt-[20%]">
             <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
-              <div className="text-center">
+              <div className="text-center relative">
+                {/* Shadow backdrop */}
+                <div className="absolute inset-0 bg-black/40 blur-lg rounded-xl -z-10 transform translate-x-1 translate-y-1"></div>
+                
                 <h1 className="text-4xl md:text-5xl text-secondary font-bold tracking-tight">
                   {t('title')}
                 </h1>
@@ -129,7 +127,10 @@ export default function Home() {
 
 
             <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
-              <VehicleSearchFilterForm />
+              <VehicleSearchFilterForm 
+                searchState={searchState}
+                updateSearchField={updateSearchField}
+              />
             </AnimatedGroup>
 
             <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
@@ -140,6 +141,7 @@ export default function Home() {
                 <VehicleList
                   vehicles={vehiclesToDisplay}
                   isLoading={isLoading}
+                  searchState={searchState}
                 />
                 <div className="flex justify-center mt-12">
                   <Button

@@ -19,7 +19,6 @@ function DisplayCard({
   title = "Featured",
   description = "Discover amazing content",
   date = "Just now",
-  iconClassName = "text-blue-500",
   titleClassName = "text-blue-500",
 }: DisplayCardProps) {
   return (

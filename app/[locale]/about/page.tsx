@@ -94,7 +94,10 @@ const AboutPage = () => {
         <div className="flex flex-col gap-12 max-w-5xl mx-auto p-4 md:p-6 lg:p-8 w-full mt-[10%] md:mt-[15%] lg:mt-[20%]">
           {/* Hero Section */}
           <AnimatedGroup variants={sectionAnimationVariants} threshold={0.2} triggerOnce={true}>
-            <div className="text-center">
+            <div className="text-center relative">
+              {/* Shadow backdrop */}
+              <div className="absolute inset-0 bg-black/40 blur-lg rounded-xl -z-10 transform translate-x-1 translate-y-1"></div>
+              
               <Badge variant="outline" className="mb-4 px-4 py-2 text-lg text-primary">
                 {t('title')}
               </Badge>

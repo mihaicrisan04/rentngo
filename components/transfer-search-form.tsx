@@ -2,10 +2,7 @@
 
 import * as React from "react"
 import { Search, Users, ArrowRight } from "lucide-react"
-import { useRouter } from 'next/navigation'
-
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
   Card,
@@ -19,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
+
 import { LocationSearchInput } from "./location-search-input"
 import { DateTimePicker } from "./date-time-picker"
 
@@ -52,7 +49,7 @@ export function TransferSearchForm({ initialData }: TransferSearchFormProps) {
   const [transferType, setTransferType] = React.useState<'one-way' | 'round-trip'>(initialData?.transferType || 'one-way')
   const [isLoading, setIsLoading] = React.useState(false)
 
-  const router = useRouter()
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()

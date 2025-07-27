@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { VehicleType, TransmissionType, FuelType, VehicleStatus, PricingTier } from "@/types/vehicle";
+import { VehicleType, VehicleClass, TransmissionType, FuelType, VehicleStatus, PricingTier } from "@/types/vehicle";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -35,10 +35,12 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { DraggableImageList } from "@/components/ui/draggable-image-list";
+import { ModernImageUpload } from "@/components/ui/modern-image-upload";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { toast } from "sonner";
-import { Plus, X, Star } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const Tabs = TabsPrimitive.Root;
@@ -58,6 +60,9 @@ const vehicleSchema = z.object({
     }, "Year must be between 1900 and next year"),
   type: z.enum(["sedan", "suv", "hatchback", "sports", "truck", "van"], {
     required_error: "Vehicle type is required",
+  }),
+  class: z.enum(["economy", "compact", "intermediate", "standard", "full-size", "premium", "luxury", "sport", "executive", "commercial", "convertible", "super-sport", "supercars", "business", "van"], {
+    required_error: "Vehicle class is required",
   }),
   seats: z.string()
     .min(1, "Number of seats is required")
@@ -91,7 +96,6 @@ const vehicleSchema = z.object({
     .regex(/^\d+(\.\d{1,2})?$/, "Warranty must be a valid number")
     .optional()
     .or(z.literal("")),
-  location: z.string().max(100, "Location must be less than 100 characters").optional(),
   features: z.array(z.string()),
   status: z.enum(["available", "rented", "maintenance"]),
   pricingTiers: z.array(z.object({
@@ -124,12 +128,11 @@ export function EditVehicleDialog({
 }: EditVehicleDialogProps) {
   const vehicle = useQuery(api.vehicles.getById, vehicleId ? { id: vehicleId } : "skip");
   const updateVehicle = useMutation(api.vehicles.update);
-  const uploadImages = useAction(api.vehicles.uploadImages as any);
   const setMainImage = useMutation(api.vehicles.setMainImage);
+  const reorderImages = useMutation(api.vehicles.reorderImages);
+  const removeImage = useMutation(api.vehicles.removeImage);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([]);
   const [mainImageId, setMainImageIdState] = useState<Id<"_storage"> | undefined>();
 
@@ -140,6 +143,7 @@ export function EditVehicleDialog({
       model: "",
       year: new Date().getFullYear().toString(),
       type: "sedan",
+      class: "economy",
       seats: "5",
       transmission: "automatic",
       fuelType: "petrol",
@@ -147,7 +151,6 @@ export function EditVehicleDialog({
       engineType: "",
       pricePerDay: "",
       warranty: "",
-      location: "",
       features: [],
       status: "available",
       pricingTiers: [],
@@ -161,6 +164,7 @@ export function EditVehicleDialog({
         model: vehicle.model || "",
         year: (vehicle.year || new Date().getFullYear()).toString(),
         type: (vehicle.type as VehicleType) || "sedan",
+        class: (vehicle.class as VehicleClass) || "economy",
         seats: (vehicle.seats || 5).toString(),
         transmission: (vehicle.transmission as TransmissionType) || "automatic",
         fuelType: (vehicle.fuelType as FuelType) || "petrol",
@@ -168,32 +172,20 @@ export function EditVehicleDialog({
         engineType: vehicle.engineType || "",
         pricePerDay: vehicle.pricePerDay.toString(),
         warranty: (vehicle.warranty || 0).toString(),
-        location: vehicle.location || "",
         features: vehicle.features || [],
         status: vehicle.status,
         pricingTiers: vehicle.pricingTiers || [],
       });
       setPricingTiers(vehicle.pricingTiers || []);
       setMainImageIdState(vehicle.mainImageId);
-      setSelectedFiles(null);
-      setPreviewUrls([]);
     } else if (!open) {
       form.reset();
       setPricingTiers([]);
       setMainImageIdState(undefined);
-      setSelectedFiles(null);
-      setPreviewUrls([]);
     }
   }, [open, vehicle]);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setSelectedFiles(e.target.files);
-      previewUrls.forEach(url => URL.revokeObjectURL(url));
-      const urls = Array.from(e.target.files).map(file => URL.createObjectURL(file));
-      setPreviewUrls(urls);
-    }
-  };
+
 
   const handleSetMainImage = async (imageId: Id<"_storage">) => {
     try {
@@ -203,6 +195,26 @@ export function EditVehicleDialog({
     } catch (error) {
       console.error("Error setting main image:", error);
       toast.error("Failed to set main image");
+    }
+  };
+
+  const handleImageReorder = async (newOrder: Id<"_storage">[]) => {
+    try {
+      await reorderImages({ vehicleId, imageIds: newOrder });
+      toast.success("Images reordered successfully");
+    } catch (error) {
+      console.error("Error reordering images:", error);
+      toast.error("Failed to reorder images");
+    }
+  };
+
+  const handleRemoveImage = async (imageId: Id<"_storage">) => {
+    try {
+      await removeImage({ vehicleId, imageId });
+      toast.success("Image removed successfully");
+    } catch (error) {
+      console.error("Error removing image:", error);
+      toast.error("Failed to remove image");
     }
   };
 
@@ -218,6 +230,7 @@ export function EditVehicleDialog({
         model: values.model,
         year: parseInt(values.year),
         type: values.type as VehicleType,
+        class: values.class as VehicleClass,
         seats: parseInt(values.seats),
         transmission: values.transmission as TransmissionType,
         fuelType: values.fuelType as FuelType,
@@ -225,27 +238,12 @@ export function EditVehicleDialog({
         engineType: values.engineType,
         pricePerDay: parseFloat(values.pricePerDay),
         warranty: values.warranty ? parseFloat(values.warranty) : 0,
-        location: values.location || "",
         features: values.features,
         status: values.status as VehicleStatus,
         pricingTiers: pricingTiers,
       };
 
       await updateVehicle(vehicleDataToSubmit);
-
-      if (selectedFiles && selectedFiles.length > 0) {
-        const imageBuffers = await Promise.all(
-          Array.from(selectedFiles).map(async (file) => {
-            const arrayBuffer = await file.arrayBuffer();
-            return arrayBuffer;
-          })
-        );
-
-        await uploadImages({
-          vehicleId: vehicleId,
-          images: imageBuffers,
-        });
-      }
       
       toast.success("Vehicle updated successfully");
       onSuccess?.();
@@ -301,55 +299,6 @@ export function EditVehicleDialog({
     if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       e.preventDefault();
     }
-  };
-
-  const VehicleImageDisplay = ({ imageId }: { imageId: Id<"_storage"> }) => {
-    const imageUrl = useQuery(api.vehicles.getImageUrl, { imageId });
-    
-    if (!imageUrl) {
-      return (
-        <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
-          <span className="text-muted-foreground text-sm">Loading...</span>
-        </div>
-      );
-    }
-
-    return (
-      <div className="relative aspect-square rounded-lg overflow-hidden group">
-        <img
-          src={imageUrl}
-          alt="Vehicle image"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            onClick={() => handleSetMainImage(imageId)}
-            disabled={imageId === mainImageId}
-            className="bg-white/90 hover:bg-white text-black"
-          >
-            {imageId === mainImageId ? (
-              <>
-                <Star className="h-4 w-4 mr-1 fill-yellow-400 text-yellow-400" />
-                Main
-              </>
-            ) : (
-              <>
-                <Star className="h-4 w-4 mr-1" />
-                Set Main
-              </>
-            )}
-          </Button>
-        </div>
-        {imageId === mainImageId && (
-          <div className="absolute top-2 right-2 bg-yellow-400 text-black px-2 py-1 rounded-full text-xs font-medium">
-            Main
-          </div>
-        )}
-      </div>
-    );
   };
 
   if (!vehicle) {
@@ -486,6 +435,41 @@ export function EditVehicleDialog({
 
                     <FormField
                       control={form.control}
+                      name="class"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Class</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select class" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="economy">Economy</SelectItem>
+                              <SelectItem value="compact">Compact</SelectItem>
+                              <SelectItem value="intermediate">Intermediate</SelectItem>
+                              <SelectItem value="standard">Standard</SelectItem>
+                              <SelectItem value="full-size">Full-Size</SelectItem>
+                              <SelectItem value="premium">Premium</SelectItem>
+                              <SelectItem value="luxury">Luxury</SelectItem>
+                              <SelectItem value="sport">Sport</SelectItem>
+                              <SelectItem value="executive">Executive</SelectItem>
+                              <SelectItem value="commercial">Commercial</SelectItem>
+                              <SelectItem value="convertible">Convertible</SelectItem>
+                              <SelectItem value="super-sport">Super Sport</SelectItem>
+                              <SelectItem value="supercars">Supercars</SelectItem>
+                              <SelectItem value="business">Business</SelectItem>
+                              <SelectItem value="van">Van</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
                       name="seats"
                       render={({ field }) => (
                         <FormItem>
@@ -581,20 +565,6 @@ export function EditVehicleDialog({
                               disabled={isSubmitting}
                               placeholder="e.g., TSI, dCi"
                             />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="location"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Location</FormLabel>
-                          <FormControl>
-                            <Input {...field} disabled={isSubmitting} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -774,50 +744,34 @@ export function EditVehicleDialog({
                     <div>
                       <FormLabel>Current Images</FormLabel>
                       <p className="text-xs text-muted-foreground mb-3">
-                        Click on an image to set it as the main image. The main image will be shown in listings.
+                        Drag to reorder • Click star to set main image • Click X to remove
                       </p>
-                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                        {vehicle.images.map((imageId) => (
-                          <VehicleImageDisplay key={imageId} imageId={imageId} />
-                        ))}
-                      </div>
+                      <DraggableImageList
+                        images={vehicle.images}
+                        mainImageId={mainImageId}
+                        onReorder={handleImageReorder}
+                        onSetMain={handleSetMainImage}
+                        onRemove={handleRemoveImage}
+                        disabled={isSubmitting}
+                        layout="grid"
+                      />
                     </div>
                   )}
 
-                  <div>
-                    <FormLabel htmlFor="edit-file-upload-input">Upload New Images</FormLabel>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Uploading new images will add them to the existing gallery.
-                    </p>
-                    <div className="mt-2">
-                      <Input
-                        id="edit-file-upload-input"
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={handleFileSelect}
-                        disabled={isSubmitting}
-                        className="cursor-pointer"
-                      />
-                    </div>
-
-                    {previewUrls.length > 0 && (
-                      <div className="mt-4">
-                        <h3 className="text-sm font-medium mb-2">New Images Preview</h3>
-                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                          {previewUrls.map((url, index) => (
-                            <div key={index} className="relative aspect-square">
-                              <img
-                                src={url}
-                                alt={`Preview ${index + 1}`}
-                                className="w-full h-full object-cover rounded border"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <ModernImageUpload
+                    vehicleId={vehicleId}
+                    onUpload={(imageIds) => {
+                      toast.success(`${imageIds.length} new images uploaded successfully`);
+                      // The images are automatically added to the vehicle via the backend
+                    }}
+                    onError={(error) => {
+                      toast.error(error);
+                    }}
+                    maxFiles={10}
+                    disabled={isSubmitting}
+                    label="Upload New Images"
+                    description="Add more images to this vehicle. New images will be appended to the existing gallery. PNG, JPG, GIF, WebP up to 10MB each."
+                  />
                 </TabsContent>
               </form>
             </Form>

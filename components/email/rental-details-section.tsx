@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Section, Heading, Text, Row, Column } from '@react-email/components';
+import { Section, Text, Row, Column } from '@react-email/components';
 import { RentalDetails } from '@/types/email';
 
 interface RentalDetailsSectionProps {

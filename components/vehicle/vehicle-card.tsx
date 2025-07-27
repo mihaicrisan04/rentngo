@@ -4,13 +4,13 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useQuery } from "convex/react";
-import { api } from "../convex/_generated/api";
-import { Id } from "../convex/_generated/dataModel";
+import { api } from "../../convex/_generated/api";
+
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Cog, Fuel, CarFront } from "lucide-react";
-import { Vehicle, getPriceForDuration } from "@/types/vehicle";
-import { calculateVehiclePricing, buildReservationUrl, calculateVehiclePricingWithSeason, getPriceForDurationWithSeason } from "@/lib/vehicleUtils";
+import { Vehicle } from "@/types/vehicle";
+import { buildReservationUrl, calculateVehiclePricingWithSeason, getPriceForDurationWithSeason } from "@/lib/vehicleUtils";
 import { useSeasonalPricing } from "@/hooks/useSeasonalPricing";
 import { useTranslations, useLocale } from 'next-intl';
 
@@ -46,7 +46,7 @@ export function VehicleCard({
     vehicle?.mainImageId ? { imageId: vehicle.mainImageId } : "skip"
   );
 
-  const { multiplier: currentMultiplier, currentSeason } = useSeasonalPricing();
+  const { multiplier: currentMultiplier } = useSeasonalPricing();
 
 
   if (!vehicle || typeof vehicle._id !== "string") {

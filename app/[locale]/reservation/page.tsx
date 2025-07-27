@@ -20,11 +20,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Switch } from "@/components/ui/switch";
 import { ArrowLeft, Calendar, Send, User, CreditCard, AlertCircle, Info } from "lucide-react";
-import { LocationPicker, getLocationPrice } from "@/components/location-picker";
+import { LocationPicker } from "@/components/location-picker";
 import { DateTimePicker } from "@/components/date-time-picker";
 import { searchStorage } from "@/lib/searchStorage";
-import { calculateVehiclePricing, calculateVehiclePricingWithSeason, getPriceForDurationWithSeason } from "@/lib/vehicleUtils";
-import { getPriceForDuration } from "@/types/vehicle";
+import { calculateVehiclePricingWithSeason, getPriceForDurationWithSeason, calculateIncludedKilometers, calculateExtraKilometersPrice } from "@/lib/vehicleUtils";
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -88,7 +87,6 @@ function ReservationPageContent() {
   const router = useRouter();
   const { user } = useUser();
   const t = useTranslations('reservationPage');
-  const tCommon = useTranslations('common');
   const locale = useLocale();
   
   // Payment method options - now using translations
@@ -102,7 +100,7 @@ function ReservationPageContent() {
   const vehicleId = searchParams.get("vehicleId");
   
   // Add seasonal pricing
-  const { multiplier: seasonalMultiplier, hasActiveSeason, currentSeason } = useSeasonalPricing();
+  const { multiplier: seasonalMultiplier, currentSeason } = useSeasonalPricing();
   
   // Rental details state
   const [deliveryLocation, setDeliveryLocation] = React.useState<string>("");
@@ -124,7 +122,6 @@ function ReservationPageContent() {
   // Payment state
   const [paymentMethod, setPaymentMethod] = React.useState<string>("");
   const [termsAccepted, setTermsAccepted] = React.useState(false);
-  const [scdwSelected, setScdwSelected] = React.useState(false);
   
   // Protection state (SCDW vs Standard warranty)
   const [isSCDWSelected, setIsSCDWSelected] = React.useState(false); // Default to standard warranty
@@ -133,6 +130,7 @@ function ReservationPageContent() {
   const [snowChainsSelected, setSnowChainsSelected] = React.useState(false);
   const [childSeat1to4Count, setChildSeat1to4Count] = React.useState(0);
   const [childSeat5to12Count, setChildSeat5to12Count] = React.useState(0);
+  const [extraKilometersCount, setExtraKilometersCount] = React.useState(0);
   
   // Form state
   const [isHydrated, setIsHydrated] = React.useState(false);
@@ -297,7 +295,8 @@ function ReservationPageContent() {
       const snowChainsPrice = snowChainsSelected ? days * 3 : 0;
       const childSeat1to4Price = childSeat1to4Count * days * 3;
       const childSeat5to12Price = childSeat5to12Count * days * 3;
-      const totalAdditionalFeatures = snowChainsPrice + childSeat1to4Price + childSeat5to12Price;
+      const extraKilometersPrice = calculateExtraKilometersPrice(extraKilometersCount * 50);
+      const totalAdditionalFeatures = snowChainsPrice + childSeat1to4Price + childSeat5to12Price + extraKilometersPrice;
       
       return { 
         basePrice,
@@ -313,6 +312,7 @@ function ReservationPageContent() {
         snowChainsPrice,
         childSeat1to4Price,
         childSeat5to12Price,
+        extraKilometersPrice,
         totalAdditionalFeatures,
         seasonalMultiplier,
         seasonalAdjustment,
@@ -333,6 +333,7 @@ function ReservationPageContent() {
       snowChainsPrice: 0,
       childSeat1to4Price: 0,
       childSeat5to12Price: 0,
+      extraKilometersPrice: 0,
       totalAdditionalFeatures: 0,
       seasonalMultiplier: 1.0,
       seasonalAdjustment: 0,
@@ -349,14 +350,11 @@ function ReservationPageContent() {
     totalLocationFees, 
     warrantyAmount, 
     scdwPrice, 
-    protectionCost,
-    deductibleAmount, 
     snowChainsPrice, 
     childSeat1to4Price, 
     childSeat5to12Price, 
-    totalAdditionalFeatures,
-    seasonalAdjustment,
-    basePriceBeforeSeason
+    extraKilometersPrice,
+    totalAdditionalFeatures
   } = calculateTotalPrice();
 
   // Calculate form completion progress
@@ -511,6 +509,13 @@ function ReservationPageContent() {
         additionalCharges.push({
           description: t('payment.additionalCharges.childSeat5to12', { count: childSeat5to12Count, days: days, price: childSeat5to12Price }),
           amount: childSeat5to12Price,
+        });
+      }
+
+      if (extraKilometersCount > 0 && extraKilometersPrice > 0) {
+        additionalCharges.push({
+          description: t('payment.additionalCharges.extraKilometers', { count: extraKilometersCount, kilometers: extraKilometersCount * 50, price: extraKilometersPrice }),
+          amount: extraKilometersPrice,
         });
       }
 
@@ -984,6 +989,54 @@ function ReservationPageContent() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Extra Kilometers */}
+                    <div className="space-y-3 border-t pt-4">
+                      <div className="flex items-start space-x-2">
+                        <div className="flex-1">
+                          <Label className="text-sm font-medium">
+                            {t('additionalFeatures.extraKilometersPackages')}
+                          </Label>
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setExtraKilometersCount(Math.max(0, extraKilometersCount - 1))}
+                                disabled={extraKilometersCount === 0}
+                              >
+                                -
+                              </Button>
+                              <span className="min-w-[2rem] text-center">{extraKilometersCount}</span>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setExtraKilometersCount(Math.min(100, extraKilometersCount + 1))}
+                                disabled={extraKilometersCount === 100}
+                              >
+                                +
+                              </Button>
+                            </div>
+                            <span className="font-medium">
+                              {extraKilometersCount > 0 ? `${extraKilometersCount * 5} EUR` : '0 EUR'}
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {t('additionalFeatures.extraKmDescription')}
+                            {days && (
+                              <div className="mt-1">
+                                {t('additionalFeatures.baseKilometersIncluded', { 
+                                  km: calculateIncludedKilometers(days), 
+                                  days: days 
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -1219,6 +1272,13 @@ function ReservationPageContent() {
                     <span>{days ? t('reservationSummary.daysCount', { days, plural: locale === 'ro' ? ((days === 1) ? "" : "le") : ((days === 1) ? "" : "s") }) : t('reservationSummary.notCalculated')}</span>
                   </div>
                   
+                  {days && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <span className="font-medium text-muted-foreground">{t('reservationSummary.totalKilometers')}:</span>
+                      <span>{calculateIncludedKilometers(days) + (extraKilometersCount * 50)} km</span>
+                    </div>
+                  )}
+                  
                   {personalInfo.flightNumber && (
                     <div className="grid grid-cols-2 gap-2">
                       <span className="font-medium text-muted-foreground">{t('reservationSummary.flight')}:</span>
@@ -1265,8 +1325,8 @@ function ReservationPageContent() {
                         </div>
                         <p className="text-sm font-medium">
                           {isSCDWSelected 
-                            ? `${scdwPrice || 0} EUR (${t('protectionOptions.included')})` 
-                            : `${warrantyAmount || 0} EUR (${t('protectionOptions.separate')})`}
+                            ? `${scdwPrice || 0} EUR ` 
+                            : `${warrantyAmount || 0} EUR `}
                         </p>
                       </div>
                       
@@ -1349,6 +1409,13 @@ function ReservationPageContent() {
                     <div className="flex justify-between text-sm">
                       <span>{t('additionalFeatures.childSeat5to12')}:</span>
                       <span>{childSeat5to12Price} EUR</span>
+                    </div>
+                  )}
+                  
+                  {extraKilometersCount > 0 && (extraKilometersPrice || 0) > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span>{t('additionalFeatures.extraKilometers')}:</span>
+                      <span>{extraKilometersPrice || 0} EUR</span>
                     </div>
                   )}
                   

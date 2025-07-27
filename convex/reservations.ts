@@ -385,3 +385,125 @@ export const deleteReservationPermanently = mutation({
     return { success: true, message: "Reservation permanently deleted." };
   },
 });
+
+// Get reservation statistics for admin dashboard
+export const getReservationStats = query({
+  args: {},
+  returns: v.object({
+    totalReservations: v.number(),
+    activeReservations: v.number(),
+    pendingConfirmations: v.number(),
+    currentMonthRevenue: v.number(),
+    reservationGrowth: v.number(),
+    revenueGrowth: v.number(),
+  }),
+  handler: async (ctx) => {
+    const user = await getCurrentUserOrThrow(ctx);
+
+    if (user.role !== "admin") {
+      throw new Error("User not authorized (admin only).");
+    }
+
+    const allReservations = await ctx.db.query("reservations").collect();
+    
+    const now = Date.now();
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+    const lastMonthStart = new Date(currentYear, currentMonth - 1, 1).getTime();
+    const currentMonthStart = new Date(currentYear, currentMonth, 1).getTime();
+    
+    // Total reservations
+    const totalReservations = allReservations.length;
+    
+    // Active reservations (confirmed and currently ongoing)
+    const activeReservations = allReservations.filter(r => 
+      r.status === "confirmed" && 
+      r.startDate <= now && 
+      r.endDate >= now
+    ).length;
+    
+    // Pending confirmations
+    const pendingConfirmations = allReservations.filter(r => 
+      r.status === "pending"
+    ).length;
+    
+    // Current month revenue and reservations
+    const currentMonthReservations = allReservations.filter(r => 
+      r._creationTime >= currentMonthStart
+    );
+    const currentMonthRevenue = currentMonthReservations
+      .filter(r => r.status === "confirmed" || r.status === "completed")
+      .reduce((sum, r) => sum + r.totalPrice, 0);
+    
+    // Last month revenue for comparison
+    const lastMonthReservations = allReservations.filter(r => 
+      r._creationTime >= lastMonthStart && r._creationTime < currentMonthStart
+    );
+    const lastMonthRevenue = lastMonthReservations
+      .filter(r => r.status === "confirmed" || r.status === "completed")
+      .reduce((sum, r) => sum + r.totalPrice, 0);
+    
+    // Calculate percentage changes
+    const reservationGrowth = lastMonthReservations.length > 0 
+      ? ((currentMonthReservations.length - lastMonthReservations.length) / lastMonthReservations.length) * 100
+      : 0;
+    
+    const revenueGrowth = lastMonthRevenue > 0 
+      ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
+      : 0;
+
+    return {
+      totalReservations,
+      activeReservations,
+      pendingConfirmations,
+      currentMonthRevenue,
+      reservationGrowth: Math.round(reservationGrowth * 10) / 10, // Round to 1 decimal
+      revenueGrowth: Math.round(revenueGrowth * 10) / 10,
+    };
+  },
+});
+
+// Get monthly data for charts (last 6 months)
+export const getMonthlyChartData = query({
+  args: {},
+  returns: v.array(v.object({
+    month: v.string(),
+    reservations: v.number(),
+    revenue: v.number(),
+  })),
+  handler: async (ctx) => {
+    const user = await getCurrentUserOrThrow(ctx);
+
+    if (user.role !== "admin") {
+      throw new Error("User not authorized (admin only).");
+    }
+
+    const allReservations = await ctx.db.query("reservations").collect();
+    
+    // Get last 6 months including current month
+    const months = [];
+    const now = new Date();
+    
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthStart = date.getTime();
+      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999).getTime();
+      
+      const monthReservations = allReservations.filter(r => 
+        r._creationTime >= monthStart && r._creationTime <= monthEnd
+      );
+      
+      const monthRevenue = monthReservations
+        .filter(r => r.status === "confirmed" || r.status === "completed")
+        .reduce((sum, r) => sum + r.totalPrice, 0);
+      
+      months.push({
+        month: date.toLocaleDateString('en-US', { month: 'short' }),
+        reservations: monthReservations.length,
+        revenue: Math.round(monthRevenue), // Round to nearest whole number
+      });
+    }
+    
+    return months;
+  },
+});
