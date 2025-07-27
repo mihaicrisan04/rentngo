@@ -1,4 +1,4 @@
-import RentalRequestEmail from '@/components/EmailRequestReservation';
+import RentalRequestEmail from '@/components/email-request-reservation';
 import { Resend } from 'resend';
 import type * as React from 'react';
 import { NextResponse } from 'next/server';
@@ -7,7 +7,7 @@ import { ReservationEmailData } from '@/types/email';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
-    const { reservationId, startDate, endDate, pickupTime, restitutionTime, pickupLocation, restitutionLocation, paymentMethod, status, totalPrice, vehicle, customerInfo, promoCode, additionalCharges } = await request.json();
+    const { reservationId, startDate, endDate, pickupTime, restitutionTime, pickupLocation, restitutionLocation, paymentMethod, totalPrice, vehicle, customerInfo, promoCode, additionalCharges } = await request.json();
 
     // Transform the API data into the email component's expected format
     const emailData: ReservationEmailData = {

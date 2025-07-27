@@ -1,13 +1,6 @@
 import { cn } from "@/lib/utils";
 import {
-  IconAdjustmentsBolt,
-  IconCloud,
   IconCurrencyDollar,
-  IconEaseInOut,
-  IconHeart,
-  IconHelp,
-  IconRouteAltLeft,
-  IconTerminal2,
   IconCar,
   IconDeviceMobileMessage,
   IconCalendarStats,
@@ -16,54 +9,50 @@ import {
   IconShieldCheck,
   IconAward,
 } from "@tabler/icons-react";
+import { useTranslations } from 'next-intl';
 
 export function FeaturesSectionWithHoverEffects() {
+  const t = useTranslations('features');
+  
   const features = [
     {
-      title: "Wide Vehicle Selection",
-      description:
-        "From compact cars for city trips to spacious SUVs for family adventures, find the perfect ride.",
+      title: t('wideVehicleSelection.title'),
+      description: t('wideVehicleSelection.description'),
       icon: <IconCar />,
     },
     {
-      title: "Transparent Pricing",
-      description:
-        "No hidden fees, ever. Enjoy competitive rates and clear billing for your rental.",
+      title: t('transparentPricing.title'),
+      description: t('transparentPricing.description'),
       icon: <IconCurrencyDollar />,
     },
     {
-      title: "Effortless Online Booking",
-      description:
-        "Book your car in minutes through our user-friendly website or mobile app.",
+      title: t('effortlessBooking.title'),
+      description: t('effortlessBooking.description'),
       icon: <IconDeviceMobileMessage />,
     },
     {
-      title: "Flexible Rental Options",
-      description:
-        "Choose daily, weekly, or monthly rentals. We offer plans that fit your schedule.",
+      title: t('flexibleRental.title'),
+      description: t('flexibleRental.description'),
       icon: <IconCalendarStats />,
     },
     {
-      title: "Convenient Locations",
-      description:
-        "Pick up and drop off your vehicle at numerous locations, including airports and city centers.",
+      title: t('convenientLocations.title'),
+      description: t('convenientLocations.description'),
       icon: <IconMapPin />,
     },
     {
-      title: "24/7 Roadside Support",
-      description:
-        "Drive with confidence. Our dedicated support team is always ready to assist you.",
+      title: t('roadsideSupport.title'),
+      description: t('roadsideSupport.description'),
       icon: <IconHeadset />,
     },
     {
-      title: "Comprehensive Insurance",
-      description:
-        "Select from a range of insurance options for complete peace of mind on the road.",
+      title: t('comprehensiveInsurance.title'),
+      description: t('comprehensiveInsurance.description'),
       icon: <IconShieldCheck />,
     },
     {
-      title: "Exclusive Member Perks",
-      description: "Join our loyalty program to unlock special discounts, upgrades, and more.",
+      title: t('memberPerks.title'),
+      description: t('memberPerks.description'),
       icon: <IconAward />,
     },
   ];

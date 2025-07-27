@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { VehiclesTable } from "@/components/admin/VehiclesTable";
-import { CreateVehicleDialog } from "@/components/admin/CreateVehicleDialog";
+import { VehiclesTable } from "@/components/admin/vehicles-table";
+import { CreateVehicleDialog } from "@/components/admin/create-vehicle-dialog";
+import { FeaturedCarsManagement } from "@/components/admin/featured-cars-management";
 
 export default function VehiclesPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -26,6 +27,8 @@ export default function VehiclesPage() {
           Add Vehicle
         </Button>
       </div>
+
+      <FeaturedCarsManagement />
       
       <VehiclesTable />
       

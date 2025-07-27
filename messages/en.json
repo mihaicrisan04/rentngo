@@ -1,0 +1,702 @@
+{
+  "homepage": {
+    "title": "Find Your Perfect Ride",
+    "subtitle": "Explore Cluj-Napoca with our wide range of rental cars. Easy booking, great prices.",
+    "viewAllCars": "View All Cars",
+    "ourStory": {
+      "title": "Our Story",
+      "subtitle": "Your trusted partner for exploring Cluj-Napoca and beyond",
+      "description1": "At Rent'n Go, we believe that every journey should be memorable. Founded with a passion for travel and a commitment to excellence, we've been serving the Cluj-Napoca community with reliable, affordable car rental solutions.",
+      "description2": "Whether you're exploring the historic streets of Cluj-Napoca, venturing into the beautiful Transylvanian countryside, or need a reliable vehicle for business, we're here to make your journey smooth and enjoyable.",
+      "description3": "Our carefully curated fleet of modern vehicles, combined with transparent pricing and exceptional customer service, ensures that your rental experience exceeds expectations every time."
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "description": "Find answers to common questions about renting a car with us.",
+      "cta": {
+        "title": "Ready to Hit the Road?",
+        "description": "Browse our extensive fleet of vehicles and find the perfect car for your next adventure in Cluj-Napoca.",
+        "buttonText": "Browse Our Cars"
+      }
+    }
+  },
+  "aboutPage": {
+    "title": "About Rent'n Go",
+    "heroTitle": "Your Journey, Our Passion",
+    "heroDescription": "Since 2024, we've been dedicated to providing exceptional car rental experiences in Cluj-Napoca, combining quality vehicles with outstanding customer service.",
+    "stats": {
+      "vehicles": "Vehicles",
+      "customers": "Happy Customers",
+      "experience": "Years Experience",
+      "rating": "Average Rating"
+    },
+    "values": {
+      "title": "Our Values",
+      "subtitle": "The principles that guide everything we do",
+      "safetyFirst": {
+        "title": "Safety First",
+        "description": "All our vehicles undergo rigorous safety inspections and maintenance to ensure your peace of mind on every journey."
+      },
+      "customerCare": {
+        "title": "Customer Care", 
+        "description": "We believe in building lasting relationships with our customers through exceptional service and personalized attention."
+      },
+      "reliability": {
+        "title": "Reliability",
+        "description": "Count on us for punctual service, well-maintained vehicles, and transparent pricing with no hidden fees."
+      },
+      "localExpertise": {
+        "title": "Local Expertise",
+        "description": "As Cluj-Napoca locals, we know the best routes and can provide insider tips for your travels."
+      }
+    },
+    "mission": {
+      "title": "Our Mission",
+      "description": "To provide exceptional car rental experiences that empower our customers to explore with confidence, comfort, and peace of mind. We strive to be more than just a car rental service – we're your trusted travel partner.",
+      "buttonText": "Get in Touch"
+    },
+    "ourStory": {
+      "title": "Our Story",
+      "subtitle": "Your trusted partner for exploring Cluj-Napoca and beyond",
+      "description1": "At Rent'n Go, we believe that every journey should be memorable. Founded with a passion for travel and a commitment to excellence, we've been serving the Cluj-Napoca community with reliable, affordable car rental solutions.",
+      "description2": "Whether you're exploring the historic streets of Cluj-Napoca, venturing into the beautiful Transylvanian countryside, or need a reliable vehicle for business, we're here to make your journey smooth and enjoyable.",
+      "description3": "Our carefully curated fleet of modern vehicles, combined with transparent pricing and exceptional customer service, ensures that your rental experience exceeds expectations every time."
+    },
+    "whyChoose": {
+      "title": "Why Choose Rent'n Go?",
+      "subtitle": "Experience the difference that sets us apart",
+      "transparentPricing": {
+        "title": "Transparent Pricing",
+        "description": "No hidden fees, no surprises. What you see is what you pay, with competitive rates and flexible packages."
+      },
+      "qualityFleet": {
+        "title": "Quality Fleet",
+        "description": "Modern, well-maintained vehicles from trusted brands, regularly serviced and thoroughly cleaned for your comfort."
+      },
+      "support247": {
+        "title": "24/7 Support",
+        "description": "Round-the-clock assistance whenever you need it, ensuring your journey is smooth from start to finish."
+      }
+    }
+  },
+  "contactPage": {
+    "title": "Get in Touch",
+    "subtitle": "Ready to hit the road? We're here to make your rental experience smooth and memorable.",
+    "meetTheMan": "Meet the Man",
+    "visionaryTitle": "The Visionary Behind the Wheels",
+    "visionarySubtitle": "Driven by passion",
+    "founder": {
+      "name": "Tudor",
+      "title": "Founder & CEO",
+      "description": "With over a decade of experience in the automotive industry, Tudor founded Rent'n Go with a simple mission: to provide premium vehicles and exceptional service that exceeds expectations. His attention to detail and commitment to customer satisfaction drives every aspect of our business.",
+      "badges": {
+        "expert": "Automotive Expert",
+        "customerFirst": "Customer-First"
+      }
+    },
+    "letsConnect": {
+      "title": "Let's Connect",
+      "subtitle": "Multiple ways to reach us - choose what works best for you"
+    },
+    "contactMethods": {
+      "phone": {
+        "title": "Phone",
+        "description": "Call us directly",
+        "buttonText": "+40 773 932 961"
+      },
+      "whatsapp": {
+        "title": "WhatsApp",
+        "description": "Quick & easy messaging",
+        "buttonText": "Message Us"
+      },
+      "email": {
+        "title": "Email",
+        "description": "Detailed inquiries",
+        "buttonText": "office@rngo.com"
+      }
+    },
+    "followUs": "Follow Us",
+    "ourLocation": "Our Location",
+    "locationDescription": "Located in the most convenient location for you",
+    "openInMaps": "Open in Google Maps",
+    "businessHours": {
+      "title": "Business Hours",
+      "mondayToSaturday": "Monday - Saturday",
+      "sunday": "Sunday",
+      "mondayToSaturdayTime": "24/7",
+      "sundayTime": "10:00 AM - 4:00 PM"
+    }
+  },
+  "reservationPage": {
+    "backToVehicleDetails": "Back to Vehicle Details",
+    "formProgress": "Form Progress",
+    "reservation": {
+      "invalid": {
+        "title": "Invalid Reservation",
+        "description": "No vehicle selected for reservation.",
+        "browseCars": "Browse Cars"
+      },
+      "vehicleNotFound": {
+        "title": "Vehicle Not Found",
+        "description": "The selected vehicle is no longer available.",
+        "browseCars": "Browse Cars"
+      },
+      "loadingDetails": "Loading reservation details...",
+      "success": "Reservation request sent successfully!",
+      "successDescription": "We will review your request and send you a confirmation email shortly.",
+      "viewReservation": "View Request",
+      "error": "Failed to create reservation. Please try again or contact support."
+    },
+    "rentalDetails": {
+      "title": "Rental Details",
+      "pickupDetails": "Pick-up Details",
+      "returnDetails": "Return Details",
+      "pickupLocation": "Pick-up Location",
+      "pickupDateTime": "Pick-up Date & Time",
+      "returnLocation": "Return Location",
+      "returnDateTime": "Return Date & Time",
+      "selectPickupLocation": "Select pick-up location",
+      "selectReturnLocation": "Select return location",
+      "returnTimeAfterPickup": "Return time must be after pick-up time when returning on the same day"
+    },
+    "vehicleDetails": {
+      "title": "Vehicle Details",
+      "noImage": "No Image",
+      "rateFor": "Rate for",
+      "rental": "rental"
+    },
+    "additionalFeatures": {
+      "title": "Additional Features",
+      "snowChains": "Snow Chains",
+      "pricePerDay": "3 EUR per day",
+      "childSeat1to4": "Child Seat (1-4 years)",
+      "childSeat5to12": "Child Seat (5-12 years)",
+      "pricePerSeat": "3 EUR per seat per day (max 2 seats)",
+      "extraKilometers": "Kilometers Package",
+      "extraKilometersPackages": "Extra Kilometers Packages",
+      "extraKmDescription": "1 package (50 km) = 5 EUR",
+      "extraKmLimit": "Maximum 5,000 km extra",
+      "baseKilometersIncluded": "Included kilometers: {km} km ({days} days × 200 km/day)"
+    },
+    "personalInfo": {
+      "title": "Personal Information",
+      "signInPrompt": "Sign in to auto-fill your information and make booking easier!",
+      "signInButton": "Sign In / Sign Up",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "Enter your full name",
+      "emailAddress": "Email Address",
+      "emailPlaceholder": "Enter your email address",
+      "phoneNumber": "Phone Number",
+      "phonePlaceholder": "Enter your phone number",
+      "flightNumber": "Flight Number (Optional)",
+      "flightPlaceholder": "e.g., AA 1234, LH 456, BA 2847",
+      "flightFormat": "Format: Two letter airline code + flight number (e.g., \"AA 1234, LH 456, BA 2847\")",
+      "additionalMessage": "Additional Message (Optional)",
+      "messagePlaceholder": "Any special requests or additional information..."
+    },
+    "paymentMethod": {
+      "title": "Payment Method",
+      "termsAcceptance": "I accept the Terms and Conditions and Privacy Policy"
+    },
+    "protectionOptions": {
+      "title": "Protection Options",
+      "scdwInsurance": "SCDW Insurance (non-refundable)",
+      "standardWarranty": "Standard Deposit",
+      "warrantyDefault": "Deposit (Default)",
+      "refundableDeposit": "Refundable deposit based on vehicle warranty",
+      "returnedEndRental": "Returned at end of rental if no damages",
+      "superCollisionDamageWaiver": "• Super Collision Damage Waiver",
+      "nonRefundableButProvidesAdditionalProtection": "• Non-refundable but provides additional protection",
+      "noDepositRequired": "• No deposit required",
+      "included": "included",
+      "separate": "separate",
+      "scdw": "SCDW",
+      "nonRefundableInsurance": "Non-refundable insurance",
+      "refundableIfNoDamages": "Refundable if no damages"
+    },
+    "reservationSummary": {
+      "title": "Reservation Summary",
+      "vehicle": "Vehicle",
+      "pickup": "Pick-up",
+      "pickupDate": "Pick-up Date",
+      "return": "Return",
+      "returnDate": "Return Date",
+      "duration": "Duration",
+      "flight": "Flight",
+      "notSelected": "Not selected",
+      "notCalculated": "Not calculated",
+      "daysCount": "{days} day{plural}",
+      "basePrice": "Base price ({days} day{plural})",
+      "pickupLocationFee": "Pick-up location fee",
+      "returnLocationFee": "Return location fee",
+      "totalLocationFees": "Total relocation fees",
+      "totalKilometers": "Total kilometers included",
+      "totalAdditionalFeatures": "Total additional features",
+      "totalPrice": "Total Price",
+      "warranty": "warranty",
+      "warrantyRefundable": "Warranty is refundable if no damages",
+      "sendReservationRequest": "Send Reservation Request",
+      "processing": "Processing..."
+    },
+    "payment": {
+      "methods": {
+        "cashOnDelivery": {
+          "label": "Cash on delivery",
+          "description": "Pay when you pick up the vehicle"
+        },
+        "cardOnDelivery": {
+          "label": "Card payment on delivery",
+          "description": "Pay with card when you pick up the vehicle"
+        },
+        "cardOnline": {
+          "label": "Card payment online (coming soon)",
+          "description": "Pay now with your card"
+        }
+      },
+      "additionalCharges": {
+        "pickupLocationFee": "Pick-up location fee ({location})",
+        "returnLocationFee": "Return location fee ({location})",
+        "snowChains": "Snow chains - {days} day × 3 EUR = {price} EUR",
+        "childSeat1to4": "{count}x Child seat 1-4 years - {count} × {days} day × 3 EUR = {price} EUR",
+        "childSeat5to12": "{count}x Child seat 5-12 years - {count} × {days} day × 3 EUR = {price} EUR",
+        "extraKilometers": "{count}x Extra kilometers - {kilometers} km (50 km × {count}) = {price} EUR"
+      }
+    },
+    "validation": {
+      "nameRequired": "Name is required",
+      "emailRequired": "Please enter a valid email",
+      "phoneRequired": "Phone number is required",
+      "flightNumberInvalid": "Flight number must be in format 'XX 1234' (e.g., 'AA 1234')",
+      "pickupLocationRequired": "Pick-up location is required",
+      "pickupDateRequired": "Pick-up date is required",
+      "pickupTimeRequired": "Pick-up time is required",
+      "returnLocationRequired": "Return location is required",
+      "returnDateRequired": "Return date is required",
+      "returnTimeRequired": "Return time is required",
+      "paymentMethodRequired": "Payment method is required",
+      "termsAcceptanceRequired": "You must accept the terms and conditions",
+      "fixErrorsBeforeSubmitting": "Please fix the errors in the form before submitting.",
+      "returnTimeSameDay": "Return time must be after pick-up time when returning on the same day",
+      "formErrors": "Please fix the errors in the form before submitting."
+    }
+  },
+  "confirmationPage": {
+    "noReservationFound": "No Reservation Found",
+    "noReservationDescription": "We couldn't find a reservation ID in the URL. Please check your confirmation email or contact support.",
+    "reservationNotFound": "Reservation Not Found",
+    "reservationNotFoundDescription": "The reservation could not be found or may have been cancelled. Please contact support if you believe this is an error.",
+    "loadingReservation": "Loading your reservation details...",
+    "title": "Reservation Request Sent!",
+    "subtitle": "Your reservation request has been successfully submitted. We will review your request and send you an email with the confirmation status and details within 24 hours.",
+    "reservationId": "Reservation ID",
+    "vehicleDetails": "Vehicle Details",
+    "customerInformation": "Customer Information",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "flightNumber": "Flight Number",
+    "message": "Message",
+    "rentalDetails": "Rental Details",
+    "pickup": "Pickup",
+    "return": "Return",
+    "paymentSummary": "Payment Summary",
+    "paymentMethod": "Payment Method:",
+    "additionalCharges": "Additional Charges:",
+    "totalAmount": "Total Amount:",
+    "bookAnotherCar": "Book Another Car",
+    "whatHappensNext": "What Happens Next",
+    "requestReview": "Request Review",
+    "requestReviewDescription": "We'll review your reservation request within 24 hours",
+    "emailConfirmation": "Email Confirmation",
+    "emailConfirmationDescription": "You'll receive an email with the final confirmation and payment instructions",
+    "prepareDocuments": "Prepare Documents",
+    "prepareDocumentsDescription": "Have your valid driver's license and credit card ready for pickup",
+    "needHelp": "Need Help?",
+    "customerSupport": "Customer Support",
+    "emailSupport": "Email Support",
+    "supportHours": "Support Hours",
+    "supportAvailable": "24/7 Available",
+    "questionsAboutReservation": "Questions about your reservation request?",
+    "viewTermsConditions": "View Terms & Conditions",
+    "noImage": "No Image",
+    "type": "Type:",
+    "seats": "Seats:",
+    "transmission": "Transmission:",
+    "fuel": "Fuel:",
+    "browseCars": "Browse Cars",
+    "goBack": "Go Back",
+    "paymentMethods": {
+      "cashOnDelivery": "Cash on Delivery",
+      "cardOnDelivery": "Card Payment on Delivery",
+      "cardOnline": "Card Payment Online"
+    },
+    "status": {
+      "confirmed": "Confirmed",
+      "pending": "Pending",
+      "cancelled": "Cancelled"
+    }
+  },
+  "transfersPage": {
+    "comingSoon": "Coming Soon",
+    "description": "Our transfers page is under construction. Stay tuned!"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "noResults": "No results found",
+    "loadingFeaturedCars": "Loading featured cars...",
+    "couldNotLoadFeaturedCars": "Could not load featured cars.",
+    "noFeaturedCarsAvailable": "No featured cars available at the moment.",
+    "browseCars": "Browse Cars",
+    "home": "Home",
+    "goBack": "Go Back",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "or": "or",
+    "and": "and",
+    "required": "Required",
+    "optional": "Optional",
+    "noImage": "No Image",
+    "invalidData": "Invalid data"
+  },
+  "navigation": {
+    "home": "Home",
+    "cars": "Cars",
+    "transfers": "Transfers",
+    "about": "About",
+    "contact": "Contact",
+    "login": "Login",
+    "signUp": "Sign Up",
+    "language": "Language",
+    "profile": "Profile",
+    "logout": "Logout"
+  },
+  "profile": {
+    "title": "My Profile",
+    "subtitle": "Manage your account settings and view your reservations",
+    "userDetails": "User Details",
+    "userDetailsDescription": "Your account information and settings",
+    "editProfile": "Edit Profile",
+    "editProfileDescription": "Update your personal information",
+    "firstName": "First Name",
+    "firstNamePlaceholder": "Enter your first name",
+    "lastName": "Last Name",
+    "lastNamePlaceholder": "Enter your last name",
+    "phoneNumber": "Phone Number",
+    "phoneNumberPlaceholder": "Enter your phone number",
+    "saveChanges": "Save Changes",
+    "updateSuccess": "Profile Updated",
+    "updateSuccessDescription": "Your profile has been successfully updated",
+    "updateError": "Update Failed",
+    "updateErrorDescription": "There was an error updating your profile. Please try again.",
+    "reservations": "My Reservations",
+    "reservationsDescription": "View and manage your rental history",
+    "noReservations": "No reservations found",
+    "noReservationsDescription": "You haven't made any reservations yet. Start by browsing our available cars.",
+    "pleaseSignIn": "Please sign in to view your profile",
+    "signInButton": "Sign In",
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled",
+      "completed": "Completed"
+    },
+    "table": {
+      "vehicle": "Vehicle",
+      "dates": "Rental Period",
+      "locations": "Pickup & Return",
+      "totalPrice": "Total Price",
+      "status": "Status"
+    }
+  },
+  "footer": {
+    "home": "Home",
+    "cars": "Cars",
+    "transfers": "Transfers",
+    "about": "About",
+    "contact": "Contact",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "copyright": "© 2025 Rent'n Go Cluj",
+    "allRightsReserved": "All rights reserved",
+    "builtBy": "Built by"
+  },
+  "search": {
+    "pickupLocation": "Pick-up Location",
+    "returnLocation": "Return Location",
+    "pickupDateTime": "Pick-up Date & Time",
+    "returnDateTime": "Return Date & Time",
+    "selectPickupLocation": "Select pick-up location",
+    "selectReturnLocation": "Select return location",
+    "pickDateTime": "Pick a date & time",
+    "selectTime": "Select time",
+    "searchCars": "Search Cars",
+    "searchingCars": "Searching Cars...",
+    "returnDateAfterPickup": "Return date must be after or the same as pick-up date.",
+    "selectDateFirst": "Select a date first"
+  },
+  "vehicleCard": {
+    "or": "or",
+    "perDay": "/ day",
+    "features": "Features",
+    "viewDetails": "View Details",
+    "bookNow": "Book Now",
+    "totalFor": "{days} day{plural}",
+    "fees": "fees",
+    "notAvailable": "N/A"
+  },
+  "filters": {
+    "title": "Filter Options",
+    "resetFilters": "Reset Filters",
+    "brand": "Brand",
+    "selectBrand": "Select Brand",
+    "allBrands": "All Brands",
+    "fuelType": "Fuel Type",
+    "selectFuelType": "Select Fuel Type",
+    "allFuelTypes": "All Fuel Types",
+    "transmission": "Transmission",
+    "selectTransmission": "Select Transmission",
+    "allTransmissions": "All Transmissions",
+    "type": "Type",
+    "selectType": "Select Type",
+    "allTypes": "All Types"
+  },
+  "features": {
+    "wideVehicleSelection": {
+      "title": "Wide Vehicle Selection",
+      "description": "From compact cars for city trips to spacious SUVs for family adventures, find the perfect ride."
+    },
+    "transparentPricing": {
+      "title": "Transparent Pricing",
+      "description": "No hidden fees, ever. Enjoy competitive rates and clear billing for your rental."
+    },
+    "effortlessBooking": {
+      "title": "Effortless Online Booking",
+      "description": "Book your car in minutes through our user-friendly website or mobile app."
+    },
+    "flexibleRental": {
+      "title": "Flexible Rental Options",
+      "description": "Choose daily, weekly, or monthly rentals. We offer plans that fit your schedule."
+    },
+    "convenientLocations": {
+      "title": "Convenient Locations",
+      "description": "Pick up and drop off your vehicle at numerous locations, including airports and city centers."
+    },
+    "roadsideSupport": {
+      "title": "24/7 Roadside Support",
+      "description": "Drive with confidence. Our dedicated support team is always ready to assist you."
+    },
+    "comprehensiveInsurance": {
+      "title": "Comprehensive Insurance",
+      "description": "Select from a range of insurance options for complete peace of mind on the road."
+    },
+    "memberPerks": {
+      "title": "Exclusive Member Perks",
+      "description": "Join our loyalty program to unlock special discounts, upgrades, and more."
+    }
+  },
+  "testimonials": {
+    "title": "What Our Customers Say",
+    "description": "Read what our customers have to say about us."
+  },
+  "faq": {
+    "questions": {
+      "0": {
+        "question": "What documents do I need to rent a car?",
+        "answer": "You'll need a valid driver's license (held for at least 2 years), a credit card in your name, and a valid ID or passport. International visitors may need an International Driving Permit."
+      },
+      "1": {
+        "question": "What is the minimum age to rent a car?",
+        "answer": "The minimum age is 21 years old. Drivers under 25 may be subject to a young driver surcharge and have restrictions on certain vehicle categories."
+      },
+      "2": {
+        "question": "Can I modify or cancel my reservation?",
+        "answer": "Yes, you can modify or cancel your reservation up to 24 hours before your pickup time without any fees. Changes made within 24 hours may incur additional charges."
+      },
+      "3": {
+        "question": "Is fuel included in the rental price?",
+        "answer": "No, fuel is not included. You'll receive the car with a full tank and should return it with a full tank to avoid refueling charges."
+      },
+      "4": {
+        "question": "Can I add an additional driver?",
+        "answer": "Yes, additional drivers can be added for a daily fee. They must meet the same requirements as the primary driver and be present during pickup with valid documentation."
+      },
+      "5": {
+        "question": "What happens if I return the car late?",
+        "answer": "Late returns may incur additional daily charges. If you're more than 29 minutes late, you'll be charged for an additional day. Please contact us if you need to extend your rental."
+      },
+      "6": {
+        "question": "Is insurance included in the rental price?",
+        "answer": "Basic Collision Damage Waiver (CDW) and Theft Protection (TP) with an excess amount are typically included. We also offer optional insurance packages to reduce the excess or provide more comprehensive coverage."
+      }
+    }
+  },
+  "admin": {
+    "reservationsManagement": "Reservations Management",
+    "reservationsDescription": "View and manage all reservation requests and bookings",
+    "addReservation": "Add Reservation",
+    "createReservation": "Create Reservation",
+    "editReservation": "Edit Reservation",
+    "vehicleDetails": "Vehicle Details",
+    "customerInformation": "Customer Information",
+    "rentalPeriod": "Rental Period",
+    "pricing": "Pricing",
+    "tabs": {
+      "basic": "Basic Info",
+      "customer": "Customer",
+      "rental": "Rental",
+      "pricing": "Pricing"
+    },
+    "form": {
+      "selectVehicle": "Select Vehicle",
+      "customerName": "Customer Name",
+      "customerEmail": "Customer Email",
+      "customerPhone": "Customer Phone",
+      "flightNumber": "Flight Number (Optional)",
+      "flightPlaceholder": "e.g., RO 123",
+      "customerMessage": "Customer Message (Optional)",
+      "customerMessagePlaceholder": "Any special requests or notes...",
+      "pickupDate": "Pickup Date",
+      "pickupTime": "Pickup Time",
+      "pickupLocation": "Pickup Location",
+      "returnDate": "Return Date",
+      "returnTime": "Return Time",
+      "returnLocation": "Return Location",
+      "paymentMethod": "Payment Method",
+      "totalPrice": "Total Price (EUR)",
+      "totalPricePlaceholder": "e.g., 250.00",
+      "autoCalculate": "Auto",
+      "recalculate": "Recalc",
+      "creating": "Creating...",
+      "updating": "Updating...",
+      "autoUpdates": "Updates automatically when pricing factors change"
+    },
+    "pricing": {
+      "baseRental": "Base rental ({days} day{plural})",
+      "protection": "Protection ({type})",
+      "scdw": "SCDW",
+      "standard": "Standard",
+      "total": "Total",
+      "zeroDeductible": "Zero deductible",
+      "standardWarranty": "Standard Deposit ({amount} EUR deductible)"
+    },
+    "emailDialog": {
+      "title": "Send Email to Customer",
+      "subject": "Subject",
+      "message": "Message",
+      "messagePlaceholder": "Enter your message here... (reservation details will be automatically included)",
+      "templateNote": "A professional email template with reservation details will be automatically generated.",
+      "sending": "Sending...",
+      "sendEmail": "Send Email"
+    }
+  },
+  "transfersPage": {
+    "title": "Coming Soon",
+    "subtitle": "Our transfers page is under construction. Stay tuned!"
+  },
+  "email": {
+    "companyName": "Rent'n Go",
+    "address": "Calea Turzii 23, Cluj-Napoca, Romania",
+    "automatedMessage": "This is an automated notification from Rent'n Go reservation system.",
+    "carRentalServices": "Car Rental Services",
+    "copyright": "© 2025 {companyName}. All rights reserved."
+  },
+  "carDetailPage": {
+    "loading": "Loading vehicle details...",
+    "vehicleNotFound": {
+      "title": "Vehicle Not Found",
+      "description": "The vehicle you're looking for doesn't exist or has been removed.",
+      "backToCars": "Back to Cars"
+    },
+    "breadcrumb": {
+      "home": "Home",
+      "cars": "Cars"
+    },
+    "reserveThisCar": "Reserve This Car",
+    "reserveDescription": "Click to proceed with your reservation"
+  },
+  "vehicleSpecifications": {
+    "specificationsTitle": "Specifications",
+    "featuresTitle": "Features",
+    "year": "Year",
+    "seats": "Seats",
+    "engine": "Engine",
+    "fuel": "Fuel",
+    "transmission": "Transmission",
+    "location": "Location"
+  },
+  "vehiclePricing": {
+    "title": "Pricing",
+    "day": "Day",
+    "rateFor": "Rate for {days} day{plural} rental",
+    "startingRate": "Starting from this rate",
+    "savingsTitle": "Save up to {savings} {currency}/day on longer rentals!",
+    "savingsDescription": "Rent for {minDays}+ days and pay only {lowestPrice} {currency}/day",
+    "extendSavingsTitle": "Extend your rental to save {savings} {currency}/day!",
+    "extendSavingsDescription": "Rent for {minDays}+ days and pay only {lowestPrice} {currency}/day instead of {currentPrice} {currency}/day",
+    "basePrice": "Base price ({days} day{plural} @ {currentPrice} {currency}/day)",
+    "pickupLocationFee": "Pick-up location fee ({location})",
+    "returnLocationFee": "Return location fee ({location})",
+    "totalLocationFees": "Total location fees",
+    "kilometersIncluded": "Kilometers included",
+    "totalPrice": "Total Price",
+    "forDays": "for {days} day{plural}",
+    "selectDatesMessage": "Select pickup and return dates to see total pricing"
+  },
+  "vehicleImageCarousel": {
+    "noImageAvailable": "No Image Available",
+    "loadingImage": "Loading image...",
+    "loading": "Loading..."
+  },
+  "pricingTiersTable": {
+    "title": "Pricing Tiers",
+    "subtitle": "Longer rentals get better rates!",
+    "rentalPeriod": "Rental Period",
+    "pricePerDay": "Price per Day",
+    "savings": "Savings",
+    "current": "Current",
+    "dayRangePlus": "{minDays}+ day{plural}",
+    "exactDays": "{days} day{plural}",
+    "dayRange": "{minDays}-{maxDays} day{plural}",
+    "savingsAmount": "-€{amount}/{day}",
+    "baseRate": "Base rate",
+    "yourRental": "Your rental ({days} day{plural})",
+    "saveAmount": "Save €{amount}/{day}",
+    "rateNotAvailable": "Rate not available for this duration"
+  },
+  "rentalDetails": {
+    "title": "Your Rental Details",
+    "pickupDetails": "Pick-up Details",
+    "returnDetails": "Return Details",
+    "pickupLocation": "Pick-up Location",
+    "pickupDateTime": "Pick-up Date & Time",
+    "returnLocation": "Return Location",
+    "returnDateTime": "Return Date & Time",
+    "selectPickupLocation": "Select pick-up location",
+    "selectReturnLocation": "Select return location"
+  },
+  "vehicleSearchForm": {
+    "title": "Find Your Vehicle",
+    "subtitle": "Select your rental details below.",
+    "pickupLocation": "Pick-up Location",
+    "pickupDateTime": "Pick-up Date & Time",
+    "returnLocation": "Return Location",
+    "returnDateTime": "Return Date & Time",
+    "selectPickup": "Select pick-up",
+    "selectReturn": "Select return"
+  },
+  "vehicleListDisplay": {
+    "loadingVehicles": "Loading Vehicles...",
+    "errorLoadingVehicles": "Error Loading Vehicles",
+    "noCarsFound": "No Cars Found",
+    "availableCars": "Available Cars",
+    "couldNotLoadVehicles": "Could not load vehicles. Please try searching again.",
+    "noVehiclesFoundMessage": "No vehicles found matching your criteria. Try broadening your search or check back later."
+  }
+}

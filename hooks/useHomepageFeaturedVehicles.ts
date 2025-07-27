@@ -10,17 +10,36 @@ export interface UseHomepageFeaturedVehiclesReturn {
 }
 
 export function useHomepageFeaturedVehicles(): UseHomepageFeaturedVehiclesReturn {
-  const featuredVehiclesQuery = useQuery(api.vehicles.getAll, { 
-    paginationOpts: { numItems: 3, cursor: null }
-  });
-
-  const vehiclesToDisplay = (featuredVehiclesQuery?.page || []) as Vehicle[];
-  const isLoading = featuredVehiclesQuery === undefined;
-  const error = featuredVehiclesQuery === null;
+  // Try to get featured cars from backend first
+  const featuredVehicles = useQuery(api.featuredCars.getFeaturedVehicles);
   
-  const currentTitle = isLoading 
-    ? "Loading..." 
-    : (vehiclesToDisplay.length > 0 ? "Featured Cars" : "No Featured Cars");
+  // Fallback to random vehicles if no featured cars are set
+  const fallbackVehiclesQuery = useQuery(
+    api.vehicles.getAll, 
+    featuredVehicles?.length === 0 ? { paginationOpts: { numItems: 3, cursor: null } } : "skip"
+  );
+
+  const isLoading = featuredVehicles === undefined || (featuredVehicles?.length === 0 && fallbackVehiclesQuery === undefined);
+  const error = featuredVehicles === null || (featuredVehicles?.length === 0 && fallbackVehiclesQuery === null);
+  
+  // Determine vehicles to display
+  let vehiclesToDisplay: Vehicle[] = [];
+  let currentTitle = "Loading...";
+
+  if (!isLoading && !error) {
+    if (featuredVehicles && featuredVehicles.length > 0) {
+      // Use featured cars from backend
+      vehiclesToDisplay = featuredVehicles;
+      currentTitle = "Featured Cars";
+    } else if (fallbackVehiclesQuery?.page) {
+      // Fallback to random selection
+      vehiclesToDisplay = fallbackVehiclesQuery.page as Vehicle[];
+      currentTitle = vehiclesToDisplay.length > 0 ? "Our Latest Cars" : "No Cars Available";
+    } else {
+      vehiclesToDisplay = [];
+      currentTitle = "No Cars Available";
+    }
+  }
 
   return {
     vehiclesToDisplay,

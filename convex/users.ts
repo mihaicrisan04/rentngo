@@ -7,6 +7,8 @@ const UserDocValidator = v.object({
   _id: v.id("users"),
   _creationTime: v.number(),
   name: v.string(),
+  firstName: v.optional(v.string()),
+  lastName: v.optional(v.string()),
   email: v.string(),
   clerkId: v.string(),
   phone: v.optional(v.string()),
@@ -40,9 +42,15 @@ export const ensureUser = mutation({
       throw new Error("Email not found in user identity from Clerk. Cannot ensure user.");
     }
 
-    // Determine the name: use identity.name, fallback to identity.nickname, then email.
+    // Extract name components from Clerk identity
+    const firstName = typeof identity.firstName === 'string' ? identity.firstName : undefined;
+    const lastName = typeof identity.lastName === 'string' ? identity.lastName : undefined;
+    // Determine the full name: use identity.name, fallback to firstName + lastName, then identity.nickname, then email.
     // The schema requires 'name' to be a string.
-    const name = identity.name || identity.nickname || email;
+    const name = (typeof identity.name === 'string' ? identity.name : null) || 
+                 (firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName) || 
+                 (typeof identity.nickname === 'string' ? identity.nickname : null) || 
+                 email;
 
     // Check if user already exists by Clerk ID (more reliable than email)
     const existingUser = await ctx.db
@@ -51,13 +59,19 @@ export const ensureUser = mutation({
       .unique();
 
     if (existingUser) {
-      // User exists, check if name or email needs update
+      // User exists, check if fields need update
       const updates: Partial<Doc<"users">> = {};
       if (existingUser.name !== name) {
         updates.name = name;
       }
       if (existingUser.email !== email) {
         updates.email = email;
+      }
+      if (existingUser.firstName !== firstName) {
+        updates.firstName = firstName;
+      }
+      if (existingUser.lastName !== lastName) {
+        updates.lastName = lastName;
       }
       
       if (Object.keys(updates).length > 0) {
@@ -72,6 +86,8 @@ export const ensureUser = mutation({
       const newUserId = await ctx.db.insert("users", {
         email,
         name,
+        firstName,
+        lastName,
         clerkId,
         role: "renter", // Default role
         // phone and preferences are optional and can be set via an update operation later
@@ -105,11 +121,13 @@ export const get = query({
 
 /**
  * Updates the current authenticated user's profile.
- * Allows updating name, phone, and preferences according to the schema.
+ * Allows updating name, firstName, lastName, phone, and preferences according to the schema.
  */
 export const update = mutation({
   args: {
     name: v.optional(v.string()),
+    firstName: v.optional(v.string()),
+    lastName: v.optional(v.string()),
     phone: v.optional(v.string()),
     preferences: v.optional(
       v.object({
@@ -138,6 +156,12 @@ export const update = mutation({
 
     if (args.name !== undefined) {
       patchData.name = args.name;
+    }
+    if (args.firstName !== undefined) {
+      patchData.firstName = args.firstName;
+    }
+    if (args.lastName !== undefined) {
+      patchData.lastName = args.lastName;
     }
     if (args.phone !== undefined) {
       patchData.phone = args.phone;

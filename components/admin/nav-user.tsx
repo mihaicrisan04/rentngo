@@ -1,7 +1,6 @@
 "use client"
 
 import {
-  Bell,
   ChevronsUpDown,
   LogOut,
 } from "lucide-react"

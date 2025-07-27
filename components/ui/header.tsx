@@ -2,11 +2,15 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { SignInButton, UserButton, SignedIn, SignedOut, useUser } from "@clerk/nextjs";
-import React, { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
+import { SignInButton, SignedIn, SignedOut, useClerk } from "@clerk/nextjs";
+import React from "react";
+import { Menu, User, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { LanguageSelector } from "@/components/language-selector";
+import { useTranslations } from 'next-intl';
+import { UserButton } from "@/components/user-button";
+
 import {
   Drawer,
   DrawerClose,
@@ -23,20 +27,31 @@ interface HeaderProps {
   brandName?: string;
 }
 
-// menuItems will be used for the mobile navigation
-const menuItems = [
-  { name: "Home", href: "/" },
-  { name: "Cars", href: "/cars" },
-  { name: "Transfers", href: "/transfers" },
-  { name: "About", href: "/about" },
-  { name: "Contact", href: "/contact" },
-];
-
 export function Header({ logo, brandName }: HeaderProps) {
-  const { user } = useUser();
+  const { signOut } = useClerk();
+  const router = useRouter();
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
   const pathname = usePathname();
+  const t = useTranslations('navigation');
+
+  // menuItems will be used for the mobile navigation
+  const menuItems = [
+    { name: t('home'), href: "/" },
+    { name: t('cars'), href: "/cars" },
+    { name: t('transfers'), href: "/transfers" },
+    { name: t('about'), href: "/about" },
+    { name: t('contact'), href: "/contact" },
+  ];
+
+  // Navigation items for desktop NavigationMenu
+  const navigationItems = [
+    { name: t('home'), href: "/" },
+    { name: t('cars'), href: "/cars" },
+    { name: t('transfers'), href: "/transfers" },
+    { name: t('about'), href: "/about" },
+    { name: t('contact'), href: "/contact" },
+  ];
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -49,6 +64,18 @@ export function Header({ logo, brandName }: HeaderProps) {
 
   const handleLinkClick = () => {
     setIsDrawerOpen(false);
+  };
+
+  const getNavLinkStyles = (href: string) => {
+    const isActive = pathname === href;
+    return cn(
+      "transition-colors hover:text-foreground/80 font-medium",
+      isScrolled
+        ? (isActive ? "text-primary" : "text-foreground/60")
+        : (pathname === "/" || pathname === "/about"
+            ? "text-background"
+            : (isActive ? "text-primary" : "text-foreground/60"))
+    );
   };
 
   return (
@@ -68,94 +95,27 @@ export function Header({ logo, brandName }: HeaderProps) {
             onClick={handleLinkClick}
           >
             {logo}
-            {brandName && <span className="text-lg font-semibold hidden sm:inline">{brandName}</span>}
+            {/* {brandName && <span className="text-lg font-semibold hidden sm:inline">{brandName}</span>} */}
           </Link>
         </div>
 
-        <nav className="hidden lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:flex lg:items-center lg:gap-6 lg:text-base">
-          <Link
-            href="/"
-            className={cn(
-              "transition-colors hover:text-foreground/80 font-medium",
-              isScrolled
-                ? (pathname === "/" ? "text-primary" : "text-foreground/60")
-                : (pathname === "/" || pathname === "/about"
-                    ? "text-background"
-                    : (pathname === "/" ? "text-primary" : "text-foreground/60"))
-            )}
-          >
-            Home
-          </Link>
-          <Link
-            href="/cars"
-            className={cn(
-              "transition-colors hover:text-foreground/80 font-medium",
-              isScrolled
-                ? (pathname === "/cars" ? "text-primary" : "text-foreground/60")
-                : (pathname === "/" || pathname === "/about"
-                    ? "text-background"
-                    : (pathname === "/cars" ? "text-primary" : "text-foreground/60"))
-            )}
-          >
-            Cars
-          </Link>
-          <Link
-            href="/transfers"
-            className={cn(
-              "transition-colors hover:text-foreground/80 font-medium",
-              isScrolled
-                ? (pathname === "/transfers" ? "text-primary" : "text-foreground/60")
-                : (pathname === "/" || pathname === "/about"
-                    ? "text-background"
-                    : (pathname === "/transfers" ? "text-primary" : "text-foreground/60"))
-            )}
-          >
-            Transfers
-          </Link>
-          <Link
-            href="/about"
-            className={cn(
-              "transition-colors hover:text-foreground/80 font-medium",
-              isScrolled
-                ? (pathname === "/about" ? "text-primary" : "text-foreground/60")
-                : (pathname === "/" || pathname === "/about"
-                    ? "text-background"
-                    : (pathname === "/about" ? "text-primary" : "text-foreground/60"))
-            )}
-          >
-            About
-          </Link>
-          <Link
-            href="/contact"
-            className={cn(
-              "transition-colors hover:text-foreground/80 font-medium",
-              isScrolled
-                ? (pathname === "/contact" ? "text-primary" : "text-foreground/60")
-                : (pathname === "/" || pathname === "/about"
-                    ? "text-background"
-                    : (pathname === "/contact" ? "text-primary" : "text-foreground/60"))
-            )}
-          >
-            Contact
-          </Link>
+        <nav className="hidden lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:flex lg:items-center lg:gap-6">
+          {navigationItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={getNavLinkStyles(item.href)}
+            >
+              {item.name}
+            </Link>
+          ))}
         </nav>
 
         <div className="flex items-center space-x-2">
           <div className="hidden lg:flex items-center space-x-4">
+            <LanguageSelector />
             <SignedIn>
-              <UserButton afterSignOutUrl="/" />
-              {user && (
-                <span className={cn(
-                  "ml-2 text-sm transition-colors",
-                  isScrolled
-                    ? "text-muted-foreground"
-                    : (pathname === "/" || pathname === "/about"
-                        ? "text-background/80"
-                        : "text-muted-foreground")
-                )}>
-                  {user.fullName}
-                </span>
-              )}
+              <UserButton />
             </SignedIn>
             <SignedOut>
               <SignInButton mode="modal">
@@ -169,11 +129,11 @@ export function Header({ logo, brandName }: HeaderProps) {
                       : (pathname === "/" ? "text-foreground" : "text-primary")
                   )}
                 >
-                  Login
+                  {t('login')}
                 </Button>
               </SignInButton>
               <SignInButton mode="modal">
-                <Button size="sm">Sign Up</Button>
+                <Button size="sm">{t('signUp')}</Button>
               </SignInButton>
             </SignedOut>
           </div>
@@ -223,29 +183,53 @@ export function Header({ logo, brandName }: HeaderProps) {
                       </Link>
                     ))}
                   </nav>
+                  
+                  {/* Language selector in mobile drawer */}
+                  <div className="mt-4 pt-4 border-t">
+                    <div className="mb-2 text-sm font-medium text-muted-foreground">{t('language')}</div>
+                    <LanguageSelector />
+                  </div>
                 </div>
 
                 <DrawerFooter className="py-6">
                   <SignedIn>
-                    <div className="flex items-center justify-start py-2 border-t">
-                      <UserButton afterSignOutUrl="/" />
-                      {user && (
-                        <span className="ml-3 pl-2 text-sm text-muted-foreground">
-                          {user.fullName || user.primaryEmailAddress?.emailAddress || "User"}
-                        </span>
-                      )}
+                    <div className="flex flex-col gap-3 border-t pt-4">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full justify-start" 
+                        onClick={() => {
+                          router.push('/profile');
+                          handleLinkClick();
+                        }}
+                      >
+                        <User className="mr-2 h-4 w-4" />
+                        {t('profile')}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full justify-start" 
+                        onClick={() => {
+                          signOut({ redirectUrl: '/' });
+                          handleLinkClick();
+                        }}
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        {t('logout')}
+                      </Button>
                     </div>
                   </SignedIn>
                   <SignedOut>
                     <div className="flex flex-col gap-3 border-t pt-4">
                       <SignInButton mode="modal">
                         <Button variant="outline" size="sm" className="w-full" onClick={handleLinkClick}>
-                          Login
+                          {t('login')}
                         </Button>
                       </SignInButton>
                       <SignInButton mode="modal">
                         <Button size="sm" className="w-full" onClick={handleLinkClick}>
-                          Sign Up
+                          {t('signUp')}
                         </Button>
                       </SignInButton>
                     </div>

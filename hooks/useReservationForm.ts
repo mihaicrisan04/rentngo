@@ -17,6 +17,7 @@ export interface AdditionalFeatures {
   snowChainsSelected: boolean;
   childSeat1to4Count: number;
   childSeat5to12Count: number;
+  extraKilometersCount: number;
 }
 
 export interface FormErrors {
@@ -107,6 +108,7 @@ export function useReservationForm(): UseReservationFormReturn {
     snowChainsSelected: false,
     childSeat1to4Count: 0,
     childSeat5to12Count: 0,
+    extraKilometersCount: 0,
   });
   
   // Form state
