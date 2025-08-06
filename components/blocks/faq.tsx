@@ -149,20 +149,33 @@ const FaqItem = React.forwardRef<
           : "hover:bg-muted/50"
       )}
     >
-      <Button
-        variant="ghost"
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-6 py-4 h-auto justify-between hover:bg-transparent"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsOpen(!isOpen);
+          }
+        }}
+        className={cn(
+          "w-full px-6 py-4 h-auto text-left cursor-pointer",
+          "hover:bg-transparent transition-colors",
+          "flex items-start justify-between gap-4",
+          "focus:outline-none"
+        )}
       >
-        <h3
+        <div
           className={cn(
             "text-base font-medium transition-colors duration-200 text-left",
-            "text-foreground/70",
+            "text-foreground/70 flex-1 min-w-0",
+            "break-words hyphens-auto",
             isOpen && "text-foreground"
           )}
         >
           {question}
-        </h3>
+        </div>
         <motion.div
           animate={{
             rotate: isOpen ? 180 : 0,
@@ -177,7 +190,7 @@ const FaqItem = React.forwardRef<
         >
           <ChevronDown className="h-4 w-4" />
         </motion.div>
-      </Button>
+      </div>
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
@@ -198,7 +211,7 @@ const FaqItem = React.forwardRef<
                 initial={{ y: -10, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: -10, opacity: 0 }}
-                className="text-sm text-muted-foreground leading-relaxed"
+                className="text-sm text-muted-foreground leading-relaxed break-words hyphens-auto"
               >
                 {answer}
               </motion.p>

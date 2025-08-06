@@ -87,7 +87,7 @@ const previewProps: EmailPreviewProps = {
     restitutionLocation: "Cluj-Napoca Airport",
   },
   pricingDetails: {
-    pricePerDay: 85,
+          pricePerDay: 85, // Demo value for email template
     totalPrice: 450,
     paymentMethod: "card_on_delivery",
     promoCode: "WELCOME10",

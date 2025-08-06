@@ -13,7 +13,7 @@ interface AdditionalFeaturesCardProps {
   additionalFeatures: AdditionalFeatures;
   setAdditionalFeatures: React.Dispatch<React.SetStateAction<AdditionalFeatures>>;
   days: number | null;
-  pricePerDay?: number;
+  vehicle?: any; // Pass the vehicle object instead of just pricePerDay
 }
 
 // SCDW calculation function (duplicated from pricing hook for display purposes)
@@ -30,7 +30,7 @@ export function AdditionalFeaturesCard({
   additionalFeatures,
   setAdditionalFeatures,
   days,
-  pricePerDay
+  vehicle
 }: AdditionalFeaturesCardProps) {
   const {
     scdwSelected,
@@ -81,11 +81,11 @@ export function AdditionalFeaturesCard({
                           <p>  - First block: +6 EUR</p>
                           <p>  - Each subsequent block: +5 EUR</p>
                         </div>
-                        {days && pricePerDay && (
+                        {days && vehicle && (
                           <div className="text-xs border-t pt-2 mt-2">
                             <p><strong>Your calculation:</strong></p>
-                            <p>Days: {days} | Daily rate: {pricePerDay} EUR</p>
-                            <p>SCDW cost: {calculateSCDW(days, pricePerDay)} EUR</p>
+                            <p>Days: {days} | Daily rate: {getBasePricePerDay(vehicle)} EUR</p>
+                            <p>SCDW cost: {calculateSCDW(days, getBasePricePerDay(vehicle))} EUR</p>
                           </div>
                         )}
                       </div>
@@ -95,7 +95,7 @@ export function AdditionalFeaturesCard({
                 <div className="flex justify-between text-sm mt-1">
                   <span className="text-muted-foreground">Non-refundable insurance</span>
                   <span className="font-medium">
-                    {days && pricePerDay ? `${calculateSCDW(days, pricePerDay)} EUR` : '0 EUR'}
+                    {days && vehicle ? `${calculateSCDW(days, getBasePricePerDay(vehicle))} EUR` : '0 EUR'}
                   </span>
                 </div>
               </div>

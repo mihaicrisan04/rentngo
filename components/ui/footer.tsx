@@ -98,7 +98,7 @@ export function Footer({ logo, brandName }: FooterProps) {
             <div className="flex items-center gap-1 mt-2">
               <span>{t('builtBy')}</span>
               <Link 
-                href="https://mihaicrisan-com.vercel.app/" 
+                href="https://mihaicrisan.com/" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-primary hover:underline underline-offset-4 transition-colors"

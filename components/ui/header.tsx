@@ -8,7 +8,7 @@ import { Menu, User, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "next/navigation";
 import { LanguageSelector } from "@/components/language-selector";
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { UserButton } from "@/components/user-button";
 
 import {
@@ -30,6 +30,7 @@ interface HeaderProps {
 export function Header({ logo, brandName }: HeaderProps) {
   const { signOut } = useClerk();
   const router = useRouter();
+  const locale = useLocale();
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
   const pathname = usePathname();
@@ -37,20 +38,20 @@ export function Header({ logo, brandName }: HeaderProps) {
 
   // menuItems will be used for the mobile navigation
   const menuItems = [
-    { name: t('home'), href: "/" },
-    { name: t('cars'), href: "/cars" },
-    { name: t('transfers'), href: "/transfers" },
-    { name: t('about'), href: "/about" },
-    { name: t('contact'), href: "/contact" },
+    { name: t('home'), href: `/${locale}` },
+    { name: t('cars'), href: `/${locale}/cars` },
+    { name: t('transfers'), href: `/${locale}/transfers` },
+    { name: t('about'), href: `/${locale}/about` },
+    { name: t('contact'), href: `/${locale}/contact` },
   ];
 
   // Navigation items for desktop NavigationMenu
   const navigationItems = [
-    { name: t('home'), href: "/" },
-    { name: t('cars'), href: "/cars" },
-    { name: t('transfers'), href: "/transfers" },
-    { name: t('about'), href: "/about" },
-    { name: t('contact'), href: "/contact" },
+    { name: t('home'), href: `/${locale}` },
+    { name: t('cars'), href: `/${locale}/cars` },
+    { name: t('transfers'), href: `/${locale}/transfers` },
+    { name: t('about'), href: `/${locale}/about` },
+    { name: t('contact'), href: `/${locale}/contact` },
   ];
 
   React.useEffect(() => {

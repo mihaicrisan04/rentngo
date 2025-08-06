@@ -74,6 +74,46 @@ export interface VehicleImageProps {
   priority?: boolean;
 }
 
+/**
+ * Get the base price tier (lowest minDays + highest pricePerDay)
+ * This represents the "standard" or "base" price for the vehicle
+ */
+export function getBasePriceTier(vehicle: Vehicle): PricingTier | null {
+  if (!vehicle.pricingTiers || vehicle.pricingTiers.length === 0) {
+    return null;
+  }
+  
+  // Sort by minDays (ascending), then by pricePerDay (descending)
+  // This gives us the tier with lowest day requirement and highest price
+  const sortedTiers = [...vehicle.pricingTiers].sort((a, b) => {
+    if (a.minDays !== b.minDays) {
+      return a.minDays - b.minDays; // Lower minDays first
+    }
+    return b.pricePerDay - a.pricePerDay; // Higher pricePerDay first
+  });
+  
+  return sortedTiers[0];
+}
+
+/**
+ * Get the base price per day for a vehicle
+ * Uses the pricing tier with lowest minDays and highest pricePerDay
+ */
+export function getBasePricePerDay(vehicle: Vehicle): number {
+  const baseTier = getBasePriceTier(vehicle);
+  if (baseTier) {
+    return baseTier.pricePerDay;
+  }
+  
+  // Legacy fallback - this should eventually be removed
+  if (vehicle.pricePerDay) {
+    return vehicle.pricePerDay;
+  }
+  
+  // Should not happen if vehicle has been properly migrated
+  throw new Error(`Vehicle ${vehicle._id} has no pricing tiers and no legacy pricePerDay`);
+}
+
 // Helper function to get price for a specific rental duration
 export function getPriceForDuration(vehicle: Vehicle, days: number): number {
   // If vehicle has pricing tiers, use them
@@ -94,8 +134,8 @@ export function getPriceForDuration(vehicle: Vehicle, days: number): number {
     return fallbackTier.pricePerDay;
   }
   
-  // Fallback to legacy pricePerDay
-  return vehicle.pricePerDay;
+  // Legacy fallback - use the base price per day
+  return getBasePricePerDay(vehicle);
 }
 
 // Helper function to get total price for a rental duration
@@ -113,9 +153,10 @@ export function getPriceRange(vehicle: Vehicle): { min: number; max: number } {
     };
   }
   
-  // Fallback to legacy pricePerDay
+  // Legacy fallback - use base price per day
+  const basePrice = getBasePricePerDay(vehicle);
   return {
-    min: vehicle.pricePerDay,
-    max: vehicle.pricePerDay
+    min: basePrice,
+    max: basePrice
   };
 } 

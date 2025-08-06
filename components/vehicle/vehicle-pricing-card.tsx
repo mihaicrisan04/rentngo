@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSeasonalPricing } from "@/hooks/useSeasonalPricing";
 import { PriceDetails, getPriceForDurationWithSeason, calculateIncludedKilometers } from "@/lib/vehicleUtils";
+import { getBasePricePerDay } from "@/types/vehicle";
 import { Vehicle } from "@/types/vehicle";
 import { useTranslations, useLocale } from 'next-intl';
 
@@ -28,9 +29,7 @@ export function VehiclePricingCard({
 
   // Get the appropriate price per day based on rental duration
   const currentPricePerDay = days ? getPriceForDurationWithSeason(vehicle, days, currentMultiplier) : 
-    (vehicle.pricingTiers && vehicle.pricingTiers.length > 0 ? 
-      Math.max(...vehicle.pricingTiers.map(tier => tier.pricePerDay)) : 
-      vehicle.pricePerDay);
+    Math.round(getBasePricePerDay(vehicle) * currentMultiplier);
 
   // Calculate potential savings for longer rentals
   const getPricingTip = () => {

@@ -76,13 +76,7 @@ const vehicleSchema = z.object({
       return capacity > 0 && capacity <= 10;
     }, "Engine capacity must be between 0.1 and 10.0"),
   engineType: z.string().min(1, "Engine type is required").max(20, "Engine type must be less than 20 characters"),
-  pricePerDay: z.string()
-    .min(1, "Price per day is required")
-    .regex(/^\d+(\.\d{1,2})?$/, "Price must be a valid number with up to 2 decimal places")
-    .refine((val) => {
-      const price = parseFloat(val);
-      return price > 0;
-    }, "Price must be greater than 0"),
+  // pricePerDay removed - using pricingTiers only
   location: z.string().min(1, "Location is required").max(100, "Location must be less than 100 characters"),
   features: z.array(z.string()),
   status: z.enum(["available", "rented", "maintenance"]),
@@ -122,7 +116,7 @@ export function CreateVehicleForm({
       fuelType: "petrol",
       engineCapacity: "",
       engineType: "",
-      pricePerDay: "",
+      // pricePerDay removed - using pricingTiers only
       location: "",
       features: [],
       status: "available",
@@ -166,13 +160,13 @@ export function CreateVehicleForm({
         fuelType: values.fuelType as FuelType,
         engineCapacity: parseFloat(values.engineCapacity),
         engineType: values.engineType,
-        pricePerDay: parseFloat(values.pricePerDay),
+        // pricePerDay removed - using pricingTiers only
         location: values.location,
         features: values.features,
         status: values.status as StatusType,
       };
 
-      const vehicleId = await createVehicle(vehicleDataToSubmit);
+      const vehicleId = await createVehicle(vehicleDataToSubmit as any);
 
       if (selectedFiles && selectedFiles.length > 0) {
         const imageBuffers = await Promise.all(
@@ -412,24 +406,6 @@ export function CreateVehicleForm({
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="pricePerDay"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Price per Day (EUR)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          onKeyDown={handleNumberInput}
-                          disabled={isSubmitting}
-                          placeholder="e.g., 150.00"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
                 
                 <FormField
                   control={form.control}

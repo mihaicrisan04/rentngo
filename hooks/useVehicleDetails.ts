@@ -13,12 +13,12 @@ interface RentalState extends SearchData {
 export function useVehicleDetails(vehicleId: string) {
   const vehicle = useQuery(api.vehicles.getById, { id: vehicleId as Id<"vehicles"> });
   const { multiplier: currentMultiplier, currentSeason } = useSeasonalPricing();
-  // Rental state management
+  // Rental state management with default locations
   const [rentalState, setRentalState] = useState<RentalState>({
-    deliveryLocation: "",
+    deliveryLocation: searchStorage.getDefaultLocation(),
     pickupDate: undefined,
     pickupTime: null,
-    restitutionLocation: "",
+    restitutionLocation: searchStorage.getDefaultLocation(),
     returnDate: undefined,
     returnTime: null,
     isHydrated: false,
@@ -36,7 +36,7 @@ export function useVehicleDetails(vehicleId: string) {
 
   // Calculate pricing details using the enhanced vehicleUtils function
   const priceDetails = calculateVehiclePricingWithSeason(
-    vehicle || { pricePerDay: 0 } as any, // fallback if vehicle is loading
+    vehicle || { pricingTiers: [{ minDays: 1, maxDays: 999, pricePerDay: 0 }] } as any, // fallback if vehicle is loading
     currentMultiplier,
     rentalState.pickupDate,
     rentalState.returnDate,

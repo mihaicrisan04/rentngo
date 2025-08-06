@@ -74,7 +74,7 @@ const vehicleSchema = z.object({
   transmission: z.enum(["automatic", "manual"], {
     required_error: "Transmission type is required",
   }),
-  fuelType: z.enum(["petrol", "diesel", "electric", "hybrid", "benzina"], {
+  fuelType: z.enum(["diesel", "electric", "hybrid", "benzina"], {
     required_error: "Fuel type is required",
   }),
   engineCapacity: z.string()
@@ -85,13 +85,7 @@ const vehicleSchema = z.object({
       return capacity > 0 && capacity <= 10;
     }, "Engine capacity must be between 0.1 and 10.0"),
   engineType: z.string().min(1, "Engine type is required").max(20, "Engine type must be less than 20 characters"),
-  pricePerDay: z.string()
-    .min(1, "Price per day is required")
-    .regex(/^\d+(\.\d{1,2})?$/, "Price must be a valid number with up to 2 decimal places")
-    .refine((val) => {
-      const price = parseFloat(val);
-      return price > 0;
-    }, "Price must be greater than 0"),
+  // Remove pricePerDay validation as it's no longer needed
   warranty: z.string()
     .regex(/^\d+(\.\d{1,2})?$/, "Warranty must be a valid number")
     .optional()
@@ -102,7 +96,7 @@ const vehicleSchema = z.object({
     minDays: z.number().min(1),
     maxDays: z.number().min(1),
     pricePerDay: z.number().min(0),
-  })),
+  })).min(1, "At least one pricing tier is required"),
 });
 
 type VehicleFormData = z.infer<typeof vehicleSchema>;
@@ -129,7 +123,7 @@ export function CreateVehicleDialog({
   const setMainImage = useMutation(api.vehicles.setMainImage);
   
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([]);
+  const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([{ minDays: 1, maxDays: 999, pricePerDay: 50 }]);
   const [selectedImageFiles, setSelectedImageFiles] = useState<Array<{file: File; previewUrl: string; error?: string}>>([]);
 
   const form = useForm<VehicleFormData>({
@@ -142,14 +136,14 @@ export function CreateVehicleDialog({
       class: "economy",
       seats: "5",
       transmission: "automatic",
-      fuelType: "petrol",
+      fuelType: "diesel",
       engineCapacity: "",
       engineType: "",
-      pricePerDay: "",
+      // pricePerDay removed - using pricingTiers only
       warranty: "",
       features: [],
       status: "available",
-      pricingTiers: [],
+      pricingTiers: [{ minDays: 1, maxDays: 999, pricePerDay: 50 }], // Default tier
     },
   });
 
@@ -163,16 +157,16 @@ export function CreateVehicleDialog({
         class: "economy",
         seats: "5",
         transmission: "automatic",
-        fuelType: "petrol",
+        fuelType: "diesel",
         engineCapacity: "",
         engineType: "",
-        pricePerDay: "",
+        // pricePerDay removed - using pricingTiers only
         warranty: "",
         features: [],
         status: "available",
-        pricingTiers: [],
+        pricingTiers: [{ minDays: 1, maxDays: 999, pricePerDay: 50 }], // Default tier
       });
-      setPricingTiers([]);
+      setPricingTiers([{ minDays: 1, maxDays: 999, pricePerDay: 50 }]); // Default tier
       setSelectedImageFiles([]);
     }
   }, [open, form]);
@@ -194,7 +188,7 @@ export function CreateVehicleDialog({
         fuelType: values.fuelType as FuelType,
         engineCapacity: parseFloat(values.engineCapacity),
         engineType: values.engineType,
-        pricePerDay: parseFloat(values.pricePerDay),
+        // pricePerDay removed - using pricingTiers only
         warranty: values.warranty ? parseFloat(values.warranty) : 0,
         features: values.features,
         status: values.status as VehicleStatus,
@@ -504,7 +498,6 @@ export function CreateVehicleDialog({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="petrol">Petrol</SelectItem>
                               <SelectItem value="diesel">Diesel</SelectItem>
                               <SelectItem value="electric">Electric</SelectItem>
                               <SelectItem value="hybrid">Hybrid</SelectItem>
@@ -603,25 +596,6 @@ export function CreateVehicleDialog({
                     "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4"
                   )}
                 >
-                  <FormField
-                    control={form.control}
-                    name="pricePerDay"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Base Price per Day (EUR)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            onKeyDown={handleNumberInput}
-                            disabled={isSubmitting}
-                            placeholder="e.g., 150.00"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <FormLabel>Pricing Tiers</FormLabel>

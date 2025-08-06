@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -11,8 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { XIcon } from "lucide-react";
 import { Vehicle } from "@/types/vehicle";
 import { useTranslations } from 'next-intl';
 
@@ -72,7 +70,7 @@ export function VehicleFilters({ allVehicles, onFilterChange }: VehicleFiltersPr
       filtered = filtered.filter(v => v.fuelType === fuelTypeFilter);
     }
     if (transmissionFilter !== "all") {
-      filtered = filtered.filter(v => v.transmission === transmissionFilter); // Assumes engineType is transmission
+      filtered = filtered.filter(v => v.transmission === transmissionFilter);
     }
     if (typeFilter !== "all") {
       filtered = filtered.filter(v => v.type === typeFilter);
@@ -81,97 +79,77 @@ export function VehicleFilters({ allVehicles, onFilterChange }: VehicleFiltersPr
     onFilterChange(filtered);
   }, [allVehicles, brandFilter, fuelTypeFilter, transmissionFilter, typeFilter, onFilterChange]);
 
-  const resetFilters = () => {
-    setBrandFilter("all");
-    setFuelTypeFilter("all");
-    setTransmissionFilter("all");
-    setTypeFilter("all");
-  };
-  
-  const hasActiveFilters = brandFilter !== "all" || fuelTypeFilter !== "all" || transmissionFilter !== "all" || typeFilter !== "all";
-
   if (!allVehicles || allVehicles.length === 0) {
     return null; // Don't show filters if there are no vehicles to filter
   }
 
   return (
-    <Card className="mb-8 shadow-lg bg-accent">
-      <CardHeader className="pb-4">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-xl md:text-2xl">
-            {t('title')}
-          </CardTitle>
-          {hasActiveFilters && (
-            <Button variant="secondary" size="sm" onClick={resetFilters} className="text-sm">
-              <XIcon className="mr-1 h-4 w-4" /> {t('resetFilters')}
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <div>
-          <Label htmlFor="brand-filter" className="text-sm font-medium">{t('brand')}</Label>
-          <Select value={brandFilter} onValueChange={setBrandFilter}>
-            <SelectTrigger id="brand-filter" className="mt-1">
-              <SelectValue placeholder={t('selectBrand')} />
-            </SelectTrigger>
-            <SelectContent>
-              {brands.map(brand => (
-                <SelectItem key={brand} value={brand} className="capitalize">
-                  {brand === "all" ? t('allBrands') : brand}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+    <Card className="mb-6 shadow-lg bg-accent">
+      <CardContent className="p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <Label htmlFor="brand-filter" className="text-sm font-medium">{t('brand')}</Label>
+            <Select value={brandFilter} onValueChange={setBrandFilter}>
+              <SelectTrigger id="brand-filter" className="mt-1">
+                <SelectValue placeholder={t('selectBrand')} />
+              </SelectTrigger>
+              <SelectContent>
+                {brands.map(brand => (
+                  <SelectItem key={brand} value={brand} className="capitalize">
+                    {brand === "all" ? t('allBrands') : brand}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div>
-          <Label htmlFor="fuel-type-filter" className="text-sm font-medium">{t('fuelType')}</Label>
-          <Select value={fuelTypeFilter} onValueChange={setFuelTypeFilter}>
-            <SelectTrigger id="fuel-type-filter" className="mt-1">
-              <SelectValue placeholder={t('selectFuelType')} />
-            </SelectTrigger>
-            <SelectContent>
-              {fuelTypes.map(fuel => (
-                <SelectItem key={fuel} value={fuel} className="capitalize">
-                  {fuel === "all" ? t('allFuelTypes') : fuel}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+          <div>
+            <Label htmlFor="fuel-type-filter" className="text-sm font-medium">{t('fuelType')}</Label>
+            <Select value={fuelTypeFilter} onValueChange={setFuelTypeFilter}>
+              <SelectTrigger id="fuel-type-filter" className="mt-1">
+                <SelectValue placeholder={t('selectFuelType')} />
+              </SelectTrigger>
+              <SelectContent>
+                {fuelTypes.map(fuel => (
+                  <SelectItem key={fuel} value={fuel} className="capitalize">
+                    {fuel === "all" ? t('allFuelTypes') : fuel}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div>
-          <Label htmlFor="transmission-filter" className="text-sm font-medium">{t('transmission')}</Label>
-          <Select value={transmissionFilter} onValueChange={setTransmissionFilter}>
-            <SelectTrigger id="transmission-filter" className="mt-1">
-              <SelectValue placeholder={t('selectTransmission')} />
-            </SelectTrigger>
-            <SelectContent>
-              {transmissions.map(trans => (
-                <SelectItem key={trans} value={trans} className="capitalize">
-                  {trans === "all" ? t('allTransmissions') : trans}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+          <div>
+            <Label htmlFor="transmission-filter" className="text-sm font-medium">{t('transmission')}</Label>
+            <Select value={transmissionFilter} onValueChange={setTransmissionFilter}>
+              <SelectTrigger id="transmission-filter" className="mt-1">
+                <SelectValue placeholder={t('selectTransmission')} />
+              </SelectTrigger>
+              <SelectContent>
+                {transmissions.map(trans => (
+                  <SelectItem key={trans} value={trans} className="capitalize">
+                    {trans === "all" ? t('allTransmissions') : trans}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        {/* Vehicle Type Filter */}
-        <div>
-          <Label htmlFor="type-filter" className="text-sm font-medium">{t('type')}</Label>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger id="type-filter" className="mt-1">
-              <SelectValue placeholder={t('selectType')} />
-            </SelectTrigger>
-            <SelectContent>
-              {vehicleTypes.map(type => (
-                <SelectItem key={type} value={type} className="capitalize">
-                  {type === "all" ? t('allTypes') : type}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div>
+            <Label htmlFor="type-filter" className="text-sm font-medium">{t('type')}</Label>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger id="type-filter" className="mt-1">
+                <SelectValue placeholder={t('selectType')} />
+              </SelectTrigger>
+              <SelectContent>
+                {vehicleTypes.map(type => (
+                  <SelectItem key={type} value={type} className="capitalize">
+                    {type === "all" ? t('allTypes') : type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </CardContent>
     </Card>

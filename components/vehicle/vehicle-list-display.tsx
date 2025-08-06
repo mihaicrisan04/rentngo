@@ -166,9 +166,9 @@ export function VehicleListDisplay({
 
   return (
     <div>
-      <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-6 text-center">
+      {/* <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-6 text-center">
         {displayTitle}
-      </h1>
+      </h1> */}
 
       {error && (
         <div className="text-center mb-4">

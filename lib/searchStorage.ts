@@ -8,6 +8,29 @@ export interface SearchData {
 }
 
 const SEARCH_STORAGE_KEY = "carRentalSearchData";
+const DEFAULT_LOCATION = "Aeroport Cluj-Napoca";
+
+
+
+// Utility to validate and fix dates that are in the past
+const validateAndFixDate = (date: Date | undefined): Date | undefined => {
+  if (!date) return undefined;
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  // If the date is in the past, return today's date instead
+  if (date.getTime() < today.getTime()) {
+    return today;
+  }
+  
+  return date;
+};
+
+// Utility to get default location if none provided
+const getDefaultLocationIfEmpty = (location: string | undefined): string => {
+  return location && location.trim() !== "" ? location : DEFAULT_LOCATION;
+};
 
 export const searchStorage = {
   // Save search data to localStorage
@@ -31,25 +54,59 @@ export const searchStorage = {
     }
   },
 
-  // Load search data from localStorage
+  // Load search data from localStorage with validation and defaults
   load: (): SearchData => {
-    if (typeof window === 'undefined') return {};
+    if (typeof window === 'undefined') return {
+      deliveryLocation: DEFAULT_LOCATION,
+      restitutionLocation: DEFAULT_LOCATION,
+    };
     
     try {
       const stored = localStorage.getItem(SEARCH_STORAGE_KEY);
-      if (!stored) return {};
+      let parsed: SearchData = {};
       
-      const parsed = JSON.parse(stored);
+      if (stored) {
+        parsed = JSON.parse(stored);
+      }
       
-      // Convert ISO strings back to dates
-      return {
+      // Convert ISO strings back to dates and validate them
+      const pickupDate = validateAndFixDate(parsed.pickupDate ? new Date(parsed.pickupDate) : undefined);
+      const returnDate = validateAndFixDate(parsed.returnDate ? new Date(parsed.returnDate) : undefined);
+      
+      // Apply defaults for locations
+      const deliveryLocation = getDefaultLocationIfEmpty(parsed.deliveryLocation);
+      const restitutionLocation = getDefaultLocationIfEmpty(parsed.restitutionLocation);
+      
+      const result = {
         ...parsed,
-        pickupDate: parsed.pickupDate ? new Date(parsed.pickupDate) : undefined,
-        returnDate: parsed.returnDate ? new Date(parsed.returnDate) : undefined,
+        deliveryLocation,
+        restitutionLocation,
+        pickupDate,
+        returnDate,
       };
+      
+      // If dates were corrected or locations were defaulted, save the corrected values back
+      const hasDateCorrections = (
+        (parsed.pickupDate && pickupDate && new Date(parsed.pickupDate).getTime() !== pickupDate.getTime()) ||
+        (parsed.returnDate && returnDate && new Date(parsed.returnDate).getTime() !== returnDate.getTime())
+      );
+      const hasLocationDefaults = (
+        !parsed.deliveryLocation || parsed.deliveryLocation.trim() === "" ||
+        !parsed.restitutionLocation || parsed.restitutionLocation.trim() === ""
+      );
+      
+      if (hasDateCorrections || hasLocationDefaults) {
+        // Save corrected values back to localStorage
+        setTimeout(() => searchStorage.save(result), 0);
+      }
+      
+      return result;
     } catch (error) {
       console.warn('Failed to load search data from localStorage:', error);
-      return {};
+      return {
+        deliveryLocation: DEFAULT_LOCATION,
+        restitutionLocation: DEFAULT_LOCATION,
+      };
     }
   },
 
@@ -69,4 +126,9 @@ export const searchStorage = {
     const current = searchStorage.load();
     searchStorage.save({ ...current, [field]: value });
   },
+
+  // Helper functions
+  validateDate: validateAndFixDate,
+  getDefaultLocation: () => DEFAULT_LOCATION,
+  ensureLocationDefault: getDefaultLocationIfEmpty,
 }; 

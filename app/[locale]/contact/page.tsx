@@ -12,13 +12,14 @@ import { Phone, Mail, MapPin, MessageCircle, ExternalLink } from 'lucide-react';
 import { contactAnimationVariants, sectionAnimationVariants } from '@/lib/animations';
 import { SocialIcon } from 'react-social-icons';
 import { useTranslations } from 'next-intl';
+import Head from 'next/head';
 
 const ContactPage = () => {
   const t = useTranslations('contactPage');
 
   const handleMapClick = () => {
     // Replace with your actual Google Maps coordinates
-    const mapsUrl = "https://maps.app.goo.gl/2Qe38GZo9WzhDsh46";
+    const mapsUrl = "https://maps.app.goo.gl/GqUHujmeuz49U4U27";
     window.open(mapsUrl, '_blank');
   };
 
@@ -30,6 +31,52 @@ const ContactPage = () => {
 
   return (
     <div className="relative flex flex-col min-h-screen">
+      <Head>
+        <title>Contact Rent'n Go - Masini de Inchiriat Cluj-Napoca</title>
+        <meta name="description" content="Contactează Rent'n Go pentru masini de inchiriat Cluj-Napoca. Telefon: +40 773 932 961. Email: office@rngo.com. Servicii profesionale de închiriere auto în Cluj." />
+        <meta name="keywords" content="contact rent n go, masini de inchiriat cluj-napoca, telefon închiriere auto cluj, car rentals cluj contact" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "ContactPage",
+              "mainEntity": {
+                "@type": "Organization",
+                "name": "Rent'n Go",
+                "telephone": "+40-773-932-961",
+                "email": "office@rngo.com",
+                "address": {
+                  "@type": "PostalAddress",
+                  "streetAddress": "Cluj \"Avram Iancu\" International Airport, Strada Traian Vuia 149-151",
+                  "addressLocality": "Cluj-Napoca",
+                  "postalCode": "400397",
+                  "addressCountry": "RO"
+                },
+                "openingHours": [
+                  "Mo-Sa 00:00-23:59",
+                  "Su 10:00-16:00"
+                ],
+                "contactPoint": [
+                  {
+                    "@type": "ContactPoint",
+                    "telephone": "+40-773-932-961",
+                    "contactType": "customer service",
+                    "availableLanguage": ["Romanian", "English"],
+                    "areaServed": "Cluj-Napoca"
+                  },
+                  {
+                    "@type": "ContactPoint",
+                    "email": "office@rngo.com",
+                    "contactType": "customer service",
+                    "availableLanguage": ["Romanian", "English"]
+                  }
+                ]
+              }
+            })
+          }}
+        />
+      </Head>
       <Header logo={<Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} />} />
 
       <main className="flex-grow bg-gradient-to-br from-background via-background to-muted/30">

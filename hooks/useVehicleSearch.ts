@@ -8,12 +8,12 @@ interface UseVehicleSearchReturn {
 }
 
 export function useVehicleSearch(): UseVehicleSearchReturn {
-  // Initialize with empty state to avoid hydration issues
+  // Initialize with default location to avoid hydration issues
   const [searchState, setSearchState] = useState<SearchData & { isHydrated: boolean }>({
-    deliveryLocation: "",
+    deliveryLocation: searchStorage.getDefaultLocation(),
     pickupDate: undefined,
     pickupTime: null,
-    restitutionLocation: "",
+    restitutionLocation: searchStorage.getDefaultLocation(),
     returnDate: undefined,
     returnTime: null,
     isHydrated: false,

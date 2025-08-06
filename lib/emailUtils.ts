@@ -51,7 +51,7 @@ export const transformReservationForEmail = (
       numberOfDays,
     },
     pricingDetails: {
-      pricePerDay: vehicle.pricePerDay,
+      pricePerDay: getBasePricePerDay(vehicle),
       totalPrice: reservation.totalPrice,
       paymentMethod: reservation.paymentMethod,
       promoCode: reservation.promoCode,
