@@ -19,12 +19,12 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
   );
 
   return (
-    <Section className="px-[32px] py-[24px]">
-      <Heading className="text-[24px] font-bold text-gray-800 mb-[16px]">
+    <Section className="px-[16px] py-[12px]">
+      <Heading className="text-[20px] font-bold text-gray-800 mb-[12px]">
         Pricing Details
       </Heading>
 
-      <Row className="mb-[12px]">
+      <Row className="mb-[8px]">
         <Column className="w-2/3">
           <Text className="text-[16px] text-gray-800 m-0">
             Rental ({rentalDetails.numberOfDays} {rentalDetails.numberOfDays === 1 ? 'day' : 'days'} × {formatCurrency(pricingDetails.pricePerDay)}/day):
@@ -38,7 +38,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
       </Row>
 
       {pricingDetails.promoCode && (
-        <Row className="mb-[12px]">
+        <Row className="mb-[8px]">
           <Column className="w-2/3">
             <Text className="text-[16px] text-green-600 m-0">Promo Code Applied:</Text>
           </Column>
@@ -49,7 +49,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
       )}
 
       {pricingDetails.additionalCharges && pricingDetails.additionalCharges.map((charge, index) => (
-        <Row key={index} className="mb-[12px]">
+        <Row key={index} className="mb-[8px]">
           <Column className="w-2/3">
             <Text className="text-[16px] text-gray-800 m-0">{charge.description}:</Text>
           </Column>
@@ -61,9 +61,9 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
         </Row>
       ))}
 
-      <Hr className="border-gray-300 my-[16px]" />
+      <Hr className="border-gray-300 my-[12px]" />
 
-      <Row className="mb-[16px]">
+      <Row className="mb-[12px]">
         <Column className="w-2/3">
           <Text className="text-[18px] font-bold text-gray-800 m-0">Total Amount:</Text>
         </Column>

@@ -15,21 +15,20 @@ import { RentalDetailsSection } from './email/rental-details-section';
 import { VehicleInfoSection } from './email/vehicle-info-section';
 import { PricingSection } from './email/pricing-section';
 
-interface CarRentalReservationEmailProps {
+interface UserReservationEmailProps {
   data: ReservationEmailData;
 }
 
-const CarRentalReservationEmail: React.FC<CarRentalReservationEmailProps> = ({ data }) => {
+const UserReservationEmail: React.FC<UserReservationEmailProps> = ({ data }) => {
   const { customerInfo, vehicleInfo, rentalDetails, pricingDetails, reservationId } = data;
 
   return (
     <Html lang="en" dir="ltr">
       <Tailwind>
         <Head />
-        <Preview>New car rental reservation request from {customerInfo.name}</Preview>
+        <Preview>Your reservation request was received</Preview>
         <Body className="bg-white font-sans p-0 m-0">
-          
-          <EmailHeader title="New Reservation Request" />
+          <EmailHeader title={`Request submitted #${reservationId}`} />
 
           <CustomerInfoSection 
             customerInfo={customerInfo} 
@@ -49,8 +48,7 @@ const CarRentalReservationEmail: React.FC<CarRentalReservationEmailProps> = ({ d
             rentalDetails={rentalDetails} 
           />
 
-          <EmailFooter />
-
+          <EmailFooter customMessage="We've received your request. Our team will contact you soon to confirm availability and details." />
         </Body>
       </Tailwind>
     </Html>
@@ -64,7 +62,7 @@ const previewProps: EmailPreviewProps = {
     name: "John Doe",
     email: "john.doe@example.com",
     phone: "+40 123 456 789",
-    message: "Please have the vehicle ready at the airport pickup location. I'll be arriving on an international flight.",
+    message: "Please have the vehicle ready at the airport pickup location.",
     flightNumber: "RO 123",
   },
   vehicleInfo: {
@@ -75,7 +73,7 @@ const previewProps: EmailPreviewProps = {
     seats: 5,
     transmission: "automatic",
     fuelType: "diesel",
-    features: ["GPS Navigation", "Bluetooth", "Air Conditioning", "Cruise Control"],
+    features: ["GPS Navigation", "Bluetooth", "Air Conditioning"],
   },
   rentalDetails: {
     startDate: "March 15, 2025",
@@ -87,17 +85,18 @@ const previewProps: EmailPreviewProps = {
     restitutionLocation: "Cluj-Napoca Airport",
   },
   pricingDetails: {
-          pricePerDay: 85, // Demo value for email template
+    pricePerDay: 85,
     totalPrice: 450,
     paymentMethod: "card_on_delivery",
     promoCode: "WELCOME10",
     additionalCharges: [
       { description: "Airport pickup fee", amount: 15 },
-      { description: "GPS Navigation", amount: 5 },
     ],
   },
 };
 
-(CarRentalReservationEmail as any).PreviewProps = previewProps;
+(UserReservationEmail as any).PreviewProps = previewProps;
 
-export default CarRentalReservationEmail;
+export default UserReservationEmail;
+
+

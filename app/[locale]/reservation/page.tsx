@@ -600,6 +600,7 @@ function ReservationPageContent() {
             paymentMethod: paymentMethod,
             status: "pending",
             totalPrice: totalPrice,
+            pricePerDayUsed: currentPricePerDay,
             vehicle: {
               make: vehicle.make,
               model: vehicle.model,

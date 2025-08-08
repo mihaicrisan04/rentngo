@@ -1,4 +1,5 @@
 import RentalRequestEmail from '@/components/email-request-reservation';
+import UserReservationEmail from '@/components/email-request-user';
 import { Resend } from 'resend';
 import type * as React from 'react';
 import { NextResponse } from 'next/server';
@@ -7,9 +8,19 @@ import { ReservationEmailData } from '@/types/email';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
-    const { reservationId, startDate, endDate, pickupTime, restitutionTime, pickupLocation, restitutionLocation, paymentMethod, totalPrice, vehicle, customerInfo, promoCode, additionalCharges } = await request.json();
+    const { reservationId, startDate, endDate, pickupTime, restitutionTime, pickupLocation, restitutionLocation, paymentMethod, totalPrice, vehicle, customerInfo, promoCode, additionalCharges, pricePerDayUsed } = await request.json();
 
     // Transform the API data into the email component's expected format
+    // Calculate derived values
+    const numberOfDays = typeof startDate === 'number' && typeof endDate === 'number'
+      ? Math.max(1, Math.ceil((endDate - startDate) / 86400))
+      : 1;
+    const additionalTotal = Array.isArray(additionalCharges)
+      ? additionalCharges.reduce((sum: number, c: { amount: number }) => sum + (c?.amount || 0), 0)
+      : 0;
+    const rentalSubtotal = Math.max(0, (totalPrice || 0) - additionalTotal);
+    const derivedPricePerDay = Math.max(0, Math.round(rentalSubtotal / numberOfDays));
+
     const emailData: ReservationEmailData = {
         reservationId,
         customerInfo: {
@@ -32,14 +43,14 @@ export async function POST(request: Request) {
         rentalDetails: {
             startDate: typeof startDate === 'number' ? new Date(startDate * 1000).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }) : startDate,
             endDate: typeof endDate === 'number' ? new Date(endDate * 1000).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }) : endDate,
-            numberOfDays: typeof startDate === 'number' && typeof endDate === 'number' ? Math.ceil((endDate - startDate) / 86400) : 1,
+            numberOfDays,
             pickupTime,
             restitutionTime,
             pickupLocation,
             restitutionLocation,
         },
         pricingDetails: {
-            pricePerDay: vehicle.pricePerDay || Math.round(totalPrice / (typeof startDate === 'number' && typeof endDate === 'number' ? Math.ceil((endDate - startDate) / 86400) : 1)),
+            pricePerDay: typeof pricePerDayUsed === 'number' && pricePerDayUsed > 0 ? pricePerDayUsed : derivedPricePerDay,
             totalPrice,
             paymentMethod,
             promoCode,
@@ -48,20 +59,37 @@ export async function POST(request: Request) {
     };
 
     try {
-        const { data, error } = await resend.emails.send({
-            from: 'Rent\'n Go <noreply@rngo.ro>',
-            to: customerInfo.email,
-            subject: 'Your reservation request has been received',
-            react: RentalRequestEmail({ data: emailData }) as React.ReactElement,
-            replyTo: 'office@rngo.ro',
-        });
+        const adminEmail = process.env.ADMIN_EMAIL || 'office@rngo.ro';
 
-        if (error) {
-            console.error(error);
-            return NextResponse.json({ error: 'Failed to send email' }, { status: 500 });
+        const [adminResult, userResult] = await Promise.all([
+            resend.emails.send({
+                from: 'Rent\'n Go <noreply@rngo.ro>',
+                to: adminEmail,
+                subject: `New reservation request #${reservationId}`,
+                react: RentalRequestEmail({ data: emailData }) as React.ReactElement,
+                replyTo: ['office@rngo.ro', customerInfo.email],
+            }),
+            resend.emails.send({
+                from: 'Rent\'n Go <noreply@rngo.ro>',
+                to: customerInfo.email,
+                subject: `Request submitted #${reservationId}`,
+                react: UserReservationEmail({ data: emailData }) as React.ReactElement,
+                replyTo: 'office@rngo.ro',
+            })
+        ]);
+
+        if ((adminResult as any)?.error) {
+            console.error('Admin email error:', (adminResult as any).error);
+        }
+        if ((userResult as any)?.error) {
+            console.error('User email error:', (userResult as any).error);
         }
 
-        return NextResponse.json(data);
+        return NextResponse.json({
+            success: true,
+            adminMessageId: (adminResult as any)?.data?.id,
+            userMessageId: (userResult as any)?.data?.id,
+        });
     } catch (error) {
         console.error(error);
         return NextResponse.json({ error: 'Failed to send email' }, { status: 500 });

@@ -10,12 +10,12 @@ export const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({
   vehicleInfo 
 }) => {
   return (
-    <Section className="px-[32px] py-[24px]">
-      <Heading className="text-[24px] font-bold text-gray-800 mb-[16px]">
+    <Section className="px-[16px] py-[12px]">
+      <Heading className="text-[20px] font-bold text-gray-800 mb-[12px]">
         Vehicle Information
       </Heading>
 
-      <Row className="mb-[16px]">
+      <Row className="mb-[12px]">
         <Column>
           <Text className="text-[18px] font-semibold text-gray-800 m-0">
             {vehicleInfo.year} {vehicleInfo.make} {vehicleInfo.model}
@@ -28,7 +28,7 @@ export const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({
         </Column>
       </Row>
 
-      <Row className="mb-[16px]">
+      <Row className="mb-[12px]">
         {vehicleInfo.seats && (
           <Column className="w-1/3 pr-[8px]">
             <Text className="text-[14px] font-semibold text-gray-600 m-0">Seats:</Text>
@@ -54,7 +54,7 @@ export const VehicleInfoSection: React.FC<VehicleInfoSectionProps> = ({
       </Row>
 
       {vehicleInfo.features && vehicleInfo.features.length > 0 && (
-        <Row className="mb-[16px]">
+        <Row className="mb-[12px]">
           <Column>
             <Text className="text-[14px] font-semibold text-gray-600 m-0">Features:</Text>
             <Text className="text-[16px] text-gray-800 m-0 mt-[4px]">

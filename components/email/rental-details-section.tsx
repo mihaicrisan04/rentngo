@@ -10,8 +10,8 @@ export const RentalDetailsSection: React.FC<RentalDetailsSectionProps> = ({
   rentalDetails 
 }) => {
   return (
-    <Section className="px-[32px] py-[24px]">
-      <Row className="mb-[16px]">
+    <Section className="px-[16px] py-[12px]">
+      <Row className="mb-[12px]">
         <Column className="w-1/2 pr-[8px]">
           <Text className="text-[14px] font-semibold text-gray-600 m-0">Pickup Date & Time:</Text>
           <Text className="text-[16px] text-gray-800 m-0 mt-[4px]">
@@ -26,7 +26,7 @@ export const RentalDetailsSection: React.FC<RentalDetailsSectionProps> = ({
         </Column>
       </Row>
 
-      <Row className="mb-[16px]">
+      <Row className="mb-[12px]">
         <Column className="w-1/2 pr-[8px]">
           <Text className="text-[14px] font-semibold text-gray-600 m-0">Pickup Location:</Text>
           <Text className="text-[16px] text-gray-800 m-0 mt-[4px]">{rentalDetails.pickupLocation}</Text>
