@@ -14,6 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://rngo.ro'),
   title: {
     default: "Rent'n Go Cluj-Napoca | Masini de Inchiriat",
     template: "%s | Rent'n Go Cluj-Napoca"
@@ -38,7 +39,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'ro_RO',
     alternateLocale: ['en_US'],
-    url: 'https://rngo.com',
+    url: 'https://rngo.ro',
     siteName: 'Rent\'n Go Cluj-Napoca',
     title: 'Rent\'n Go Cluj-Napoca | Masini de Inchiriat',
     description: 'Masini de inchiriat Cluj-Napoca cu Rent\'n Go. Servicii profesionale de închiriere auto cu prețuri competitive.',
@@ -63,10 +64,10 @@ export const metadata: Metadata = {
     apple: "/rentngo-icon.ico",
   },
   alternates: {
-    canonical: 'https://rngo.com',
+    canonical: 'https://rngo.ro',
     languages: {
-      'ro-RO': 'https://rngo.com/ro',
-      'en-US': 'https://rngo.com/en',
+      'ro-RO': 'https://rngo.ro/ro',
+      'en-US': 'https://rngo.ro/en',
     },
   },
 };
