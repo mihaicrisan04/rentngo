@@ -65,6 +65,7 @@ export default defineSchema({
 
   // Reservations table - stores booking records
   reservations: defineTable({
+    reservationNumber: v.optional(v.number()),
     userId: v.optional(v.id("users")),
     vehicleId: v.id("vehicles"),
     startDate: v.number(), // Unix timestamp

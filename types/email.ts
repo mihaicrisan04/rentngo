@@ -38,14 +38,19 @@ export interface PricingDetails {
     description: string;
     amount: number;
   }>;
+  // Protection details according to reservation schema
+  isSCDWSelected?: boolean;
+  deductibleAmount?: number; // used when isSCDWSelected is false
+  protectionCost?: number;   // used when isSCDWSelected is true
 }
 
 export interface ReservationEmailData {
-  reservationId: string;
+  reservationNumber: number;
   customerInfo: CustomerInfo;
   vehicleInfo: VehicleInfo;
   rentalDetails: RentalDetails;
   pricingDetails: PricingDetails;
+  locale?: 'en' | 'ro';
 }
 
 // Email template types for different email purposes

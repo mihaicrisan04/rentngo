@@ -31,6 +31,7 @@ import {
   Plane
 } from "lucide-react";
 import { useTranslations, useLocale } from 'next-intl';
+import { getPriceForDurationWithSeason } from '@/lib/vehicleUtils';
 
 function ReservationConfirmationContent() {
   const searchParams = useSearchParams();
@@ -138,6 +139,40 @@ function ReservationConfirmationContent() {
 
   const startDate = new Date(reservation.startDate);
   const endDate = new Date(reservation.endDate);
+
+  // Compute rental days similar to pricing logic
+  const computeRentalDays = (
+    start: Date,
+    end: Date,
+    pickupTimeStr: string,
+    restitutionTimeStr: string
+  ) => {
+    const startMid = new Date(start);
+    startMid.setHours(0, 0, 0, 0);
+    const endMid = new Date(end);
+    endMid.setHours(0, 0, 0, 0);
+    const baseDays = Math.max(0, Math.round((endMid.getTime() - startMid.getTime()) / 86400000));
+    const [ph, pm] = (pickupTimeStr || '00:00').split(':').map(Number);
+    const [rh, rm] = (restitutionTimeStr || '00:00').split(':').map(Number);
+    let calculated = baseDays;
+    if (baseDays === 0) {
+      calculated = 1;
+    } else {
+      if (rh <= ph + 2) {
+        calculated = baseDays;
+      } else if (rh > ph + 2) {
+        calculated = baseDays + 1;
+      } else if (rh < ph) {
+        calculated = baseDays;
+      }
+    }
+    return Math.max(1, calculated);
+  };
+
+  const rentalDays = computeRentalDays(startDate, endDate, reservation.pickupTime, reservation.restitutionTime);
+  const seasonalMultiplier = reservation.seasonalMultiplier ?? 1.0;
+  const pricePerDayUsed = vehicle ? getPriceForDurationWithSeason(vehicle, rentalDays, seasonalMultiplier) : 0;
+  const rentalSubtotal = rentalDays * pricePerDayUsed;
   
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -193,8 +228,8 @@ function ReservationConfirmationContent() {
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">{t('reservationId')}</p>
-                  <p className="text-xl font-mono font-bold">{reservationId}</p>
+                  <p className="text-sm text-muted-foreground">{t('reservationNumber')}</p>
+                  <p className="text-xl font-mono font-bold">#{reservation.reservationNumber}</p>
                 </div>
                 <Badge className={`w-fit ${getStatusColor(reservation.status)}`}>
                   {getStatusLabel(reservation.status)}
@@ -213,41 +248,43 @@ function ReservationConfirmationContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-start space-x-4">
-                  <div className="w-24 h-24 relative bg-muted rounded-lg overflow-hidden flex-shrink-0">
-                    {imageUrl ? (
-                      <Image
-                        src={imageUrl}
-                        alt={`${vehicle.make} ${vehicle.model}`}
-                        fill
-                        style={{ objectFit: "cover" }}
-                        sizes="96px"
-                      />
-                    ) : (
-                                              <div className="flex items-center justify-center h-full text-muted-foreground text-xs">
+                <div className="flex flex-col space-y-4">
+                  <div className="w-full relative bg-muted rounded-lg overflow-hidden">
+                    <div className="w-full aspect-[16/9] relative">
+                      {imageUrl ? (
+                        <Image
+                          src={imageUrl}
+                          alt={`${vehicle.make} ${vehicle.model}`}
+                          fill
+                          style={{ objectFit: "cover" }}
+                          sizes="(max-width: 768px) 100vw, 50vw"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-muted-foreground text-xs">
                           {t('noImage')}
                         </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-semibold mb-1">
+                  <div>
+                    <h3 className="text-xl font-semibold mb-1 break-words">
                       {vehicle.make} {vehicle.model}
                     </h3>
                     <p className="text-muted-foreground mb-2">{vehicle.year}</p>
-                    <div className="flex flex-col gap-2 md:grid md:grid-cols-2 lg:gap-x-24 text-sm">
-                      <div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                      <div className="break-words">
                         <span className="text-muted-foreground">{t('type')}</span>
                         <span className="ml-1 capitalize">{vehicle.type}</span>
                       </div>
-                      <div>
+                      <div className="break-words">
                         <span className="text-muted-foreground">{t('seats')}</span>
                         <span className="ml-1">{vehicle.seats}</span>
                       </div>
-                      <div>
+                      <div className="break-words">
                         <span className="text-muted-foreground">{t('transmission')}</span>
                         <span className="ml-1 capitalize">{vehicle.transmission}</span>
                       </div>
-                      <div>
+                      <div className="break-words">
                         <span className="text-muted-foreground">{t('fuel')}</span>
                         <span className="ml-1 capitalize">{vehicle.fuelType}</span>
                       </div>
@@ -374,32 +411,52 @@ function ReservationConfirmationContent() {
                   <span>{t('paymentSummary')}</span>
                 </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">{t('paymentMethod')}</span>
-                  <span className="font-medium">{getPaymentMethodLabel(reservation.paymentMethod)}</span>
-                </div>
-                {reservation.additionalCharges && reservation.additionalCharges.length > 0 && (
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">{t('additionalCharges')}</p>
-                    <div className="space-y-1">
-                      {reservation.additionalCharges.map((charge, index) => (
-                        <div key={index} className="flex justify-between text-sm">
-                          <span>{charge.description}</span>
-                          <span>{charge.amount} EUR</span>
-                        </div>
-                      ))}
-                    </div>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">{t('paymentMethod')}</span>
+                    <span className="font-medium">{getPaymentMethodLabel(reservation.paymentMethod)}</span>
                   </div>
-                )}
-                <Separator />
-                <div className="flex justify-between items-center text-lg font-bold">
-                  <span>{t('totalAmount')}</span>
-                  <span className="text-green-600">{reservation.totalPrice} EUR</span>
+                  {/* Base rental breakdown */}
+                  <div className="flex justify-between items-center text-sm">
+                    <span>
+                      {t('baseRentalLine', { days: rentalDays, price: pricePerDayUsed })}
+                    </span>
+                    <span>{rentalSubtotal} EUR</span>
+                  </div>
+                  {reservation.additionalCharges && reservation.additionalCharges.length > 0 && (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">{t('additionalCharges')}</p>
+                      <div className="space-y-1">
+                        {reservation.additionalCharges.map((charge, index) => (
+                          <div key={index} className="flex justify-between text-sm">
+                            <span>{charge.description}</span>
+                            <span>{charge.amount} EUR</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {/* SCDW line above total */}
+                  {reservation.isSCDWSelected && (reservation.protectionCost ?? 0) > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">{t('scdwLine')}</span>
+                      <span className="font-medium">{reservation.protectionCost} EUR</span>
+                    </div>
+                  )}
+                  <Separator />
+                  <div className="flex justify-between items-center text-lg font-bold">
+                    <span>{t('totalAmount')}</span>
+                    <span className="text-green-600">{reservation.totalPrice} EUR</span>
+                  </div>
+                  {/* Warranty note below total when SCDW not selected */}
+                  {!reservation.isSCDWSelected && reservation.deductibleAmount !== undefined && (
+                    <div className="text-right text-sm text-muted-foreground">
+                      {t('warrantyLine')}: {reservation.deductibleAmount} EUR
+                    </div>
+                  )}
                 </div>
-              </div>
-            </CardContent>
+              </CardContent>
           </Card>
 
           {/* Action Buttons */}

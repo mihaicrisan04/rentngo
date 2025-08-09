@@ -8,7 +8,7 @@ import { ReservationEmailData } from '@/types/email';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
-    const { reservationId, startDate, endDate, pickupTime, restitutionTime, pickupLocation, restitutionLocation, paymentMethod, totalPrice, vehicle, customerInfo, promoCode, additionalCharges, pricePerDayUsed } = await request.json();
+    const { reservationId, reservationNumber, startDate, endDate, pickupTime, restitutionTime, pickupLocation, restitutionLocation, paymentMethod, totalPrice, vehicle, customerInfo, promoCode, additionalCharges, pricePerDayUsed, locale, isSCDWSelected, deductibleAmount, protectionCost } = await request.json();
 
     // Transform the API data into the email component's expected format
     // Calculate derived values
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     const derivedPricePerDay = Math.max(0, Math.round(rentalSubtotal / numberOfDays));
 
     const emailData: ReservationEmailData = {
-        reservationId,
+        reservationNumber: reservationNumber ?? 0,
         customerInfo: {
             name: customerInfo.name,
             email: customerInfo.email,
@@ -55,7 +55,11 @@ export async function POST(request: Request) {
             paymentMethod,
             promoCode,
             additionalCharges: additionalCharges || [],
+            isSCDWSelected,
+            deductibleAmount,
+            protectionCost,
         },
+        locale: (locale === 'ro' ? 'ro' : 'en'),
     };
 
     try {
@@ -65,14 +69,14 @@ export async function POST(request: Request) {
             resend.emails.send({
                 from: 'Rent\'n Go <noreply@rngo.ro>',
                 to: adminEmail,
-                subject: `New reservation request #${reservationId}`,
+                subject: `New reservation request #${reservationNumber ?? reservationId}`,
                 react: RentalRequestEmail({ data: emailData }) as React.ReactElement,
-                replyTo: ['office@rngo.ro', customerInfo.email],
+                replyTo: customerInfo.email,
             }),
             resend.emails.send({
                 from: 'Rent\'n Go <noreply@rngo.ro>',
                 to: customerInfo.email,
-                subject: `Request submitted #${reservationId}`,
+                subject: `Request submitted #${reservationNumber ?? reservationId}`,
                 react: UserReservationEmail({ data: emailData }) as React.ReactElement,
                 replyTo: 'office@rngo.ro',
             })

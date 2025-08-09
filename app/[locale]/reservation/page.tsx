@@ -555,7 +555,7 @@ function ReservationPageContent() {
       const currentDeductibleAmount = isSCDWSelected ? 0 : currentWarrantyAmount;
 
       // Get the Convex user ID (not the Clerk user ID)
-      const reservationId = await createReservationMutation({
+      const created = await createReservationMutation({
         userId: currentUser ? currentUser._id : undefined,
         vehicleId: vehicleId as Id<"vehicles">,
         startDate: pickupDate.getTime(),
@@ -581,6 +581,8 @@ function ReservationPageContent() {
         seasonId: currentSeason?.seasonId,
         seasonalMultiplier: seasonalMultiplier,
       });
+      const reservationId = (created as any)?.reservationId ?? created;
+      const reservationNumber = (created as any)?.reservationNumber;
 
       // Send confirmation email
       try {
@@ -591,6 +593,7 @@ function ReservationPageContent() {
           },
           body: JSON.stringify({
             reservationId: reservationId,
+            reservationNumber: reservationNumber,
             startDate: pickupDate.getTime() / 1000, // Convert to Unix timestamp
             endDate: returnDate.getTime() / 1000, // Convert to Unix timestamp
             pickupTime: pickupTime || "00:00",
@@ -612,6 +615,7 @@ function ReservationPageContent() {
               pricePerDay: getBasePricePerDay(vehicle),
               features: vehicle.features || [],
             },
+            locale,
             customerInfo: {
               name: personalInfo.name.trim(),
               email: personalInfo.email.trim(),
@@ -621,6 +625,9 @@ function ReservationPageContent() {
             },
             promoCode: undefined,
             additionalCharges: additionalCharges.length > 0 ? additionalCharges : undefined,
+            isSCDWSelected: isSCDWSelected,
+            deductibleAmount: currentDeductibleAmount,
+            protectionCost: currentProtectionCost > 0 ? currentProtectionCost : undefined,
           }),
         });
 

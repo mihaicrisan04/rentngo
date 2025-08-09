@@ -110,38 +110,38 @@ export default function CarsPage() {
         )}
       </Head>
       <PageLayout className="p-4 md:p-8 flex flex-col gap-8">
-      <div className="max-w-7xl mx-auto w-full">
-        {/* Search Form - show skeleton while loading or not hydrated */}
-        {(!searchState.isHydrated || isLoading) ? (
-          <VehicleSearchFormSkeleton />
-        ) : (
-          <VehicleSearchForm
-            searchState={searchState}
-            updateSearchField={updateSearchField}
+        <div className="max-w-7xl mx-auto w-full">
+          {/* Search Form - show skeleton while loading or not hydrated */}
+          {(!searchState.isHydrated || isLoading) ? (
+            <VehicleSearchFormSkeleton />
+          ) : (
+            <VehicleSearchForm
+              searchState={searchState}
+              updateSearchField={updateSearchField}
+              isLoading={isLoading}
+            />
+          )}
+          
+          {/* Filters - show skeleton while loading or when vehicles aren't loaded */}
+          {(!searchState.isHydrated || isLoading || !allVehicles) ? (
+            <VehicleFiltersSkeleton />
+          ) : (
+            <VehicleFilters 
+              allVehicles={allVehicles} 
+              onFilterChange={setDisplayedVehicles} 
+            />
+          )}
+          
+          {/* Vehicle List Display - already has internal skeleton handling */}
+          <VehicleListDisplay
+            vehicles={displayedVehicles}
             isLoading={isLoading}
+            isHydrated={searchState.isHydrated}
+            error={error}
+            searchState={searchState}
           />
-        )}
-        
-        {/* Filters - show skeleton while loading or when vehicles aren't loaded */}
-        {(!searchState.isHydrated || isLoading || !allVehicles) ? (
-          <VehicleFiltersSkeleton />
-        ) : (
-          <VehicleFilters 
-            allVehicles={allVehicles} 
-            onFilterChange={setDisplayedVehicles} 
-          />
-        )}
-        
-        {/* Vehicle List Display - already has internal skeleton handling */}
-        <VehicleListDisplay
-          vehicles={displayedVehicles}
-          isLoading={isLoading}
-          isHydrated={searchState.isHydrated}
-          error={error}
-          searchState={searchState}
-        />
-      </div>
-    </PageLayout>
+        </div>
+      </PageLayout>
     </>
   );
 } 

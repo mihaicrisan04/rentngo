@@ -64,6 +64,10 @@ export const createReservation = mutation({
     seasonId: v.optional(v.id("seasons")),
     seasonalMultiplier: v.optional(v.number()),
   },
+  returns: v.object({
+    reservationId: v.id("reservations"),
+    reservationNumber: v.number(),
+  }),
   handler: async (ctx, args) => {
     // Get the current authenticated user (if any)
     const currentUser = await getCurrentUser(ctx);
@@ -85,7 +89,17 @@ export const createReservation = mutation({
     //   throw new Error("Vehicle not available for the selected dates.");
     // }
 
+    // Compute next reservation number
+    const allReservations = await ctx.db.query("reservations").collect();
+    const hasAny = allReservations.length > 0;
+    const maxNumber = allReservations.reduce((max, r) => {
+      const num = (r as any).reservationNumber ?? 0;
+      return num > max ? num : max;
+    }, 0);
+    const nextReservationNumber = hasAny ? (maxNumber + 1) : 10000;
+
     const newReservationData = {
+      reservationNumber: nextReservationNumber,
       userId: currentUser?._id || undefined, // Use the Convex user ID if authenticated
       vehicleId: args.vehicleId,
       startDate: args.startDate,
@@ -114,7 +128,7 @@ export const createReservation = mutation({
     // 2. Trigger a "confirmation" email to the user using Resend.
     //    Example: await ctx.runAction(api.emails.sendBookingConfirmation, { reservationId });
 
-    return reservationId;
+    return { reservationId, reservationNumber: nextReservationNumber };
   },
 });
 

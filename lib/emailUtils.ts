@@ -23,7 +23,7 @@ export const transformReservationForEmail = (
   numberOfDays: number
 ): ReservationEmailData => {
   return {
-    reservationId: reservation._id || "N/A",
+    reservationNumber: reservation.reservationNumber ?? 0,
     customerInfo: {
       name: reservation.customerInfo.name,
       email: reservation.customerInfo.email,
@@ -56,6 +56,9 @@ export const transformReservationForEmail = (
       paymentMethod: reservation.paymentMethod,
       promoCode: reservation.promoCode,
       additionalCharges: reservation.additionalCharges,
+      isSCDWSelected: reservation.isSCDWSelected,
+      deductibleAmount: reservation.deductibleAmount,
+      protectionCost: reservation.protectionCost,
     },
   };
 };
