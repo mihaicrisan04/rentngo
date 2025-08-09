@@ -267,7 +267,7 @@
       "nameRequired": "Name is required",
       "emailRequired": "Please enter a valid email",
       "phoneRequired": "Phone number is required",
-      "phoneFormatInvalid": "Phone number must start with +40 (Romania) or +44 (England) followed by the correct number of digits",
+      "phoneFormatInvalid": "Enter a valid international phone number starting with + and a country code (e.g., +40..., +44..., +49...).",
       "flightNumberInvalid": "Flight number must be in format 'XX 1234' (e.g., 'AA 1234')",
       "pickupLocationRequired": "Pick-up location is required",
       "pickupDateRequired": "Pick-up date is required",

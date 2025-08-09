@@ -29,7 +29,7 @@ import { CheckedState } from "@radix-ui/react-checkbox";
 // Assuming these types are defined in a shared location or are appropriate here
 type VehicleType = "sedan" | "suv" | "hatchback" | "sports";
 type TransmissionType = "automatic" | "manual";
-type FuelType = "petrol" | "diesel" | "electric" | "hybrid";
+type FuelType = "benzina" | "diesel" | "electric" | "hybrid";
 type StatusType = "available" | "rented" | "maintenance"; // Assuming vehicle object has status
 
 interface EditVehicleFormProps {
@@ -47,7 +47,7 @@ const initialFormData = {
   type: "sedan" as VehicleType,
   seats: 5,
   transmission: "automatic" as TransmissionType,
-  fuelType: "petrol" as FuelType,
+  fuelType: "benzina" as FuelType,
       // pricePerDay removed - using pricingTiers only
   location: "",
   features: [] as string[],
@@ -289,7 +289,7 @@ export function EditVehicleForm({
                     <SelectValue placeholder="Select fuel type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="petrol">Petrol</SelectItem>
+                    <SelectItem value="benzina">Benzina</SelectItem>
                     <SelectItem value="diesel">Diesel</SelectItem>
                     <SelectItem value="electric">Electric</SelectItem>
                     <SelectItem value="hybrid">Hybrid</SelectItem>

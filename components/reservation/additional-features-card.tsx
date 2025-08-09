@@ -8,6 +8,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { Info } from "lucide-react";
 import { AdditionalFeatures } from "@/hooks/useReservationForm";
 import { calculateIncludedKilometers, calculateExtraKilometersPrice, getMaxExtraKilometers } from "@/lib/vehicleUtils";
+import { getBasePricePerDay } from "@/types/vehicle";
 
 interface AdditionalFeaturesCardProps {
   additionalFeatures: AdditionalFeatures;

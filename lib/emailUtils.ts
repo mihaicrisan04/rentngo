@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { ReservationEmailData } from "@/types/email";
+import { getBasePricePerDay } from "@/types/vehicle";
 
 // Payment method display names
 export const getPaymentMethodLabel = (method: string): string => {

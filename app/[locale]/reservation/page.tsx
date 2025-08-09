@@ -33,6 +33,7 @@ import { Progress } from "@/components/ui/progress";
 import { useSeasonalPricing } from "@/hooks/useSeasonalPricing";
 import { useTranslations, useLocale } from 'next-intl';
 import { z } from "zod";
+import { isValidInternationalPhoneNumber } from "@/lib/phoneValidation";
 
 // Validation schema for reservation form - will be updated with translations
 const createReservationSchema = (t: any) => z.object({
@@ -40,28 +41,7 @@ const createReservationSchema = (t: any) => z.object({
   name: z.string().min(1, t('validation.nameRequired')),
   email: z.string().email(t('validation.emailRequired')),
   phone: z.string().min(1, t('validation.phoneRequired'))
-    .refine((val) => {
-      // Check if phone starts with +40 (Romania) or +44 (England)
-      const trimmed = val.trim();
-      if (!trimmed.startsWith('+40') && !trimmed.startsWith('+44')) {
-        return false;
-      }
-      
-      // Remove the country code to get the actual phone number
-      const phoneNumber = trimmed.startsWith('+40') ? trimmed.substring(3) : trimmed.substring(3);
-      
-      // Validate Romanian phone number format (+40 followed by 9 digits)
-      if (trimmed.startsWith('+40')) {
-        return /^\+40\d{9}$/.test(trimmed);
-      }
-      
-      // Validate English phone number format (+44 followed by 10-11 digits)
-      if (trimmed.startsWith('+44')) {
-        return /^\+44\d{10,11}$/.test(trimmed);
-      }
-      
-      return false;
-    }, t('validation.phoneFormatInvalid')),
+    .refine((val) => isValidInternationalPhoneNumber(val), t('validation.phoneFormatInvalid')),
   flightNumber: z.string().optional().refine((val) => {
     if (!val || !val.trim()) return true; // Optional field
     return validateFlightNumber(val);

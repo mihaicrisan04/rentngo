@@ -267,7 +267,7 @@
       "nameRequired": "Numele este obligatoriu",
       "emailRequired": "Vă rugăm să introduceți un email valid",
       "phoneRequired": "Numărul de telefon este obligatoriu",
-      "phoneFormatInvalid": "Numărul de telefon trebuie să înceapă cu +40 (România) sau +44 (Anglia) urmat de numărul corect de cifre",
+      "phoneFormatInvalid": "Introduceți un număr internațional valid începând cu + și un cod de țară (ex: +40..., +44..., +49...).",
       "flightNumberInvalid": "Numărul zborului trebuie să fie în formatul 'XX 1234' (ex: 'AA 1234')",
       "pickupLocationRequired": "Locația de ridicare este obligatorie",
       "pickupDateRequired": "Data de ridicare este obligatorie",

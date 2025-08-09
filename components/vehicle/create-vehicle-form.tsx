@@ -39,7 +39,7 @@ import { toast } from "sonner";
 
 type VehicleType = "sedan" | "suv" | "hatchback" | "sports";
 type TransmissionType = "automatic" | "manual";
-type FuelType = "petrol" | "diesel" | "electric" | "hybrid";
+type FuelType = "benzina" | "diesel" | "electric" | "hybrid";
 type StatusType = "available" | "rented" | "maintenance";
 
 const vehicleSchema = z.object({
@@ -65,7 +65,7 @@ const vehicleSchema = z.object({
   transmission: z.enum(["automatic", "manual"], {
     required_error: "Transmission type is required",
   }),
-  fuelType: z.enum(["petrol", "diesel", "electric", "hybrid"], {
+  fuelType: z.enum(["benzina", "diesel", "electric", "hybrid"], {
     required_error: "Fuel type is required",
   }),
   engineCapacity: z.string()
@@ -113,7 +113,7 @@ export function CreateVehicleForm({
       type: "sedan",
       seats: "5",
       transmission: "automatic",
-      fuelType: "petrol",
+      fuelType: "benzina",
       engineCapacity: "",
       engineType: "",
       // pricePerDay removed - using pricingTiers only
@@ -157,7 +157,7 @@ export function CreateVehicleForm({
         type: values.type as VehicleType,
         seats: parseInt(values.seats),
         transmission: values.transmission as TransmissionType,
-        fuelType: values.fuelType as FuelType,
+         fuelType: values.fuelType as FuelType,
         engineCapacity: parseFloat(values.engineCapacity),
         engineType: values.engineType,
         // pricePerDay removed - using pricingTiers only
@@ -358,7 +358,7 @@ export function CreateVehicleForm({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="petrol">Petrol</SelectItem>
+                         <SelectItem value="benzina">Benzina</SelectItem>
                           <SelectItem value="diesel">Diesel</SelectItem>
                           <SelectItem value="electric">Electric</SelectItem>
                           <SelectItem value="hybrid">Hybrid</SelectItem>
