@@ -198,7 +198,7 @@ export function VehiclesTable() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">{vehicle.pricePerDay} EUR</div>
+                    <div className="font-medium">{vehicle.pricingTiers && vehicle.pricingTiers.length > 0 ? vehicle.pricingTiers[0].pricePerDay : (vehicle.pricePerDay || 'N/A')} EUR</div>
                     {vehicle.warranty && (
                       <div className="text-xs text-muted-foreground">
                         Warranty: {vehicle.warranty} EUR

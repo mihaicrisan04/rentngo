@@ -13,13 +13,13 @@ export const EmailHeader: React.FC<EmailHeaderProps> = ({
   logoAlt = "Rent'n Go Logo"
 }) => {
   return (
-    <Section className="bg-white text-center py-[32px] rounded-t-[8px] border-b border-solid border-gray-200">
+    <Section className="bg-white text-center py-[16px] rounded-t-[8px] border-b border-solid border-gray-200 px-0" style={{ width: '100%' }}>
       <Img
         src={logoUrl}
         alt={logoAlt}
-        className="w-[120px] h-auto object-cover mx-auto mb-[16px]"
+        className="w-[120px] h-auto object-cover mx-auto mb-[8px]"
       />
-      <Text className="text-[18px] text-gray-700 m-0">{title}</Text>
+      <Text className="text-[16px] text-gray-700 m-0">{title}</Text>
     </Section>
   );
 }; 

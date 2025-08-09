@@ -43,7 +43,7 @@ export function LocaleProviders({
   messages: any;
 }) {
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
+    <NextIntlClientProvider locale={locale} messages={messages} timeZone="Europe/Bucharest">
       {children}
     </NextIntlClientProvider>
   )

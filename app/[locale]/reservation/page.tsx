@@ -24,6 +24,7 @@ import { LocationPicker } from "@/components/location-picker";
 import { DateTimePicker } from "@/components/date-time-picker";
 import { searchStorage } from "@/lib/searchStorage";
 import { calculateVehiclePricingWithSeason, getPriceForDurationWithSeason, calculateIncludedKilometers, calculateExtraKilometersPrice } from "@/lib/vehicleUtils";
+import { getBasePricePerDay } from "@/types/vehicle";
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -32,13 +33,15 @@ import { Progress } from "@/components/ui/progress";
 import { useSeasonalPricing } from "@/hooks/useSeasonalPricing";
 import { useTranslations, useLocale } from 'next-intl';
 import { z } from "zod";
+import { isValidInternationalPhoneNumber } from "@/lib/phoneValidation";
 
 // Validation schema for reservation form - will be updated with translations
 const createReservationSchema = (t: any) => z.object({
   // Personal info
   name: z.string().min(1, t('validation.nameRequired')),
   email: z.string().email(t('validation.emailRequired')),
-  phone: z.string().min(1, t('validation.phoneRequired')),
+  phone: z.string().min(1, t('validation.phoneRequired'))
+    .refine((val) => isValidInternationalPhoneNumber(val), t('validation.phoneFormatInvalid')),
   flightNumber: z.string().optional().refine((val) => {
     if (!val || !val.trim()) return true; // Optional field
     return validateFlightNumber(val);
@@ -48,14 +51,21 @@ const createReservationSchema = (t: any) => z.object({
   // Rental details
   deliveryLocation: z.string().min(1, t('validation.pickupLocationRequired')),
   pickupDate: z.date({ required_error: t('validation.pickupDateRequired') }),
-  pickupTime: z.string().min(1, t('validation.pickupTimeRequired')),
+  pickupTime: z.string().refine((val) => val.trim().length > 0, {
+    message: t('validation.pickupTimeRequired')
+  }),
   restitutionLocation: z.string().min(1, t('validation.returnLocationRequired')),
   returnDate: z.date({ required_error: t('validation.returnDateRequired') }),
-  returnTime: z.string().min(1, t('validation.returnTimeRequired')),
+  returnTime: z.string().refine((val) => val.trim().length > 0, {
+    message: t('validation.returnTimeRequired')
+  }),
   
   // Payment
-  paymentMethod: z.enum(["cash_on_delivery", "card_on_delivery", "card_online"], {
-    required_error: t('validation.paymentMethodRequired'),
+  paymentMethod: z.union([
+    z.enum(["cash_on_delivery", "card_on_delivery", "card_online"]),
+    z.undefined()
+  ]).refine((val) => val !== undefined, {
+    message: t('validation.paymentMethodRequired')
   }),
   termsAccepted: z.boolean().refine((val) => val === true, t('validation.termsAcceptanceRequired')),
 });
@@ -102,11 +112,11 @@ function ReservationPageContent() {
   // Add seasonal pricing
   const { multiplier: seasonalMultiplier, currentSeason } = useSeasonalPricing();
   
-  // Rental details state
-  const [deliveryLocation, setDeliveryLocation] = React.useState<string>("");
+  // Rental details state - initialize with default locations
+  const [deliveryLocation, setDeliveryLocation] = React.useState<string>(searchStorage.getDefaultLocation());
   const [pickupDate, setPickupDate] = React.useState<Date | undefined>(undefined);
   const [pickupTime, setPickupTime] = React.useState<string | null>(null);
-  const [restitutionLocation, setRestitutionLocation] = React.useState<string>("");
+  const [restitutionLocation, setRestitutionLocation] = React.useState<string>(searchStorage.getDefaultLocation());
   const [returnDate, setReturnDate] = React.useState<Date | undefined>(undefined);
   const [returnTime, setReturnTime] = React.useState<string | null>(null);
   
@@ -145,18 +155,15 @@ function ReservationPageContent() {
   React.useEffect(() => {
     const storedData = searchStorage.load();
     
-    // Only populate fields that exist in localStorage
-    if (storedData.deliveryLocation) {
-      setDeliveryLocation(storedData.deliveryLocation);
-    }
+    // Apply stored data with defaults (searchStorage.load() already handles defaults and validation)
+    setDeliveryLocation(storedData.deliveryLocation || searchStorage.getDefaultLocation());
+    setRestitutionLocation(storedData.restitutionLocation || searchStorage.getDefaultLocation());
+    
     if (storedData.pickupDate) {
       setPickupDate(storedData.pickupDate);
     }
     if (storedData.pickupTime) {
       setPickupTime(storedData.pickupTime);
-    }
-    if (storedData.restitutionLocation) {
-      setRestitutionLocation(storedData.restitutionLocation);
     }
     if (storedData.returnDate) {
       setReturnDate(storedData.returnDate);
@@ -397,11 +404,11 @@ function ReservationPageContent() {
       message: personalInfo.message?.trim() || undefined,
       deliveryLocation,
       pickupDate,
-      pickupTime,
+      pickupTime: pickupTime || '',
       restitutionLocation,
       returnDate,
-      returnTime,
-      paymentMethod,
+      returnTime: returnTime || '',
+      paymentMethod: paymentMethod || undefined,
       termsAccepted,
     };
 
@@ -522,13 +529,13 @@ function ReservationPageContent() {
       // Calculate protection values for the mutation
       const currentWarrantyAmount = calculateWarranty(vehicle);
       const currentDays = days || 0;
-      const currentPricePerDay = currentDays > 0 ? getPriceForDurationWithSeason(vehicle, currentDays, seasonalMultiplier) : vehicle.pricePerDay;
+      const currentPricePerDay = currentDays > 0 ? getPriceForDurationWithSeason(vehicle, currentDays, seasonalMultiplier) : getBasePricePerDay(vehicle);
       const currentScdwPrice = currentDays > 0 ? calculateSCDW(currentDays, currentPricePerDay) : 0;
       const currentProtectionCost = isSCDWSelected ? currentScdwPrice : 0;
       const currentDeductibleAmount = isSCDWSelected ? 0 : currentWarrantyAmount;
 
       // Get the Convex user ID (not the Clerk user ID)
-      const reservationId = await createReservationMutation({
+      const created = await createReservationMutation({
         userId: currentUser ? currentUser._id : undefined,
         vehicleId: vehicleId as Id<"vehicles">,
         startDate: pickupDate.getTime(),
@@ -554,6 +561,8 @@ function ReservationPageContent() {
         seasonId: currentSeason?.seasonId,
         seasonalMultiplier: seasonalMultiplier,
       });
+      const reservationId = (created as any)?.reservationId ?? created;
+      const reservationNumber = (created as any)?.reservationNumber;
 
       // Send confirmation email
       try {
@@ -564,6 +573,7 @@ function ReservationPageContent() {
           },
           body: JSON.stringify({
             reservationId: reservationId,
+            reservationNumber: reservationNumber,
             startDate: pickupDate.getTime() / 1000, // Convert to Unix timestamp
             endDate: returnDate.getTime() / 1000, // Convert to Unix timestamp
             pickupTime: pickupTime || "00:00",
@@ -573,6 +583,7 @@ function ReservationPageContent() {
             paymentMethod: paymentMethod,
             status: "pending",
             totalPrice: totalPrice,
+            pricePerDayUsed: currentPricePerDay,
             vehicle: {
               make: vehicle.make,
               model: vehicle.model,
@@ -581,9 +592,10 @@ function ReservationPageContent() {
               seats: vehicle.seats,
               transmission: vehicle.transmission,
               fuelType: vehicle.fuelType,
-              pricePerDay: vehicle.pricePerDay,
+              pricePerDay: getBasePricePerDay(vehicle),
               features: vehicle.features || [],
             },
+            locale,
             customerInfo: {
               name: personalInfo.name.trim(),
               email: personalInfo.email.trim(),
@@ -593,6 +605,9 @@ function ReservationPageContent() {
             },
             promoCode: undefined,
             additionalCharges: additionalCharges.length > 0 ? additionalCharges : undefined,
+            isSCDWSelected: isSCDWSelected,
+            deductibleAmount: currentDeductibleAmount,
+            protectionCost: currentProtectionCost > 0 ? currentProtectionCost : undefined,
           }),
         });
 
@@ -868,7 +883,7 @@ function ReservationPageContent() {
                       <p className="text-muted-foreground">{vehicle.year}</p>
                       <div>
                         <p className="text-lg font-bold text-yellow-500">
-                          {days ? getPriceForDurationWithSeason(vehicle, days, seasonalMultiplier) : Math.round(vehicle.pricePerDay * seasonalMultiplier)} EUR / Day
+                          {days ? getPriceForDurationWithSeason(vehicle, days, seasonalMultiplier) : Math.round(getBasePricePerDay(vehicle) * seasonalMultiplier)} EUR / Day
                         </p>
                         {days && vehicle.pricingTiers && vehicle.pricingTiers.length > 0 && (
                           <p className="text-xs text-muted-foreground">
@@ -1109,7 +1124,7 @@ function ReservationPageContent() {
                         <Input
                           id="customer-phone"
                           type="tel"
-                          placeholder={t('personalInfo.phonePlaceholder')}
+                          placeholder="+40 123 456 789 or +44 20 7946 0958"
                           value={personalInfo.phone}
                           onChange={(e) => setPersonalInfo(prev => ({ ...prev, phone: e.target.value }))}
                           className={cn(errors.personalInfo?.phone && "border-red-500")}
@@ -1120,6 +1135,9 @@ function ReservationPageContent() {
                             {errors.personalInfo.phone}
                           </p>
                         )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {t('personalInfo.phoneFormat')}
+                        </p>
                       </div>
                       
                       <div>
@@ -1209,9 +1227,51 @@ function ReservationPageContent() {
                           checked={termsAccepted}
                           onCheckedChange={(checked) => setTermsAccepted(checked === true)}
                         />
-                        <Label htmlFor="terms-conditions" className="text-sm cursor-pointer">
-                          {t('paymentMethod.termsAcceptance')}
-                        </Label>
+                        <div className="text-sm cursor-pointer leading-relaxed">
+                          {locale === 'ro' ? (
+                            <>
+                              Accept{' '}
+                              <Link 
+                                href="/terms" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-primary hover:text-primary/80 underline"
+                              >
+                                Termenii și Condițiile
+                              </Link>
+                              {' '}și{' '}
+                              <Link 
+                                href="/privacy" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-primary hover:text-primary/80 underline"
+                              >
+                                Politica de Confidențialitate
+                              </Link>
+                            </>
+                          ) : (
+                            <>
+                              I accept the{' '}
+                              <Link 
+                                href="/terms" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-primary hover:text-primary/80 underline"
+                              >
+                                Terms and Conditions
+                              </Link>
+                              {' '}and{' '}
+                              <Link 
+                                href="/privacy" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-primary hover:text-primary/80 underline"
+                              >
+                                Privacy Policy
+                              </Link>
+                            </>
+                          )}
+                        </div>
                       </div>
                       {errors.payment?.termsAccepted && (
                         <p className="text-sm text-red-500 mt-1 flex items-center">

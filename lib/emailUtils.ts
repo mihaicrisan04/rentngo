@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { ReservationEmailData } from "@/types/email";
+import { getBasePricePerDay } from "@/types/vehicle";
 
 // Payment method display names
 export const getPaymentMethodLabel = (method: string): string => {
@@ -23,7 +24,7 @@ export const transformReservationForEmail = (
   numberOfDays: number
 ): ReservationEmailData => {
   return {
-    reservationId: reservation._id || "N/A",
+    reservationNumber: reservation.reservationNumber ?? 0,
     customerInfo: {
       name: reservation.customerInfo.name,
       email: reservation.customerInfo.email,
@@ -51,11 +52,14 @@ export const transformReservationForEmail = (
       numberOfDays,
     },
     pricingDetails: {
-      pricePerDay: vehicle.pricePerDay,
+      pricePerDay: getBasePricePerDay(vehicle),
       totalPrice: reservation.totalPrice,
       paymentMethod: reservation.paymentMethod,
       promoCode: reservation.promoCode,
       additionalCharges: reservation.additionalCharges,
+      isSCDWSelected: reservation.isSCDWSelected,
+      deductibleAmount: reservation.deductibleAmount,
+      protectionCost: reservation.protectionCost,
     },
   };
 };

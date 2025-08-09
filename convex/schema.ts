@@ -43,10 +43,10 @@ export default defineSchema({
     )),
     seats: v.optional(v.number()),
     transmission: v.optional(v.union(v.literal("automatic"), v.literal("manual"))),
-    fuelType: v.optional(v.union(v.literal("petrol"), v.literal("diesel"), v.literal("electric"), v.literal("hybrid"), v.literal("benzina"))),
+    fuelType: v.optional(v.union(v.literal("diesel"), v.literal("electric"), v.literal("hybrid"), v.literal("benzina"))),
     engineCapacity: v.optional(v.number()),
     engineType: v.optional(v.string()),
-    pricePerDay: v.number(),
+    pricePerDay: v.optional(v.number()), // Legacy field - use pricingTiers instead
     pricingTiers: v.optional(v.array(v.object({
       minDays: v.number(),
       maxDays: v.number(),
@@ -65,6 +65,7 @@ export default defineSchema({
 
   // Reservations table - stores booking records
   reservations: defineTable({
+    reservationNumber: v.optional(v.number()),
     userId: v.optional(v.id("users")),
     vehicleId: v.id("vehicles"),
     startDate: v.number(), // Unix timestamp

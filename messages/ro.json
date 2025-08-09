@@ -1,12 +1,12 @@
 {
   "homepage": {
-    "title": "Găsește-ți Mașina Perfectă",
-    "subtitle": "Explorează Cluj-Napoca cu gama noastră largă de mașini de închiriat. Rezervare ușoară, prețuri excelente.",
+    "title": "Masini de Inchiriat Cluj-Napoca",
+    "subtitle": "Explorează Cluj-Napoca cu gama noastră largă de masini de inchiriat. Rezervare ușoară, prețuri competitive, servicii de încredere.",
     "viewAllCars": "Vezi Toate Mașinile",
     "ourStory": {
       "title": "Povestea Noastră",
-      "subtitle": "Partenerul tău de încredere pentru explorarea Cluj-Napoca și nu numai",
-      "description1": "La Rent'n Go, credem că fiecare călătorie ar trebui să fie memorabilă. Fondată cu o pasiune pentru călătorii și un angajament pentru excelență, servim comunitatea din Cluj-Napoca cu soluții de închiriere auto fiabile și accesibile.",
+      "subtitle": "Partenerul tău de încredere pentru masini de inchiriat în Cluj-Napoca și nu numai",
+      "description1": "La Rent'n Go, credem că fiecare călătorie ar trebui să fie memorabilă. Fondată cu o pasiune pentru călătorii și un angajament pentru excelență, servim comunitatea din Cluj-Napoca cu soluții fiabile și accesibile pentru masini de inchiriat.",
       "description2": "Indiferent dacă explorezi străzile istorice ale Cluj-Napoca, te aventurezi în frumoasa țară transilvăneană sau ai nevoie de un vehicul de încredere pentru afaceri, suntem aici să-ți facem călătoria lină și plăcută.",
       "description3": "Flota noastră atent selectată de vehicule moderne, combinată cu prețuri transparente și servicii excepționale pentru clienți, asigură că experiența ta de închiriere depășește așteptările de fiecare dată."
     },
@@ -21,9 +21,9 @@
     }
   },
   "aboutPage": {
-    "title": "Despre Rent'n Go",
+    "title": "Despre Rent'n Go - Masini de Inchiriat Cluj-Napoca",
     "heroTitle": "Călătoria Ta, Pasiunea Noastră",
-    "heroDescription": "Din 2024, ne-am dedicat furnizării de experiențe excepționale de închiriere auto în Cluj-Napoca, combinând vehicule de calitate cu servicii pentru clienți de excepție.",
+    "heroDescription": "Din 2024, ne-am dedicat furnizării de experiențe excepționale cu masini de inchiriat în Cluj-Napoca. Combinând vehicule de calitate cu servicii pentru clienți de excepție.",
     "stats": {
       "vehicles": "Vehicule",
       "customers": "Clienți Mulțumiți",
@@ -80,8 +80,8 @@
     }
   },
   "contactPage": {
-    "title": "Intră în Contact",
-    "subtitle": "Gata să pleci la drum? Suntem aici să-ți facem experiența de închiriere lină și memorabilă.",
+    "title": "Contact - Masini de Inchiriat Cluj-Napoca",
+    "subtitle": "Gata să închiriezi o mașină în Cluj-Napoca? Suntem aici să-ți facem experiența lină și memorabilă.",
     "meetTheMan": "Cunoaște Omul",
     "visionaryTitle": "Vizionarul din Spatele Volanului",
     "visionarySubtitle": "Mânat de pasiune",
@@ -188,6 +188,7 @@
       "emailPlaceholder": "Introduceți adresa de email",
       "phoneNumber": "Numărul de Telefon",
       "phonePlaceholder": "Introduceți numărul de telefon",
+      "phoneFormat": "Introduceți numărul de telefon cu codul de țară (+40 pentru România, +44 pentru Anglia)",
       "flightNumber": "Numărul Zborului (Opțional)",
       "flightPlaceholder": "ex: AA 1234, LH 456, BA 2847",
       "flightFormat": "Format: Cod companie aeriană de două litere + numărul zborului (ex: \"AA 1234, LH 456, BA 2847\")",
@@ -266,6 +267,7 @@
       "nameRequired": "Numele este obligatoriu",
       "emailRequired": "Vă rugăm să introduceți un email valid",
       "phoneRequired": "Numărul de telefon este obligatoriu",
+      "phoneFormatInvalid": "Introduceți un număr internațional valid începând cu + și un cod de țară (ex: +40..., +44..., +49...).",
       "flightNumberInvalid": "Numărul zborului trebuie să fie în formatul 'XX 1234' (ex: 'AA 1234')",
       "pickupLocationRequired": "Locația de ridicare este obligatorie",
       "pickupDateRequired": "Data de ridicare este obligatorie",
@@ -274,6 +276,7 @@
       "returnDateRequired": "Data de returnare este obligatorie",
       "returnTimeRequired": "Ora de returnare este obligatorie",
       "paymentMethodRequired": "Metoda de plată este obligatorie",
+      "paymentMethodInvalid": "Vă rugăm să selectați o metodă de plată validă",
       "termsAcceptanceRequired": "Trebuie să acceptați termenii și condițiile",
       "fixErrorsBeforeSubmitting": "Vă rugăm să corectați erorile din formular înainte de a trimite.",
       "returnTimeSameDay": "Ora de returnare trebuie să fie după ora de ridicare când returnezi în aceeași zi",
@@ -289,6 +292,7 @@
     "title": "Cererea de Rezervare a Fost Trimisă!",
     "subtitle": "Cererea voastră de rezervare a fost trimisă cu succes. Vom examina cererea și vă vom trimite un email cu starea confirmării și detalii în termen de 24 ore.",
     "reservationId": "ID Rezervare",
+    "reservationNumber": "Număr Rezervare",
     "vehicleDetails": "Detalii Vehicul",
     "customerInformation": "Informații Client",
     "name": "Nume",
@@ -303,6 +307,9 @@
     "paymentMethod": "Metoda de Plată:",
     "additionalCharges": "Taxe Suplimentare:",
     "totalAmount": "Suma Totală:",
+    "scdwLine": "SCDW (nerestituibilă)",
+    "warrantyLine": "Garanție (restituibilă)",
+    "baseRentalLine": "Închiriere ({days} {days, plural, one {zi} other {zile}} × {price} EUR/zi)",
     "bookAnotherCar": "Rezervă O Altă Mașină",
     "whatHappensNext": "Ce Se Întâmplă Acum",
     "requestReview": "Examinarea Cererii",
@@ -310,7 +317,7 @@
     "emailConfirmation": "Confirmare prin Email",
     "emailConfirmationDescription": "Veți primi un email cu confirmarea finală și instrucțiunile de plată",
     "prepareDocuments": "Pregătiți Documentele",
-    "prepareDocumentsDescription": "Aveți permisul de conducere valid și cardul de credit pregătite pentru ridicare",
+    "prepareDocumentsDescription": "Aveți permisul de conducere valid, CI sau pașaport, și un card de credit/debit pregătite pentru ridicare",
     "needHelp": "Aveți Nevoie de Ajutor?",
     "customerSupport": "Suport Clienți",
     "emailSupport": "Suport Email",
@@ -336,10 +343,7 @@
       "cancelled": "Anulată"
     }
   },
-  "transfersPage": {
-    "comingSoon": "În Curând",
-    "description": "Pagina noastră de transferuri este în construcție. Rămâneți aproape!"
-  },
+
   "common": {
     "loading": "Se încarcă...",
     "error": "Eroare",
@@ -436,8 +440,8 @@
     "selectReturnLocation": "Selectează locația de returnare",
     "pickDateTime": "Alege o dată și oră",
     "selectTime": "Selectează ora",
-    "searchCars": "Caută Mașini",
-    "searchingCars": "Se caută mașini...",
+    "searchCars": "Caută Masini de Inchiriat",
+    "searchingCars": "Se caută masini de inchiriat...",
     "returnDateAfterPickup": "Data de returnare trebuie să fie după sau aceeași cu data de ridicare.",
     "selectDateFirst": "Selectează mai întâi o dată"
   },
@@ -513,7 +517,7 @@
       },
       "1": {
         "question": "Care este vârsta minimă pentru a închiria o mașină?",
-        "answer": "Vârsta minimă este de 21 de ani. Șoferii sub 25 de ani pot fi supuși unei taxe pentru șofer tânăr și pot avea restricții pentru anumite categorii de vehicule."
+        "answer": "Vârsta minimă este de 23 de ani. Șoferii sub 25 de ani pot fi supuși unei taxe pentru șofer tânăr și pot avea restricții pentru anumite categorii de vehicule."
       },
       "2": {
         "question": "Pot modifica sau anula rezervarea?",
@@ -546,7 +550,6 @@
     "vehicleDetails": "Detalii Vehicul",
     "customerInformation": "Informații Client",
     "rentalPeriod": "Perioada de Închiriere",
-    "pricing": "Prețuri",
     "tabs": {
       "basic": "Info de Bază",
       "customer": "Client",
@@ -682,8 +685,8 @@
     "selectReturnLocation": "Selectează locația de returnare"
   },
   "vehicleSearchForm": {
-    "title": "Găsește-ți Vehiculul",
-    "subtitle": "Selectează detaliile închirierii de mai jos.",
+    "title": "Masini de Inchiriat Cluj-Napoca - Găsește-ți Vehiculul Perfect",
+    "subtitle": "Explorează Cluj-Napoca cu gama noastră largă de masini de inchiriat. Rezervare ușoară, prețuri competitive, servicii de încredere.",
     "pickupLocation": "Locația de Ridicare",
     "pickupDateTime": "Data și Ora de Ridicare",
     "returnLocation": "Locația de Returnare",

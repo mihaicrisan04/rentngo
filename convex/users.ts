@@ -67,10 +67,11 @@ export const ensureUser = mutation({
       if (existingUser.email !== email) {
         updates.email = email;
       }
-      if (existingUser.firstName !== firstName) {
+      // Only update firstName/lastName if Clerk provides them (don't overwrite with undefined)
+      if (firstName !== undefined && existingUser.firstName !== firstName) {
         updates.firstName = firstName;
       }
-      if (existingUser.lastName !== lastName) {
+      if (lastName !== undefined && existingUser.lastName !== lastName) {
         updates.lastName = lastName;
       }
       

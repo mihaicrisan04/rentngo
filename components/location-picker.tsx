@@ -56,20 +56,11 @@ const LocationCombobox = ({ id, value, onValueChange, placeholder, disabled, loc
     const newValue = selectedLocationName === value ? "" : selectedLocationName;
     onValueChange(newValue);
     
-    // Save to localStorage based on the component ID (only if there's a value)
-    if (newValue) {
-      if (id.includes('delivery') || id.includes('pickup')) {
-        searchStorage.updateField('deliveryLocation', newValue);
-      } else if (id.includes('restitution') || id.includes('return')) {
-        searchStorage.updateField('restitutionLocation', newValue);
-      }
-    } else {
-      // Clear from localStorage if value is empty
-      if (id.includes('delivery') || id.includes('pickup')) {
-        searchStorage.updateField('deliveryLocation', undefined);
-      } else if (id.includes('restitution') || id.includes('return')) {
-        searchStorage.updateField('restitutionLocation', undefined);
-      }
+    // Save to localStorage based on the component ID 
+    if (id.includes('delivery') || id.includes('pickup')) {
+      searchStorage.updateField('deliveryLocation', newValue || undefined);
+    } else if (id.includes('restitution') || id.includes('return')) {
+      searchStorage.updateField('restitutionLocation', newValue || undefined);
     }
   };
 

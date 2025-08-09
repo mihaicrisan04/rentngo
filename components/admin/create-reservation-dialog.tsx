@@ -262,7 +262,7 @@ export function CreateReservationDialog({
                             <SelectContent>
                               {vehicles?.filter(v => v.status === 'available').map((vehicle) => (
                                 <SelectItem key={vehicle._id} value={vehicle._id}>
-                                  {vehicle.make} {vehicle.model} ({vehicle.year}) - {Math.round(vehicle.pricePerDay * seasonalMultiplier)} EUR/day
+                                  {vehicle.make} {vehicle.model} ({vehicle.year}) - {Math.round((vehicle.pricingTiers && vehicle.pricingTiers.length > 0 ? vehicle.pricingTiers[0].pricePerDay : (vehicle.pricePerDay || 50)) * seasonalMultiplier)} EUR/day
                                 </SelectItem>
                               ))}
                             </SelectContent>

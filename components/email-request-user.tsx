@@ -15,21 +15,16 @@ import { RentalDetailsSection } from './email/rental-details-section';
 import { VehicleInfoSection } from './email/vehicle-info-section';
 import { PricingSection } from './email/pricing-section';
 
-interface CarRentalReservationEmailProps {
+interface UserReservationEmailProps {
   data: ReservationEmailData;
 }
 
-const CarRentalReservationEmail: React.FC<CarRentalReservationEmailProps> = ({ data }) => {
+const UserReservationEmail: React.FC<UserReservationEmailProps> = ({ data }) => {
   const { customerInfo, vehicleInfo, rentalDetails, pricingDetails, reservationNumber, locale } = data;
 
   const isRo = locale === 'ro';
   const t = {
-    preview: isRo
-      ? `Cerere nouă de rezervare de la ${customerInfo.name}`
-      : `New car rental reservation request from ${customerInfo.name}`,
-    title: isRo
-      ? `Cerere nouă de rezervare #${reservationNumber}`
-      : `New Reservation Request #${reservationNumber}`,
+    title: isRo ? `Cerere trimisă #${reservationNumber}` : `Request submitted #${reservationNumber}`,
     customer: {
       heading: isRo ? 'Detalii Rezervare' : 'Reservation Details',
       name: isRo ? 'Nume Client:' : 'Customer Name:',
@@ -65,17 +60,16 @@ const CarRentalReservationEmail: React.FC<CarRentalReservationEmailProps> = ({ d
       warrantyText: isRo ? 'Garanție (restituibilă)' : 'Warranty (deductible)',
     },
     footerMessage: isRo
-      ? 'Aceasta este o notificare automată din sistemul de rezervări Rent\'n Go.'
-      : "This is an automated notification from Rent'n Go reservation system.",
+      ? "Am primit cererea ta. Echipa noastră te va contacta în curând pentru confirmare."
+      : "We've received your request. Our team will contact you soon to confirm.",
   };
 
   return (
     <Html lang="en" dir="ltr">
       <Tailwind>
         <Head />
-        <Preview>{t.preview}</Preview>
+        <Preview>Your reservation request was received</Preview>
         <Body className="bg-white font-sans p-0 m-0">
-          
           <EmailHeader title={t.title} />
 
           <CustomerInfoSection 
@@ -88,7 +82,7 @@ const CarRentalReservationEmail: React.FC<CarRentalReservationEmailProps> = ({ d
               phone: t.customer.phone,
               flightNumber: t.customer.flight,
               message: t.customer.message,
-            }} 
+            }}
           />
 
           <RentalDetailsSection
@@ -103,7 +97,7 @@ const CarRentalReservationEmail: React.FC<CarRentalReservationEmailProps> = ({ d
 
           <Hr className="border-gray-200 my-[4px]" />
 
-          <VehicleInfoSection 
+          <VehicleInfoSection
             vehicleInfo={vehicleInfo}
             labels={{
               heading: t.vehicle.heading,
@@ -130,7 +124,6 @@ const CarRentalReservationEmail: React.FC<CarRentalReservationEmailProps> = ({ d
           />
 
           <EmailFooter customMessage={t.footerMessage} />
-
         </Body>
       </Tailwind>
     </Html>
@@ -144,7 +137,7 @@ const previewProps: EmailPreviewProps = {
     name: "John Doe",
     email: "john.doe@example.com",
     phone: "+40 123 456 789",
-    message: "Please have the vehicle ready at the airport pickup location. I'll be arriving on an international flight.",
+    message: "Please have the vehicle ready at the airport pickup location.",
     flightNumber: "RO 123",
   },
   vehicleInfo: {
@@ -155,7 +148,7 @@ const previewProps: EmailPreviewProps = {
     seats: 5,
     transmission: "automatic",
     fuelType: "diesel",
-    features: ["GPS Navigation", "Bluetooth", "Air Conditioning", "Cruise Control"],
+    features: ["GPS Navigation", "Bluetooth", "Air Conditioning"],
   },
   rentalDetails: {
     startDate: "March 15, 2025",
@@ -167,17 +160,18 @@ const previewProps: EmailPreviewProps = {
     restitutionLocation: "Cluj-Napoca Airport",
   },
   pricingDetails: {
-          pricePerDay: 85, // Demo value for email template
+    pricePerDay: 85,
     totalPrice: 450,
     paymentMethod: "card_on_delivery",
     promoCode: "WELCOME10",
     additionalCharges: [
       { description: "Airport pickup fee", amount: 15 },
-      { description: "GPS Navigation", amount: 5 },
     ],
   },
 };
 
-(CarRentalReservationEmail as any).PreviewProps = previewProps;
+(UserReservationEmail as any).PreviewProps = previewProps;
 
-export default CarRentalReservationEmail;
+export default UserReservationEmail;
+
+

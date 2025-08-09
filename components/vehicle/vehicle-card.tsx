@@ -8,9 +8,11 @@ import { api } from "../../convex/_generated/api";
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Cog, Fuel, CarFront } from "lucide-react";
+import { Cog, Fuel, CarFront, Icon } from "lucide-react";
+import { gearbox } from '@lucide/lab';
 import { Vehicle } from "@/types/vehicle";
 import { buildReservationUrl, calculateVehiclePricingWithSeason, getPriceForDurationWithSeason } from "@/lib/vehicleUtils";
+import { getBasePricePerDay } from "@/types/vehicle";
 import { useSeasonalPricing } from "@/hooks/useSeasonalPricing";
 import { useTranslations, useLocale } from 'next-intl';
 
@@ -69,8 +71,10 @@ export function VehicleCard({
     if (priceDetails.days) {
       return getPriceForDurationWithSeason(vehicle, priceDetails.days, currentMultiplier);
     }
-    return vehicle.pricePerDay; // fallback to legacy price
-  }, [vehicle, priceDetails.days]);
+    // Use the base price tier (lowest minDays + highest pricePerDay) with seasonal adjustment
+    const basePrice = getBasePricePerDay(vehicle);
+    return Math.round(basePrice * currentMultiplier);
+  }, [vehicle, priceDetails.days, currentMultiplier]);
 
   const currency = "EUR";
 
@@ -85,7 +89,7 @@ export function VehicleCard({
 
   return (
     <div 
-      className="flex flex-col bg-accent text-card-foreground overflow-hidden rounded-lg shadow-lg w-full max-w-sm transition-all duration-200 hover:shadow-xl hover:-translate-y-1"
+      className="relative flex flex-col bg-accent text-card-foreground overflow-hidden rounded-lg shadow-lg w-full max-w-sm transition-all duration-300 hover:shadow-xl hover:scale-105 group before:absolute before:inset-0 before:rounded-lg before:border-2 before:border-primary/20 before:scale-110 before:opacity-0 before:transition-all before:duration-300 group-hover:before:opacity-100 before:pointer-events-none"
     >
       <div 
         className="aspect-[4/3] relative w-full bg-muted overflow-hidden cursor-pointer"
@@ -108,38 +112,47 @@ export function VehicleCard({
       </div>
 
       <div className="flex-grow p-4 space-y-4 text-center">
-        <h3 className="text-lg font-semibold">
-          {vehicle.make} {vehicle.model}
-        </h3>
-
-        <div className="space-y-2">
-          <div className="flex justify-between items-baseline">
-            <div>
-              <span className="text-2xl font-bold text-yellow-500">
-                {currentPricePerDay}
-              </span>
-              <span className="text-sm text-muted-foreground"> {currency} {t('perDay')}</span>
-            </div>
-            {priceDetails.totalPrice !== null && priceDetails.days !== null && (
-              <div>
-                <span className="text-xl font-semibold text-yellow-600">
-                  {priceDetails.totalPrice}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {" "}{currency} / {t('totalFor', { 
-                    days: priceDetails.days, 
-                    plural: locale === 'ro' ? ((priceDetails.days === 1) ? "" : "le") : ((priceDetails.days === 1) ? "" : "s") 
-                  })}
-                </span>
-                {priceDetails.totalLocationFees > 0 && (
-                  <div className="text-xs text-muted-foreground/60">
-                    +{priceDetails.totalLocationFees} {currency} {t('fees')}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+        <div className="flex items-center justify-center space-x-2">
+          <h3 className="text-lg font-semibold">
+            {vehicle.make} {vehicle.model}
+          </h3>
+          <span className="flex items-center space-x-1 text-xs text-muted-foreground">
+            <Icon iconNode={gearbox} className="h-3 w-3" />
+            <span>{vehicle.transmission || t('notAvailable')}</span>
+          </span>
         </div>
+
+        {/* Only show pricing when dates are selected */}
+        {pickupDate && returnDate && (
+          <div className="space-y-2">
+            <div className="flex justify-between items-baseline">
+              <div>
+                <span className="text-2xl font-bold text-yellow-500">
+                  {currentPricePerDay}
+                </span>
+                <span className="text-sm text-muted-foreground"> {currency} {t('perDay')}</span>
+              </div>
+              {priceDetails.totalPrice !== null && priceDetails.days !== null && (
+                <div>
+                  <span className="text-xl font-semibold text-yellow-600">
+                    {priceDetails.totalPrice}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {" "}{currency} / {t('totalFor', { 
+                      days: priceDetails.days, 
+                      plural: locale === 'ro' ? ((priceDetails.days === 1) ? "" : "le") : ((priceDetails.days === 1) ? "" : "s") 
+                    })}
+                  </span>
+                  {priceDetails.totalLocationFees > 0 && (
+                    <div className="text-xs text-muted-foreground/60">
+                      +{priceDetails.totalLocationFees} {currency} {t('fees')}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <Button 
           // #055E3B

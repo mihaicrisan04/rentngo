@@ -228,7 +228,7 @@ export default function TermsAndConditionsPage() {
             <p><strong>Rent'n Go Prodexa S.R.L.</strong></p>
             <p>Email: <Link href="mailto:office@rngo.ro" className="text-primary hover:underline">office@rngo.ro</Link></p>
             <p>Telefon: +40773932961</p>
-            <p>Adresă: Calea Turzii 23, Cluj-Napoca, România</p>
+            <p>Adresă: Cluj \"Avram Iancu\" International Airport, Strada Traian Vuia 149-151, Cluj-Napoca, România</p>
           </CardContent>
         </Card>
 

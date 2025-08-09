@@ -1,6 +1,7 @@
 import { differenceInDays } from "date-fns";
 import { getLocationPrice } from "@/components/location-picker";
 import { AdditionalFeatures } from "./useReservationForm";
+import { getBasePricePerDay } from "@/types/vehicle";
 
 export interface PricingDetails {
   basePrice: number | null;
@@ -22,7 +23,7 @@ export interface UseReservationPricingParams {
   deliveryLocation: string;
   restitutionLocation: string;
   additionalFeatures: AdditionalFeatures;
-  pricePerDay?: number;
+  vehicle?: any; // Pass the vehicle object instead of just pricePerDay
 }
 
 // SCDW calculation function
@@ -41,10 +42,10 @@ export function useReservationPricing({
   deliveryLocation,
   restitutionLocation,
   additionalFeatures,
-  pricePerDay
+  vehicle
 }: UseReservationPricingParams): PricingDetails {
   
-  if (!pickupDate || !returnDate || !pricePerDay) {
+  if (!pickupDate || !returnDate || !vehicle) {
     return {
       basePrice: null,
       totalPrice: null,
@@ -61,6 +62,7 @@ export function useReservationPricing({
   }
 
   const days = Math.max(1, differenceInDays(returnDate, pickupDate));
+  const pricePerDay = getBasePricePerDay(vehicle);
   const basePrice = days * pricePerDay;
   
   // Add location fees

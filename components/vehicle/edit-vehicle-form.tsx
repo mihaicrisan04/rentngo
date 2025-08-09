@@ -29,7 +29,7 @@ import { CheckedState } from "@radix-ui/react-checkbox";
 // Assuming these types are defined in a shared location or are appropriate here
 type VehicleType = "sedan" | "suv" | "hatchback" | "sports";
 type TransmissionType = "automatic" | "manual";
-type FuelType = "petrol" | "diesel" | "electric" | "hybrid";
+type FuelType = "benzina" | "diesel" | "electric" | "hybrid";
 type StatusType = "available" | "rented" | "maintenance"; // Assuming vehicle object has status
 
 interface EditVehicleFormProps {
@@ -47,8 +47,8 @@ const initialFormData = {
   type: "sedan" as VehicleType,
   seats: 5,
   transmission: "automatic" as TransmissionType,
-  fuelType: "petrol" as FuelType,
-  pricePerDay: 0,
+  fuelType: "benzina" as FuelType,
+      // pricePerDay removed - using pricingTiers only
   location: "",
   features: [] as string[],
   status: "available" as StatusType, // Default status
@@ -82,7 +82,7 @@ export function EditVehicleForm({
         seats: vehicle.seats || 5,
         transmission: vehicle.transmission as TransmissionType,
         fuelType: vehicle.fuelType as FuelType,
-        pricePerDay: vehicle.pricePerDay,
+        // pricePerDay removed - using pricingTiers only
         location: vehicle.location || "",
         features: vehicle.features || [],
         status: (vehicle.status || "available") as StatusType, // Handle if status is not present
@@ -122,7 +122,7 @@ export function EditVehicleForm({
         ...formData,
         year: Number(formData.year),
         seats: Number(formData.seats),
-        pricePerDay: Number(formData.pricePerDay),
+        // pricePerDay removed - using pricingTiers only
         engineCapacity: Number(formData.engineCapacity), // Ensure it's a number
         engineType: formData.engineType,
       };
@@ -289,7 +289,7 @@ export function EditVehicleForm({
                     <SelectValue placeholder="Select fuel type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="petrol">Petrol</SelectItem>
+                    <SelectItem value="benzina">Benzina</SelectItem>
                     <SelectItem value="diesel">Diesel</SelectItem>
                     <SelectItem value="electric">Electric</SelectItem>
                     <SelectItem value="hybrid">Hybrid</SelectItem>
@@ -297,20 +297,6 @@ export function EditVehicleForm({
                 </Select>
               </div>
 
-              <div>
-                <Label htmlFor="edit-pricePerDay">Price per Day (RON)</Label>
-                <Input
-                  id="edit-pricePerDay"
-                  type="number"
-                  required
-                  min="0"
-                  step="0.01"
-                  value={formData.pricePerDay}
-                  onChange={(e) => setFormData({ ...formData, pricePerDay: parseFloat(e.target.value) || 0 })}
-                  className="mt-1"
-                  disabled={isSubmitting}
-                />
-              </div>
               
               <div className="md:col-span-2">
                 <Label htmlFor="edit-location">Location</Label>

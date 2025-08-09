@@ -92,17 +92,19 @@ export function DateTimePicker({
 
   const handleDateChange = (newDate: Date | undefined) => {
     if (newDate) {
-      setDateState(newDate);
+      // Validate the date to ensure it's not in the past
+      const validatedDate = searchStorage.validateDate(newDate) || newDate;
+      setDateState(validatedDate);
       
       // Save to localStorage based on the component ID
       if (id.includes('pickup')) {
-        searchStorage.updateField('pickupDate', newDate);
+        searchStorage.updateField('pickupDate', validatedDate);
       } else if (id.includes('return')) {
-        searchStorage.updateField('returnDate', newDate);
+        searchStorage.updateField('returnDate', validatedDate);
       }
       
       if (onDateChange) {
-        onDateChange(newDate);
+        onDateChange(validatedDate);
       }
     } else {
       // Handle clearing the date
@@ -141,6 +143,22 @@ export function DateTimePicker({
     }
   }, [pickupDate, pickupTime, dateState, timeState, id, setTimeState]);
 
+  // Effect to validate date on component mount or when dateState changes
+  React.useEffect(() => {
+    if (dateState) {
+      const validatedDate = searchStorage.validateDate(dateState);
+      if (validatedDate && validatedDate.getTime() !== dateState.getTime()) {
+        // Date was corrected, update the state and localStorage
+        setDateState(validatedDate);
+        if (id.includes('pickup')) {
+          searchStorage.updateField('pickupDate', validatedDate);
+        } else if (id.includes('return')) {
+          searchStorage.updateField('returnDate', validatedDate);
+        }
+      }
+    }
+  }, [dateState, id, setDateState]);
+
   return (
     <div className={cn("grid gap-1.5 w-full", contentAlign === 'end' && "justify-items-end")}>
       <Label htmlFor={id} className={cn("text-sm font-medium", contentAlign === 'end' && "text-right")}>{label}</Label>
@@ -171,7 +189,7 @@ export function DateTimePicker({
             disabled={disabledDateRanges}
             initialFocus
           />
-          <div className="relative w-full max-sm:h-60 sm:w-40 sm:h-[270px]">
+          <div className="relative w-full max-sm:h-60 sm:w-40 sm:h-[320px]">
             <ScrollArea className="h-full py-2">
               <div className="space-y-2 px-3">
                 <div className="flex h-5 shrink-0 items-center">

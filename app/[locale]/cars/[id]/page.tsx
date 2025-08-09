@@ -29,6 +29,7 @@ import { formatVehicleName, getVehicleTypeLabel } from "@/lib/vehicleUtils";
 import { RentalDetails } from "@/components/rental-details";
 import { RentalDetailsSkeleton } from "@/components/rental-details-skeleton";
 import { useTranslations } from 'next-intl';
+import Head from 'next/head';
 
 export default function CarDetailPage() {
   const params = useParams();
@@ -120,8 +121,94 @@ export default function CarDetailPage() {
 
   const vehicleName = formatVehicleName(vehicle.make, vehicle.model, vehicle.year);
 
+  // Generate schema markup for individual vehicle
+  const generateVehicleSchema = () => {
+    if (!vehicle) return null;
+
+    return {
+      "@context": "https://schema.org",
+      "@type": "Vehicle",
+      "@id": `https://rngo.com/cars/${vehicle._id}`,
+      "name": vehicleName,
+      "description": `${vehicleName} disponibil pentru închiriere în Cluj-Napoca. Masini de inchiriat cu Rent'n Go - servicii profesionale de închiriere auto.`,
+      "brand": {
+        "@type": "Brand",
+        "name": vehicle.make
+      },
+      "model": vehicle.model,
+      "vehicleModelDate": vehicle.year?.toString(),
+      "bodyType": vehicle.type,
+      "numberOfSeats": vehicle.seats,
+      "fuelType": vehicle.fuelType || "Petrol",
+      "vehicleTransmission": vehicle.transmission || "Manual",
+      "vehicleEngine": {
+        "@type": "EngineSpecification",
+        "fuelType": vehicle.fuelType || "Petrol",
+        "engineDisplacement": vehicle.engineCapacity ? `${vehicle.engineCapacity}L` : "1.6L"
+      },
+      "image": vehicle.images?.map(img => `https://rngo.com${img}`) || ["https://rngo.com/logo.png"],
+      "url": `https://rngo.com/cars/${vehicle._id}`,
+      "offers": {
+        "@type": "Offer",
+        "priceCurrency": "EUR",
+        "price": priceDetails.basePrice || vehicle.pricingTiers?.[0]?.pricePerDay || "25",
+        "priceSpecification": {
+          "@type": "UnitPriceSpecification",
+          "price": priceDetails.basePrice || vehicle.pricingTiers?.[0]?.pricePerDay || "25",
+          "priceCurrency": "EUR",
+          "unitText": "per day"
+        },
+        "availability": "https://schema.org/InStock",
+        "validFrom": new Date().toISOString(),
+        "seller": {
+          "@type": "Organization",
+          "name": "Rent'n Go",
+          "url": "https://rngo.com",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Cluj \"Avram Iancu\" International Airport, Strada Traian Vuia 149-151",
+            "addressLocality": "Cluj-Napoca",
+            "postalCode": "400397",
+            "addressCountry": "RO"
+          },
+          "telephone": "+40-773-932-961"
+        }
+      },
+      "potentialAction": {
+        "@type": "RentAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": `https://rngo.com/reservation?vehicleId=${vehicle._id}`,
+          "actionPlatform": [
+            "https://schema.org/DesktopWebPlatform",
+            "https://schema.org/MobileWebPlatform"
+          ]
+        }
+      }
+    };
+  };
+
+  const vehicleSchema = generateVehicleSchema();
+
   return (
-    <PageLayout className="p-4 md:p-8">
+    <>
+      <Head>
+        <title>{vehicleName} - Masini de Inchiriat Cluj-Napoca | Rent'n Go</title>
+        <meta name="description" content={`Închiriază ${vehicleName} în Cluj-Napoca cu Rent'n Go. ${vehicle.seats} locuri, ${vehicle.fuelType || 'Petrol'}, ${vehicle.transmission || 'Manual'}. Rezervare online rapidă pentru masini de inchiriat Cluj.`} />
+        <meta name="keywords" content={`${vehicleName}, masini de inchiriat cluj-napoca, ${vehicle.make} închiriere, car rental ${vehicle.model}, rent ${vehicle.make} cluj`} />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href={`https://rngo.com/cars/${vehicle._id}`} />
+        
+        {vehicleSchema && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(vehicleSchema)
+            }}
+          />
+        )}
+      </Head>
+      <PageLayout className="p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb navigation */}
         <div className="mb-6">
@@ -223,5 +310,6 @@ export default function CarDetailPage() {
         )}
       </div>
     </PageLayout>
+    </>
   );
 }

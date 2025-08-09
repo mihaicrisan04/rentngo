@@ -85,13 +85,7 @@ const vehicleSchema = z.object({
       return capacity > 0 && capacity <= 10;
     }, "Engine capacity must be between 0.1 and 10.0"),
   engineType: z.string().min(1, "Engine type is required").max(20, "Engine type must be less than 20 characters"),
-  pricePerDay: z.string()
-    .min(1, "Price per day is required")
-    .regex(/^\d+(\.\d{1,2})?$/, "Price must be a valid number with up to 2 decimal places")
-    .refine((val) => {
-      const price = parseFloat(val);
-      return price > 0;
-    }, "Price must be greater than 0"),
+  // Remove pricePerDay validation as it's no longer needed
   warranty: z.string()
     .regex(/^\d+(\.\d{1,2})?$/, "Warranty must be a valid number")
     .optional()
@@ -102,7 +96,7 @@ const vehicleSchema = z.object({
     minDays: z.number().min(1),
     maxDays: z.number().min(1),
     pricePerDay: z.number().min(0),
-  })),
+  })).min(1, "At least one pricing tier is required"),
 });
 
 type VehicleFormData = z.infer<typeof vehicleSchema>;
@@ -117,7 +111,7 @@ interface EditVehicleDialogProps {
 const availableFeatures = [
   "Air Conditioning", "Bluetooth", "Parking Sensors", "Backup Camera", 
   "GPS", "Sunroof", "Heated Seats", "Cruise Control", "Leather Seats",
-  "USB Charging", "Wireless Charging", "Premium Audio"
+  "USB Charging", "Wireless Charging", "Premium Audio", "Android Auto", "Apple CarPlay",
 ];
 
 export function EditVehicleDialog({
@@ -149,7 +143,7 @@ export function EditVehicleDialog({
       fuelType: "petrol",
       engineCapacity: "",
       engineType: "",
-      pricePerDay: "",
+      // pricePerDay removed - using pricingTiers only
       warranty: "",
       features: [],
       status: "available",
@@ -170,13 +164,17 @@ export function EditVehicleDialog({
         fuelType: (vehicle.fuelType as FuelType) || "petrol",
         engineCapacity: (vehicle.engineCapacity || 0).toString(),
         engineType: vehicle.engineType || "",
-        pricePerDay: vehicle.pricePerDay.toString(),
+        // pricePerDay removed - using pricingTiers only
         warranty: (vehicle.warranty || 0).toString(),
         features: vehicle.features || [],
         status: vehicle.status,
-        pricingTiers: vehicle.pricingTiers || [],
+        pricingTiers: [],
       });
-      setPricingTiers(vehicle.pricingTiers || []);
+      const tiers = vehicle.pricingTiers && vehicle.pricingTiers.length > 0 
+        ? vehicle.pricingTiers 
+        : [{ minDays: 1, maxDays: 999, pricePerDay: vehicle.pricePerDay || 50 }]; // Create default from legacy or fallback
+      setPricingTiers(tiers);
+      form.setValue("pricingTiers", tiers);
       setMainImageIdState(vehicle.mainImageId);
     } else if (!open) {
       form.reset();
@@ -236,7 +234,7 @@ export function EditVehicleDialog({
         fuelType: values.fuelType as FuelType,
         engineCapacity: parseFloat(values.engineCapacity),
         engineType: values.engineType,
-        pricePerDay: parseFloat(values.pricePerDay),
+        // pricePerDay removed - using pricingTiers only
         warranty: values.warranty ? parseFloat(values.warranty) : 0,
         features: values.features,
         status: values.status as VehicleStatus,
@@ -522,7 +520,6 @@ export function EditVehicleDialog({
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="petrol">Petrol</SelectItem>
                               <SelectItem value="diesel">Diesel</SelectItem>
                               <SelectItem value="electric">Electric</SelectItem>
                               <SelectItem value="hybrid">Hybrid</SelectItem>
@@ -621,25 +618,6 @@ export function EditVehicleDialog({
                     "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4"
                   )}
                 >
-                  <FormField
-                    control={form.control}
-                    name="pricePerDay"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Base Price per Day (EUR)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            onKeyDown={handleNumberInput}
-                            disabled={isSubmitting}
-                            placeholder="e.g., 150.00"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <FormLabel>Pricing Tiers</FormLabel>

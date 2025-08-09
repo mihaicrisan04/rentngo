@@ -1,6 +1,6 @@
 import { differenceInDays } from "date-fns";
 import { getLocationPrice } from "@/components/location-picker";
-import { Vehicle, getPriceForDuration } from "@/types/vehicle";
+import { Vehicle, getPriceForDuration, getBasePricePerDay } from "@/types/vehicle";
 
 // Pricing calculation types
 export interface PriceDetails {

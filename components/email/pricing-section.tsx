@@ -6,11 +6,22 @@ import { calculatePricingBreakdown, getPaymentMethodLabel, formatCurrency } from
 interface PricingSectionProps {
   pricingDetails: PricingDetails;
   rentalDetails: RentalDetails;
+  labels?: {
+    heading?: string;
+    rentalLine?: (days: number, pricePerDay: number) => string; // preformatted line
+    promoCode?: string;
+    additionalCharges?: string;
+    totalAmount?: string;
+    paymentMethod?: string;
+    scdwText?: string; // e.g., "SCDW (zero deductible)"
+    warrantyText?: string; // e.g., "Warranty (deductible)"
+  };
 }
 
 export const PricingSection: React.FC<PricingSectionProps> = ({ 
   pricingDetails, 
-  rentalDetails 
+  rentalDetails,
+  labels,
 }) => {
   const { rentalSubtotal } = calculatePricingBreakdown(
     pricingDetails.pricePerDay,
@@ -19,15 +30,17 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
   );
 
   return (
-    <Section className="px-[32px] py-[24px]">
-      <Heading className="text-[24px] font-bold text-gray-800 mb-[16px]">
-        Pricing Details
+    <Section className="px-[16px] py-[12px]">
+      <Heading className="text-[20px] font-bold text-gray-800 mb-[12px]">
+        {labels?.heading ?? 'Pricing Details'}
       </Heading>
 
-      <Row className="mb-[12px]">
+      <Row className="mb-[8px]">
         <Column className="w-2/3">
           <Text className="text-[16px] text-gray-800 m-0">
-            Rental ({rentalDetails.numberOfDays} {rentalDetails.numberOfDays === 1 ? 'day' : 'days'} × {formatCurrency(pricingDetails.pricePerDay)}/day):
+            {labels?.rentalLine
+              ? labels.rentalLine(rentalDetails.numberOfDays, pricingDetails.pricePerDay)
+              : `Rental (${rentalDetails.numberOfDays} ${rentalDetails.numberOfDays === 1 ? 'day' : 'days'} × ${formatCurrency(pricingDetails.pricePerDay)}/day):`}
           </Text>
         </Column>
         <Column className="w-1/3 text-right">
@@ -38,9 +51,9 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
       </Row>
 
       {pricingDetails.promoCode && (
-        <Row className="mb-[12px]">
+        <Row className="mb-[8px]">
           <Column className="w-2/3">
-            <Text className="text-[16px] text-green-600 m-0">Promo Code Applied:</Text>
+            <Text className="text-[16px] text-green-600 m-0">{labels?.promoCode ?? 'Promo Code Applied:'}</Text>
           </Column>
           <Column className="w-1/3 text-right">
             <Text className="text-[16px] text-green-600 m-0">{pricingDetails.promoCode}</Text>
@@ -49,9 +62,9 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
       )}
 
       {pricingDetails.additionalCharges && pricingDetails.additionalCharges.map((charge, index) => (
-        <Row key={index} className="mb-[12px]">
+        <Row key={index} className="mb-[8px]">
           <Column className="w-2/3">
-            <Text className="text-[16px] text-gray-800 m-0">{charge.description}:</Text>
+            <Text className="text-[16px] text-gray-800 m-0">{labels?.additionalCharges ?? 'Additional Charge'}{labels?.additionalCharges ? '' : ''}{labels?.additionalCharges ? '' : ''}{charge.description ? `: ${charge.description}` : ''}</Text>
           </Column>
           <Column className="w-1/3 text-right">
             <Text className="text-[16px] text-gray-800 m-0">
@@ -61,11 +74,25 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
         </Row>
       ))}
 
-      <Hr className="border-gray-300 my-[16px]" />
+      {/* Show SCDW as a line item at the end of pricing details (before total) */}
+      {pricingDetails.isSCDWSelected && (pricingDetails.protectionCost || 0) > 0 && (
+        <Row className="mb-[8px]">
+          <Column className="w-2/3">
+            <Text className="text-[16px] text-gray-800 m-0">{labels?.scdwText ?? 'SCDW (zero deductible)'}:</Text>
+          </Column>
+          <Column className="w-1/3 text-right">
+            <Text className="text-[16px] text-gray-800 m-0">
+              {formatCurrency(pricingDetails.protectionCost || 0)}
+            </Text>
+          </Column>
+        </Row>
+      )}
 
-      <Row className="mb-[16px]">
+      <Hr className="border-gray-300 my-[12px]" />
+
+      <Row className="mb-[12px]">
         <Column className="w-2/3">
-          <Text className="text-[18px] font-bold text-gray-800 m-0">Total Amount:</Text>
+          <Text className="text-[18px] font-bold text-gray-800 m-0">{labels?.totalAmount ?? 'Total Amount:'}</Text>
         </Column>
         <Column className="w-1/3 text-right">
           <Text className="text-[18px] font-bold text-gray-800 m-0">
@@ -74,9 +101,20 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
         </Column>
       </Row>
 
+      {/* Protection note for Warranty (deposit) shown under total only when SCDW is not selected */}
+      {!pricingDetails.isSCDWSelected && pricingDetails.deductibleAmount !== undefined && (
+        <Row className="mb-[12px]">
+          <Column>
+            <Text className="text-[14px] text-gray-800 m-0">
+              {(labels?.warrantyText ?? 'Warranty (deductible)') + ': '} {formatCurrency(pricingDetails.deductibleAmount || 0)}
+            </Text>
+          </Column>
+        </Row>
+      )}
+
       <Row>
         <Column>
-          <Text className="text-[14px] font-semibold text-gray-600 m-0">Payment Method:</Text>
+          <Text className="text-[14px] font-semibold text-gray-600 m-0">{labels?.paymentMethod ?? 'Payment Method:'}</Text>
           <Text className="text-[16px] text-gray-800 m-0 mt-[4px]">
             {getPaymentMethodLabel(pricingDetails.paymentMethod)}
           </Text>
