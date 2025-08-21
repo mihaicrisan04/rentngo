@@ -15,16 +15,7 @@ const reservationStatusValidator = v.union(
 // Explicit type for ReservationStatus based on the schema
 type ReservationStatusType = "pending" | "confirmed" | "cancelled" | "completed";
 
-// Flight number validation function
-const validateFlightNumber = (flightNumber: string): boolean => {
-  if (!flightNumber || !flightNumber.trim()) {
-    return true; // Optional field
-  }
-  // Format: Two letter airline code followed by a space and then numbers
-  // Examples: "AA 1234", "LH 456", "BA 2847"
-  const flightNumberRegex = /^[A-Z]{2}\s\d+$/;
-  return flightNumberRegex.test(flightNumber.trim());
-};
+ 
 
 // Validator for additional charges, aligned with schema.ts
 const additionalChargeValidator = v.object({
@@ -72,10 +63,7 @@ export const createReservation = mutation({
     // Get the current authenticated user (if any)
     const currentUser = await getCurrentUser(ctx);
 
-    // Validate flight number format if provided
-    if (args.customerInfo.flightNumber && !validateFlightNumber(args.customerInfo.flightNumber)) {
-      throw new Error("Invalid flight number format. Please use format: 'XX 1234' (two letter airline code, space, then numbers)");
-    }
+    
 
     // TODO: Implement robust availability check for the vehicle.
     // This should query reservations using the 'by_vehicle' and/or 'by_dates' index
@@ -310,10 +298,7 @@ export const updateReservationDetails = mutation({
       throw new Error("User not authorized to update this reservation.");
     }
 
-    // Validate flight number format if provided in customerInfo update
-    if (updatesIn.customerInfo?.flightNumber && !validateFlightNumber(updatesIn.customerInfo.flightNumber)) {
-      throw new Error("Invalid flight number format. Please use format: 'XX 1234' (two letter airline code, space, then numbers)");
-    }
+    
 
     // TODO: If startDate or endDate are changing, re-run availability checks.
 

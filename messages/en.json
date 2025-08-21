@@ -121,10 +121,10 @@
     "openInMaps": "Open in Google Maps",
     "businessHours": {
       "title": "Business Hours",
-      "mondayToSaturday": "Monday - Saturday",
+      "mondayToSunday": "Monday - Sunday",
       "sunday": "Sunday",
-      "mondayToSaturdayTime": "24/7",
-      "sundayTime": "10:00 AM - 4:00 PM"
+      "mondayToSundayTime": "24/7",
+      "sundayTime": "24/7"
     }
   },
   "reservationPage": {
@@ -191,7 +191,7 @@
       "phoneFormat": "Enter phone number with country code (+40 for Romania, +44 for England)",
       "flightNumber": "Flight Number (Optional)",
       "flightPlaceholder": "e.g., AA 1234, LH 456, BA 2847",
-      "flightFormat": "Format: Two letter airline code + flight number (e.g., \"AA 1234, LH 456, BA 2847\")",
+      "flightFormat": "flight number (e.g., \"AA 1234, LH 456, BA 2847\")",
       "additionalMessage": "Additional Message (Optional)",
       "messagePlaceholder": "Any special requests or additional information..."
     },

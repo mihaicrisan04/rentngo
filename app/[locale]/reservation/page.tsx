@@ -28,7 +28,7 @@ import { getBasePricePerDay } from "@/types/vehicle";
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { validateFlightNumber, formatFlightNumber } from "@/lib/flightValidation";
+ 
 import { Progress } from "@/components/ui/progress";
 import { useSeasonalPricing } from "@/hooks/useSeasonalPricing";
 import { useTranslations, useLocale } from 'next-intl';
@@ -42,10 +42,7 @@ const createReservationSchema = (t: any) => z.object({
   email: z.string().email(t('validation.emailRequired')),
   phone: z.string().min(1, t('validation.phoneRequired'))
     .refine((val) => isValidInternationalPhoneNumber(val), t('validation.phoneFormatInvalid')),
-  flightNumber: z.string().optional().refine((val) => {
-    if (!val || !val.trim()) return true; // Optional field
-    return validateFlightNumber(val);
-  }, t('validation.flightNumberInvalid')),
+  flightNumber: z.string().optional(),
   message: z.string().optional(),
   
   // Rental details
@@ -1148,11 +1145,9 @@ function ReservationPageContent() {
                           placeholder={t('personalInfo.flightPlaceholder')}
                           value={personalInfo.flightNumber}
                           onChange={(e) => {
-                            const formattedValue = formatFlightNumber(e.target.value);
-                            setPersonalInfo(prev => ({ ...prev, flightNumber: formattedValue }));
+                            setPersonalInfo(prev => ({ ...prev, flightNumber: e.target.value }));
                           }}
                           className={cn(errors.personalInfo?.flightNumber && "border-red-500")}
-                          maxLength={10} // XX 1234 format shouldn't exceed this
                         />
                         {errors.personalInfo?.flightNumber && (
                           <p className="text-sm text-red-500 mt-1 flex items-center">
@@ -1160,9 +1155,7 @@ function ReservationPageContent() {
                             {errors.personalInfo.flightNumber}
                           </p>
                         )}
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {t('personalInfo.flightFormat')}
-                        </p>
+                        
                       </div>
                       
                       <div>
