@@ -1,6 +1,9 @@
 import { ReservationEmailData, EmailType } from '@/types/email';
 import { transformReservationForEmail } from './emailUtils';
 import { differenceInDays } from 'date-fns';
+import { Vehicle } from '@/types/vehicle';
+import { Reservation } from '@/types/reservation';
+import { calculateVehiclePricingWithSeason, calculateRentalDays } from './vehicleUtils';
 
 /**
  * Email Factory for creating different types of reservation emails
@@ -11,14 +14,18 @@ export class EmailFactory {
    * Create email data from raw reservation and vehicle data
    */
   static createEmailData(
-    reservation: any,
-    vehicle: any,
+    reservation: Reservation,
+    vehicle: Vehicle,
     emailType: EmailType = 'reservation_request'
   ): ReservationEmailData {
-    const numberOfDays = Math.max(1, differenceInDays(
-      new Date(reservation.endDate),
-      new Date(reservation.startDate)
-    ));
+    const pickupDate = new Date(reservation.startDate as any);
+    const restitutionDate = new Date(reservation.endDate as any);
+    const hasValidDates = !isNaN(pickupDate.getTime()) && !isNaN(restitutionDate.getTime()) && restitutionDate >= pickupDate;
+    const hasTimes = Boolean(reservation.pickupTime && reservation.restitutionTime);
+
+    const numberOfDays = hasValidDates && hasTimes
+      ? calculateRentalDays(pickupDate, restitutionDate, reservation.pickupTime as any, reservation.restitutionTime as any)
+      : 1;
 
     return transformReservationForEmail(reservation, vehicle, numberOfDays);
   }

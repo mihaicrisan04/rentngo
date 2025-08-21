@@ -29,29 +29,7 @@ export function calculateVehiclePricing(
   restitutionTime?: string | null
 ): PriceDetails {
   if (pickup && restitution && pickupTime && restitutionTime && restitution >= pickup) {
-    // Get hours from time strings
-    const pickupHour = parseInt(pickupTime.split(':')[0]);
-    const restitutionHour = parseInt(restitutionTime.split(':')[0]);
-    
-    // Calculate base days difference
-    const days = differenceInDays(restitution, pickup);
-    
-    let calculatedDays = days;
-    
-    // If it's same day rental (days = 0) or different days
-    if (days === 0) {
-      // For same day rentals, always count as 1 day
-      calculatedDays = 1;
-    } else {
-      // For multi-day rentals, check hours
-      if (restitutionHour <= pickupHour + 2) {
-        calculatedDays = days;
-      } else if (restitutionHour > pickupHour + 2) {
-        calculatedDays = days + 1;
-      } else if (restitutionHour < pickupHour) {
-        calculatedDays = days;
-      }
-    }
+    const calculatedDays = calculateRentalDays(pickup, restitution, pickupTime, restitutionTime);
 
     // Get the appropriate price per day based on rental duration using pricing tiers
     const pricePerDay = getPriceForDuration(vehicle, calculatedDays);
@@ -134,6 +112,26 @@ export function getMinReturnDate(pickupDate?: Date): Date {
 }
 
 /**
+ * Calculate number of rental days using dates and pickup/return times
+ * Rules:
+ * - Same-day rentals count as 1 day
+ * - For multi-day rentals, if restitution time is more than 2 hours after pickup time, add 1 day
+ */
+export function calculateRentalDays(
+  pickup: Date,
+  restitution: Date,
+  pickupTime: string,
+  restitutionTime: string
+): number {
+  const pickupHour = parseInt(pickupTime.split(':')[0]);
+  const restitutionHour = parseInt(restitutionTime.split(':')[0]);
+  const days = differenceInDays(restitution, pickup);
+  if (days === 0) return 1;
+  if (restitutionHour > pickupHour + 2) return days + 1;
+  return days;
+}
+
+/**
  * Calculate pricing details for a vehicle rental with seasonal adjustments
  */
 export function calculateVehiclePricingWithSeason(
@@ -147,29 +145,7 @@ export function calculateVehiclePricingWithSeason(
   restitutionTime?: string | null
 ): PriceDetails {
   if (pickup && restitution && pickupTime && restitutionTime && restitution >= pickup) {
-    // Get hours from time strings
-    const pickupHour = parseInt(pickupTime.split(':')[0]);
-    const restitutionHour = parseInt(restitutionTime.split(':')[0]);
-    
-    // Calculate base days difference
-    const days = differenceInDays(restitution, pickup);
-    
-    let calculatedDays = days;
-    
-    // If it's same day rental (days = 0) or different days
-    if (days === 0) {
-      // For same day rentals, always count as 1 day
-      calculatedDays = 1;
-    } else {
-      // For multi-day rentals, check hours
-      if (restitutionHour <= pickupHour + 2) {
-        calculatedDays = days;
-      } else if (restitutionHour > pickupHour + 2) {
-        calculatedDays = days + 1;
-      } else if (restitutionHour < pickupHour) {
-        calculatedDays = days;
-      }
-    }
+    const calculatedDays = calculateRentalDays(pickup, restitution, pickupTime, restitutionTime);
 
     // Get the base price per day from pricing tiers
     const basePricePerDay = getPriceForDuration(vehicle, calculatedDays);

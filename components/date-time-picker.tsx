@@ -66,18 +66,21 @@ export function DateTimePicker({
 
   // Function to check if a time slot should be disabled
   const isTimeSlotDisabled = (timeSlot: string) => {
-    // If no pickup date/time or no current date selected, don't disable any slots
-    if (!pickupDate || !pickupTime || !dateState) {
-      return false;
+    if (!dateState) return false;
+
+    const today = new Date();
+    const isToday = dateState.toDateString() === today.toDateString();
+
+    if (isToday) {
+      const [slotHour] = timeSlot.split(':').map(Number);
+      if (slotHour < today.getHours()) return true;
     }
 
-    // Only restrict times if the selected date is the same as pickup date
-    const isSameDate = dateState.toDateString() === pickupDate.toDateString();
-    if (!isSameDate) {
-      return false;
-    }
+    if (!pickupDate || !pickupTime) return false;
 
-    // Convert times to comparable format (minutes since midnight)
+    const isSamePickup = dateState.toDateString() === pickupDate.toDateString();
+    if (!isSamePickup) return false;
+
     const timeToMinutes = (time: string) => {
       const [hours, minutes] = time.split(':').map(Number);
       return hours * 60 + minutes;
@@ -86,7 +89,6 @@ export function DateTimePicker({
     const currentSlotMinutes = timeToMinutes(timeSlot);
     const pickupTimeMinutes = timeToMinutes(pickupTime);
 
-    // Disable if current slot is before or equal to pickup time
     return currentSlotMinutes <= pickupTimeMinutes;
   };
 
@@ -187,7 +189,7 @@ export function DateTimePicker({
             fromDate={minDate}
             className="p-2 sm:pe-3 border-border max-sm:border-b sm:border-r"
             disabled={disabledDateRanges}
-            initialFocus
+            autoFocus
           />
           <div className="relative w-full max-sm:h-60 sm:w-40 sm:h-[320px]">
             <ScrollArea className="h-full py-2">

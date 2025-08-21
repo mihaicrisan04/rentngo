@@ -1,5 +1,5 @@
 import { FormErrors, PersonalInfo } from "@/hooks/useReservationForm";
-import { validateFlightNumber } from "@/lib/flightValidation";
+ 
 
 export const paymentMethods = [
   { id: "cash_on_delivery", label: "Cash on delivery", description: "Pay when you pick up the vehicle" },
@@ -42,9 +42,7 @@ export function validateReservationForm({
   if (!personalInfo.phone.trim()) {
     newErrors.personalInfo = { ...newErrors.personalInfo, phone: "Phone number is required" };
   }
-  if (personalInfo.flightNumber.trim() && !validateFlightNumber(personalInfo.flightNumber)) {
-    newErrors.personalInfo = { ...newErrors.personalInfo, flightNumber: "Flight number must be in format 'XX 1234' (e.g., 'AA 1234')" };
-  }
+  
 
   // Rental details validation
   if (!deliveryLocation) {

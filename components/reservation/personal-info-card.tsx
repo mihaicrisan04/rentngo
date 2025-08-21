@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AlertCircle, User } from "lucide-react";
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
-import { formatFlightNumber } from "@/lib/flightValidation";
+ 
 import { PersonalInfo, FormErrors } from "@/hooks/useReservationForm";
 
 interface PersonalInfoCardProps {
@@ -111,11 +111,9 @@ export function PersonalInfoCard({
                 placeholder={t('personalInfo.flightPlaceholder')}
                 value={personalInfo.flightNumber}
                 onChange={(e) => {
-                  const formattedValue = formatFlightNumber(e.target.value);
-                  setPersonalInfo(prev => ({ ...prev, flightNumber: formattedValue }));
+                  setPersonalInfo(prev => ({ ...prev, flightNumber: e.target.value }));
                 }}
                 className={cn(errors.personalInfo?.flightNumber && "border-red-500")}
-                maxLength={10}
               />
               {errors.personalInfo?.flightNumber && (
                 <p className="text-sm text-red-500 mt-1 flex items-center">
@@ -123,9 +121,7 @@ export function PersonalInfoCard({
                   {errors.personalInfo.flightNumber}
                 </p>
               )}
-              <p className="text-xs text-muted-foreground mt-1">
-                {t('personalInfo.flightFormat')}
-              </p>
+              
             </div>
             
             <div>

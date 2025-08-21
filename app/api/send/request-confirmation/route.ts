@@ -4,6 +4,7 @@ import { Resend } from 'resend';
 import type * as React from 'react';
 import { NextResponse } from 'next/server';
 import { ReservationEmailData } from '@/types/email';
+import { calculateRentalDays } from '@/lib/vehicleUtils';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -11,10 +12,14 @@ export async function POST(request: Request) {
     const { reservationId, reservationNumber, startDate, endDate, pickupTime, restitutionTime, pickupLocation, restitutionLocation, paymentMethod, totalPrice, vehicle, customerInfo, promoCode, additionalCharges, pricePerDayUsed, locale, isSCDWSelected, deductibleAmount, protectionCost } = await request.json();
 
     // Transform the API data into the email component's expected format
-    // Calculate derived values
-    const numberOfDays = typeof startDate === 'number' && typeof endDate === 'number'
-      ? Math.max(1, Math.ceil((endDate - startDate) / 86400))
-      : 1;
+    // Calculate derived values using date+time aware logic
+    const pickupDate = typeof startDate === 'number' ? new Date(startDate * 1000) : new Date(startDate);
+    const restitutionDate = typeof endDate === 'number' ? new Date(endDate * 1000) : new Date(endDate);
+    const hasValidDates = !isNaN(pickupDate.getTime()) && !isNaN(restitutionDate.getTime()) && restitutionDate >= pickupDate;
+    const hasTimes = Boolean(pickupTime && restitutionTime);
+    const numberOfDays = hasValidDates && hasTimes
+      ? calculateRentalDays(pickupDate, restitutionDate, pickupTime, restitutionTime)
+      : (hasValidDates ? Math.max(1, Math.ceil((restitutionDate.getTime() - pickupDate.getTime()) / (1000 * 60 * 60 * 24))) : 1);
     const additionalTotal = Array.isArray(additionalCharges)
       ? additionalCharges.reduce((sum: number, c: { amount: number }) => sum + (c?.amount || 0), 0)
       : 0;

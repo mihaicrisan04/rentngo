@@ -54,8 +54,7 @@ const ContactPage = () => {
                   "addressCountry": "RO"
                 },
                 "openingHours": [
-                  "Mo-Sa 00:00-23:59",
-                  "Su 10:00-16:00"
+                  "Mo-Su 00:00-23:59"
                 ],
                 "contactPoint": [
                   {
@@ -295,13 +294,10 @@ const ContactPage = () => {
                     </h3>
                     <div className="space-y-4">
                       <div className="flex justify-between items-center py-2 border-b border-border">
-                        <span className="font-medium text-foreground">{t('businessHours.mondayToSaturday')}</span>
-                        <span className="text-muted-foreground">{t('businessHours.mondayToSaturdayTime')}</span>
+                        <span className="font-medium text-foreground">{t('businessHours.mondayToSunday')}</span>
+                        <span className="text-muted-foreground">{t('businessHours.mondayToSundayTime')}</span>
                       </div>
-                      <div className="flex justify-between items-center py-2">
-                        <span className="font-medium text-foreground">{t('businessHours.sunday')}</span>
-                        <span className="text-muted-foreground">{t('businessHours.sundayTime')}</span>
-                      </div>
+
                     </div>
                   </CardContent>
                 </Card>

@@ -121,10 +121,10 @@
     "openInMaps": "Deschide în Google Maps",
     "businessHours": {
       "title": "Program de Lucru",
-      "mondayToSaturday": "Luni - Sâmbătă",
+      "mondayToSunday": "Luni - Duminică",
       "sunday": "Duminică",
-      "mondayToSaturdayTime": "24/7",
-      "sundayTime": "10:00 - 16:00"
+      "mondayToSundayTime": "24/7",
+      "sundayTime": "24/7"
     }
   },
   "reservationPage": {
@@ -191,7 +191,7 @@
       "phoneFormat": "Introduceți numărul de telefon cu codul de țară (+40 pentru România, +44 pentru Anglia)",
       "flightNumber": "Numărul Zborului (Opțional)",
       "flightPlaceholder": "ex: AA 1234, LH 456, BA 2847",
-      "flightFormat": "Format: Cod companie aeriană de două litere + numărul zborului (ex: \"AA 1234, LH 456, BA 2847\")",
+      "flightFormat": "numărul zborului (ex: \"AA 1234, LH 456, BA 2847\")",
       "additionalMessage": "Mesaj Suplimentar (Opțional)",
       "messagePlaceholder": "Orice cereri speciale sau informații suplimentare..."
     },
