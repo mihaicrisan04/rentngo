@@ -9,7 +9,7 @@ import { calculateRentalDays } from '@/lib/vehicleUtils';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
-    const { reservationId, reservationNumber, startDate, endDate, pickupTime, restitutionTime, pickupLocation, restitutionLocation, paymentMethod, totalPrice, vehicle, customerInfo, promoCode, additionalCharges, pricePerDayUsed, locale, isSCDWSelected, deductibleAmount, protectionCost } = await request.json();
+    const { reservationId, reservationNumber, startDate, endDate, startDateString, endDateString, pickupTime, restitutionTime, pickupLocation, restitutionLocation, paymentMethod, totalPrice, vehicle, customerInfo, promoCode, additionalCharges, pricePerDayUsed, locale, isSCDWSelected, deductibleAmount, protectionCost } = await request.json();
 
     // Transform the API data into the email component's expected format
     // Calculate derived values using date+time aware logic
@@ -25,6 +25,8 @@ export async function POST(request: Request) {
       : 0;
     const rentalSubtotal = Math.max(0, (totalPrice || 0) - additionalTotal);
     const derivedPricePerDay = Math.max(0, Math.round(rentalSubtotal / numberOfDays));
+
+    const timeZone = 'Europe/Bucharest';
 
     const emailData: ReservationEmailData = {
         reservationNumber: reservationNumber ?? 0,
@@ -46,8 +48,8 @@ export async function POST(request: Request) {
             features: vehicle.features || [],
         },
         rentalDetails: {
-            startDate: typeof startDate === 'number' ? new Date(startDate * 1000).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }) : startDate,
-            endDate: typeof endDate === 'number' ? new Date(endDate * 1000).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }) : endDate,
+            startDate: startDateString ? startDateString : typeof startDate === 'number' ? new Date(startDate * 1000).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone }) : startDate,
+            endDate: endDateString ? endDateString : typeof endDate === 'number' ? new Date(endDate * 1000).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone }) : endDate,
             numberOfDays,
             pickupTime,
             restitutionTime,

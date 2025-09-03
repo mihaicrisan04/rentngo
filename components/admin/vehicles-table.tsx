@@ -33,17 +33,18 @@ export function VehiclesTable() {
   const [currentPage, setCurrentPage] = useState(1);
   const [editingVehicle, setEditingVehicle] = useState<Id<"vehicles"> | null>(null);
   
-  const paginationOpts = {
-    numItems: ITEMS_PER_PAGE,
-    cursor: null,
-  };
-
-  const vehiclesData = useQuery(api.vehicles.getAll, {
-    paginationOpts,
-    filters: undefined,
-  });
+  // Fetch all vehicles and paginate on the client side
+  const vehicles = useQuery(api.vehicles.getAllVehicles);
 
   const deleteVehicle = useMutation(api.vehicles.remove);
+
+  const handleNextPage = (totalPages: number) => {
+    setCurrentPage((p) => Math.min(totalPages, p + 1));
+  };
+
+  const handlePreviousPage = () => {
+    setCurrentPage((p) => Math.max(1, p - 1));
+  };
 
   const handleEdit = (vehicleId: Id<"vehicles">) => {
     setEditingVehicle(vehicleId);
@@ -108,11 +109,14 @@ export function VehiclesTable() {
     );
   };
 
-  if (!vehiclesData) {
+  if (!vehicles) {
     return <div className="flex justify-center py-8">Loading vehicles...</div>;
   }
 
-  const { page: vehicles, isDone } = vehiclesData;
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedVehicles = vehicles.slice(startIndex, endIndex);
+  const totalPages = Math.ceil(vehicles.length / ITEMS_PER_PAGE) || 1;
 
   return (
     <div className="space-y-4">
@@ -141,7 +145,7 @@ export function VehiclesTable() {
                 </TableCell>
               </TableRow>
             ) : (
-              vehicles.map((vehicle) => (
+              paginatedVehicles.map((vehicle) => (
                 <TableRow key={vehicle._id}>
                   <TableCell>
                     <VehicleImage vehicle={vehicle} />
@@ -241,29 +245,27 @@ export function VehiclesTable() {
       {vehicles.length > 0 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            Showing {vehicles.length} vehicles
+            Showing {startIndex + 1} to {Math.min(endIndex, vehicles.length)} of {vehicles.length} vehicles
           </div>
           <Pagination>
             <PaginationContent>
               <PaginationItem>
                 <PaginationPrevious 
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  onClick={handlePreviousPage}
                   className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
                 />
               </PaginationItem>
               <PaginationItem>
                 <PaginationLink className="cursor-default">
-                  {currentPage}
+                  {currentPage} of {totalPages}
                 </PaginationLink>
               </PaginationItem>
-              {!isDone && (
-                <PaginationItem>
-                  <PaginationNext 
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    className="cursor-pointer"
-                  />
-                </PaginationItem>
-              )}
+              <PaginationItem>
+                <PaginationNext 
+                  onClick={() => handleNextPage(totalPages)}
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
             </PaginationContent>
           </Pagination>
         </div>

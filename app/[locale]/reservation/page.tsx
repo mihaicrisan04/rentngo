@@ -573,6 +573,8 @@ function ReservationPageContent() {
             reservationNumber: reservationNumber,
             startDate: pickupDate.getTime() / 1000, // Convert to Unix timestamp
             endDate: returnDate.getTime() / 1000, // Convert to Unix timestamp
+            startDateString: pickupDate ? `${String(pickupDate.getDate()).padStart(2, '0')}.${String(pickupDate.getMonth() + 1).padStart(2, '0')}.${pickupDate.getFullYear()}` : undefined,
+            endDateString: returnDate ? `${String(returnDate.getDate()).padStart(2, '0')}.${String(returnDate.getMonth() + 1).padStart(2, '0')}.${returnDate.getFullYear()}` : undefined,
             pickupTime: pickupTime || "00:00",
             restitutionTime: returnTime || "00:00",
             pickupLocation: deliveryLocation.trim(),
