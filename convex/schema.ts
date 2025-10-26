@@ -11,11 +11,14 @@ export default defineSchema({
     clerkId: v.string(), // Clerk user ID from the JWT subject
     phone: v.optional(v.string()),
     role: v.union(v.literal("renter"), v.literal("admin")),
-    preferences: v.optional(v.object({
-      language: v.union(v.literal("en"), v.literal("ro")),
-      notifications: v.boolean(),
-    })),
-  }).index("by_email", ["email"])
+    preferences: v.optional(
+      v.object({
+        language: v.union(v.literal("en"), v.literal("ro")),
+        notifications: v.boolean(),
+      }),
+    ),
+  })
+    .index("by_email", ["email"])
     .index("by_clerk_id", ["clerkId"]),
 
   // Vehicles table - stores car inventory
@@ -23,42 +26,72 @@ export default defineSchema({
     make: v.string(),
     model: v.string(),
     year: v.optional(v.number()),
-    type: v.optional(v.union(v.literal("sedan"), v.literal("suv"), v.literal("hatchback"), v.literal("sports"), v.literal("truck"), v.literal("van"))),
-    class: v.optional(v.union(
-      v.literal("economy"), 
-      v.literal("van"), 
-      v.literal("compact"), 
-      v.literal("intermediate"), 
-      v.literal("standard"), 
-      v.literal("business"), 
-      v.literal("full-size"), 
-      v.literal("premium"), 
-      v.literal("luxury"), 
-      v.literal("sport"), 
-      v.literal("super-sport"), 
-      v.literal("supercars"), 
-      v.literal("executive"), 
-      v.literal("commercial"), 
-      v.literal("convertible")
-    )),
+    type: v.optional(
+      v.union(
+        v.literal("sedan"),
+        v.literal("suv"),
+        v.literal("hatchback"),
+        v.literal("sports"),
+        v.literal("truck"),
+        v.literal("van"),
+      ),
+    ),
+    class: v.optional(
+      v.union(
+        v.literal("economy"),
+        v.literal("van"),
+        v.literal("compact"),
+        v.literal("intermediate"),
+        v.literal("standard"),
+        v.literal("business"),
+        v.literal("full-size"),
+        v.literal("premium"),
+        v.literal("luxury"),
+        v.literal("sport"),
+        v.literal("super-sport"),
+        v.literal("supercars"),
+        v.literal("executive"),
+        v.literal("commercial"),
+        v.literal("convertible"),
+      ),
+    ),
     seats: v.optional(v.number()),
-    transmission: v.optional(v.union(v.literal("automatic"), v.literal("manual"))),
-    fuelType: v.optional(v.union(v.literal("diesel"), v.literal("electric"), v.literal("hybrid"), v.literal("benzina"))),
+    transmission: v.optional(
+      v.union(v.literal("automatic"), v.literal("manual")),
+    ),
+    fuelType: v.optional(
+      v.union(
+        v.literal("diesel"),
+        v.literal("electric"),
+        v.literal("hybrid"),
+        v.literal("benzina"),
+      ),
+    ),
     engineCapacity: v.optional(v.number()),
     engineType: v.optional(v.string()),
     pricePerDay: v.optional(v.number()), // Legacy field - use pricingTiers instead
-    pricingTiers: v.optional(v.array(v.object({
-      minDays: v.number(),
-      maxDays: v.number(),
-      pricePerDay: v.number(),
-    }))),
+    pricingTiers: v.optional(
+      v.array(
+        v.object({
+          minDays: v.number(),
+          maxDays: v.number(),
+          pricePerDay: v.number(),
+        }),
+      ),
+    ),
     warranty: v.optional(v.number()), // Warranty amount for the vehicle
+    isOwner: v.optional(v.boolean()), // Whether the car is owned by the company (true) or partnership (false)
     location: v.optional(v.string()),
     features: v.optional(v.array(v.string())),
-    status: v.union(v.literal("available"), v.literal("rented"), v.literal("maintenance")),
+    status: v.union(
+      v.literal("available"),
+      v.literal("rented"),
+      v.literal("maintenance"),
+    ),
     images: v.optional(v.array(v.id("_storage"))),
     mainImageId: v.optional(v.id("_storage")),
-  }).index("by_location", ["location"])
+  })
+    .index("by_location", ["location"])
     .index("by_type", ["type"])
     .index("by_class", ["class"])
     .index("by_status", ["status"]),
@@ -77,13 +110,13 @@ export default defineSchema({
     paymentMethod: v.union(
       v.literal("cash_on_delivery"),
       v.literal("card_on_delivery"),
-      v.literal("card_online")
+      v.literal("card_online"),
     ),
     status: v.union(
       v.literal("pending"),
       v.literal("confirmed"),
       v.literal("cancelled"),
-      v.literal("completed")
+      v.literal("completed"),
     ),
     totalPrice: v.number(),
     // Customer information (for non-authenticated or guest bookings)
@@ -96,16 +129,20 @@ export default defineSchema({
     }),
     promoCode: v.optional(v.string()),
     // Store any additional charges or fees (delivery fees, extras, etc.)
-    additionalCharges: v.optional(v.array(v.object({
-      description: v.string(),
-      amount: v.number(),
-    }))),
+    additionalCharges: v.optional(
+      v.array(
+        v.object({
+          description: v.string(),
+          amount: v.number(),
+        }),
+      ),
+    ),
     // Simple protection fields
     // True if SCDW is selected (zero deductible). False if standard warranty (non-zero deductible).
-    isSCDWSelected: v.boolean(), 
-    // The deductible amount applicable to this reservation. 
+    isSCDWSelected: v.boolean(),
+    // The deductible amount applicable to this reservation.
     // If isSCDWSelected is true, this should be 0. Otherwise, it's the warranty deductible.
-    deductibleAmount: v.number(), 
+    deductibleAmount: v.number(),
     // The cost added to the totalPrice specifically for the chosen protection (warranty or SCDW)
     protectionCost: v.optional(v.number()),
     // Seasonal pricing tracking
@@ -113,7 +150,8 @@ export default defineSchema({
     seasonId: v.optional(v.id("seasons")),
     // Store the multiplier that was applied (for historical accuracy even if season changes)
     seasonalMultiplier: v.optional(v.number()),
-  }).index("by_user", ["userId"])
+  })
+    .index("by_user", ["userId"])
     .index("by_vehicle", ["vehicleId"])
     .index("by_dates", ["startDate", "endDate"])
     .index("by_pickup_location", ["pickupLocation"])
@@ -130,11 +168,12 @@ export default defineSchema({
       v.literal("pending"),
       v.literal("completed"),
       v.literal("failed"),
-      v.literal("refunded")
+      v.literal("refunded"),
     ),
     paymentMethod: v.string(),
     refundAmount: v.optional(v.number()),
-  }).index("by_reservation", ["reservationId"])
+  })
+    .index("by_reservation", ["reservationId"])
     .index("by_status", ["status"]),
 
   // Promotions table - stores discount codes
@@ -146,7 +185,8 @@ export default defineSchema({
     usageCount: v.number(),
     maxUsage: v.optional(v.number()),
     active: v.boolean(),
-  }).index("by_code", ["code"])
+  })
+    .index("by_code", ["code"])
     .index("by_active", ["active"]),
 
   // Email logs table - tracks sent emails
@@ -155,14 +195,15 @@ export default defineSchema({
       v.literal("confirmation"),
       v.literal("reminder"),
       v.literal("receipt"),
-      v.literal("cancellation")
+      v.literal("cancellation"),
     ),
     userId: v.id("users"),
     reservationId: v.optional(v.id("reservations")),
     sentAt: v.number(),
     status: v.union(v.literal("sent"), v.literal("failed")),
     error: v.optional(v.string()),
-  }).index("by_user", ["userId"])
+  })
+    .index("by_user", ["userId"])
     .index("by_reservation", ["reservationId"]),
 
   // Seasons table - defines seasonal pricing multipliers and their periods
@@ -170,11 +211,13 @@ export default defineSchema({
     name: v.string(), // "High Season", "Low Season", "Holiday Season", "Extra Season"
     description: v.optional(v.string()), // "Summer and holiday pricing"
     multiplier: v.number(), // 1.35, 1.5, 0.8, etc.
-    periods: v.array(v.object({
-      startDate: v.string(), // ISO date string "2024-06-01" 
-      endDate: v.string(), // ISO date string "2024-07-30"
-      description: v.optional(v.string()) // "Summer period", "Easter week", "New Year period"
-    })),
+    periods: v.array(
+      v.object({
+        startDate: v.string(), // ISO date string "2024-06-01"
+        endDate: v.string(), // ISO date string "2024-07-30"
+        description: v.optional(v.string()), // "Summer period", "Easter week", "New Year period"
+      }),
+    ),
     isActive: v.boolean(), // whether this season type is enabled for selection
   }).index("by_active", ["isActive"]),
 
