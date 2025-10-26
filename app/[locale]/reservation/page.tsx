@@ -401,9 +401,9 @@ function ReservationPageContent() {
         seasonalMultiplier,
       );
 
-      // Calculate protection costs (warranty or SCDW) using seasonal-adjusted price
+      // Calculate protection costs (warranty or SCDW) using base price without seasonal adjustments
       const warrantyAmount = calculateWarranty(vehicle);
-      const scdwPrice = calculateSCDW(days, seasonalPricePerDay);
+      const scdwPrice = calculateSCDW(days, getBasePricePerDay(vehicle));
 
       // Calculate protection cost and deductible based on selection
       const protectionCost = isSCDWSelected ? scdwPrice : 0;
@@ -706,7 +706,7 @@ function ReservationPageContent() {
         seasonalPricePerDay ||
         Math.round(getBasePricePerDay(vehicle) * seasonalMultiplier);
       const currentScdwPrice =
-        days > 0 ? calculateSCDW(days, currentPricePerDay) : 0;
+        days > 0 ? calculateSCDW(days, getBasePricePerDay(vehicle)) : 0;
       const currentProtectionCost = isSCDWSelected ? currentScdwPrice : 0;
       const currentDeductibleAmount = isSCDWSelected
         ? 0
