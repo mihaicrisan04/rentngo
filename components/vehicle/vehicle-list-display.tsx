@@ -2,9 +2,9 @@
 
 import { VehicleCard } from "@/components/vehicle/vehicle-card";
 import { VehicleCardSkeleton } from "@/components/vehicle/vehicle-card-skeleton";
-import { Vehicle, VehicleClass } from "@/types/vehicle";
+import { Vehicle } from "@/types/vehicle";
 import { SearchData } from "@/lib/searchStorage";
-import { useTranslations } from 'next-intl';
+import { useTranslations } from "next-intl";
 import { Separator } from "@/components/ui/separator";
 
 interface VehicleListDisplayProps {
@@ -15,67 +15,93 @@ interface VehicleListDisplayProps {
   searchState: SearchData;
 }
 
-// Helper function to format class names for display
-function formatClassName(className: VehicleClass | undefined): string {
-  if (!className) return "Unclassified";
-  
-  return className
-    .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+// Extended vehicle type with class information
+interface VehicleWithClass extends Vehicle {
+  className?: string;
+  classDisplayName?: string;
+  classSortIndexFromClass?: number;
+  classSortIndex?: number;
 }
 
 // Helper function to group vehicles by class
-function groupVehiclesByClass(vehicles: Vehicle[]): Record<string, Vehicle[]> {
-  const grouped: Record<string, Vehicle[]> = {};
-  
+function groupVehiclesByClass(
+  vehicles: VehicleWithClass[],
+): Record<string, VehicleWithClass[]> {
+  const grouped: Record<string, VehicleWithClass[]> = {
+    other: [], // Fallback for vehicles without a class
+  };
+
   vehicles.forEach((vehicle) => {
-    if (!vehicle || typeof vehicle._id !== 'string') {
+    if (!vehicle || typeof vehicle._id !== "string") {
       console.warn("Skipping invalid vehicle data:", vehicle);
       return;
     }
-    
-    const vehicleClass = vehicle.class || 'unclassified';
-    if (!grouped[vehicleClass]) {
-      grouped[vehicleClass] = [];
+
+    // Use className from the database (fetched via the new query)
+    const classKey = vehicle.className || "other";
+
+    if (!grouped[classKey]) {
+      grouped[classKey] = [];
     }
-    grouped[vehicleClass].push(vehicle);
+    grouped[classKey].push(vehicle);
   });
-  
+
   return grouped;
 }
 
-// Define the order of vehicle classes for consistent display (hardcoded from schema)
-const classOrder = [
-  'economy',
-  'compact', 
-  'intermediate',
-  'standard',
-  'full-size',
-  'premium',
-  'luxury',
-  'sport',
-  'super-sport',
-  'supercars',
-  'business',
-  'executive',
-  'commercial',
-  'convertible',
-  'van',
-  'unclassified'
-] as const;
+// Helper function to sort vehicles within a class by classSortIndex
+function sortVehiclesInClass(vehicles: VehicleWithClass[]): VehicleWithClass[] {
+  return [...vehicles].sort((a, b) => {
+    const aSortIndex = a.classSortIndex ?? 999999;
+    const bSortIndex = b.classSortIndex ?? 999999;
+    return aSortIndex - bSortIndex;
+  });
+}
+
+// Helper function to get unique classes in order
+function getOrderedClasses(vehicles: VehicleWithClass[]): Array<{
+  key: string;
+  displayName: string;
+  sortIndex: number;
+}> {
+  const classMap = new Map<
+    string,
+    { displayName: string; sortIndex: number }
+  >();
+
+  vehicles.forEach((vehicle) => {
+    const classKey = vehicle.className || "other";
+
+    if (!classMap.has(classKey)) {
+      classMap.set(classKey, {
+        displayName: vehicle.classDisplayName || vehicle.className || "Other",
+        sortIndex: vehicle.classSortIndexFromClass ?? 999999,
+      });
+    }
+  });
+
+  // Convert to array and sort by sortIndex
+  const classArray = Array.from(classMap.entries()).map(([key, value]) => ({
+    key,
+    displayName: value.displayName,
+    sortIndex: value.sortIndex,
+  }));
+
+  return classArray.sort((a, b) => a.sortIndex - b.sortIndex);
+}
 
 function VehicleClassSection({
-  className,
+  displayName,
   vehicles,
   searchState,
 }: {
-  className: string;
-  vehicles: Vehicle[];
+  displayName: string;
+  vehicles: VehicleWithClass[];
   searchState: SearchData;
 }) {
-  const displayName = formatClassName(className as VehicleClass);
-  
+  // Sort vehicles within this class by their classSortIndex
+  const sortedVehicles = sortVehiclesInClass(vehicles);
+
   return (
     <div className="mb-12">
       {/* Class header with separator line */}
@@ -85,14 +111,14 @@ function VehicleClassSection({
         </h2>
         <Separator className="flex-1" />
       </div>
-      
+
       {/* Vehicles grid for this class */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {vehicles.map((vehicle) => (
-          <VehicleCard 
-            key={vehicle._id} 
-            vehicle={vehicle} 
-            pickupDate={searchState.pickupDate || null} 
+        {sortedVehicles.map((vehicle) => (
+          <VehicleCard
+            key={vehicle._id}
+            vehicle={vehicle}
+            pickupDate={searchState.pickupDate || null}
             returnDate={searchState.returnDate || null}
             deliveryLocation={searchState.deliveryLocation || null}
             restitutionLocation={searchState.restitutionLocation || null}
@@ -109,25 +135,26 @@ function VehiclesByClass({
   vehicles,
   searchState,
 }: {
-  vehicles: Vehicle[];
+  vehicles: VehicleWithClass[];
   searchState: SearchData;
 }) {
   const groupedVehicles = groupVehiclesByClass(vehicles);
-  
-  // Sort classes according to our defined order and only show classes that have vehicles
-  const availableClasses = classOrder.filter(className => {
-    const vehiclesInClass = groupedVehicles[className];
+  const orderedClasses = getOrderedClasses(vehicles);
+
+  // Filter to only show classes that have vehicles
+  const availableClasses = orderedClasses.filter((classInfo) => {
+    const vehiclesInClass = groupedVehicles[classInfo.key];
     return vehiclesInClass && vehiclesInClass.length > 0;
   });
-  
+
   return (
     <div>
-      {availableClasses.map((className) => {
-        const vehiclesInClass = groupedVehicles[className];
+      {availableClasses.map((classInfo) => {
+        const vehiclesInClass = groupedVehicles[classInfo.key];
         return (
           <VehicleClassSection
-            key={className}
-            className={className}
+            key={classInfo.key}
+            displayName={classInfo.displayName}
             vehicles={vehiclesInClass || []}
             searchState={searchState}
           />
@@ -147,13 +174,6 @@ function LoadingSkeleton() {
   );
 }
 
-function getDisplayTitle(vehicles: Vehicle[] | null, isLoading: boolean, error: string | null, t: any): string {
-  if (isLoading) return t('loadingVehicles');
-  if (error) return t('errorLoadingVehicles');
-  if (!vehicles || vehicles.length === 0) return t('noCarsFound');
-  return t('availableCars');
-}
-
 export function VehicleListDisplay({
   vehicles,
   isLoading,
@@ -161,8 +181,7 @@ export function VehicleListDisplay({
   error,
   searchState,
 }: VehicleListDisplayProps) {
-  const t = useTranslations('vehicleListDisplay');
-  const displayTitle = getDisplayTitle(vehicles, isLoading, error, t);
+  const t = useTranslations("vehicleListDisplay");
 
   return (
     <div>
@@ -182,21 +201,27 @@ export function VehicleListDisplay({
       {/* Show error state */}
       {isHydrated && !isLoading && vehicles === null && error && (
         <p className="text-center text-destructive">
-          {t('couldNotLoadVehicles')}
+          {t("couldNotLoadVehicles")}
         </p>
       )}
 
       {/* Show empty state */}
-      {isHydrated && !isLoading && vehicles !== null && vehicles.length === 0 && (
-        <p className="text-center text-muted-foreground">
-          {t('noVehiclesFoundMessage')}
-        </p>
-      )}
+      {isHydrated &&
+        !isLoading &&
+        vehicles !== null &&
+        vehicles.length === 0 && (
+          <p className="text-center text-muted-foreground">
+            {t("noVehiclesFoundMessage")}
+          </p>
+        )}
 
       {/* Show vehicles */}
       {isHydrated && !isLoading && vehicles && vehicles.length > 0 && (
-        <VehiclesByClass vehicles={vehicles} searchState={searchState} />
+        <VehiclesByClass
+          vehicles={vehicles as VehicleWithClass[]}
+          searchState={searchState}
+        />
       )}
     </div>
   );
-} 
+}

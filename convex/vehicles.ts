@@ -567,3 +567,199 @@ export const searchAvailableVehicles = query({
 });
 
 // --- End of Migration ---
+
+// Get vehicles by class ID (for ordering page)
+export const getByClass = query({
+  args: {
+    classId: v.id("vehicleClasses"),
+  },
+  returns: v.array(
+    v.object({
+      _id: v.id("vehicles"),
+      _creationTime: v.number(),
+      make: v.string(),
+      model: v.string(),
+      year: v.optional(v.number()),
+      status: v.union(
+        v.literal("available"),
+        v.literal("rented"),
+        v.literal("maintenance"),
+      ),
+      classSortIndex: v.optional(v.number()),
+      mainImageId: v.optional(v.id("_storage")),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const vehicles = await ctx.db
+      .query("vehicles")
+      .filter((q) => q.eq(q.field("classId"), args.classId))
+      .collect();
+
+    // Sort by classSortIndex
+    return vehicles
+      .map((v) => ({
+        _id: v._id,
+        _creationTime: v._creationTime,
+        make: v.make,
+        model: v.model,
+        year: v.year,
+        status: v.status,
+        classSortIndex: v.classSortIndex ?? 0,
+        mainImageId: v.mainImageId,
+      }))
+      .sort((a, b) => a.classSortIndex - b.classSortIndex);
+  },
+});
+
+// Reorder vehicles within a class
+export const reorder = mutation({
+  args: {
+    updates: v.array(
+      v.object({
+        id: v.id("vehicles"),
+        classSortIndex: v.number(),
+      }),
+    ),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const { updates } = args;
+
+    // Update each vehicle with its new classSortIndex
+    for (const update of updates) {
+      const existingVehicle = await ctx.db.get(update.id);
+      if (!existingVehicle) {
+        throw new Error(`Vehicle with ID ${update.id} not found.`);
+      }
+
+      await ctx.db.patch(update.id, {
+        classSortIndex: update.classSortIndex,
+      });
+    }
+
+    return null;
+  },
+});
+
+// Get all vehicles with their class information for public display
+export const getAllVehiclesWithClasses = query({
+  args: {},
+  returns: v.array(
+    v.object({
+      _id: v.id("vehicles"),
+      _creationTime: v.number(),
+      make: v.string(),
+      model: v.string(),
+      year: v.optional(v.number()),
+      type: v.optional(
+        v.union(
+          v.literal("sedan"),
+          v.literal("suv"),
+          v.literal("hatchback"),
+          v.literal("sports"),
+          v.literal("truck"),
+          v.literal("van"),
+        ),
+      ),
+      class: v.optional(
+        v.union(
+          v.literal("economy"),
+          v.literal("van"),
+          v.literal("compact"),
+          v.literal("intermediate"),
+          v.literal("standard"),
+          v.literal("business"),
+          v.literal("full-size"),
+          v.literal("premium"),
+          v.literal("luxury"),
+          v.literal("sport"),
+          v.literal("super-sport"),
+          v.literal("supercars"),
+          v.literal("executive"),
+          v.literal("commercial"),
+          v.literal("convertible"),
+        ),
+      ),
+      classId: v.optional(v.id("vehicleClasses")),
+      classSortIndex: v.optional(v.number()),
+      seats: v.optional(v.number()),
+      transmission: v.optional(
+        v.union(v.literal("automatic"), v.literal("manual")),
+      ),
+      fuelType: v.optional(
+        v.union(
+          v.literal("diesel"),
+          v.literal("electric"),
+          v.literal("hybrid"),
+          v.literal("benzina"),
+        ),
+      ),
+      engineCapacity: v.optional(v.number()),
+      engineType: v.optional(v.string()),
+      pricePerDay: v.optional(v.number()),
+      pricingTiers: v.optional(
+        v.array(
+          v.object({
+            minDays: v.number(),
+            maxDays: v.number(),
+            pricePerDay: v.number(),
+          }),
+        ),
+      ),
+      warranty: v.optional(v.number()),
+      isOwner: v.optional(v.boolean()),
+      location: v.optional(v.string()),
+      features: v.optional(v.array(v.string())),
+      status: v.union(
+        v.literal("available"),
+        v.literal("rented"),
+        v.literal("maintenance"),
+      ),
+      images: v.optional(v.array(v.id("_storage"))),
+      mainImageId: v.optional(v.id("_storage")),
+      // Class information
+      className: v.optional(v.string()),
+      classDisplayName: v.optional(v.string()),
+      classSortIndexFromClass: v.optional(v.number()),
+    }),
+  ),
+  handler: async (ctx) => {
+    // Get all vehicles
+    const vehicles = await ctx.db.query("vehicles").collect();
+
+    // Get all vehicle classes
+    const vehicleClasses = await ctx.db.query("vehicleClasses").collect();
+    const classMap = new Map(vehicleClasses.map((c) => [c._id, c]));
+
+    // Combine vehicle data with class information
+    const vehiclesWithClasses = vehicles.map((vehicle) => {
+      const vehicleClass = vehicle.classId
+        ? classMap.get(vehicle.classId)
+        : undefined;
+
+      return {
+        ...vehicle,
+        className: vehicleClass?.name,
+        classDisplayName: vehicleClass?.displayName,
+        classSortIndexFromClass: vehicleClass?.sortIndex,
+      };
+    });
+
+    // Sort vehicles by class sortIndex (ascending), then by vehicle classSortIndex (ascending)
+    return vehiclesWithClasses.sort((a, b) => {
+      // First, sort by class sortIndex (classes with sortIndex come first)
+      const aClassSort = a.classSortIndexFromClass ?? 999999;
+      const bClassSort = b.classSortIndexFromClass ?? 999999;
+
+      if (aClassSort !== bClassSort) {
+        return aClassSort - bClassSort;
+      }
+
+      // Within same class, sort by vehicle's classSortIndex
+      const aVehicleSort = a.classSortIndex ?? 999999;
+      const bVehicleSort = b.classSortIndex ?? 999999;
+
+      return aVehicleSort - bVehicleSort;
+    });
+  },
+});
