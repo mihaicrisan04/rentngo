@@ -36,6 +36,7 @@ export default defineSchema({
         v.literal("van"),
       ),
     ),
+    // DEPRECATED: Use classId instead. Kept for data migration.
     class: v.optional(
       v.union(
         v.literal("economy"),
@@ -55,6 +56,8 @@ export default defineSchema({
         v.literal("convertible"),
       ),
     ),
+    classId: v.optional(v.id("vehicleClasses")), // Reference to vehicle class
+    classSortIndex: v.optional(v.number()), // For custom sorting within a class (future feature)
     seats: v.optional(v.number()),
     transmission: v.optional(
       v.union(v.literal("automatic"), v.literal("manual")),
@@ -235,4 +238,16 @@ export default defineSchema({
     setAt: v.number(), // timestamp when this featured car was set
     setBy: v.optional(v.string()), // admin user ID or name who set it (for tracking)
   }).index("by_slot", ["slot"]),
+
+  // Vehicle classes table - stores vehicle class definitions for categorization
+  vehicleClasses: defineTable({
+    name: v.string(), // The class name (e.g., "Economy", "Luxury")
+    displayName: v.optional(v.string()), // For localization/display purposes
+    description: v.optional(v.string()), // Description of the class
+    sortIndex: v.number(), // For custom sorting of classes
+    isActive: v.boolean(), // Whether this class is active/visible
+  })
+    .index("by_active", ["isActive"])
+    .index("by_sort_index", ["sortIndex"])
+    .index("by_name", ["name"]),
 });

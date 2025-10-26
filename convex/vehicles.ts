@@ -145,6 +145,8 @@ export const create = mutation({
         v.literal("van"),
       ),
     ),
+    classId: v.optional(v.id("vehicleClasses")), // Reference to vehicle class
+    classSortIndex: v.optional(v.number()), // For custom sorting within a class
     class: v.optional(
       v.union(
         v.literal("economy"),
@@ -216,6 +218,8 @@ export const update = mutation({
         v.literal("van"),
       ),
     ),
+    classId: v.optional(v.id("vehicleClasses")), // Reference to vehicle class
+    classSortIndex: v.optional(v.number()), // For custom sorting within a class
     class: v.optional(
       v.union(
         v.literal("economy"),

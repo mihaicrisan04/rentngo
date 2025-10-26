@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { CreateClassDialog } from "@/components/admin/create-class-dialog";
 import {
   VehicleType,
   VehicleClass,
@@ -47,7 +48,7 @@ import { ModernImageUpload } from "@/components/ui/modern-image-upload";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { toast } from "sonner";
-import { Plus, X } from "lucide-react";
+import { Plus, X, FolderPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const Tabs = TabsPrimitive.Root;
@@ -75,28 +76,32 @@ const vehicleSchema = z.object({
   type: z.enum(["sedan", "suv", "hatchback", "sports", "truck", "van"], {
     required_error: "Vehicle type is required",
   }),
-  class: z.enum(
-    [
-      "economy",
-      "compact",
-      "intermediate",
-      "standard",
-      "full-size",
-      "premium",
-      "luxury",
-      "sport",
-      "executive",
-      "commercial",
-      "convertible",
-      "super-sport",
-      "supercars",
-      "business",
-      "van",
-    ],
-    {
-      required_error: "Vehicle class is required",
-    },
-  ),
+  classId: z.string().min(1, "Vehicle class is required"),
+  // DEPRECATED: Use classId instead. Kept for backwards compatibility during migration.
+  class: z
+    .enum(
+      [
+        "economy",
+        "compact",
+        "intermediate",
+        "standard",
+        "full-size",
+        "premium",
+        "luxury",
+        "sport",
+        "executive",
+        "commercial",
+        "convertible",
+        "super-sport",
+        "supercars",
+        "business",
+        "van",
+      ],
+      {
+        required_error: "Vehicle class is required",
+      },
+    )
+    .optional(),
   seats: z
     .string()
     .min(1, "Number of seats is required")
@@ -183,8 +188,12 @@ export function EditVehicleDialog({
   const setMainImage = useMutation(api.vehicles.setMainImage);
   const reorderImages = useMutation(api.vehicles.reorderImages);
   const removeImage = useMutation(api.vehicles.removeImage);
+  const vehicleClasses = useQuery(api.vehicleClasses.list, {
+    activeOnly: true,
+  });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createClassDialogOpen, setCreateClassDialogOpen] = useState(false);
   const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([]);
   const [mainImageId, setMainImageIdState] = useState<
     Id<"_storage"> | undefined
@@ -197,7 +206,8 @@ export function EditVehicleDialog({
       model: "",
       year: new Date().getFullYear().toString(),
       type: "sedan",
-      class: "economy",
+      classId: "",
+      class: undefined,
       seats: "5",
       transmission: "automatic",
       fuelType: "petrol",
@@ -219,7 +229,8 @@ export function EditVehicleDialog({
         model: vehicle.model || "",
         year: (vehicle.year || new Date().getFullYear()).toString(),
         type: (vehicle.type as VehicleType) || "sedan",
-        class: (vehicle.class as VehicleClass) || "economy",
+        classId: (vehicle.classId as string) || "",
+        class: vehicle.class as VehicleClass | undefined,
         seats: (vehicle.seats || 5).toString(),
         transmission: (vehicle.transmission as TransmissionType) || "automatic",
         fuelType: (vehicle.fuelType as FuelType) || "petrol",
@@ -295,7 +306,8 @@ export function EditVehicleDialog({
         model: values.model,
         year: parseInt(values.year),
         type: values.type as VehicleType,
-        class: values.class as VehicleClass,
+        classId: values.classId as Id<"vehicleClasses">,
+        class: values.class as VehicleClass | undefined,
         seats: parseInt(values.seats),
         transmission: values.transmission as TransmissionType,
         fuelType: values.fuelType as FuelType,
@@ -542,52 +554,44 @@ export function EditVehicleDialog({
 
                     <FormField
                       control={form.control}
-                      name="class"
+                      name="classId"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Class</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            value={field.value}
-                            disabled={isSubmitting}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select class" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="economy">Economy</SelectItem>
-                              <SelectItem value="compact">Compact</SelectItem>
-                              <SelectItem value="intermediate">
-                                Intermediate
-                              </SelectItem>
-                              <SelectItem value="standard">Standard</SelectItem>
-                              <SelectItem value="full-size">
-                                Full-Size
-                              </SelectItem>
-                              <SelectItem value="premium">Premium</SelectItem>
-                              <SelectItem value="luxury">Luxury</SelectItem>
-                              <SelectItem value="sport">Sport</SelectItem>
-                              <SelectItem value="executive">
-                                Executive
-                              </SelectItem>
-                              <SelectItem value="commercial">
-                                Commercial
-                              </SelectItem>
-                              <SelectItem value="convertible">
-                                Convertible
-                              </SelectItem>
-                              <SelectItem value="super-sport">
-                                Super Sport
-                              </SelectItem>
-                              <SelectItem value="supercars">
-                                Supercars
-                              </SelectItem>
-                              <SelectItem value="business">Business</SelectItem>
-                              <SelectItem value="van">Van</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <div className="flex gap-2">
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              disabled={isSubmitting}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="flex-1">
+                                  <SelectValue placeholder="Select class" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {vehicleClasses?.map((vehicleClass) => (
+                                  <SelectItem
+                                    key={vehicleClass._id}
+                                    value={vehicleClass._id}
+                                  >
+                                    {vehicleClass.displayName ||
+                                      vehicleClass.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => setCreateClassDialogOpen(true)}
+                              disabled={isSubmitting}
+                              title="Create new class"
+                            >
+                              <FolderPlus className="h-4 w-4" />
+                            </Button>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -977,6 +981,15 @@ export function EditVehicleDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <CreateClassDialog
+        open={createClassDialogOpen}
+        onOpenChange={setCreateClassDialogOpen}
+        onSuccess={(newClassId) => {
+          form.setValue("classId", newClassId as string);
+          setCreateClassDialogOpen(false);
+        }}
+      />
     </Dialog>
   );
 }

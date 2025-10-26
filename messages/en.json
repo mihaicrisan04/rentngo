@@ -38,7 +38,7 @@
         "description": "All our vehicles undergo rigorous safety inspections and maintenance to ensure your peace of mind on every journey."
       },
       "customerCare": {
-        "title": "Customer Care", 
+        "title": "Customer Care",
         "description": "We believe in building lasting relationships with our customers through exceptional service and personalized attention."
       },
       "reliability": {
@@ -532,7 +532,7 @@
       },
       "4": {
         "question": "Can I add an additional driver?",
-        "answer": "Yes, additional drivers can be added for a daily fee. They must meet the same requirements as the primary driver and be present during pickup with valid documentation."
+        "answer": "Yes, additional drivers can be added. They must meet the same requirements as the primary driver and be present during pickup with valid documentation."
       },
       "5": {
         "question": "What happens if I return the car late?",

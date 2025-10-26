@@ -15,9 +15,12 @@ import type {
 } from "convex/server";
 import type * as auth from "../auth.js";
 import type * as featuredCars from "../featuredCars.js";
+import type * as migrations_migrateVehicleClasses from "../migrations/migrateVehicleClasses.js";
+import type * as migrations_seedVehicleClasses from "../migrations/seedVehicleClasses.js";
 import type * as reservations from "../reservations.js";
 import type * as seasons from "../seasons.js";
 import type * as users from "../users.js";
+import type * as vehicleClasses from "../vehicleClasses.js";
 import type * as vehicles from "../vehicles.js";
 
 /**
@@ -31,9 +34,12 @@ import type * as vehicles from "../vehicles.js";
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   featuredCars: typeof featuredCars;
+  "migrations/migrateVehicleClasses": typeof migrations_migrateVehicleClasses;
+  "migrations/seedVehicleClasses": typeof migrations_seedVehicleClasses;
   reservations: typeof reservations;
   seasons: typeof seasons;
   users: typeof users;
+  vehicleClasses: typeof vehicleClasses;
   vehicles: typeof vehicles;
 }>;
 export declare const api: FilterApi<
