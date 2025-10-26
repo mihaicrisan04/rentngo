@@ -10,22 +10,26 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PricingTier } from "@/types/vehicle";
-import { useSeasonalPricing } from "@/hooks/useSeasonalPricing";
+import { useDateBasedSeasonalPricing } from "@/hooks/useDateBasedSeasonalPricing";
 import { useTranslations, useLocale } from 'next-intl';
 
 interface PricingTiersTableProps {
   pricingTiers?: PricingTier[];
   currency?: string;
   currentDays?: number | null;
+  pickupDate?: Date | null;
+  returnDate?: Date | null;
 }
 
 export function PricingTiersTable({ 
   pricingTiers, 
-  currentDays 
+  currentDays,
+  pickupDate,
+  returnDate
 }: PricingTiersTableProps) {
   const t = useTranslations('pricingTiersTable');
   const locale = useLocale();
-  const { multiplier: seasonalMultiplier } = useSeasonalPricing();
+  const { multiplier: seasonalMultiplier } = useDateBasedSeasonalPricing(pickupDate, returnDate);
 
   // Don't render if no pricing tiers
   if (!pricingTiers || pricingTiers.length === 0) {
