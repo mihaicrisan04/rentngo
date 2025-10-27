@@ -98,6 +98,8 @@ export default function RootLayout({
       </body>
 
       <Analytics />
+      <SpeedInsights />
+
 
       <Script
         async
