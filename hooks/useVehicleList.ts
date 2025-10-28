@@ -13,9 +13,11 @@ interface UseVehicleListReturn {
 
 export function useVehicleList(isHydrated: boolean): UseVehicleListReturn {
   const convex = useConvex();
-  
+
   const [allVehicles, setAllVehicles] = useState<Vehicle[] | null>(null);
-  const [displayedVehicles, setDisplayedVehicles] = useState<Vehicle[] | null>(null);
+  const [displayedVehicles, setDisplayedVehicles] = useState<Vehicle[] | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,13 +30,18 @@ export function useVehicleList(isHydrated: boolean): UseVehicleListReturn {
       setIsLoading(true);
 
       try {
-        const results = await convex.query(api.vehicles.getAllVehicles, {});
+        const results = await convex.query(
+          api.vehicles.getAllVehiclesWithClasses,
+          {},
+        );
         const vehicles = results as Vehicle[];
         setAllVehicles(vehicles);
         setDisplayedVehicles(vehicles);
       } catch (err) {
         console.error("Failed to fetch all vehicles:", err);
-        setError("Failed to load vehicles. Please try refreshing or contact support.");
+        setError(
+          "Failed to load vehicles. Please try refreshing or contact support.",
+        );
         setAllVehicles(null);
         setDisplayedVehicles(null);
       } finally {
@@ -52,4 +59,4 @@ export function useVehicleList(isHydrated: boolean): UseVehicleListReturn {
     error,
     setDisplayedVehicles,
   };
-} 
+}

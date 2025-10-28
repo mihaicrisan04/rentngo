@@ -17,9 +17,7 @@ import {
   rectSortingStrategy,
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import {
-  useSortable,
-} from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -27,6 +25,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Star, X, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface DraggableImageItem {
   id: string;
@@ -58,7 +57,7 @@ function SortableImageItem({
     transform,
     transition,
     isDragging,
-  } = useSortable({ 
+  } = useSortable({
     id: item.id,
     disabled,
   });
@@ -68,7 +67,9 @@ function SortableImageItem({
     transition,
   };
 
-  const imageUrl = useQuery(api.vehicles.getImageUrl, { imageId: item.imageId });
+  const imageUrl = useQuery(api.vehicles.getImageUrl, {
+    imageId: item.imageId,
+  });
 
   return (
     <div
@@ -76,9 +77,11 @@ function SortableImageItem({
       style={style}
       className={cn(
         "relative aspect-square rounded-lg overflow-hidden border-2 transition-all duration-200",
-        isDragging ? "opacity-50 border-primary shadow-lg z-50" : "border-border",
+        isDragging
+          ? "opacity-50 border-primary shadow-lg z-50"
+          : "border-border",
         item.isMain ? "ring-2 ring-yellow-400 ring-offset-2" : "",
-        disabled ? "opacity-50" : ""
+        disabled ? "opacity-50" : "",
       )}
     >
       {/* Drag Handle */}
@@ -88,7 +91,7 @@ function SortableImageItem({
         className={cn(
           "absolute top-2 left-2 z-10 cursor-grab active:cursor-grabbing",
           "bg-black/50 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity",
-          disabled && "cursor-not-allowed"
+          disabled && "cursor-not-allowed",
         )}
       >
         <GripVertical className="h-4 w-4 text-white" />
@@ -96,9 +99,12 @@ function SortableImageItem({
 
       {/* Image */}
       {imageUrl ? (
-        <img
+        <Image
           src={imageUrl}
           alt="Vehicle image"
+          width={200}
+          height={200}
+          quality={60}
           className="w-full h-full object-cover"
           draggable={false}
         />
@@ -139,7 +145,7 @@ function SortableImageItem({
             )}
           </Button>
         )}
-        
+
         {showRemoveButton && (
           <Button
             type="button"
@@ -187,7 +193,7 @@ export function DraggableImageList({
       id: `image-${index}-${imageId}`,
       imageId,
       isMain: imageId === mainImageId,
-    }))
+    })),
   );
 
   // Update items when props change
@@ -197,7 +203,7 @@ export function DraggableImageList({
         id: `image-${index}-${imageId}`,
         imageId,
         isMain: imageId === mainImageId,
-      }))
+      })),
     );
   }, [images, mainImageId]);
 
@@ -209,7 +215,7 @@ export function DraggableImageList({
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   function handleDragEnd(event: DragEndEvent) {
@@ -221,9 +227,9 @@ export function DraggableImageList({
         const newIndex = items.findIndex((item) => item.id === over?.id);
 
         const newItems = arrayMove(items, oldIndex, newIndex);
-        
+
         // Extract the new order of image IDs
-        const newImageOrder = newItems.map(item => item.imageId);
+        const newImageOrder = newItems.map((item) => item.imageId);
         onReorder(newImageOrder);
 
         return newItems;
@@ -247,14 +253,20 @@ export function DraggableImageList({
         onDragEnd={handleDragEnd}
       >
         <SortableContext
-          items={items.map(item => item.id)}
-          strategy={layout === "grid" ? rectSortingStrategy : horizontalListSortingStrategy}
+          items={items.map((item) => item.id)}
+          strategy={
+            layout === "grid"
+              ? rectSortingStrategy
+              : horizontalListSortingStrategy
+          }
         >
-          <div className={cn(
-            layout === "grid" 
-              ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3" 
-              : "flex gap-3 overflow-x-auto pb-2"
-          )}>
+          <div
+            className={cn(
+              layout === "grid"
+                ? "grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3"
+                : "flex gap-3 overflow-x-auto pb-2",
+            )}
+          >
             {items.map((item) => (
               <SortableImageItem
                 key={item.id}
@@ -271,4 +283,4 @@ export function DraggableImageList({
       </DndContext>
     </div>
   );
-} 
+}

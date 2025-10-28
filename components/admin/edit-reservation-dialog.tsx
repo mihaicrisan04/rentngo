@@ -39,7 +39,10 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useSeasonalPricing } from "@/hooks/useSeasonalPricing";
-import { getPriceForDurationWithSeason, calculateVehiclePricing } from "@/lib/vehicleUtils";
+import {
+  getPriceForDurationWithSeason,
+  calculateVehiclePricing,
+} from "@/lib/vehicleUtils";
 import { Trash2, Plus } from "lucide-react";
 
 const Tabs = TabsPrimitive.Root;
@@ -61,16 +64,33 @@ const reservationSchema = z.object({
   vehicleId: z.string().min(1, "Vehicle is required"),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
-  pickupTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Please enter time in HH:MM format"),
-  restitutionTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Please enter time in HH:MM format"),
+  pickupTime: z
+    .string()
+    .regex(
+      /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+      "Please enter time in HH:MM format",
+    ),
+  restitutionTime: z
+    .string()
+    .regex(
+      /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+      "Please enter time in HH:MM format",
+    ),
   pickupLocation: z.string().min(1, "Pickup location is required"),
   restitutionLocation: z.string().min(1, "Return location is required"),
-  paymentMethod: z.enum(["cash_on_delivery", "card_on_delivery", "card_online"], {
-    required_error: "Payment method is required",
-  }),
-  totalPrice: z.string()
+  paymentMethod: z.enum(
+    ["cash_on_delivery", "card_on_delivery", "card_online"],
+    {
+      required_error: "Payment method is required",
+    },
+  ),
+  totalPrice: z
+    .string()
     .min(1, "Total price is required")
-    .regex(/^\d+(\.\d{1,2})?$/, "Price must be a valid number with up to 2 decimal places")
+    .regex(
+      /^\d+(\.\d{1,2})?$/,
+      "Price must be a valid number with up to 2 decimal places",
+    )
     .refine((val) => {
       const price = parseFloat(val);
       return price > 0;
@@ -84,20 +104,34 @@ const reservationSchema = z.object({
   customerMessage: z.string().optional(),
   flightNumber: z.string().optional(),
   isSCDWSelected: z.boolean(),
-  deductibleAmount: z.string()
-    .regex(/^\d+(\.\d{1,2})?$/, "Deductible must be a valid number with up to 2 decimal places"),
-  protectionCost: z.string()
-    .regex(/^\d+(\.\d{1,2})?$/, "Protection cost must be a valid number with up to 2 decimal places")
+  deductibleAmount: z
+    .string()
+    .regex(
+      /^\d+(\.\d{1,2})?$/,
+      "Deductible must be a valid number with up to 2 decimal places",
+    ),
+  protectionCost: z
+    .string()
+    .regex(
+      /^\d+(\.\d{1,2})?$/,
+      "Protection cost must be a valid number with up to 2 decimal places",
+    )
     .optional(),
-  additionalCharges: z.array(z.object({
-    description: z.string().min(1, "Description is required"),
-    amount: z.string()
-      .regex(/^\d+(\.\d{1,2})?$/, "Amount must be a valid number with up to 2 decimal places")
-      .refine((val) => {
-        const amount = parseFloat(val);
-        return amount >= 0;
-      }, "Amount must be 0 or greater"),
-  })),
+  additionalCharges: z.array(
+    z.object({
+      description: z.string().min(1, "Description is required"),
+      amount: z
+        .string()
+        .regex(
+          /^\d+(\.\d{1,2})?$/,
+          "Amount must be a valid number with up to 2 decimal places",
+        )
+        .refine((val) => {
+          const amount = parseFloat(val);
+          return amount >= 0;
+        }, "Amount must be 0 or greater"),
+    }),
+  ),
 });
 
 type ReservationFormData = z.infer<typeof reservationSchema>;
@@ -115,12 +149,18 @@ export function EditReservationDialog({
   reservationId,
   onSuccess,
 }: EditReservationDialogProps) {
-  const reservation = useQuery(api.reservations.getReservationById, reservationId ? { reservationId } : "skip");
+  const reservation = useQuery(
+    api.reservations.getReservationById,
+    reservationId ? { reservationId } : "skip",
+  );
   const vehicles = useQuery(api.vehicles.getAllVehicles);
-  const updateReservation = useMutation(api.reservations.updateReservationDetails);
-  
+  const updateReservation = useMutation(
+    api.reservations.updateReservationDetails,
+  );
+
   // Get current seasonal pricing (for new calculations) or use historical data from reservation
-  const { multiplier: currentSeasonalMultiplier, currentSeason } = useSeasonalPricing();
+  const { multiplier: currentSeasonalMultiplier, currentSeason } =
+    useSeasonalPricing();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -157,21 +197,21 @@ export function EditReservationDialog({
   // Watch all pricing-related fields for automatic total calculation
   const watchedFields = form.watch([
     "vehicleId",
-    "startDate", 
+    "startDate",
     "endDate",
     "pickupTime",
     "restitutionTime",
     "isSCDWSelected",
     "protectionCost",
-    "additionalCharges"
+    "additionalCharges",
   ]);
 
   useEffect(() => {
     if (open && reservation) {
       form.reset({
         vehicleId: reservation.vehicleId,
-        startDate: new Date(reservation.startDate).toISOString().split('T')[0],
-        endDate: new Date(reservation.endDate).toISOString().split('T')[0],
+        startDate: new Date(reservation.startDate).toISOString().split("T")[0],
+        endDate: new Date(reservation.endDate).toISOString().split("T")[0],
         pickupTime: reservation.pickupTime,
         restitutionTime: reservation.restitutionTime,
         pickupLocation: reservation.pickupLocation,
@@ -187,10 +227,11 @@ export function EditReservationDialog({
         isSCDWSelected: reservation.isSCDWSelected || false,
         deductibleAmount: (reservation.deductibleAmount || 0).toString(),
         protectionCost: (reservation.protectionCost || 0).toString(),
-        additionalCharges: reservation.additionalCharges?.map(charge => ({
-          description: charge.description,
-          amount: charge.amount.toString(),
-        })) || [],
+        additionalCharges:
+          reservation.additionalCharges?.map((charge) => ({
+            description: charge.description,
+            amount: charge.amount.toString(),
+          })) || [],
       });
     } else if (!open) {
       form.reset();
@@ -205,16 +246,23 @@ export function EditReservationDialog({
     const pickupTime = form.watch("pickupTime");
     const restitutionTime = form.watch("restitutionTime");
 
-    if (!vehicleId || !vehicles || !startDate || !endDate || !pickupTime || !restitutionTime) {
+    if (
+      !vehicleId ||
+      !vehicles ||
+      !startDate ||
+      !endDate ||
+      !pickupTime ||
+      !restitutionTime
+    ) {
       return null;
     }
 
-    const selectedVehicle = vehicles.find(v => v._id === vehicleId);
+    const selectedVehicle = vehicles.find((v) => v._id === vehicleId);
     if (!selectedVehicle) return null;
 
     const pickup = new Date(startDate);
     const restitution = new Date(endDate);
-    
+
     const priceDetails = calculateVehiclePricing(
       selectedVehicle,
       pickup,
@@ -222,7 +270,7 @@ export function EditReservationDialog({
       undefined, // deliveryLocation not used here
       undefined, // restitutionLocation not used here
       pickupTime,
-      restitutionTime
+      restitutionTime,
     );
 
     return priceDetails.days;
@@ -239,14 +287,22 @@ export function EditReservationDialog({
     const protectionCost = parseFloat(form.watch("protectionCost") || "0");
     const additionalCharges = form.watch("additionalCharges");
 
-    if (!vehicleId || !vehicles || !startDate || !endDate || !pickupTime || !restitutionTime) return null;
+    if (
+      !vehicleId ||
+      !vehicles ||
+      !startDate ||
+      !endDate ||
+      !pickupTime ||
+      !restitutionTime
+    )
+      return null;
 
-    const selectedVehicle = vehicles.find(v => v._id === vehicleId);
+    const selectedVehicle = vehicles.find((v) => v._id === vehicleId);
     if (!selectedVehicle) return null;
 
     const pickup = new Date(startDate);
     const restitution = new Date(endDate);
-    
+
     const priceDetails = calculateVehiclePricing(
       selectedVehicle,
       pickup,
@@ -254,26 +310,34 @@ export function EditReservationDialog({
       undefined,
       undefined,
       pickupTime,
-      restitutionTime
+      restitutionTime,
     );
 
     if (!priceDetails.days) return null;
 
     // Use reservation's historical multiplier if available, otherwise use current seasonal pricing
-    const effectiveMultiplier = reservation?.seasonalMultiplier || currentSeasonalMultiplier;
-    const seasonalPricePerDay = getPriceForDurationWithSeason(selectedVehicle, priceDetails.days, effectiveMultiplier);
+    const effectiveMultiplier =
+      reservation?.seasonalMultiplier || currentSeasonalMultiplier;
+    const seasonalPricePerDay = getPriceForDurationWithSeason(
+      selectedVehicle,
+      priceDetails.days,
+      effectiveMultiplier,
+    );
     const basePrice = seasonalPricePerDay * priceDetails.days;
-    
+
     // Calculate SCDW cost if selected, otherwise use manual protection cost
     let finalProtectionCost = protectionCost;
     if (isSCDWSelected) {
-      finalProtectionCost = calculateSCDW(priceDetails.days, seasonalPricePerDay);
+      finalProtectionCost = calculateSCDW(
+        priceDetails.days,
+        seasonalPricePerDay,
+      );
     }
-    
+
     const additionalChargesTotal = additionalCharges.reduce((total, charge) => {
       return total + parseFloat(charge.amount || "0");
     }, 0);
-    
+
     return basePrice + finalProtectionCost + additionalChargesTotal;
   };
 
@@ -294,12 +358,20 @@ export function EditReservationDialog({
     const pickupTime = form.watch("pickupTime");
     const restitutionTime = form.watch("restitutionTime");
 
-    if (isSCDWSelected && vehicleId && vehicles && startDate && endDate && pickupTime && restitutionTime) {
-      const selectedVehicle = vehicles.find(v => v._id === vehicleId);
+    if (
+      isSCDWSelected &&
+      vehicleId &&
+      vehicles &&
+      startDate &&
+      endDate &&
+      pickupTime &&
+      restitutionTime
+    ) {
+      const selectedVehicle = vehicles.find((v) => v._id === vehicleId);
       if (selectedVehicle) {
         const pickup = new Date(startDate);
         const restitution = new Date(endDate);
-        
+
         const priceDetails = calculateVehiclePricing(
           selectedVehicle,
           pickup,
@@ -307,14 +379,15 @@ export function EditReservationDialog({
           undefined,
           undefined,
           pickupTime,
-          restitutionTime
+          restitutionTime,
         );
 
         if (priceDetails.days) {
-          const effectiveMultiplier = reservation?.seasonalMultiplier || currentSeasonalMultiplier;
-          const seasonalPricePerDay = getPriceForDurationWithSeason(selectedVehicle, priceDetails.days, effectiveMultiplier);
-          const scdwCost = calculateSCDW(priceDetails.days, seasonalPricePerDay);
-          
+          const scdwCost = calculateSCDW(
+            priceDetails.days,
+            getBasePricePerDay(selectedVehicle),
+          );
+
           form.setValue("protectionCost", scdwCost.toFixed(2));
           form.setValue("deductibleAmount", "0");
         }
@@ -323,7 +396,14 @@ export function EditReservationDialog({
       // Reset protection cost when SCDW is deselected
       form.setValue("protectionCost", "0");
     }
-  }, [form.watch("isSCDWSelected"), form.watch("vehicleId"), form.watch("startDate"), form.watch("endDate"), form.watch("pickupTime"), form.watch("restitutionTime")]);
+  }, [
+    form.watch("isSCDWSelected"),
+    form.watch("vehicleId"),
+    form.watch("startDate"),
+    form.watch("endDate"),
+    form.watch("pickupTime"),
+    form.watch("restitutionTime"),
+  ]);
 
   const onSubmit = async (values: ReservationFormData) => {
     if (!reservation) return;
@@ -355,11 +435,16 @@ export function EditReservationDialog({
         },
         isSCDWSelected: values.isSCDWSelected,
         deductibleAmount: parseFloat(values.deductibleAmount),
-        protectionCost: values.protectionCost ? parseFloat(values.protectionCost) : undefined,
-        additionalCharges: values.additionalCharges.length > 0 ? values.additionalCharges.map(charge => ({
-          description: charge.description,
-          amount: parseFloat(charge.amount),
-        })) : undefined,
+        protectionCost: values.protectionCost
+          ? parseFloat(values.protectionCost)
+          : undefined,
+        additionalCharges:
+          values.additionalCharges.length > 0
+            ? values.additionalCharges.map((charge) => ({
+                description: charge.description,
+                amount: parseFloat(charge.amount),
+              }))
+            : undefined,
         // Update seasonal data if dates or vehicle changed
         seasonId: currentSeason?.seasonId,
         seasonalMultiplier: currentSeasonalMultiplier,
@@ -377,7 +462,17 @@ export function EditReservationDialog({
   };
 
   const handleNumberInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!/[0-9.]/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+    if (
+      !/[0-9.]/.test(e.key) &&
+      ![
+        "Backspace",
+        "Delete",
+        "Tab",
+        "Enter",
+        "ArrowLeft",
+        "ArrowRight",
+      ].includes(e.key)
+    ) {
       e.preventDefault();
     }
   };
@@ -392,32 +487,34 @@ export function EditReservationDialog({
         <DialogHeader>
           <DialogTitle>Edit Reservation</DialogTitle>
         </DialogHeader>
-        
+
         <ScrollArea className="max-h-[calc(80vh-150px)] pr-6">
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className={cn(
-              "inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full grid grid-cols-3"
-            )}>
-              <TabsTrigger 
+            <TabsList
+              className={cn(
+                "inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full grid grid-cols-3",
+              )}
+            >
+              <TabsTrigger
                 value="details"
                 className={cn(
-                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
                 )}
               >
                 Reservation Details
               </TabsTrigger>
-              <TabsTrigger 
+              <TabsTrigger
                 value="customer"
                 className={cn(
-                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
                 )}
               >
                 Customer Info
               </TabsTrigger>
-              <TabsTrigger 
+              <TabsTrigger
                 value="pricing"
                 className={cn(
-                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
                 )}
               >
                 Pricing & Payment
@@ -425,11 +522,14 @@ export function EditReservationDialog({
             </TabsList>
 
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
-                <TabsContent 
-                  value="details" 
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6 py-4"
+              >
+                <TabsContent
+                  value="details"
                   className={cn(
-                    "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4"
+                    "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4",
                   )}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -439,7 +539,11 @@ export function EditReservationDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Vehicle</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={isSubmitting}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select vehicle" />
@@ -447,8 +551,18 @@ export function EditReservationDialog({
                             </FormControl>
                             <SelectContent>
                               {vehicles?.map((vehicle) => (
-                                <SelectItem key={vehicle._id} value={vehicle._id}>
-                                  {vehicle.make} {vehicle.model} ({vehicle.year}) - {getPriceForDurationWithSeason(vehicle, getRentalDays() || 0, currentSeasonalMultiplier)} EUR/day
+                                <SelectItem
+                                  key={vehicle._id}
+                                  value={vehicle._id}
+                                >
+                                  {vehicle.make} {vehicle.model} ({vehicle.year}
+                                  ) -{" "}
+                                  {getPriceForDurationWithSeason(
+                                    vehicle,
+                                    getRentalDays() || 0,
+                                    currentSeasonalMultiplier,
+                                  )}{" "}
+                                  EUR/day
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -457,7 +571,6 @@ export function EditReservationDialog({
                         </FormItem>
                       )}
                     />
-
                     <div className="flex items-end">
                       <div className="text-sm text-muted-foreground">
                         {(() => {
@@ -466,17 +579,26 @@ export function EditReservationDialog({
                           const endDate = form.watch("endDate");
                           const pickupTime = form.watch("pickupTime");
                           const restitutionTime = form.watch("restitutionTime");
-                          
-                          if (!vehicleId || !vehicles || !startDate || !endDate || !pickupTime || !restitutionTime) {
+
+                          if (
+                            !vehicleId ||
+                            !vehicles ||
+                            !startDate ||
+                            !endDate ||
+                            !pickupTime ||
+                            !restitutionTime
+                          ) {
                             return "Select vehicle, dates and times to see pricing";
                           }
 
-                          const selectedVehicle = vehicles.find(v => v._id === vehicleId);
+                          const selectedVehicle = vehicles.find(
+                            (v) => v._id === vehicleId,
+                          );
                           if (!selectedVehicle) return "";
 
                           const pickup = new Date(startDate);
                           const restitution = new Date(endDate);
-                          
+
                           const priceDetails = calculateVehiclePricing(
                             selectedVehicle,
                             pickup,
@@ -484,27 +606,37 @@ export function EditReservationDialog({
                             undefined,
                             undefined,
                             pickupTime,
-                            restitutionTime
+                            restitutionTime,
                           );
 
                           if (!priceDetails.days) return "";
 
                           // Use reservation's historical multiplier if available, otherwise use current seasonal pricing
-                          const effectiveMultiplier = reservation?.seasonalMultiplier || currentSeasonalMultiplier;
-                          const seasonalPricePerDay = getPriceForDurationWithSeason(selectedVehicle, priceDetails.days, effectiveMultiplier);
+                          const effectiveMultiplier =
+                            reservation?.seasonalMultiplier ||
+                            currentSeasonalMultiplier;
+                          const seasonalPricePerDay =
+                            getPriceForDurationWithSeason(
+                              selectedVehicle,
+                              priceDetails.days,
+                              effectiveMultiplier,
+                            );
 
-                          return `${priceDetails.days} ${priceDetails.days !== 1 ? 'days' : 'day'} × ${seasonalPricePerDay} EUR = ${priceDetails.days * seasonalPricePerDay} EUR`;
+                          return `${priceDetails.days} ${priceDetails.days !== 1 ? "days" : "day"} × ${seasonalPricePerDay} EUR = ${priceDetails.days * seasonalPricePerDay} EUR`;
                         })()}
                       </div>
                     </div>
-
                     <FormField
                       control={form.control}
                       name="status"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Status</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={isSubmitting}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select status" />
@@ -512,18 +644,22 @@ export function EditReservationDialog({
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="confirmed">Confirmed</SelectItem>
-                              <SelectItem value="cancelled">Cancelled</SelectItem>
-                              <SelectItem value="completed">Completed</SelectItem>
+                              <SelectItem value="confirmed">
+                                Confirmed
+                              </SelectItem>
+                              <SelectItem value="cancelled">
+                                Cancelled
+                              </SelectItem>
+                              <SelectItem value="completed">
+                                Completed
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-
                     <div></div> {/* Empty div for spacing */}
-
                     <FormField
                       control={form.control}
                       name="startDate"
@@ -531,8 +667,8 @@ export function EditReservationDialog({
                         <FormItem>
                           <FormLabel>Start Date</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               type="date"
                               disabled={isSubmitting}
                             />
@@ -541,7 +677,6 @@ export function EditReservationDialog({
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
                       name="endDate"
@@ -549,8 +684,8 @@ export function EditReservationDialog({
                         <FormItem>
                           <FormLabel>End Date</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               type="date"
                               disabled={isSubmitting}
                             />
@@ -559,7 +694,6 @@ export function EditReservationDialog({
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
                       name="pickupTime"
@@ -567,8 +701,8 @@ export function EditReservationDialog({
                         <FormItem>
                           <FormLabel>Pickup Time</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               type="time"
                               disabled={isSubmitting}
                             />
@@ -577,7 +711,6 @@ export function EditReservationDialog({
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
                       name="restitutionTime"
@@ -585,8 +718,8 @@ export function EditReservationDialog({
                         <FormItem>
                           <FormLabel>Return Time</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               type="time"
                               disabled={isSubmitting}
                             />
@@ -595,7 +728,6 @@ export function EditReservationDialog({
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
                       name="pickupLocation"
@@ -609,7 +741,6 @@ export function EditReservationDialog({
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
                       name="restitutionLocation"
@@ -626,10 +757,10 @@ export function EditReservationDialog({
                   </div>
                 </TabsContent>
 
-                <TabsContent 
-                  value="customer" 
+                <TabsContent
+                  value="customer"
                   className={cn(
-                    "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4"
+                    "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4",
                   )}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -654,7 +785,11 @@ export function EditReservationDialog({
                         <FormItem>
                           <FormLabel>Customer Email</FormLabel>
                           <FormControl>
-                            <Input {...field} type="email" disabled={isSubmitting} />
+                            <Input
+                              {...field}
+                              type="email"
+                              disabled={isSubmitting}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -682,10 +817,10 @@ export function EditReservationDialog({
                         <FormItem>
                           <FormLabel>Flight Number (Optional)</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               placeholder="e.g., RO 123"
-                              disabled={isSubmitting} 
+                              disabled={isSubmitting}
                             />
                           </FormControl>
                           <FormMessage />
@@ -701,8 +836,8 @@ export function EditReservationDialog({
                       <FormItem>
                         <FormLabel>Customer Message (Optional)</FormLabel>
                         <FormControl>
-                          <Textarea 
-                            {...field} 
+                          <Textarea
+                            {...field}
                             placeholder="Any special requests or notes..."
                             disabled={isSubmitting}
                             className="min-h-[100px]"
@@ -714,10 +849,10 @@ export function EditReservationDialog({
                   />
                 </TabsContent>
 
-                <TabsContent 
-                  value="pricing" 
+                <TabsContent
+                  value="pricing"
                   className={cn(
-                    "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4"
+                    "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4",
                   )}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -729,8 +864,8 @@ export function EditReservationDialog({
                           <FormLabel>Total Price (EUR)</FormLabel>
                           <div className="flex gap-2">
                             <FormControl>
-                              <Input 
-                                {...field} 
+                              <Input
+                                {...field}
                                 onKeyDown={handleNumberInput}
                                 disabled={isSubmitting}
                                 placeholder="e.g., 250.00"
@@ -743,16 +878,22 @@ export function EditReservationDialog({
                               size="sm"
                               disabled={isSubmitting}
                               onClick={() => {
-                                const suggestedPrice = calculateSuggestedPrice();
+                                const suggestedPrice =
+                                  calculateSuggestedPrice();
                                 if (suggestedPrice !== null) {
-                                  form.setValue("totalPrice", suggestedPrice.toFixed(2));
+                                  form.setValue(
+                                    "totalPrice",
+                                    suggestedPrice.toFixed(2),
+                                  );
                                 }
                               }}
                             >
                               Recalc
                             </Button>
                           </div>
-                          <p className="text-xs text-muted-foreground">Updates automatically when pricing factors change</p>
+                          <p className="text-xs text-muted-foreground">
+                            Updates automatically when pricing factors change
+                          </p>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -764,16 +905,26 @@ export function EditReservationDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Payment Method</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={isSubmitting}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select payment method" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="cash_on_delivery">Cash on Delivery</SelectItem>
-                              <SelectItem value="card_on_delivery">Card on Delivery</SelectItem>
-                              <SelectItem value="card_online">Card Online</SelectItem>
+                              <SelectItem value="cash_on_delivery">
+                                Cash on Delivery
+                              </SelectItem>
+                              <SelectItem value="card_on_delivery">
+                                Card on Delivery
+                              </SelectItem>
+                              <SelectItem value="card_online">
+                                Card Online
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -783,8 +934,10 @@ export function EditReservationDialog({
                   </div>
 
                   <div className="space-y-4">
-                    <h4 className="text-sm font-medium">Protection & Insurance</h4>
-                    
+                    <h4 className="text-sm font-medium">
+                      Protection & Insurance
+                    </h4>
+
                     <FormField
                       control={form.control}
                       name="isSCDWSelected"
@@ -805,7 +958,8 @@ export function EditReservationDialog({
                               Super Collision Damage Waiver (SCDW)
                             </FormLabel>
                             <p className="text-xs text-muted-foreground">
-                              Zero deductible protection (cost calculated automatically)
+                              Zero deductible protection (cost calculated
+                              automatically)
                             </p>
                           </div>
                         </FormItem>
@@ -820,13 +974,15 @@ export function EditReservationDialog({
                           <FormItem>
                             <FormLabel>Deductible Amount (EUR)</FormLabel>
                             <FormControl>
-                              <Input 
+                              <Input
                                 {...field}
                                 type="number"
                                 step="0.01"
                                 min="0"
                                 placeholder="0.00"
-                                disabled={isSubmitting || form.watch("isSCDWSelected")}
+                                disabled={
+                                  isSubmitting || form.watch("isSCDWSelected")
+                                }
                               />
                             </FormControl>
                             <FormMessage />
@@ -841,18 +997,24 @@ export function EditReservationDialog({
                           <FormItem>
                             <FormLabel>Protection Cost (EUR)</FormLabel>
                             <FormControl>
-                              <Input 
+                              <Input
                                 {...field}
                                 type="number"
                                 step="0.01"
                                 min="0"
                                 placeholder="0.00"
                                 disabled={isSubmitting}
-                                className={form.watch("isSCDWSelected") ? "bg-muted/30" : ""}
+                                className={
+                                  form.watch("isSCDWSelected")
+                                    ? "bg-muted/30"
+                                    : ""
+                                }
                               />
                             </FormControl>
                             {form.watch("isSCDWSelected") && (
-                              <p className="text-xs text-muted-foreground">Auto-calculated SCDW cost</p>
+                              <p className="text-xs text-muted-foreground">
+                                Auto-calculated SCDW cost
+                              </p>
                             )}
                             <FormMessage />
                           </FormItem>
@@ -864,7 +1026,9 @@ export function EditReservationDialog({
                   {/* Additional Charges Section */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-medium">Additional Charges</h4>
+                      <h4 className="text-sm font-medium">
+                        Additional Charges
+                      </h4>
                       <Button
                         type="button"
                         variant="outline"
@@ -879,7 +1043,9 @@ export function EditReservationDialog({
                     </div>
 
                     {fields.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No additional charges added</p>
+                      <p className="text-sm text-muted-foreground">
+                        No additional charges added
+                      </p>
                     ) : (
                       <div className="space-y-3">
                         {fields.map((field, index) => (
@@ -889,9 +1055,11 @@ export function EditReservationDialog({
                               name={`additionalCharges.${index}.description`}
                               render={({ field }) => (
                                 <FormItem className="flex-1">
-                                  <FormLabel className="text-xs">Description</FormLabel>
+                                  <FormLabel className="text-xs">
+                                    Description
+                                  </FormLabel>
                                   <FormControl>
-                                    <Input 
+                                    <Input
                                       {...field}
                                       placeholder="e.g., Delivery fee"
                                       disabled={isSubmitting}
@@ -906,9 +1074,11 @@ export function EditReservationDialog({
                               name={`additionalCharges.${index}.amount`}
                               render={({ field }) => (
                                 <FormItem className="w-32">
-                                  <FormLabel className="text-xs">Amount (EUR)</FormLabel>
+                                  <FormLabel className="text-xs">
+                                    Amount (EUR)
+                                  </FormLabel>
                                   <FormControl>
-                                    <Input 
+                                    <Input
                                       {...field}
                                       type="number"
                                       step="0.01"
@@ -947,19 +1117,34 @@ export function EditReservationDialog({
                       const pickupTime = form.watch("pickupTime");
                       const restitutionTime = form.watch("restitutionTime");
                       const isSCDWSelected = form.watch("isSCDWSelected");
-                      const protectionCost = parseFloat(form.watch("protectionCost") || "0");
+                      const protectionCost = parseFloat(
+                        form.watch("protectionCost") || "0",
+                      );
                       const additionalCharges = form.watch("additionalCharges");
-                      
-                      if (!vehicleId || !vehicles || !startDate || !endDate || !pickupTime || !restitutionTime) {
-                        return <p className="text-sm text-muted-foreground">Select vehicle, dates and times to see breakdown</p>;
+
+                      if (
+                        !vehicleId ||
+                        !vehicles ||
+                        !startDate ||
+                        !endDate ||
+                        !pickupTime ||
+                        !restitutionTime
+                      ) {
+                        return (
+                          <p className="text-sm text-muted-foreground">
+                            Select vehicle, dates and times to see breakdown
+                          </p>
+                        );
                       }
 
-                      const selectedVehicle = vehicles.find(v => v._id === vehicleId);
+                      const selectedVehicle = vehicles.find(
+                        (v) => v._id === vehicleId,
+                      );
                       if (!selectedVehicle) return null;
 
                       const pickup = new Date(startDate);
                       const restitution = new Date(endDate);
-                      
+
                       const priceDetails = calculateVehiclePricing(
                         selectedVehicle,
                         pickup,
@@ -967,29 +1152,47 @@ export function EditReservationDialog({
                         undefined,
                         undefined,
                         pickupTime,
-                        restitutionTime
+                        restitutionTime,
                       );
 
                       if (!priceDetails.days) return null;
-                      
+
                       // Use reservation's historical multiplier if available, otherwise use current seasonal pricing
-                      const effectiveMultiplier = reservation?.seasonalMultiplier || currentSeasonalMultiplier;
-                      const seasonalPricePerDay = getPriceForDurationWithSeason(selectedVehicle, priceDetails.days, effectiveMultiplier);
+                      const effectiveMultiplier =
+                        reservation?.seasonalMultiplier ||
+                        currentSeasonalMultiplier;
+                      const seasonalPricePerDay = getPriceForDurationWithSeason(
+                        selectedVehicle,
+                        priceDetails.days,
+                        effectiveMultiplier,
+                      );
                       const basePrice = seasonalPricePerDay * priceDetails.days;
 
-                      const additionalChargesTotal = additionalCharges.reduce((total, charge) => {
-                        return total + parseFloat(charge.amount || "0");
-                      }, 0);
+                      const additionalChargesTotal = additionalCharges.reduce(
+                        (total, charge) => {
+                          return total + parseFloat(charge.amount || "0");
+                        },
+                        0,
+                      );
 
                       return (
                         <div className="text-sm space-y-1">
                           <div className="flex justify-between">
-                            <span>Base rental ({priceDetails.days} {priceDetails.days !== 1 ? 'days' : 'day'})</span>
+                            <span>
+                              Base rental ({priceDetails.days}{" "}
+                              {priceDetails.days !== 1 ? "days" : "day"})
+                            </span>
                             <span>{basePrice.toFixed(2)} EUR</span>
                           </div>
                           {protectionCost > 0 && (
                             <div className="flex justify-between">
-                              <span>Protection ({isSCDWSelected ? 'SCDW (auto-calculated)' : 'Standard'})</span>
+                              <span>
+                                Protection (
+                                {isSCDWSelected
+                                  ? "SCDW (auto-calculated)"
+                                  : "Standard"}
+                                )
+                              </span>
                               <span>{protectionCost.toFixed(2)} EUR</span>
                             </div>
                           )}
@@ -997,8 +1200,14 @@ export function EditReservationDialog({
                             const amount = parseFloat(charge.amount || "0");
                             if (amount > 0) {
                               return (
-                                <div key={index} className="flex justify-between">
-                                  <span>{charge.description || `Additional charge ${index + 1}`}</span>
+                                <div
+                                  key={index}
+                                  className="flex justify-between"
+                                >
+                                  <span>
+                                    {charge.description ||
+                                      `Additional charge ${index + 1}`}
+                                  </span>
                                   <span>{amount.toFixed(2)} EUR</span>
                                 </div>
                               );
@@ -1007,7 +1216,14 @@ export function EditReservationDialog({
                           })}
                           <div className="border-t pt-1 flex justify-between font-medium">
                             <span>Total</span>
-                            <span>{(basePrice + protectionCost + additionalChargesTotal).toFixed(2)} EUR</span>
+                            <span>
+                              {(
+                                basePrice +
+                                protectionCost +
+                                additionalChargesTotal
+                              ).toFixed(2)}{" "}
+                              EUR
+                            </span>
                           </div>
                         </div>
                       );
@@ -1039,4 +1255,4 @@ export function EditReservationDialog({
       </DialogContent>
     </Dialog>
   );
-} 
+}

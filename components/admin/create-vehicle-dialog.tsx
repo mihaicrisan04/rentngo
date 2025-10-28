@@ -1,10 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useMutation, useAction } from "convex/react";
+import { useMutation, useAction, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { VehicleType, VehicleClass, TransmissionType, FuelType, VehicleStatus, PricingTier } from "@/types/vehicle";
+import { CreateClassDialog } from "@/components/admin/create-class-dialog";
+import {
+  VehicleType,
+  VehicleClass,
+  TransmissionType,
+  FuelType,
+  VehicleStatus,
+  PricingTier,
+} from "@/types/vehicle";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -40,7 +48,7 @@ import { ModernImageUploadPreview } from "@/components/ui/modern-image-upload-pr
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { toast } from "sonner";
-import { Plus, X } from "lucide-react";
+import { Plus, X, FolderPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const Tabs = TabsPrimitive.Root;
@@ -49,9 +57,16 @@ const TabsTrigger = TabsPrimitive.Trigger;
 const TabsContent = TabsPrimitive.Content;
 
 const vehicleSchema = z.object({
-  make: z.string().min(1, "Make is required").max(50, "Make must be less than 50 characters"),
-  model: z.string().min(1, "Model is required").max(50, "Model must be less than 50 characters"),
-  year: z.string()
+  make: z
+    .string()
+    .min(1, "Make is required")
+    .max(50, "Make must be less than 50 characters"),
+  model: z
+    .string()
+    .min(1, "Model is required")
+    .max(50, "Model must be less than 50 characters"),
+  year: z
+    .string()
     .min(1, "Year is required")
     .regex(/^\d{4}$/, "Year must be a 4-digit number")
     .refine((val) => {
@@ -61,10 +76,34 @@ const vehicleSchema = z.object({
   type: z.enum(["sedan", "suv", "hatchback", "sports", "truck", "van"], {
     required_error: "Vehicle type is required",
   }),
-  class: z.enum(["economy", "compact", "intermediate", "standard", "full-size", "premium", "luxury", "sport", "executive", "commercial", "convertible", "super-sport", "supercars", "business", "van"], {
-    required_error: "Vehicle class is required",
-  }),
-  seats: z.string()
+  classId: z.string().min(1, "Vehicle class is required"),
+  // DEPRECATED: Use classId instead. Kept for backwards compatibility during migration.
+  class: z
+    .enum(
+      [
+        "economy",
+        "compact",
+        "intermediate",
+        "standard",
+        "full-size",
+        "premium",
+        "luxury",
+        "sport",
+        "executive",
+        "commercial",
+        "convertible",
+        "super-sport",
+        "supercars",
+        "business",
+        "van",
+      ],
+      {
+        required_error: "Vehicle class is required",
+      },
+    )
+    .optional(),
+  seats: z
+    .string()
     .min(1, "Number of seats is required")
     .regex(/^\d+$/, "Seats must be a number")
     .refine((val) => {
@@ -77,26 +116,36 @@ const vehicleSchema = z.object({
   fuelType: z.enum(["diesel", "electric", "hybrid", "benzina"], {
     required_error: "Fuel type is required",
   }),
-  engineCapacity: z.string()
+  engineCapacity: z
+    .string()
     .min(1, "Engine capacity is required")
     .regex(/^\d+(\.\d+)?$/, "Engine capacity must be a valid number")
     .refine((val) => {
       const capacity = parseFloat(val);
       return capacity > 0 && capacity <= 10;
     }, "Engine capacity must be between 0.1 and 10.0"),
-  engineType: z.string().min(1, "Engine type is required").max(20, "Engine type must be less than 20 characters"),
+  engineType: z
+    .string()
+    .min(1, "Engine type is required")
+    .max(20, "Engine type must be less than 20 characters"),
   // Remove pricePerDay validation as it's no longer needed
-  warranty: z.string()
+  warranty: z
+    .string()
     .regex(/^\d+(\.\d{1,2})?$/, "Warranty must be a valid number")
     .optional()
     .or(z.literal("")),
   features: z.array(z.string()),
   status: z.enum(["available", "rented", "maintenance"]),
-  pricingTiers: z.array(z.object({
-    minDays: z.number().min(1),
-    maxDays: z.number().min(1),
-    pricePerDay: z.number().min(0),
-  })).min(1, "At least one pricing tier is required"),
+  pricingTiers: z
+    .array(
+      z.object({
+        minDays: z.number().min(1),
+        maxDays: z.number().min(1),
+        pricePerDay: z.number().min(0),
+      }),
+    )
+    .min(1, "At least one pricing tier is required"),
+  isOwner: z.boolean(),
 });
 
 type VehicleFormData = z.infer<typeof vehicleSchema>;
@@ -108,9 +157,20 @@ interface CreateVehicleDialogProps {
 }
 
 const availableFeatures = [
-  "Air Conditioning", "Bluetooth", "Parking Sensors", "Backup Camera", 
-  "GPS", "Sunroof", "Heated Seats", "Cruise Control", "Leather Seats",
-  "USB Charging", "Wireless Charging", "Premium Audio", "Android Auto", "Apple CarPlay",
+  "Air Conditioning",
+  "Bluetooth",
+  "Parking Sensors",
+  "Backup Camera",
+  "GPS",
+  "Sunroof",
+  "Heated Seats",
+  "Cruise Control",
+  "Leather Seats",
+  "USB Charging",
+  "Wireless Charging",
+  "Premium Audio",
+  "Android Auto",
+  "Apple CarPlay",
 ];
 
 export function CreateVehicleDialog({
@@ -119,12 +179,20 @@ export function CreateVehicleDialog({
   onSuccess,
 }: CreateVehicleDialogProps) {
   const createVehicle = useMutation(api.vehicles.create);
-  const uploadImages = useAction(api.vehicles.uploadImages as any);
+  const uploadImages = useAction(api.vehicles.uploadImages);
   const setMainImage = useMutation(api.vehicles.setMainImage);
-  
+  const vehicleClasses = useQuery(api.vehicleClasses.list, {
+    activeOnly: true,
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([{ minDays: 1, maxDays: 999, pricePerDay: 50 }]);
-  const [selectedImageFiles, setSelectedImageFiles] = useState<Array<{file: File; previewUrl: string; error?: string}>>([]);
+  const [createClassDialogOpen, setCreateClassDialogOpen] = useState(false);
+  const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([
+    { minDays: 1, maxDays: 999, pricePerDay: 50 },
+  ]);
+  const [selectedImageFiles, setSelectedImageFiles] = useState<
+    Array<{ file: File; previewUrl: string; error?: string }>
+  >([]);
 
   const form = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
@@ -133,7 +201,8 @@ export function CreateVehicleDialog({
       model: "",
       year: new Date().getFullYear().toString(),
       type: "sedan",
-      class: "economy",
+      classId: "",
+      class: undefined,
       seats: "5",
       transmission: "automatic",
       fuelType: "diesel",
@@ -141,6 +210,7 @@ export function CreateVehicleDialog({
       engineType: "",
       // pricePerDay removed - using pricingTiers only
       warranty: "",
+      isOwner: false,
       features: [],
       status: "available",
       pricingTiers: [{ minDays: 1, maxDays: 999, pricePerDay: 50 }], // Default tier
@@ -154,7 +224,8 @@ export function CreateVehicleDialog({
         model: "",
         year: new Date().getFullYear().toString(),
         type: "sedan",
-        class: "economy",
+        classId: "",
+        class: undefined,
         seats: "5",
         transmission: "automatic",
         fuelType: "diesel",
@@ -171,8 +242,6 @@ export function CreateVehicleDialog({
     }
   }, [open, form]);
 
-
-
   const onSubmit = async (values: VehicleFormData) => {
     setIsSubmitting(true);
 
@@ -182,7 +251,8 @@ export function CreateVehicleDialog({
         model: values.model,
         year: parseInt(values.year),
         type: values.type as VehicleType,
-        class: values.class as VehicleClass,
+        classId: values.classId as Id<"vehicleClasses">,
+        class: values.class as VehicleClass | undefined,
         seats: parseInt(values.seats),
         transmission: values.transmission as TransmissionType,
         fuelType: values.fuelType as FuelType,
@@ -190,6 +260,7 @@ export function CreateVehicleDialog({
         engineType: values.engineType,
         // pricePerDay removed - using pricingTiers only
         warranty: values.warranty ? parseFloat(values.warranty) : 0,
+        isOwner: values.isOwner,
         features: values.features,
         status: values.status as VehicleStatus,
         pricingTiers: pricingTiers,
@@ -199,12 +270,12 @@ export function CreateVehicleDialog({
 
       // Upload images if any are selected
       if (selectedImageFiles.length > 0) {
-        const validFiles = selectedImageFiles.filter(f => !f.error);
+        const validFiles = selectedImageFiles.filter((f) => !f.error);
         const imageBuffers = await Promise.all(
           validFiles.map(async (fileData) => {
             const arrayBuffer = await fileData.file.arrayBuffer();
             return arrayBuffer;
-          })
+          }),
         );
 
         const uploadedImageIds = await uploadImages({
@@ -220,7 +291,7 @@ export function CreateVehicleDialog({
           });
         }
       }
-      
+
       toast.success("Vehicle created successfully");
       onSuccess?.();
       onOpenChange(false);
@@ -235,16 +306,22 @@ export function CreateVehicleDialog({
   const handleFeatureChange = (feature: string, checked: CheckedState) => {
     const featureLower = feature.toLowerCase();
     const currentFeatures = form.getValues("features");
-    
+
     if (checked === true) {
       form.setValue("features", [...currentFeatures, featureLower]);
     } else {
-      form.setValue("features", currentFeatures.filter(f => f !== featureLower));
+      form.setValue(
+        "features",
+        currentFeatures.filter((f) => f !== featureLower),
+      );
     }
   };
 
   const addPricingTier = () => {
-    const newTiers = [...pricingTiers, { minDays: 1, maxDays: 7, pricePerDay: 0 }];
+    const newTiers = [
+      ...pricingTiers,
+      { minDays: 1, maxDays: 7, pricePerDay: 0 },
+    ];
     setPricingTiers(newTiers);
     form.setValue("pricingTiers", newTiers);
   };
@@ -255,9 +332,13 @@ export function CreateVehicleDialog({
     form.setValue("pricingTiers", newTiers);
   };
 
-  const updatePricingTier = (index: number, field: keyof PricingTier, value: number) => {
-    const newTiers = pricingTiers.map((tier, i) => 
-      i === index ? { ...tier, [field]: value } : tier
+  const updatePricingTier = (
+    index: number,
+    field: keyof PricingTier,
+    value: number,
+  ) => {
+    const newTiers = pricingTiers.map((tier, i) =>
+      i === index ? { ...tier, [field]: value } : tier,
     );
     setPricingTiers(newTiers);
     form.setValue("pricingTiers", newTiers);
@@ -265,21 +346,37 @@ export function CreateVehicleDialog({
 
   // Helper function to allow only numbers in text inputs
   const handleNumberInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!/[0-9.]/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+    if (
+      !/[0-9.]/.test(e.key) &&
+      ![
+        "Backspace",
+        "Delete",
+        "Tab",
+        "Enter",
+        "ArrowLeft",
+        "ArrowRight",
+      ].includes(e.key)
+    ) {
       e.preventDefault();
     }
   };
 
   // Helper function for integer-only inputs
   const handleIntegerInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+    if (
+      !/[0-9]/.test(e.key) &&
+      ![
+        "Backspace",
+        "Delete",
+        "Tab",
+        "Enter",
+        "ArrowLeft",
+        "ArrowRight",
+      ].includes(e.key)
+    ) {
       e.preventDefault();
     }
   };
-
-
-
-
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -287,40 +384,42 @@ export function CreateVehicleDialog({
         <DialogHeader>
           <DialogTitle>Create New Vehicle</DialogTitle>
         </DialogHeader>
-        
+
         <ScrollArea className="max-h-[calc(80vh-150px)] pr-6">
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className={cn(
-              "inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full grid grid-cols-4"
-            )}>
-              <TabsTrigger 
+            <TabsList
+              className={cn(
+                "inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full grid grid-cols-4",
+              )}
+            >
+              <TabsTrigger
                 value="basic"
                 className={cn(
-                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
                 )}
               >
                 Basic Info
               </TabsTrigger>
-              <TabsTrigger 
+              <TabsTrigger
                 value="pricing"
                 className={cn(
-                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
                 )}
               >
                 Pricing
               </TabsTrigger>
-              <TabsTrigger 
+              <TabsTrigger
                 value="features"
                 className={cn(
-                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
                 )}
               >
                 Features
               </TabsTrigger>
-              <TabsTrigger 
+              <TabsTrigger
                 value="images"
                 className={cn(
-                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
                 )}
               >
                 Images
@@ -328,11 +427,14 @@ export function CreateVehicleDialog({
             </TabsList>
 
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
-                <TabsContent 
-                  value="basic" 
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6 py-4"
+              >
+                <TabsContent
+                  value="basic"
                   className={cn(
-                    "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4"
+                    "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4",
                   )}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -349,7 +451,7 @@ export function CreateVehicleDialog({
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="model"
@@ -371,8 +473,8 @@ export function CreateVehicleDialog({
                         <FormItem>
                           <FormLabel>Year</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               onKeyDown={handleIntegerInput}
                               disabled={isSubmitting}
                               placeholder="e.g., 2024"
@@ -389,7 +491,11 @@ export function CreateVehicleDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Type</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            disabled={isSubmitting}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select type" />
@@ -398,7 +504,9 @@ export function CreateVehicleDialog({
                             <SelectContent>
                               <SelectItem value="sedan">Sedan</SelectItem>
                               <SelectItem value="suv">SUV</SelectItem>
-                              <SelectItem value="hatchback">Hatchback</SelectItem>
+                              <SelectItem value="hatchback">
+                                Hatchback
+                              </SelectItem>
                               <SelectItem value="sports">Sports</SelectItem>
                               <SelectItem value="truck">Truck</SelectItem>
                               <SelectItem value="van">Van</SelectItem>
@@ -411,34 +519,44 @@ export function CreateVehicleDialog({
 
                     <FormField
                       control={form.control}
-                      name="class"
+                      name="classId"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Class</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select class" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="economy">Economy</SelectItem>
-                              <SelectItem value="compact">Compact</SelectItem>
-                              <SelectItem value="intermediate">Intermediate</SelectItem>
-                              <SelectItem value="standard">Standard</SelectItem>
-                              <SelectItem value="full-size">Full-Size</SelectItem>
-                              <SelectItem value="premium">Premium</SelectItem>
-                              <SelectItem value="luxury">Luxury</SelectItem>
-                              <SelectItem value="sport">Sport</SelectItem>
-                              <SelectItem value="executive">Executive</SelectItem>
-                              <SelectItem value="commercial">Commercial</SelectItem>
-                              <SelectItem value="convertible">Convertible</SelectItem>
-                              <SelectItem value="super-sport">Super Sport</SelectItem>
-                              <SelectItem value="supercars">Supercars</SelectItem>
-                              <SelectItem value="business">Business</SelectItem>
-                              <SelectItem value="van">Van</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <div className="flex gap-2">
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              disabled={isSubmitting}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="flex-1">
+                                  <SelectValue placeholder="Select class" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {vehicleClasses?.map((vehicleClass) => (
+                                  <SelectItem
+                                    key={vehicleClass._id}
+                                    value={vehicleClass._id}
+                                  >
+                                    {vehicleClass.displayName ||
+                                      vehicleClass.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => setCreateClassDialogOpen(true)}
+                              disabled={isSubmitting}
+                              title="Create new class"
+                            >
+                              <FolderPlus className="h-4 w-4" />
+                            </Button>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -451,8 +569,8 @@ export function CreateVehicleDialog({
                         <FormItem>
                           <FormLabel>Seats</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               onKeyDown={handleIntegerInput}
                               disabled={isSubmitting}
                               placeholder="e.g., 5"
@@ -469,14 +587,20 @@ export function CreateVehicleDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Transmission</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            disabled={isSubmitting}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select transmission" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="automatic">Automatic</SelectItem>
+                              <SelectItem value="automatic">
+                                Automatic
+                              </SelectItem>
                               <SelectItem value="manual">Manual</SelectItem>
                             </SelectContent>
                           </Select>
@@ -491,7 +615,11 @@ export function CreateVehicleDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Fuel Type</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            disabled={isSubmitting}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select fuel type" />
@@ -516,8 +644,8 @@ export function CreateVehicleDialog({
                         <FormItem>
                           <FormLabel>Engine Capacity (L)</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               onKeyDown={handleNumberInput}
                               disabled={isSubmitting}
                               placeholder="e.g., 1.6"
@@ -535,8 +663,8 @@ export function CreateVehicleDialog({
                         <FormItem>
                           <FormLabel>Engine Type</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               disabled={isSubmitting}
                               placeholder="e.g., TSI, dCi"
                             />
@@ -553,8 +681,8 @@ export function CreateVehicleDialog({
                         <FormItem>
                           <FormLabel>Warranty (EUR)</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               onKeyDown={handleNumberInput}
                               disabled={isSubmitting}
                               placeholder="e.g., 500.00"
@@ -567,20 +695,50 @@ export function CreateVehicleDialog({
 
                     <FormField
                       control={form.control}
+                      name="isOwner"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                          <div className="space-y-0.5">
+                            <FormLabel>Owner Vehicle</FormLabel>
+                            <div className="text-sm text-muted-foreground">
+                              Is this vehicle owned by the company?
+                            </div>
+                          </div>
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              disabled={isSubmitting}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
                       name="status"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Status</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            disabled={isSubmitting}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select status" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="available">Available</SelectItem>
+                              <SelectItem value="available">
+                                Available
+                              </SelectItem>
                               <SelectItem value="rented">Rented</SelectItem>
-                              <SelectItem value="maintenance">Maintenance</SelectItem>
+                              <SelectItem value="maintenance">
+                                Maintenance
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -590,10 +748,10 @@ export function CreateVehicleDialog({
                   </div>
                 </TabsContent>
 
-                <TabsContent 
-                  value="pricing" 
+                <TabsContent
+                  value="pricing"
                   className={cn(
-                    "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4"
+                    "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4",
                   )}
                 >
                   <div className="space-y-3">
@@ -610,16 +768,25 @@ export function CreateVehicleDialog({
                         Add Tier
                       </Button>
                     </div>
-                    
+
                     {pricingTiers.map((tier, index) => (
-                      <div key={index} className="flex items-end gap-2 p-3 border rounded-lg">
+                      <div
+                        key={index}
+                        className="flex items-end gap-2 p-3 border rounded-lg"
+                      >
                         <div className="flex-1">
                           <FormLabel className="text-xs">Min Days</FormLabel>
                           <Input
                             type="text"
                             value={tier.minDays.toString()}
                             onKeyDown={handleIntegerInput}
-                            onChange={(e) => updatePricingTier(index, "minDays", parseInt(e.target.value) || 1)}
+                            onChange={(e) =>
+                              updatePricingTier(
+                                index,
+                                "minDays",
+                                parseInt(e.target.value) || 1,
+                              )
+                            }
                             disabled={isSubmitting}
                           />
                         </div>
@@ -629,17 +796,31 @@ export function CreateVehicleDialog({
                             type="text"
                             value={tier.maxDays.toString()}
                             onKeyDown={handleIntegerInput}
-                            onChange={(e) => updatePricingTier(index, "maxDays", parseInt(e.target.value) || 1)}
+                            onChange={(e) =>
+                              updatePricingTier(
+                                index,
+                                "maxDays",
+                                parseInt(e.target.value) || 1,
+                              )
+                            }
                             disabled={isSubmitting}
                           />
                         </div>
                         <div className="flex-1">
-                          <FormLabel className="text-xs">Price/Day (EUR)</FormLabel>
+                          <FormLabel className="text-xs">
+                            Price/Day (EUR)
+                          </FormLabel>
                           <Input
                             type="text"
                             value={tier.pricePerDay.toString()}
                             onKeyDown={handleNumberInput}
-                            onChange={(e) => updatePricingTier(index, "pricePerDay", parseFloat(e.target.value) || 0)}
+                            onChange={(e) =>
+                              updatePricingTier(
+                                index,
+                                "pricePerDay",
+                                parseFloat(e.target.value) || 0,
+                              )
+                            }
                             disabled={isSubmitting}
                           />
                         </div>
@@ -657,10 +838,10 @@ export function CreateVehicleDialog({
                   </div>
                 </TabsContent>
 
-                <TabsContent 
-                  value="features" 
+                <TabsContent
+                  value="features"
                   className={cn(
-                    "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4"
+                    "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4",
                   )}
                 >
                   <FormField
@@ -671,14 +852,24 @@ export function CreateVehicleDialog({
                         <FormLabel>Features</FormLabel>
                         <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2">
                           {availableFeatures.map((feature) => (
-                            <div key={feature} className="flex items-center space-x-2">
+                            <div
+                              key={feature}
+                              className="flex items-center space-x-2"
+                            >
                               <Checkbox
-                                id={`feature-${feature.toLowerCase().replace(/\s+/g, '-')}`}
-                                checked={form.watch("features").includes(feature.toLowerCase())}
-                                onCheckedChange={(checked: CheckedState) => handleFeatureChange(feature, checked)}
+                                id={`feature-${feature.toLowerCase().replace(/\s+/g, "-")}`}
+                                checked={form
+                                  .watch("features")
+                                  .includes(feature.toLowerCase())}
+                                onCheckedChange={(checked: CheckedState) =>
+                                  handleFeatureChange(feature, checked)
+                                }
                                 disabled={isSubmitting}
                               />
-                              <FormLabel htmlFor={`feature-${feature.toLowerCase().replace(/\s+/g, '-')}`} className="font-normal">
+                              <FormLabel
+                                htmlFor={`feature-${feature.toLowerCase().replace(/\s+/g, "-")}`}
+                                className="font-normal"
+                              >
                                 {feature}
                               </FormLabel>
                             </div>
@@ -690,10 +881,10 @@ export function CreateVehicleDialog({
                   />
                 </TabsContent>
 
-                <TabsContent 
-                  value="images" 
+                <TabsContent
+                  value="images"
                   className={cn(
-                    "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4"
+                    "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4",
                   )}
                 >
                   <ModernImageUploadPreview
@@ -731,6 +922,15 @@ export function CreateVehicleDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <CreateClassDialog
+        open={createClassDialogOpen}
+        onOpenChange={setCreateClassDialogOpen}
+        onSuccess={(newClassId) => {
+          form.setValue("classId", newClassId as string);
+          setCreateClassDialogOpen(false);
+        }}
+      />
     </Dialog>
   );
-} 
+}
