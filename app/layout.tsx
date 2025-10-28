@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import { Providers } from "./providers";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/react";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
