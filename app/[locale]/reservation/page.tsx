@@ -628,6 +628,12 @@ function ReservationPageContent() {
       return;
     }
 
+    if (days === null || days < 0) {
+      toast.error(t("validation.invalidRentalDuration"));
+      setIsSubmitting(false);
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -747,11 +753,11 @@ function ReservationPageContent() {
         deductibleAmount: currentDeductibleAmount,
         protectionCost:
           currentProtectionCost > 0 ? currentProtectionCost : undefined,
-        seasonId: seasonId,
+        seasonId: seasonId as Id<"seasons"> | undefined,
         seasonalMultiplier: seasonalMultiplier,
       });
-      const reservationId = (created as any)?.reservationId ?? created;
-      const reservationNumber = (created as any)?.reservationNumber;
+      const reservationId = (created)?.reservationId ?? created;
+      const reservationNumber = (created)?.reservationNumber;
 
       // Send confirmation email
       try {
