@@ -9,19 +9,19 @@ import { VehicleListDisplay } from "@/components/vehicle/vehicle-list-display";
 import { useVehicleSearch } from "@/hooks/useVehicleSearch";
 import { useVehicleList } from "@/hooks/useVehicleList";
 import Head from "next/head";
-import { useTranslations } from "next-intl";
+// import { useTranslations } from "next-intl";
 
 export default function CarsPage() {
   // Use custom hooks for state management
   const { searchState, updateSearchField } = useVehicleSearch();
   const { allVehicles, displayedVehicles, isLoading, error, setDisplayedVehicles } = useVehicleList(searchState.isHydrated);
-  const t = useTranslations();
+  // const t = useTranslations();
 
   // Generate schema markup for vehicle listings
   const generateVehicleListSchema = () => {
     if (!displayedVehicles || displayedVehicles.length === 0) return null;
 
-    const vehicleItems = displayedVehicles.slice(0, 20).map((vehicle, index) => ({
+    const vehicleItems = displayedVehicles.slice(0, 20).map((vehicle) => ({
       "@type": "Vehicle",
       "@id": `https://rngo.com/cars/${vehicle._id}`,
       "name": `${vehicle.make} ${vehicle.model} ${vehicle.year}`,
@@ -94,12 +94,12 @@ export default function CarsPage() {
   return (
     <>
       <Head>
-        <title>Masini de Inchiriat Cluj-Napoca | Rent'n Go</title>
+        <title>Masini de Inchiriat Cluj-Napoca | Rent&apos;n Go</title>
         <meta name="description" content="Găsește masini de inchiriat Cluj-Napoca cu Rent'n Go. Flotă largă de vehicule moderne, prețuri competitive, rezervare online rapidă. Car rentals Cluj-Napoca disponibile 24/7." />
         <meta name="keywords" content="masini de inchiriat cluj-napoca, car rentals cluj, închiriere auto cluj, rent car cluj-napoca, vehicule închiriere cluj" />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://rngo.com/cars" />
-        
+
         {vehicleSchema && (
           <script
             type="application/ld+json"
@@ -121,17 +121,17 @@ export default function CarsPage() {
               isLoading={isLoading}
             />
           )}
-          
+
           {/* Filters - show skeleton while loading or when vehicles aren't loaded */}
           {(!searchState.isHydrated || isLoading || !allVehicles) ? (
             <VehicleFiltersSkeleton />
           ) : (
-            <VehicleFilters 
-              allVehicles={allVehicles} 
-              onFilterChange={setDisplayedVehicles} 
+            <VehicleFilters
+              allVehicles={allVehicles}
+              onFilterChange={setDisplayedVehicles}
             />
           )}
-          
+
           {/* Vehicle List Display - already has internal skeleton handling */}
           <VehicleListDisplay
             vehicles={displayedVehicles}
@@ -144,4 +144,4 @@ export default function CarsPage() {
       </PageLayout>
     </>
   );
-} 
+}

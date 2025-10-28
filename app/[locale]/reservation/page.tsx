@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
+import { Vehicle } from "@/types/vehicle";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -53,7 +54,7 @@ import { z } from "zod";
 import { isValidInternationalPhoneNumber } from "@/lib/phoneValidation";
 
 // Validation schema for reservation form - will be updated with translations
-const createReservationSchema = (t: any) =>
+const createReservationSchema = (t: ReturnType<typeof useTranslations>) =>
   z.object({
     // Personal info
     name: z.string().min(1, t("validation.nameRequired")),
@@ -316,7 +317,7 @@ function ReservationPageContent() {
   };
 
   // Warranty calculation function - use vehicle warranty or fallback based on type
-  const calculateWarranty = (vehicle: any): number => {
+  const calculateWarranty = (vehicle: Vehicle | null | undefined): number => {
     // If vehicle has warranty field, use it
     if (vehicle?.warranty) {
       return vehicle.warranty;
