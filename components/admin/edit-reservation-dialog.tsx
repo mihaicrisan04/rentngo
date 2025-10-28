@@ -7,6 +7,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
+import { getBasePricePerDay } from "@/types/vehicle";
 
 import { Button } from "@/components/ui/button";
 import {
