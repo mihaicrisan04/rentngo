@@ -109,11 +109,6 @@ export default function ClassOrderingPage() {
     }
   }, [classes]);
 
-  // Sync items when classes data changes
-  if (classes && items.length === 0) {
-    setItems([...classes]);
-  }
-
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
