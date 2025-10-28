@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -103,11 +103,11 @@ export default function ClassOrderingPage() {
   const reorderClasses = useMutation(api.vehicleClasses.reorder);
 
   // Update local state when data loads
-  useState(() => {
+  useEffect(() => {
     if (classes) {
       setItems([...classes]);
     }
-  });
+  }, [classes]);
 
   // Sync items when classes data changes
   if (classes && items.length === 0) {
