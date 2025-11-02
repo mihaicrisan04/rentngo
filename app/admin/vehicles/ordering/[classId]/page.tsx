@@ -191,6 +191,9 @@ export default function VehicleOrderingPage() {
           <p className="text-muted-foreground">
             Drag and drop to reorder vehicles in this class
           </p>
+          <p className="text-sm text-muted-foreground">
+            Extra 50km: {vehicleClass.additional50kmPrice ?? 5} EUR
+          </p>
         </div>
       </div>
 

@@ -298,10 +298,17 @@ function ReservationPageContent() {
     vehicleId ? { id: vehicleId as Id<"vehicles"> } : "skip",
   );
 
+  const vehicleClass = useQuery(
+    api.vehicleClasses.getById,
+    vehicle?.classId ? { id: vehicle.classId } : "skip",
+  );
+
   const imageUrl = useQuery(
     api.vehicles.getImageUrl,
     vehicle?.mainImageId ? { imageId: vehicle.mainImageId } : "skip",
   );
+
+  const additional50kmPrice = vehicleClass?.additional50kmPrice ?? 5;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -416,6 +423,7 @@ function ReservationPageContent() {
       const childSeat5to12Price = childSeat5to12Count * days * 3;
       const extraKilometersPrice = calculateExtraKilometersPrice(
         extraKilometersCount * 50,
+        additional50kmPrice,
       );
       const totalAdditionalFeatures =
         snowChainsPrice +
@@ -1390,12 +1398,12 @@ function ReservationPageContent() {
                             </div>
                             <span className="font-medium">
                               {extraKilometersCount > 0
-                                ? `${extraKilometersCount * 5} EUR`
+                                ? `${extraKilometersCount * additional50kmPrice} EUR`
                                 : "0 EUR"}
                             </span>
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">
-                            {t("additionalFeatures.extraKmDescription")}
+                            {t("additionalFeatures.extraKmDescription", { price: additional50kmPrice })}
                             {days && (
                               <div className="mt-1">
                                 {t(

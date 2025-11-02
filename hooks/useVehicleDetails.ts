@@ -20,6 +20,11 @@ export function useVehicleDetails(vehicleId: string) {
     id: vehicleId as Id<"vehicles">,
   });
 
+  const vehicleClass = useQuery(
+    api.vehicleClasses.getById,
+    vehicle?.classId ? { id: vehicle.classId } : "skip"
+  );
+
   // Rental state management with default locations
   const [rentalState, setRentalState] = useState<RentalState>({
     deliveryLocation: searchStorage.getDefaultLocation(),
@@ -80,11 +85,15 @@ export function useVehicleDetails(vehicleId: string) {
     return `/reservation?${params.toString()}`;
   }, [vehicleId]);
 
+  const additional50kmPrice = vehicleClass?.additional50kmPrice ?? 5;
+
   return {
     vehicle,
+    vehicleClass,
     rentalState,
     priceDetails,
     updateRentalDetails,
     buildReservationUrl,
+    additional50kmPrice,
   };
 }

@@ -246,6 +246,7 @@ export default defineSchema({
     description: v.optional(v.string()), // Description of the class
     sortIndex: v.number(), // For custom sorting of classes
     isActive: v.boolean(), // Whether this class is active/visible
+    additional50kmPrice: v.optional(v.number()), // Price per extra 50km package in EUR
   })
     .index("by_active", ["isActive"])
     .index("by_sort_index", ["sortIndex"])

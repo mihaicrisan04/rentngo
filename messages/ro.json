@@ -174,7 +174,7 @@
       "pricePerSeat": "3 EUR pe scaun pe zi (max 2 scaune)",
       "extraKilometers": "Kilometri Suplimentari",
       "extraKilometersPackages": "Numar Pachete Kilometri Suplimentari",
-      "extraKmDescription": "1 pachet (50 km) = 5 EUR",
+      "extraKmDescription": "1 pachet (50 km) = {price} EUR",
       "extraKmLimit": "Maxim 5.000 km suplimentari",
       "baseKilometersIncluded": "Kilometri incluși: {km} km ({days} zile × 200 km/zi)"
     },

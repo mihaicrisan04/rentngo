@@ -174,7 +174,7 @@
       "pricePerSeat": "3 EUR per seat per day (max 2 seats)",
       "extraKilometers": "Kilometers Package",
       "extraKilometersPackages": "Extra Kilometers Packages",
-      "extraKmDescription": "1 package (50 km) = 5 EUR",
+      "extraKmDescription": "1 package (50 km) = {price} EUR",
       "extraKmLimit": "Maximum 5,000 km extra",
       "baseKilometersIncluded": "Included kilometers: {km} km ({days} days × 200 km/day)"
     },
