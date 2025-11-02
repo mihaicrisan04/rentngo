@@ -171,7 +171,10 @@ export function ClassOrderingCard({
               setEditPriceOpen(true);
             }}
           >
-            Edit Price
+            Edit Price 
+            <span className="ml-2 text-xs text-muted-foreground font-normal">
+              {vehicleClass.additional50kmPrice ? `${vehicleClass.additional50kmPrice} EUR` : '5 EUR'}
+            </span>
           </Button>
           <Button
             variant="ghost"
