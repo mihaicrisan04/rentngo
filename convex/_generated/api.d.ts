@@ -15,6 +15,7 @@ import type {
 } from "convex/server";
 import type * as auth from "../auth.js";
 import type * as featuredCars from "../featuredCars.js";
+import type * as migrations_addAdditional50kmPrice from "../migrations/addAdditional50kmPrice.js";
 import type * as migrations_migrateVehicleClasses from "../migrations/migrateVehicleClasses.js";
 import type * as migrations_seedVehicleClasses from "../migrations/seedVehicleClasses.js";
 import type * as reservations from "../reservations.js";
@@ -34,6 +35,7 @@ import type * as vehicles from "../vehicles.js";
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   featuredCars: typeof featuredCars;
+  "migrations/addAdditional50kmPrice": typeof migrations_addAdditional50kmPrice;
   "migrations/migrateVehicleClasses": typeof migrations_migrateVehicleClasses;
   "migrations/seedVehicleClasses": typeof migrations_seedVehicleClasses;
   reservations: typeof reservations;

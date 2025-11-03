@@ -23,7 +23,7 @@
   "aboutPage": {
     "title": "About Rent'n Go - Car Rentals Cluj-Napoca",
     "heroTitle": "Your Journey, Our Passion",
-    "heroDescription": "Since 2024, we've been dedicated to providing exceptional car rental experiences in Cluj-Napoca. Combining quality vehicles with outstanding customer service.",
+    "heroDescription": "Since 2020, we've been dedicated to providing exceptional car rental experiences in Cluj-Napoca. Combining quality vehicles with outstanding customer service.",
     "stats": {
       "vehicles": "Vehicles",
       "customers": "Happy Customers",
@@ -174,7 +174,7 @@
       "pricePerSeat": "3 EUR per seat per day (max 2 seats)",
       "extraKilometers": "Kilometers Package",
       "extraKilometersPackages": "Extra Kilometers Packages",
-      "extraKmDescription": "1 package (50 km) = 5 EUR",
+      "extraKmDescription": "1 package (50 km) = {price} EUR",
       "extraKmLimit": "Maximum 5,000 km extra",
       "baseKilometersIncluded": "Included kilometers: {km} km ({days} days × 200 km/day)"
     },
@@ -536,7 +536,7 @@
       },
       "5": {
         "question": "What happens if I return the car late?",
-        "answer": "Late returns may incur additional daily charges. If you're more than 29 minutes late, you'll be charged for an additional day. Please contact us if you need to extend your rental."
+        "answer": "Late returns may incur additional charges. If you're more than 2 hours late, you'll be charged for an additional day of rental. Please contact us if you need to extend your rental."
       },
       "6": {
         "question": "Is insurance included in the rental price?",

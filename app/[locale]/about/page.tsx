@@ -88,7 +88,7 @@ const AboutPage = () => {
   return (
     <div className="relative flex flex-col min-h-screen">
       <Head>
-        <title>Despre Rent'n Go - Masini de Inchiriat Cluj-Napoca</title>
+        <title>Despre Rent&aposn Go - Masini de Inchiriat Cluj-Napoca</title>
         <meta name="description" content="Află mai multe despre Rent'n Go, liderul în masini de inchiriat Cluj-Napoca. Servicii profesionale de închiriere auto în Cluj cu experiență de peste 5 ani." />
         <meta name="keywords" content="despre rent n go, masini de inchiriat cluj-napoca, car rentals cluj-napoca, istoric companie închiriere auto" />
         <script
@@ -150,7 +150,7 @@ const AboutPage = () => {
             <div className="text-center relative">
               {/* Shadow backdrop */}
               <div className="absolute inset-0 bg-black/40 blur-lg rounded-xl -z-10 transform translate-x-1 translate-y-1"></div>
-              
+
               <Badge variant="outline" className="mb-4 px-4 py-2 text-lg text-primary">
                 {t('title')}
               </Badge>
@@ -279,8 +279,8 @@ const AboutPage = () => {
                     <p className="text-xl text-muted-foreground leading-relaxed mb-8">
                       {t('mission.description')}
                     </p>
-                    <Button 
-                      size="lg" 
+                    <Button
+                      size="lg"
                       className="bg-primary hover:bg-primary/90 text-primary-foreground"
                       onClick={() => window.location.href = '/contact'}
                     >

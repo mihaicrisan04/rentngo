@@ -211,11 +211,14 @@ export function calculateIncludedKilometers(days: number): number {
 
 /**
  * Calculate extra kilometers price
- * Each extra 50km costs 5 EUR
+ * Each extra 50km costs a configurable price (default 5 EUR)
  */
-export function calculateExtraKilometersPrice(extraKilometers: number): number {
+export function calculateExtraKilometersPrice(
+  extraKilometers: number,
+  pricePerExtra50km: number = 5,
+): number {
   const extraPackages = Math.floor(extraKilometers / 50);
-  return extraPackages * 5;
+  return extraPackages * pricePerExtra50km;
 }
 
 /**

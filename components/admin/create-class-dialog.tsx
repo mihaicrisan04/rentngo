@@ -49,6 +49,10 @@ const classSchema = z.object({
     .max(200, "Description must be less than 200 characters")
     .optional()
     .or(z.literal("")),
+  additional50kmPrice: z.coerce
+    .number()
+    .min(0, "Price must be positive")
+    .max(100, "Price must be less than 100 EUR"),
 });
 
 type ClassFormData = z.infer<typeof classSchema>;
@@ -73,6 +77,7 @@ export function CreateClassDialog({
       name: "",
       displayName: "",
       description: "",
+      additional50kmPrice: 5,
     },
   });
 
@@ -85,6 +90,7 @@ export function CreateClassDialog({
         displayName: values.displayName?.trim() || undefined,
         description: values.description?.trim() || undefined,
         isActive: true,
+        additional50kmPrice: values.additional50kmPrice,
       });
 
       toast.success("Vehicle class created successfully");
@@ -176,6 +182,32 @@ export function CreateClassDialog({
                   </FormControl>
                   <FormDescription>
                     Optional description (max 200 characters)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="additional50kmPrice"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Extra 50km Price (EUR)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="5.00"
+                      {...field}
+                      disabled={isSubmitting}
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      value={field.value || 5}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Price per 50km package (default: 5 EUR)
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

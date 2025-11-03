@@ -15,6 +15,7 @@ interface AdditionalFeaturesCardProps {
   setAdditionalFeatures: React.Dispatch<React.SetStateAction<AdditionalFeatures>>;
   days: number | null;
   vehicle?: any; // Pass the vehicle object instead of just pricePerDay
+  additional50kmPrice?: number; // Price per 50km package
 }
 
 // SCDW calculation function (duplicated from pricing hook for display purposes)
@@ -31,7 +32,8 @@ export function AdditionalFeaturesCard({
   additionalFeatures,
   setAdditionalFeatures,
   days,
-  vehicle
+  vehicle,
+  additional50kmPrice = 5
 }: AdditionalFeaturesCardProps) {
   const {
     scdwSelected,
@@ -279,11 +281,11 @@ export function AdditionalFeaturesCard({
                     </Button>
                   </div>
                   <span className="font-medium">
-                    {extraKilometersCount > 0 ? `${calculateExtraKilometersPrice(extraKilometersCount * 50)} EUR` : '0 EUR'}
+                    {extraKilometersCount > 0 ? `${calculateExtraKilometersPrice(extraKilometersCount * 50, additional50kmPrice)} EUR` : '0 EUR'}
                   </span>
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  +50 km for 5 EUR each | Max: {getMaxExtraKilometers()} km extra
+                  +50 km for {additional50kmPrice} EUR each | Max: {getMaxExtraKilometers()} km extra
                 </div>
               </div>
             </div>

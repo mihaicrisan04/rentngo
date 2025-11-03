@@ -127,6 +127,7 @@ export default internalMutation({
         description: classData.description,
         sortIndex: classData.sortIndex,
         isActive: true,
+        additional50kmPrice: 5, // Default price per 50km package
       });
 
       console.log(`Created: Vehicle class "${classData.name}"`);
