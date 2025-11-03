@@ -23,7 +23,7 @@
   "aboutPage": {
     "title": "Despre Rent'n Go - Masini de Inchiriat Cluj-Napoca",
     "heroTitle": "Călătoria Ta, Pasiunea Noastră",
-    "heroDescription": "Din 2024, ne-am dedicat furnizării de experiențe excepționale cu masini de inchiriat în Cluj-Napoca. Combinând vehicule de calitate cu servicii pentru clienți de excepție.",
+    "heroDescription": "Din 2020, ne-am dedicat furnizării de experiențe excepționale cu masini de inchiriat în Cluj-Napoca. Combinând vehicule de calitate cu servicii pentru clienți de excepție.",
     "stats": {
       "vehicles": "Vehicule",
       "customers": "Clienți Mulțumiți",
@@ -533,7 +533,7 @@
       },
       "5": {
         "question": "Ce se întâmplă dacă returnez mașina târziu?",
-        "answer": "Retururile târzii pot atrage taxe zilnice suplimentare. Dacă întârzii mai mult de 29 de minute, vei fi taxat pentru o zi suplimentară. Te rugăm să ne contactezi dacă trebuie să prelungești închirierea."
+        "answer": "Retururilările târzii pot atrage taxe suplimentare. Dacă întârzii mai mult de 2 ore, vei fi taxat pentru o zi suplimentară de închiriere. Te rugăm să ne contactezi dacă trebuie să prelungești închirierea."
       },
       "6": {
         "question": "Este asigurarea inclusă în prețul închirierii?",
