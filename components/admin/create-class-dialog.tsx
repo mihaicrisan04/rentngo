@@ -49,11 +49,10 @@ const classSchema = z.object({
     .max(200, "Description must be less than 200 characters")
     .optional()
     .or(z.literal("")),
-  additional50kmPrice: z
+  additional50kmPrice: z.coerce
     .number()
     .min(0, "Price must be positive")
-    .max(100, "Price must be less than 100 EUR")
-    .default(5),
+    .max(100, "Price must be less than 100 EUR"),
 });
 
 type ClassFormData = z.infer<typeof classSchema>;
