@@ -251,4 +251,23 @@ export default defineSchema({
     .index("by_active", ["isActive"])
     .index("by_sort_index", ["sortIndex"])
     .index("by_name", ["name"]),
+
+  // Blogs table - stores blog posts
+  blogs: defineTable({
+    title: v.string(),
+    slug: v.string(), // URL-safe slug
+    author: v.string(),
+    description: v.string(), // Short excerpt/description
+    content: v.string(), // MDX content as string
+    coverImage: v.optional(v.id("_storage")), // Main cover image
+    images: v.optional(v.array(v.id("_storage"))), // Additional blog images
+    tags: v.optional(v.array(v.string())), // Blog categories/tags
+    publishedAt: v.optional(v.number()), // Publish timestamp
+    status: v.union(v.literal("draft"), v.literal("published")),
+    readingTime: v.optional(v.number()), // Estimated reading time in minutes
+    views: v.optional(v.number()), // View count
+  })
+    .index("by_slug", ["slug"])
+    .index("by_status", ["status"])
+    .index("by_published_at", ["publishedAt"]),
 });

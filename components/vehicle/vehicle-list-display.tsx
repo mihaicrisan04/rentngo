@@ -103,17 +103,17 @@ function VehicleClassSection({
   const sortedVehicles = sortVehiclesInClass(vehicles);
 
   return (
-    <div className="mb-12">
+    <div className="mb-8">
       {/* Class header with separator line */}
-      <div className="flex items-center gap-4 mb-6">
-        <h2 className="text-2xl font-semibold text-foreground whitespace-nowrap">
+      <div className="flex items-center gap-3 mb-4">
+        <h2 className="text-xl font-semibold text-foreground whitespace-nowrap">
           {displayName}
         </h2>
         <Separator className="flex-1" />
       </div>
 
       {/* Vehicles grid for this class */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {sortedVehicles.map((vehicle) => (
           <VehicleCard
             key={vehicle._id}
@@ -166,7 +166,7 @@ function VehiclesByClass({
 
 function LoadingSkeleton() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {Array.from({ length: 6 }, (_, index) => (
         <VehicleCardSkeleton key={index} />
       ))}
