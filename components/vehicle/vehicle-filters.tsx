@@ -4,154 +4,293 @@ import * as React from "react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { X, ChevronDown, ChevronUp, Filter } from "lucide-react";
 import { Vehicle } from "@/types/vehicle";
-import { useTranslations } from 'next-intl';
+import { useTranslations } from "next-intl";
+import {
+  useVehicleFilters,
+  FilterOption,
+} from "@/hooks/useVehicleFilters";
 
 interface VehicleFiltersProps {
   allVehicles: Vehicle[] | null;
   onFilterChange: (filteredVehicles: Vehicle[] | null) => void;
 }
 
-export function VehicleFilters({ allVehicles, onFilterChange }: VehicleFiltersProps) {
-  const t = useTranslations('filters');
+export function VehicleFilters({
+  allVehicles,
+  onFilterChange,
+}: VehicleFiltersProps) {
+  const t = useTranslations("filters");
+  const [isExpanded, setIsExpanded] = React.useState(false);
 
-  const [brandFilter, setBrandFilter] = React.useState<string>("all");
-  const [fuelTypeFilter, setFuelTypeFilter] = React.useState<string>("all");
-  const [transmissionFilter, setTransmissionFilter] = React.useState<string>("all");
-  const [typeFilter, setTypeFilter] = React.useState<string>("all");
+  const {
+    filterState,
+    filteredVehicles,
+    brandOptions,
+    fuelTypeOptions,
+    transmissionOptions,
+    typeOptions,
+    toggleBrand,
+    toggleFuelType,
+    toggleTransmission,
+    toggleType,
+    removeBrand,
+    removeFuelType,
+    removeTransmission,
+    removeType,
+    clearAllFilters,
+    hasActiveFilters,
+    activeFilterCount,
+  } = useVehicleFilters(allVehicles);
 
-  // Extract unique brands
-  const brands = React.useMemo(() => {
-    if (!allVehicles) return [];
-    const uniqueBrands = new Set(allVehicles.map(v => v.make).filter(Boolean));
-    return ["all", ...Array.from(uniqueBrands)];
-  }, [allVehicles]);
-
-  // Extract unique fuel types
-  const fuelTypes = React.useMemo(() => {
-    if (!allVehicles) return [];
-    const uniqueFuelTypes = new Set(allVehicles.map(v => v.fuelType).filter(Boolean) as string[]);
-    return ["all", ...Array.from(uniqueFuelTypes)];
-  }, [allVehicles]);
-
-  // Extract unique transmissions
-  const transmissions = React.useMemo(() => {
-    if (!allVehicles) return [];
-    const uniqueTransmissions = new Set(allVehicles.map(v => v.transmission).filter(Boolean) as string[]); 
-    return ["all", ...Array.from(uniqueTransmissions)];
-  }, [allVehicles]);
-
-  // Extract unique vehicle types
-  const vehicleTypes = React.useMemo(() => {
-    if (!allVehicles) return [];
-    const uniqueTypes = new Set(allVehicles.map(v => v.type).filter(Boolean) as string[]); 
-    return ["all", ...Array.from(uniqueTypes)];
-  }, [allVehicles]);
-
+  // Update parent component when filtered vehicles change
   React.useEffect(() => {
-    if (!allVehicles) {
-      onFilterChange(null);
-      return;
-    }
-
-    let filtered = [...allVehicles];
-
-    if (brandFilter !== "all") {
-      filtered = filtered.filter(v => v.make === brandFilter);
-    }
-    if (fuelTypeFilter !== "all") {
-      filtered = filtered.filter(v => v.fuelType === fuelTypeFilter);
-    }
-    if (transmissionFilter !== "all") {
-      filtered = filtered.filter(v => v.transmission === transmissionFilter);
-    }
-    if (typeFilter !== "all") {
-      filtered = filtered.filter(v => v.type === typeFilter);
-    }
-
-    onFilterChange(filtered);
-  }, [allVehicles, brandFilter, fuelTypeFilter, transmissionFilter, typeFilter, onFilterChange]);
+    onFilterChange(filteredVehicles);
+  }, [filteredVehicles, onFilterChange]);
 
   if (!allVehicles || allVehicles.length === 0) {
-    return null; // Don't show filters if there are no vehicles to filter
+    return null;
   }
 
   return (
-    <Card className="mb-6 shadow-lg bg-accent">
-      <CardContent className="p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <Label htmlFor="brand-filter" className="text-sm font-medium">{t('brand')}</Label>
-            <Select value={brandFilter} onValueChange={setBrandFilter}>
-              <SelectTrigger id="brand-filter" className="mt-1">
-                <SelectValue placeholder={t('selectBrand')} />
-              </SelectTrigger>
-              <SelectContent>
-                {brands.map(brand => (
-                  <SelectItem key={brand} value={brand} className="capitalize">
-                    {brand === "all" ? t('allBrands') : brand}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+    <>
+      {/* Toggle Button */}
+      <div className="mb-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full sm:w-auto"
+        >
+          <Filter className="mr-2 h-4 w-4" />
+          {isExpanded ? t("hideFilters") : t("showFilters")}
+          {hasActiveFilters && (
+            <span className="ml-2 px-2 py-0.5 text-xs bg-primary text-primary-foreground rounded-full">
+              {activeFilterCount}
+            </span>
+          )}
+          {isExpanded ? (
+            <ChevronUp className="ml-2 h-4 w-4" />
+          ) : (
+            <ChevronDown className="ml-2 h-4 w-4" />
+          )}
+        </Button>
+      </div>
 
-          <div>
-            <Label htmlFor="fuel-type-filter" className="text-sm font-medium">{t('fuelType')}</Label>
-            <Select value={fuelTypeFilter} onValueChange={setFuelTypeFilter}>
-              <SelectTrigger id="fuel-type-filter" className="mt-1">
-                <SelectValue placeholder={t('selectFuelType')} />
-              </SelectTrigger>
-              <SelectContent>
-                {fuelTypes.map(fuel => (
-                  <SelectItem key={fuel} value={fuel} className="capitalize">
-                    {fuel === "all" ? t('allFuelTypes') : fuel}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+      {/* Filter Options Card - Collapsible */}
+      {isExpanded && (
+        <Card className="mb-3 shadow-lg bg-accent">
+          <CardContent className="p-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Brand Filter */}
+              <div>
+                <Label className="text-sm font-semibold mb-2 block">
+                  {t("brand")}
+                </Label>
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                  {brandOptions.map((option) => (
+                    <FilterCheckboxItem
+                      key={option.value}
+                      option={option}
+                      checked={filterState.brands.includes(option.value)}
+                      onCheckedChange={() => toggleBrand(option.value)}
+                    />
+                  ))}
+                  {brandOptions.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {t("noBrands")}
+                    </p>
+                  )}
+                </div>
+              </div>
 
-          <div>
-            <Label htmlFor="transmission-filter" className="text-sm font-medium">{t('transmission')}</Label>
-            <Select value={transmissionFilter} onValueChange={setTransmissionFilter}>
-              <SelectTrigger id="transmission-filter" className="mt-1">
-                <SelectValue placeholder={t('selectTransmission')} />
-              </SelectTrigger>
-              <SelectContent>
-                {transmissions.map(trans => (
-                  <SelectItem key={trans} value={trans} className="capitalize">
-                    {trans === "all" ? t('allTransmissions') : trans}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              {/* Fuel Type Filter */}
+              <div>
+                <Label className="text-sm font-semibold mb-2 block">
+                  {t("fuelType")}
+                </Label>
+                <div className="space-y-2">
+                  {fuelTypeOptions.map((option) => (
+                    <FilterCheckboxItem
+                      key={option.value}
+                      option={option}
+                      checked={filterState.fuelTypes.includes(option.value)}
+                      onCheckedChange={() => toggleFuelType(option.value)}
+                      capitalize
+                    />
+                  ))}
+                  {fuelTypeOptions.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {t("noFuelTypes")}
+                    </p>
+                  )}
+                </div>
+              </div>
 
-          <div>
-            <Label htmlFor="type-filter" className="text-sm font-medium">{t('type')}</Label>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger id="type-filter" className="mt-1">
-                <SelectValue placeholder={t('selectType')} />
-              </SelectTrigger>
-              <SelectContent>
-                {vehicleTypes.map(type => (
-                  <SelectItem key={type} value={type} className="capitalize">
-                    {type === "all" ? t('allTypes') : type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              {/* Transmission Filter */}
+              <div>
+                <Label className="text-sm font-semibold mb-2 block">
+                  {t("transmission")}
+                </Label>
+                <div className="space-y-2">
+                  {transmissionOptions.map((option) => (
+                    <FilterCheckboxItem
+                      key={option.value}
+                      option={option}
+                      checked={filterState.transmissions.includes(option.value)}
+                      onCheckedChange={() => toggleTransmission(option.value)}
+                      capitalize
+                    />
+                  ))}
+                  {transmissionOptions.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {t("noTransmissions")}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Type Filter */}
+              <div>
+                <Label className="text-sm font-semibold mb-2 block">
+                  {t("type")}
+                </Label>
+                <div className="space-y-2">
+                  {typeOptions.map((option) => (
+                    <FilterCheckboxItem
+                      key={option.value}
+                      option={option}
+                      checked={filterState.types.includes(option.value)}
+                      onCheckedChange={() => toggleType(option.value)}
+                      capitalize
+                    />
+                  ))}
+                  {typeOptions.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {t("noTypes")}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Active Filters Chips - Below Filter Card */}
+      {hasActiveFilters && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground">
+            {t("activeFilters")} ({activeFilterCount}):
+          </span>
+
+          {/* Brand chips */}
+          {filterState.brands.map((brand) => (
+            <Button
+              key={`brand-${brand}`}
+              variant="secondary"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={() => removeBrand(brand)}
+            >
+              {brand}
+              <X className="ml-1 h-3 w-3" />
+            </Button>
+          ))}
+
+          {/* Fuel type chips */}
+          {filterState.fuelTypes.map((fuelType) => (
+            <Button
+              key={`fuel-${fuelType}`}
+              variant="secondary"
+              size="sm"
+              className="h-7 px-2 text-xs capitalize"
+              onClick={() => removeFuelType(fuelType)}
+            >
+              {fuelType}
+              <X className="ml-1 h-3 w-3" />
+            </Button>
+          ))}
+
+          {/* Transmission chips */}
+          {filterState.transmissions.map((transmission) => (
+            <Button
+              key={`transmission-${transmission}`}
+              variant="secondary"
+              size="sm"
+              className="h-7 px-2 text-xs capitalize"
+              onClick={() => removeTransmission(transmission)}
+            >
+              {transmission}
+              <X className="ml-1 h-3 w-3" />
+            </Button>
+          ))}
+
+          {/* Type chips */}
+          {filterState.types.map((type) => (
+            <Button
+              key={`type-${type}`}
+              variant="secondary"
+              size="sm"
+              className="h-7 px-2 text-xs capitalize"
+              onClick={() => removeType(type)}
+            >
+              {type}
+              <X className="ml-1 h-3 w-3" />
+            </Button>
+          ))}
+
+          {/* Clear all button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2 text-xs text-destructive hover:text-destructive"
+            onClick={clearAllFilters}
+          >
+            {t("clearAll")}
+          </Button>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </>
   );
-} 
+}
+
+// Reusable checkbox filter item component
+interface FilterCheckboxItemProps {
+  option: FilterOption;
+  checked: boolean;
+  onCheckedChange: () => void;
+  capitalize?: boolean;
+}
+
+function FilterCheckboxItem({
+  option,
+  checked,
+  onCheckedChange,
+  capitalize = false,
+}: FilterCheckboxItemProps) {
+  return (
+    <div className="flex items-center space-x-2">
+      <Checkbox
+        id={`filter-${option.value}`}
+        checked={checked}
+        onCheckedChange={onCheckedChange}
+        disabled={option.count === 0}
+      />
+      <label
+        htmlFor={`filter-${option.value}`}
+        className={`text-sm font-normal cursor-pointer flex-1 ${
+          capitalize ? "capitalize" : ""
+        } ${option.count === 0 ? "text-muted-foreground line-through" : ""}`}
+      >
+        {option.label}
+        <span className="ml-1 text-xs text-muted-foreground">
+          ({option.count})
+        </span>
+      </label>
+    </div>
+  );
+}

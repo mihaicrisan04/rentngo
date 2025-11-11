@@ -1,56 +1,82 @@
+"use client";
 
-import { ThemeToggle } from "@/components/ui/theme-toggle"
-import Link from "next/link"
-import { SocialIcon } from 'react-social-icons'
-import { useTranslations } from 'next-intl'
-
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import Link from "next/link";
+import { SocialIcon } from "react-social-icons";
+import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 
 interface FooterProps {
-  logo: React.ReactNode
-  brandName?: string
+  logo: React.ReactNode;
+  brandName?: string;
 }
 
 const socialLinks = [
   {
-    icon: <SocialIcon url="https://www.tiktok.com/@rentn.go" style={{ height: 36, width: 36 }} borderRadius={"0.5rem"}/>,
+    icon: (
+      <SocialIcon
+        url="https://www.tiktok.com/@rentn.go"
+        style={{ height: 36, width: 36 }}
+        borderRadius={"0.5rem"}
+      />
+    ),
     href: "https://www.tiktok.com/@rentngo",
     label: "TikTok",
   },
   {
-    icon: <SocialIcon url="https://www.instagram.com/rentn_go.ro" style={{ height: 36, width: 36 }} borderRadius={"0.5rem"}/>,
+    icon: (
+      <SocialIcon
+        url="https://www.instagram.com/rentn_go.ro"
+        style={{ height: 36, width: 36 }}
+        borderRadius={"0.5rem"}
+      />
+    ),
     href: "https://www.instagram.com/rentn_go.ro",
     label: "Instagram",
   },
   {
-    icon: <SocialIcon url="https://www.facebook.com/share/1Ad82uMtP3/?mibextid=wwXIfr" style={{ height: 36, width: 36 }} borderRadius={"0.5rem"}/>,
+    icon: (
+      <SocialIcon
+        url="https://www.facebook.com/share/1Ad82uMtP3/?mibextid=wwXIfr"
+        style={{ height: 36, width: 36 }}
+        borderRadius={"0.5rem"}
+      />
+    ),
     href: "https://www.facebook.com/share/1Ad82uMtP3/?mibextid=wwXIfr",
     label: "Facebook",
   },
-]
+];
 
 export function Footer({ logo, brandName }: FooterProps) {
-  const t = useTranslations('footer');
+  const t = useTranslations("footer");
+  const locale = useLocale();
 
   const mainLinks = [
-    { href: "/", label: t('home') },
-    { href: "/cars", label: t('cars') },
-    { href: "/transfers", label: t('transfers') },
-    { href: "/about", label: t('about') },
-    { href: "/contact", label: t('contact') },
-  ]
+    { href: `/${locale}`, label: t("home") },
+    { href: `/${locale}/cars`, label: t("cars") },
+    { href: `/${locale}/transfers`, label: t("transfers") },
+    { href: `/${locale}/about`, label: t("about") },
+    { href: `/${locale}/contact`, label: t("contact") },
+  ];
 
   const legalLinks = [
-    { href: "/privacy", label: t('privacy') },
-    { href: "/terms", label: t('terms') },
-  ]
+    { href: `/${locale}/privacy`, label: t("privacy") },
+    { href: `/${locale}/terms`, label: t("terms") },
+  ];
 
   return (
     <footer className="pb-6 pt-16 lg:pb-8 px-4 lg:pt-24 bg-muted border-t">
-      <div className="container mx-auto lg:px-8">
+      <div className="container mx-auto max-w-6xl lg:px-8">
         <div className="md:flex md:items-end md:justify-between">
-          <Link href="/" className="flex items-center gap-x-2" aria-label={brandName || "Go to homepage"}>
+          <Link
+            href={`/${locale}`}
+            className="flex items-center gap-x-2"
+            aria-label={brandName || "Go to homepage"}
+          >
             {logo}
-            {brandName && <span className="font-bold text-xl">{brandName}</span>}
+            {brandName && (
+              <span className="font-bold text-xl">{brandName}</span>
+            )}
           </Link>
           <div className="flex items-center gap-3 mt-6 md:mt-0">
             <ul className="flex list-none space-x-3">
@@ -93,13 +119,13 @@ export function Footer({ logo, brandName }: FooterProps) {
             </ul>
           </div>
           <div className="mt-6 text-sm leading-6 text-muted-foreground whitespace-nowrap lg:mt-0 lg:row-start-1 lg:col-span-4 xl:col-span-5">
-            <div>{t('copyright')}</div>
-            <div>{t('allRightsReserved')}</div>
+            <div>{t("copyright")}</div>
+            <div>{t("allRightsReserved")}</div>
             <div className="flex items-center gap-1 mt-2">
-              <span>{t('builtBy')}</span>
-              <Link 
-                href="https://mihaicrisan.com/" 
-                target="_blank" 
+              <span>{t("builtBy")}</span>
+              <Link
+                href="https://mihaicrisan.com/"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary hover:underline underline-offset-4 transition-colors"
               >
@@ -110,5 +136,5 @@ export function Footer({ logo, brandName }: FooterProps) {
         </div>
       </div>
     </footer>
-  )
+  );
 }

@@ -1,12 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PageLayout } from "@/components/layout/page-layout";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 
 export default function PrivacyPolicyPage() {
   return (
-    <PageLayout>
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header Section */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-center mb-4">
@@ -269,6 +267,5 @@ export default function PrivacyPolicyPage() {
           </p>
         </div>
       </div>
-    </PageLayout>
   );
-} 
+}

@@ -15,7 +15,6 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { ArrowLeft } from "lucide-react";
-import { PageLayout } from "@/components/layout/page-layout";
 import { VehicleImageCarousel } from "@/components/vehicle/vehicle-image-carrousel";
 import { VehicleImageCarouselSkeleton } from "@/components/vehicle/vehicle-image-carousel-skeleton";
 import { VehicleSpecifications } from "@/components/vehicle/vehicle-specifications";
@@ -51,7 +50,7 @@ export default function CarDetailPage() {
   // Show skeleton loading state
   if (vehicle === undefined) {
     return (
-      <PageLayout className="p-4 md:p-8">
+      <div className="p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
           {/* Breadcrumb skeleton */}
           <div className="mb-6">
@@ -98,13 +97,13 @@ export default function CarDetailPage() {
             <PricingTiersTableSkeleton />
           </div>
         </div>
-      </PageLayout>
+      </div>
     );
   }
 
   if (vehicle === null) {
     return (
-      <PageLayout className="flex items-center justify-center">
+      <div className="flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">
             {t("vehicleNotFound.title")}
@@ -119,7 +118,7 @@ export default function CarDetailPage() {
             </Button>
           </Link>
         </div>
-      </PageLayout>
+      </div>
     );
   }
 
@@ -235,7 +234,7 @@ export default function CarDetailPage() {
           />
         )}
       </Head>
-      <PageLayout className="p-4 md:p-8">
+      <div className="p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
           {/* Breadcrumb navigation */}
           <div className="mb-6">
@@ -334,7 +333,7 @@ export default function CarDetailPage() {
             </div>
           )}
         </div>
-      </PageLayout>
+      </div>
     </>
   );
 }

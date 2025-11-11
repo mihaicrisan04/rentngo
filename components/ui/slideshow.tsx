@@ -10,6 +10,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Card, CardContent } from "@/components/ui/card";
+import { ProgressiveBlur } from "@/components/ui/progressive-blur";
 import Autoplay from "embla-carousel-autoplay";
 
 interface SlideData {
@@ -32,18 +33,32 @@ interface SlideshowProps {
 const defaultSlides: SlideData[] = [
   {
     id: "1",
-    image: "/slideshow/banner1.png",
+    image: "/slideshow/banner1.jpeg",
     // title: "Adventure Awaits",
     // description: "Perfect vehicles for your next adventure in Cluj-Napoca",
     alt: "Cars ready for adventure and exploration",
   },
   {
     id: "2",
-    image: "/slideshow/banner2.png",
+    image: "/slideshow/banner2.jpeg",
     // title: "Adventure Awaits",
     // description: "Perfect vehicles for your next adventure in Cluj-Napoca",
     alt: "Cars ready for adventure and exploration",
   },
+  {
+    id: "3",
+    image: "/slideshow/banner3.jpeg",
+    // title: "Adventure Awaits",
+    // description: "Perfect vehicles for your next adventure in Cluj-Napoca",
+    alt: "Cars ready for adventure and exploration",
+  },
+  {
+    id: "4",
+    image: "/slideshow/banner4.jpeg",
+    // title: "Adventure Awaits",
+    // description: "Perfect vehicles for your next adventure in Cluj-Napoca",
+    alt: "Cars ready for adventure and exploration",
+  }
 ];
 
 export function Slideshow({
@@ -73,55 +88,69 @@ export function Slideshow({
 
   return (
     <div className={`relative w-full ${className || ""}`}>
-      <Carousel
-        setApi={setApi}
-        className="w-full"
-        plugins={autoplayPlugin}
-        opts={{
-          align: "start",
-          loop: true,
-        }}
-      >
-        <CarouselContent>
-          {slides.map((slide) => (
-            <CarouselItem key={slide.id}>
-              <Card className="border-0">
-                <CardContent className="relative p-0 h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden">
-                  <Image
-                    src={slide.image}
-                    alt={slide.alt}
-                    fill
-                    className="object-cover"
-                    priority={slide.id === "1"}
-                  />
-                  {(slide.title || slide.description) && (
-                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                      <div className="text-center text-white px-4 max-w-4xl">
-                        {slide.title && (
-                          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
-                            {slide.title}
-                          </h2>
-                        )}
-                        {slide.description && (
-                          <p className="text-lg md:text-xl lg:text-2xl opacity-90">
-                            {slide.description}
-                          </p>
-                        )}
+      <div className="relative overflow-hidden">
+        <Carousel
+          setApi={setApi}
+          className="w-full"
+          plugins={autoplayPlugin}
+          opts={{
+            align: "center",
+            loop: true,
+            containScroll: false,
+          }}
+        >
+          <CarouselContent className="-ml-2 md:-ml-[200px] lg:-ml-[600px] xl:-ml-[800px]">
+            {slides.map((slide) => (
+              <CarouselItem key={slide.id} className="pl-2 md:pl-[200px] lg:pl-[600px] xl:pl-[800px] basis-full md:basis-[95%] lg:basis-[80%] xl:basis-[70%]">
+                <Card className="border-0">
+                  <CardContent className="relative p-0 w-full aspect-video overflow-hidden">
+                    <Image
+                      src={slide.image}
+                      alt={slide.alt}
+                      fill
+                      className="object-contain rounded-lg"
+                      priority={slide.id === "1"}
+                    />
+                    {(slide.title || slide.description) && (
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <div className="text-center text-white px-4 max-w-4xl">
+                          {slide.title && (
+                            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+                              {slide.title}
+                            </h2>
+                          )}
+                          {slide.description && (
+                            <p className="text-lg md:text-xl lg:text-2xl opacity-90">
+                              {slide.description}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </CarouselItem>
-          ))}
-        </CarouselContent>
-        
-        <CarouselPrevious className="left-4 md:left-8 bg-white/10 border-white/20 hover:bg-white/20 text-white" />
-        <CarouselNext className="right-4 md:right-8 bg-white/10 border-white/20 hover:bg-white/20 text-white" />
-      </Carousel>
+                    )}
+                  </CardContent>
+                </Card>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+
+          <CarouselPrevious className="left-4 md:left-8 bg-white/10 border-white/20 hover:bg-white/20 text-white z-20" />
+          <CarouselNext className="right-4 md:right-8 bg-white/10 border-white/20 hover:bg-white/20 text-white z-20" />
+        </Carousel>
+
+        <ProgressiveBlur
+          className="pointer-events-none absolute top-0 left-0 h-full w-[30px] md:w-[150px] lg:w-[350px] xl:w-[500px] z-10"
+          direction="left"
+          blurIntensity={0.4}
+        />
+        <ProgressiveBlur
+          className="pointer-events-none absolute top-0 right-0 h-full w-[30px] md:w-[150px] lg:w-[350px] xl:w-[500px] z-10"
+          direction="right"
+          blurIntensity={0.4}
+        />
+      </div>
 
       {showIndicators && slides.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 flex space-x-2">
           {slides.map((_, index) => (
             <button
               key={index}
@@ -138,4 +167,4 @@ export function Slideshow({
       )}
     </div>
   );
-} 
+}

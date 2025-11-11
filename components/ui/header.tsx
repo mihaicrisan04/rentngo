@@ -1,248 +1,201 @@
 "use client";
 
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { SignInButton, SignedIn, SignedOut, useClerk } from "@clerk/nextjs";
 import React from "react";
-import { Menu, User, LogOut } from "lucide-react";
+import Link from "next/link";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { LanguageSelector } from "@/components/language-selector";
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from "next-intl";
 import { UserButton } from "@/components/user-button";
-
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
+import { MenuToggleIcon } from "@/components/ui/menu-toggle-icon";
+import { useScroll } from "@/components/ui/use-scroll";
 
 interface HeaderProps {
   logo: React.ReactNode;
-  brandName?: string;
 }
 
-export function Header({ logo, brandName }: HeaderProps) {
-  const { signOut } = useClerk();
-  const router = useRouter();
+export function Header({ logo }: HeaderProps) {
+  const [open, setOpen] = React.useState(false);
+  const scrolled = useScroll(10);
   const locale = useLocale();
-  const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
-  const [isScrolled, setIsScrolled] = React.useState(false);
   const pathname = usePathname();
-  const t = useTranslations('navigation');
+  const t = useTranslations("navigation");
 
-  // menuItems will be used for the mobile navigation
-  const menuItems = [
-    { name: t('home'), href: `/${locale}` },
-    { name: t('cars'), href: `/${locale}/cars` },
-    { name: t('transfers'), href: `/${locale}/transfers` },
-    { name: t('about'), href: `/${locale}/about` },
-    { name: t('contact'), href: `/${locale}/contact` },
-  ];
-
-  // Navigation items for desktop NavigationMenu
-  const navigationItems = [
-    { name: t('home'), href: `/${locale}` },
-    { name: t('cars'), href: `/${locale}/cars` },
-    { name: t('transfers'), href: `/${locale}/transfers` },
-    { name: t('about'), href: `/${locale}/about` },
-    { name: t('contact'), href: `/${locale}/contact` },
+  const links = [
+    { name: t("home"), href: `/${locale}` },
+    { name: t("cars"), href: `/${locale}/cars` },
+    { name: t("transfers"), href: `/${locale}/transfers` },
+    { name: t("blog"), href: `/${locale}/blog` },
+    { name: t("about"), href: `/${locale}/about` },
+    { name: t("contact"), href: `/${locale}/contact` },
   ];
 
   React.useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 0);
+    if (open) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
     };
-    window.addEventListener("scroll", handleScroll);
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [open]);
 
   const handleLinkClick = () => {
-    setIsDrawerOpen(false);
+    setOpen(false);
   };
 
-  const getNavLinkStyles = (href: string) => {
-    const isActive = pathname === href;
-    return cn(
-      "transition-colors hover:text-foreground/80 font-medium",
-      isScrolled
-        ? (isActive ? "text-primary" : "text-foreground/60")
-        : (pathname === "/" || pathname === "/about"
-            ? "text-background"
-            : (isActive ? "text-primary" : "text-foreground/60"))
-    );
-  };
+  const isOnDarkBackground = pathname === `/${locale}` || pathname === `/${locale}/about`;
 
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 w-full border-b transition-all duration-300 ease-in-out lg:px-4",
-        isScrolled
-          ? "border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
-          : "border-transparent bg-transparent"
+        "sticky top-0 z-50 mx-auto w-full max-w-5xl border-b border-transparent md:rounded-md md:border md:transition-all md:ease-out",
+        {
+          "bg-background/95 supports-[backdrop-filter]:bg-background/50 border-border backdrop-blur-lg md:top-4 md:max-w-4xl md:shadow":
+            scrolled && !open,
+          "bg-background/90": open,
+        }
       )}
     >
-      <div className="relative container mx-auto flex h-14 max-w-screen-2xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center">
-          <Link
-            href="/"
-            className="mr-6 flex items-center space-x-2"
-            onClick={handleLinkClick}
-          >
-            {logo}
-            {/* {brandName && <span className="text-lg font-semibold hidden sm:inline">{brandName}</span>} */}
-          </Link>
+      <nav
+        className={cn(
+          "flex h-14 w-full items-center px-4 md:h-12 md:transition-all md:ease-out",
+          {
+            "md:px-2": scrolled,
+          }
+        )}
+      >
+        <Link href={`/${locale}`} className="flex items-center space-x-2 flex-1 md:flex-1" onClick={handleLinkClick}>
+          {logo}
+        </Link>
+
+        <div className="hidden items-center gap-2 md:flex md:absolute md:left-1/2 md:-translate-x-1/2">
+          {links.map((link) => {
+            const isActive = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                className={cn(
+                  buttonVariants({ variant: "ghost" }),
+                  "transition-colors duration-300",
+                  !scrolled && isOnDarkBackground
+                    ? isActive
+                      ? "[color:rgb(255_255_255)]"
+                      : "[color:rgba(255_255_255_0.85)] hover:[color:rgb(255_255_255)]"
+                    : isActive
+                      ? "text-foreground"
+                      : "text-foreground/70 hover:text-foreground"
+                )}
+                href={link.href}
+              >
+                {link.name}
+              </Link>
+            );
+          })}
         </div>
 
-        <nav className="hidden lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:flex lg:items-center lg:gap-6">
-          {navigationItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={getNavLinkStyles(item.href)}
-            >
-              {item.name}
-            </Link>
-          ))}
-        </nav>
+        <div className="hidden items-center gap-2 md:flex md:flex-1 md:justify-end">
+          <LanguageSelector />
+          
+          <SignedIn>
+            <UserButton />
+          </SignedIn>
+          
+          <SignedOut>
+            <SignInButton mode="modal">
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "transition-colors",
+                  !scrolled && isOnDarkBackground
+                    ? "[color:rgb(255_255_255)] hover:[color:rgb(255_255_255)] border-white/30 hover:bg-white/10"
+                    : "text-primary hover:text-foreground"
+                )}
+              >
+                {t("login")}
+              </Button>
+            </SignInButton>
+            <SignInButton mode="modal">
+              <Button size="sm">{t("signUp")}</Button>
+            </SignInButton>
+          </SignedOut>
+        </div>
 
-        <div className="flex items-center space-x-2">
-          <div className="hidden lg:flex items-center space-x-4">
+        <Button
+          size="icon"
+          variant="outline"
+          onClick={() => setOpen(!open)}
+          className={cn(
+            "md:hidden",
+            !scrolled && isOnDarkBackground && "[color:rgb(255_255_255)] border-white/30"
+          )}
+        >
+          <MenuToggleIcon open={open} className="size-5" duration={300} />
+        </Button>
+      </nav>
+
+      <div
+        className={cn(
+          "bg-background/90 fixed top-14 right-0 bottom-0 left-0 z-50 flex flex-col overflow-hidden border-y md:hidden",
+          open ? "block" : "hidden"
+        )}
+      >
+        <div
+          data-slot={open ? "open" : "closed"}
+          className={cn(
+            "data-[slot=open]:animate-in data-[slot=open]:zoom-in-95 data-[slot=closed]:animate-out data-[slot=closed]:zoom-out-95 ease-out",
+            "flex h-full w-full flex-col justify-between gap-y-2 p-4"
+          )}
+        >
+          <div className="grid gap-y-2">
+            {links.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  className={buttonVariants({
+                    variant: "ghost",
+                    className: cn(
+                      "justify-start",
+                      isActive && "text-primary bg-accent"
+                    ),
+                  })}
+                  href={link.href}
+                  onClick={handleLinkClick}
+                >
+                  {link.name}
+                </Link>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-col gap-3 border-t pt-4">
+            <div className="mb-2 text-sm font-medium text-muted-foreground">
+              {t("language")}
+            </div>
             <LanguageSelector />
+
             <SignedIn>
               <UserButton />
             </SignedIn>
+
             <SignedOut>
               <SignInButton mode="modal">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className={cn(
-                    "transition-colors hover:text-foreground",
-                    isScrolled
-                      ? "text-primary"
-                      : (pathname === "/" ? "text-foreground" : "text-primary")
-                  )}
-                >
-                  {t('login')}
+                <Button variant="outline" className="w-full" onClick={handleLinkClick}>
+                  {t("login")}
                 </Button>
               </SignInButton>
               <SignInButton mode="modal">
-                <Button size="sm">{t('signUp')}</Button>
+                <Button className="w-full" onClick={handleLinkClick}>
+                  {t("signUp")}
+                </Button>
               </SignInButton>
             </SignedOut>
-          </div>
-
-          {/* Mobile Drawer */}
-          <div className="lg:hidden">
-            <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-              <DrawerTrigger asChild>
-                <button
-                  aria-label="Open Menu"
-                  className={cn(
-                    "relative -m-2.5 p-2.5",
-                  )}
-                >
-                  <Menu
-                    className={cn(
-                      "m-auto size-6",
-                      !isScrolled && (pathname === "/" || pathname === "/about") && "text-background"
-                    )}
-                  />
-                </button>
-              </DrawerTrigger>
-              <DrawerContent>
-                <DrawerHeader className="text-left">
-                  <DrawerTitle className="flex items-center space-x-2">
-                    {logo}
-                    {brandName && <span className="text-lg font-semibold">{brandName}</span>}
-                  </DrawerTitle>
-                  <DrawerDescription>
-                    Navigate through our services
-                  </DrawerDescription>
-                </DrawerHeader>
-                
-                <div className="px-4 pb-4">
-                  <nav className="space-y-2">
-                    {menuItems.map((item, index) => (
-                      <Link
-                        key={index}
-                        href={item.href}
-                        className={cn(
-                          "block py-3 px-2 rounded-md text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
-                          pathname === item.href ? "text-primary bg-accent" : "text-muted-foreground"
-                        )}
-                        onClick={handleLinkClick}
-                      >
-                        {item.name}
-                      </Link>
-                    ))}
-                  </nav>
-                  
-                  {/* Language selector in mobile drawer */}
-                  <div className="mt-4 pt-4 border-t">
-                    <div className="mb-2 text-sm font-medium text-muted-foreground">{t('language')}</div>
-                    <LanguageSelector />
-                  </div>
-                </div>
-
-                <DrawerFooter className="py-6">
-                  <SignedIn>
-                    <div className="flex flex-col gap-3 border-t pt-4">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full justify-start" 
-                        onClick={() => {
-                          router.push('/profile');
-                          handleLinkClick();
-                        }}
-                      >
-                        <User className="mr-2 h-4 w-4" />
-                        {t('profile')}
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full justify-start" 
-                        onClick={() => {
-                          signOut({ redirectUrl: '/' });
-                          handleLinkClick();
-                        }}
-                      >
-                        <LogOut className="mr-2 h-4 w-4" />
-                        {t('logout')}
-                      </Button>
-                    </div>
-                  </SignedIn>
-                  <SignedOut>
-                    <div className="flex flex-col gap-3 border-t pt-4">
-                      <SignInButton mode="modal">
-                        <Button variant="outline" size="sm" className="w-full" onClick={handleLinkClick}>
-                          {t('login')}
-                        </Button>
-                      </SignInButton>
-                      <SignInButton mode="modal">
-                        <Button size="sm" className="w-full" onClick={handleLinkClick}>
-                          {t('signUp')}
-                        </Button>
-                      </SignInButton>
-                    </div>
-                  </SignedOut>
-                  <DrawerClose asChild>
-                    <Button variant="outline" className="mt-4">
-                      Close
-                    </Button>
-                  </DrawerClose>
-                </DrawerFooter>
-              </DrawerContent>
-            </Drawer>
           </div>
         </div>
       </div>

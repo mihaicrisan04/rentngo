@@ -22,15 +22,15 @@ export function VehicleSearchForm({
   today.setHours(0, 0, 0, 0);
 
   return (
-    <div className="mb-8">
-      <div className="mb-8 text-center">
-        <h1 className="text-2xl font-semibold">{t('title')}</h1>
-        <p className="text-muted-foreground">{t('subtitle')}</p>
+    <div className="mb-6">
+      <div className="mb-4 text-center">
+        <h1 className="text-xl font-semibold">{t('title')}</h1>
+        <p className="text-sm text-muted-foreground">{t('subtitle')}</p>
       </div>
       
       <Card className="shadow-md">
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
             <LocationPicker
               id="deliveryLocation"
               label={t('pickupLocation')}

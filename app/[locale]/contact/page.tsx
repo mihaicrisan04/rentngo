@@ -2,8 +2,6 @@
 
 import React from "react";
 import Image from "next/image";
-import { Header } from "@/components/ui/header";
-import { Footer } from "@/components/ui/footer";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +14,7 @@ import {
 import { SocialIcon } from "react-social-icons";
 import { useTranslations } from "next-intl";
 import Head from "next/head";
+import { toast } from "sonner";
 
 const ContactPage = () => {
   const t = useTranslations("contactPage");
@@ -33,8 +32,19 @@ const ContactPage = () => {
     window.open(whatsappUrl, "_blank");
   };
 
+  const handlePhoneClick = () => {
+    const phoneNumber = "+40773932961";
+    navigator.clipboard.writeText(phoneNumber).then(() => {
+      toast.success("Phone number copied to clipboard!");
+    });
+  };
+
+  const handleEmailClick = () => {
+    window.location.href = "mailto:office@rngo.com";
+  };
+
   return (
-    <div className="relative flex flex-col min-h-screen">
+    <>
       <Head>
         <title>Contact Rent'n Go - Masini de Inchiriat Cluj-Napoca</title>
         <meta
@@ -85,13 +95,8 @@ const ContactPage = () => {
           }}
         />
       </Head>
-      <Header
-        logo={
-          <Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} />
-        }
-      />
 
-      <main className="flex-grow bg-gradient-to-br from-background via-background to-muted/30">
+      <div className="flex-grow bg-gradient-to-br from-background via-background to-muted/30">
         {/* Hero Section */}
         <section className="py-16 px-4">
           <div className="container mx-auto text-center">
@@ -141,7 +146,7 @@ const ContactPage = () => {
                       <p className="text-muted-foreground mb-4">
                         {t("contactMethods.phone.description")}
                       </p>
-                      <Button variant="outline" className="w-full">
+                      <Button variant="outline" className="w-full" onClick={handlePhoneClick}>
                         <Phone className="w-4 h-4 mr-2" />
                         {t("contactMethods.phone.buttonText")}
                       </Button>
@@ -183,7 +188,7 @@ const ContactPage = () => {
                       <p className="text-muted-foreground mb-4">
                         {t("contactMethods.email.description")}
                       </p>
-                      <Button variant="outline" className="w-full">
+                      <Button variant="outline" className="w-full" onClick={handleEmailClick}>
                         <Mail className="w-4 h-4 mr-2" />
                         {t("contactMethods.email.buttonText")}
                       </Button>
@@ -342,7 +347,7 @@ const ContactPage = () => {
         </section>
 
         {/* Business Hours */}
-        <section className="py-16 px-4 bg-muted/20">
+        <section className="py-16 px-4 bg-card/30">
           <div className="container mx-auto">
             <div className="max-w-2xl mx-auto">
               <AnimatedGroup
@@ -371,15 +376,8 @@ const ContactPage = () => {
             </div>
           </div>
         </section>
-      </main>
-
-      <Footer
-        logo={
-          <Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} />
-        }
-        brandName=""
-      />
-    </div>
+      </div>
+    </>
   );
 };
 

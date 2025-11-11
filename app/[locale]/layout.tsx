@@ -1,8 +1,9 @@
-import { notFound } from 'next/navigation';
-import { getMessages } from 'next-intl/server';
-import { LocaleProviders } from '../providers';
+import { notFound } from "next/navigation";
+import { getMessages } from "next-intl/server";
+import { LocaleProviders } from "../providers";
+import { PublicLayout } from "@/components/layout/public-layout";
 
-const locales = ['ro', 'en'];
+const locales = ["ro", "en"];
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -10,14 +11,14 @@ export function generateStaticParams() {
 
 export default async function LocaleLayout({
   children,
-  params
+  params,
 }: {
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 }) {
   // Await the params as required by Next.js 15
   const { locale } = await params;
-  
+
   // Validate that the incoming `locale` parameter is valid
   if (!locales.includes(locale as any)) notFound();
 
@@ -26,7 +27,7 @@ export default async function LocaleLayout({
 
   return (
     <LocaleProviders locale={locale} messages={messages}>
-      {children}
+      <PublicLayout>{children}</PublicLayout>
     </LocaleProviders>
   );
-} 
+}

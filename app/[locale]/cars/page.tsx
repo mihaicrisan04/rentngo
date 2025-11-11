@@ -2,7 +2,6 @@
 
 import { VehicleFilters } from "@/components/vehicle/vehicle-filters";
 import { VehicleFiltersSkeleton } from "@/components/vehicle/vehicle-filters-skeleton";
-import { PageLayout } from "@/components/layout/page-layout";
 import { VehicleSearchForm } from "@/components/vehicle/vehicle-search-form";
 import { VehicleSearchFormSkeleton } from "@/components/vehicle/vehicle-search-form-skeleton";
 import { VehicleListDisplay } from "@/components/vehicle/vehicle-list-display";
@@ -109,8 +108,8 @@ export default function CarsPage() {
           />
         )}
       </Head>
-      <PageLayout className="p-4 md:p-8 flex flex-col gap-8">
-        <div className="max-w-7xl mx-auto w-full">
+      <div className="p-4 md:p-6 flex flex-col gap-6">
+        <div className="max-w-6xl mx-auto w-full">
           {/* Search Form - show skeleton while loading or not hydrated */}
           {(!searchState.isHydrated || isLoading) ? (
             <VehicleSearchFormSkeleton />
@@ -141,7 +140,7 @@ export default function CarsPage() {
             searchState={searchState}
           />
         </div>
-      </PageLayout>
+      </div>
     </>
   );
 }

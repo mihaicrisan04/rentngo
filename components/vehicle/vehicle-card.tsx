@@ -111,9 +111,9 @@ export function VehicleCard({
   };
 
   return (
-    <div className="relative flex flex-col bg-accent text-card-foreground overflow-hidden rounded-lg shadow-lg w-full max-w-sm transition-all duration-300 hover:shadow-xl hover:scale-105 group before:absolute before:inset-0 before:rounded-lg before:border-2 before:border-primary/20 before:scale-110 before:opacity-0 before:transition-all before:duration-300 group-hover:before:opacity-100 before:pointer-events-none">
+    <div className="relative flex flex-col bg-accent text-card-foreground overflow-hidden rounded-lg shadow-lg w-full transition-all duration-300 hover:shadow-xl hover:scale-105 group before:absolute before:inset-0 before:rounded-lg before:border-2 before:border-primary/20 before:scale-110 before:opacity-0 before:transition-all before:duration-300 group-hover:before:opacity-100 before:pointer-events-none">
       <div
-        className="aspect-[4/3] relative w-full bg-muted overflow-hidden cursor-pointer"
+        className="aspect-[16/10] relative w-full bg-muted overflow-hidden cursor-pointer"
         onClick={handleImageClick}
       >
         {imageUrl ? (
@@ -132,23 +132,23 @@ export function VehicleCard({
         )}
       </div>
 
-      <div className="flex-grow p-4 space-y-4 text-center">
-        <div className="flex items-center justify-center space-x-2">
-          <h3 className="text-lg font-semibold">
+      <div className="flex-grow p-3 space-y-3 text-center">
+        <div className="flex items-center justify-center space-x-1.5">
+          <h3 className="text-base font-semibold">
             {vehicle.make} {vehicle.model}
           </h3>
-          <span className="flex items-center space-x-1 text-xs text-muted-foreground">
-            <Icon iconNode={gearbox} className="h-3 w-3" />
+          <span className="flex items-center space-x-0.5 text-[10px] text-muted-foreground">
+            <Icon iconNode={gearbox} className="h-2.5 w-2.5" />
             <span>{vehicle.transmission || t("notAvailable")}</span>
           </span>
         </div>
 
         {/* Only show pricing when dates are selected */}
         {pickupDate && returnDate && (
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <div className="flex justify-between items-baseline">
               <div>
-                <span className="text-2xl font-bold text-yellow-500">
+                <span className="text-xl font-bold text-yellow-500">
                   {currentPricePerDay}
                 </span>
                 <span className="text-sm text-muted-foreground">
@@ -159,7 +159,7 @@ export function VehicleCard({
               {priceDetails.totalPrice !== null &&
                 priceDetails.days !== null && (
                   <div>
-                    <span className="text-xl font-semibold text-yellow-600">
+                    <span className="text-lg font-semibold text-yellow-600">
                       {priceDetails.totalPrice}
                     </span>
                     <span className="text-xs text-muted-foreground">
@@ -190,24 +190,24 @@ export function VehicleCard({
 
         <Button
           // #055E3B
-          className="w-full bg-[#055E3B] hover:bg-[#055E3B]/80 text-white font-bold py-3 rounded-md text-sm"
+          className="w-full bg-[#055E3B] hover:bg-[#055E3B]/80 text-white font-bold py-2 rounded-md text-xs"
           asChild
         >
           <Link href={reservationUrl}>{t("bookNow")}</Link>
         </Button>
       </div>
 
-      <div className="p-3 border-t border-border">
-        <div className="flex justify-around items-center w-full text-xs text-muted-foreground">
-          <div className="flex items-center space-x-1">
-            <CarFront className="h-4 w-4" />
+      <div className="p-2 border-t border-border">
+        <div className="flex justify-around items-center w-full text-[10px] text-muted-foreground">
+          <div className="flex items-center space-x-0.5">
+            <CarFront className="h-3 w-3" />
             <span>{vehicle.year || t("notAvailable")}</span>
           </div>
           <div className="flex items-center self-stretch px-1.5">
             <Separator orientation="vertical" />
           </div>
-          <div className="flex items-center space-x-1">
-            <Cog className="h-4 w-4" />
+          <div className="flex items-center space-x-0.5">
+            <Cog className="h-3 w-3" />
             <span>
               {vehicle.engineCapacity
                 ? `${vehicle.engineCapacity.toFixed(1)} ${vehicle.engineType || ""}`
@@ -217,8 +217,8 @@ export function VehicleCard({
           <div className="flex items-center self-stretch px-1.5">
             <Separator orientation="vertical" />
           </div>
-          <div className="flex items-center space-x-1">
-            <Fuel className="h-4 w-4" />
+          <div className="flex items-center space-x-0.5">
+            <Fuel className="h-3 w-3" />
             <span>{vehicle.fuelType || t("notAvailable")}</span>
           </div>
         </div>
