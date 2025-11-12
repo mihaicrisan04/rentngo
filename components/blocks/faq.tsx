@@ -94,7 +94,7 @@ const FaqSection = React.forwardRef<HTMLElement, FaqSectionProps>(
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="max-w-lg mx-auto mt-12 md:mt-16 lg:mt-20 p-8 rounded-lg text-center bg-gradient-to-br from-primary/5 to-secondary/5 border border-primary/20"
+              className="max-w-lg mx-auto mt-12 md:mt-16 lg:mt-30 p-8 rounded-lg text-center bg-gradient-to-br from-primary/5 to-secondary/5 border border-primary/20"
             >
               <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full mb-4">
                 <Car className="h-6 w-6 text-primary" />
@@ -105,8 +105,8 @@ const FaqSection = React.forwardRef<HTMLElement, FaqSectionProps>(
               <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
                 {ctaSection.description}
               </p>
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 className="bg-primary hover:bg-primary/90 text-primary-foreground"
                 onClick={ctaSection.onBrowseCars}
               >

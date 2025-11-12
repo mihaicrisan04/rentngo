@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -241,12 +242,13 @@ const AboutPage = () => {
                     </p>
                   </div>
                   <div className="relative">
-                    <Card className="overflow-hidden shadow-xl">
-                      <CardContent className="p-0">
-                        <div className="relative h-80 bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                          <Car className="w-24 h-24 text-primary/60" />
-                        </div>
-                      </CardContent>
+                    <Card className="overflow-hidden shadow-xl p-0 relative h-96">
+                      <Image
+                        src="/our-story.jpg"
+                        alt="Our Story"
+                        fill
+                        className="object-cover"
+                      />
                     </Card>
                   </div>
                 </div>
