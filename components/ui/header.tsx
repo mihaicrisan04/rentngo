@@ -53,11 +53,11 @@ export function Header({ logo }: HeaderProps) {
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 mx-auto w-full max-w-5xl border-b border-transparent md:rounded-md md:border md:transition-all md:ease-out",
+        "sticky top-0 z-50 mx-auto w-full max-w-7xl border-b border-transparent md:rounded-md md:border md:transition-all md:ease-out",
         {
-          "bg-background/95 supports-[backdrop-filter]:bg-background/50 border-border backdrop-blur-lg md:top-4 md:max-w-4xl md:shadow":
+          "bg-background/95 supports-[backdrop-filter]:bg-background/50 border-border backdrop-blur-lg md:top-4 md:max-w-6xl md:shadow":
             scrolled && !open,
-          "bg-background/90": open,
+          "bg-background": open,
         }
       )}
     >
@@ -100,11 +100,11 @@ export function Header({ logo }: HeaderProps) {
 
         <div className="hidden items-center gap-2 md:flex md:flex-1 md:justify-end">
           <LanguageSelector />
-          
+
           <SignedIn>
             <UserButton />
           </SignedIn>
-          
+
           <SignedOut>
             <SignInButton mode="modal">
               <Button
@@ -141,7 +141,7 @@ export function Header({ logo }: HeaderProps) {
 
       <div
         className={cn(
-          "bg-background/90 fixed top-14 right-0 bottom-0 left-0 z-50 flex flex-col overflow-hidden border-y md:hidden",
+          "bg-background fixed top-14 right-0 bottom-0 left-0 z-50 flex flex-col overflow-hidden border-y md:hidden",
           open ? "block" : "hidden"
         )}
       >
@@ -149,10 +149,10 @@ export function Header({ logo }: HeaderProps) {
           data-slot={open ? "open" : "closed"}
           className={cn(
             "data-[slot=open]:animate-in data-[slot=open]:zoom-in-95 data-[slot=closed]:animate-out data-[slot=closed]:zoom-out-95 ease-out",
-            "flex h-full w-full flex-col justify-between gap-y-2 p-4"
+            "flex h-full w-full flex-col gap-y-2 p-4"
           )}
         >
-          <div className="grid gap-y-2">
+          <div className="grid gap-y-2 pb-4 border-b">
             {links.map((link) => {
               const isActive = pathname === link.href;
               return (
@@ -174,7 +174,7 @@ export function Header({ logo }: HeaderProps) {
             })}
           </div>
 
-          <div className="flex flex-col gap-3 border-t pt-4">
+          <div className="flex flex-col gap-3 pt-2">
             <div className="mb-2 text-sm font-medium text-muted-foreground">
               {t("language")}
             </div>

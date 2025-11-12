@@ -10,7 +10,6 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Card, CardContent } from "@/components/ui/card";
-import { ProgressiveBlur } from "@/components/ui/progressive-blur";
 import Autoplay from "embla-carousel-autoplay";
 
 interface SlideData {
@@ -133,20 +132,11 @@ export function Slideshow({
             ))}
           </CarouselContent>
 
-          <CarouselPrevious className="left-4 md:left-8 bg-white/10 border-white/20 hover:bg-white/20 text-white z-20" />
-          <CarouselNext className="right-4 md:right-8 bg-white/10 border-white/20 hover:bg-white/20 text-white z-20" />
+          <CarouselPrevious className="left-4 md:left-[50px] lg:left-[200px] xl:left-[300px] bg-white/10 border-white/20 hover:bg-white/20 text-white z-20" />
+          <CarouselNext className="right-4 md:right-[50px] lg:right-[200px] xl:right-[300px] bg-white/10 border-white/20 hover:bg-white/20 text-white z-20" />
         </Carousel>
 
-        <ProgressiveBlur
-          className="pointer-events-none absolute top-0 left-0 h-full w-[30px] md:w-[150px] lg:w-[350px] xl:w-[500px] z-10"
-          direction="left"
-          blurIntensity={0.4}
-        />
-        <ProgressiveBlur
-          className="pointer-events-none absolute top-0 right-0 h-full w-[30px] md:w-[150px] lg:w-[350px] xl:w-[500px] z-10"
-          direction="right"
-          blurIntensity={0.4}
-        />
+
       </div>
 
       {showIndicators && slides.length > 1 && (
