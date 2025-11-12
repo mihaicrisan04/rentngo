@@ -13,20 +13,20 @@ export function LanguageSelector() {
   const router = useRouter()
   const pathname = usePathname()
   const locale = useLocale()
-  
+
   const handleLanguageChange = (newLocale: string) => {
     // Remove current locale from pathname if it exists
     const pathnameWithoutLocale = pathname.replace(/^\/[a-z]{2}/, '') || '/'
-    
+
     // Both Romanian and English will have explicit prefixes
     const newPath = `/${newLocale}${pathnameWithoutLocale}`
-    
+
     router.push(newPath)
   }
-  
+
   return (
     <Select value={locale} onValueChange={handleLanguageChange}>
-      <SelectTrigger className="h-9 w-[50px] md:h-8 md:w-[40px] [&>svg]:hidden">
+      <SelectTrigger size="sm" className="w-[50px] md:w-[40px] [&>svg]:hidden">
         <SelectValue>
           {languages[locale as keyof typeof languages]?.flag}
         </SelectValue>
@@ -47,4 +47,4 @@ export function LanguageSelector() {
       </SelectContent>
     </Select>
   )
-} 
+}

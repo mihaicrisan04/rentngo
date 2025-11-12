@@ -73,7 +73,7 @@ export function Header({ logo }: HeaderProps) {
           {logo}
         </Link>
 
-        <div className="hidden items-center gap-2 md:flex md:absolute md:left-1/2 md:-translate-x-1/2">
+        <div className="hidden items-center gap-2 lg:flex lg:absolute lg:left-1/2 lg:-translate-x-1/2">
           {links.map((link) => {
             const isActive = pathname === link.href;
             return (
@@ -98,7 +98,7 @@ export function Header({ logo }: HeaderProps) {
           })}
         </div>
 
-        <div className="hidden items-center gap-2 md:flex md:flex-1 md:justify-end">
+        <div className="hidden items-center gap-2 lg:flex lg:flex-1 lg:justify-end">
           <LanguageSelector />
 
           <SignedIn>
@@ -131,7 +131,7 @@ export function Header({ logo }: HeaderProps) {
           variant="outline"
           onClick={() => setOpen(!open)}
           className={cn(
-            "md:hidden",
+            "lg:hidden",
             !scrolled && isOnDarkBackground && "[color:rgb(255_255_255)] border-white/30"
           )}
         >
@@ -141,7 +141,7 @@ export function Header({ logo }: HeaderProps) {
 
       <div
         className={cn(
-          "bg-background fixed top-14 right-0 bottom-0 left-0 z-50 flex flex-col overflow-hidden border-y md:hidden",
+          "bg-background fixed top-14 right-0 bottom-0 left-0 z-50 flex flex-col overflow-hidden border-y lg:hidden",
           open ? "block" : "hidden"
         )}
       >

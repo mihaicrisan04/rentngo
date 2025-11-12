@@ -13,7 +13,13 @@ import { VehicleCard } from "@/components/vehicle/vehicle-card";
 import { FaqSection } from "@/components/blocks/faq";
 import { BackgroundImage } from "@/components/ui/BackgroundImage";
 import { AnimatedGroup } from "@/components/ui/animated-group";
-import { Slideshow } from "@/components/ui/slideshow";
+import {
+  ProgressSlider,
+  SliderContent,
+  SliderWrapper,
+  SliderBtnGroup,
+  SliderBtn,
+} from "@/components/ui/progressive-carousel";
 import { Vehicle } from "@/types/vehicle";
 import { useHomepageFeaturedVehicles } from "@/hooks/useHomepageFeaturedVehicles";
 import { sectionAnimationVariants } from "@/lib/animations";
@@ -192,11 +198,88 @@ export default function Home() {
           </AnimatedGroup>
         </div>
 
-        {/* <AnimatedGroup variants={sectionAnimationVariants} threshold={0.1} triggerOnce={true}> */}
-        <div className="w-full">
-          <Slideshow className="mb-8" />
+        <div className="w-full px-4 py-16">
+          <ProgressSlider
+            activeSlider="slide1"
+            duration={5000}
+            className="max-w-7xl mx-auto"
+          >
+            <SliderContent>
+              <SliderWrapper value="slide1" className="w-full">
+                <div className="relative w-full aspect-video overflow-hidden rounded-lg">
+                  <Image
+                    src="/slideshow/banner1.jpeg"
+                    alt="Cars ready for adventure and exploration"
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+                </div>
+              </SliderWrapper>
+              <SliderWrapper value="slide2" className="w-full">
+                <div className="relative w-full aspect-video overflow-hidden rounded-lg">
+                  <Image
+                    src="/slideshow/banner2.jpeg"
+                    alt="Cars ready for adventure and exploration"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              </SliderWrapper>
+              <SliderWrapper value="slide3" className="w-full">
+                <div className="relative w-full aspect-video overflow-hidden rounded-lg">
+                  <Image
+                    src="/slideshow/banner3.jpeg"
+                    alt="Cars ready for adventure and exploration"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              </SliderWrapper>
+              <SliderWrapper value="slide4" className="w-full">
+                <div className="relative w-full aspect-video overflow-hidden rounded-lg">
+                  <Image
+                    src="/slideshow/banner4.jpeg"
+                    alt="Cars ready for adventure and exploration"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              </SliderWrapper>
+            </SliderContent>
+
+            <SliderBtnGroup className="flex justify-center gap-2 mt-6">
+              <SliderBtn
+                value="slide1"
+                className="w-12 h-2 rounded-full bg-white/30 hover:bg-white/50 transition-colors"
+                progressBarClass="bg-white h-full rounded-full top-0"
+              >
+                <span className="sr-only">Slide 1</span>
+              </SliderBtn>
+              <SliderBtn
+                value="slide2"
+                className="w-12 h-2 rounded-full bg-white/30 hover:bg-white/50 transition-colors"
+                progressBarClass="bg-white h-full rounded-full top-0"
+              >
+                <span className="sr-only">Slide 2</span>
+              </SliderBtn>
+              <SliderBtn
+                value="slide3"
+                className="w-12 h-2 rounded-full bg-white/30 hover:bg-white/50 transition-colors"
+                progressBarClass="bg-white h-full rounded-full top-0"
+              >
+                <span className="sr-only">Slide 3</span>
+              </SliderBtn>
+              <SliderBtn
+                value="slide4"
+                className="w-12 h-2 rounded-full bg-white/30 hover:bg-white/50 transition-colors"
+                progressBarClass="bg-white h-full rounded-full top-0"
+              >
+                <span className="sr-only">Slide 4</span>
+              </SliderBtn>
+            </SliderBtnGroup>
+          </ProgressSlider>
         </div>
-        {/* </AnimatedGroup> */}
 
         {/* Our Story Section */}
         <AnimatedGroup
