@@ -112,8 +112,8 @@ const AboutPage = () => {
               "@type": "Organization",
               name: "Rent'n Go",
               alternateName: "Rent'n Go Cluj-Napoca",
-              url: "https://rngo.com",
-              logo: "https://rngo.com/logo.png",
+              url: "https://rngo.ro",
+              logo: "https://rngo.ro/logo.png",
               contactPoint: {
                 "@type": "ContactPoint",
                 telephone: "+40-773-932-961",

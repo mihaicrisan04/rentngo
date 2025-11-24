@@ -18,8 +18,8 @@ export default function TransfersPage() {
       provider: {
         "@type": "Organization",
         name: "Rent'n Go",
-        url: "https://rngo.com",
-        logo: "https://rngo.com/logo.png",
+        url: "https://rngo.ro",
+        logo: "https://rngo.ro/logo.png",
         contactPoint: {
           "@type": "ContactPoint",
           telephone: "+40-773-932-961",
@@ -52,7 +52,7 @@ export default function TransfersPage() {
       ],
       availableChannel: {
         "@type": "ServiceChannel",
-        serviceUrl: "https://rngo.com/transfers",
+        serviceUrl: "https://rngo.ro/transfers",
         serviceSmsNumber: "+40-773-932-961",
         servicePhone: "+40-773-932-961",
       },
@@ -88,7 +88,7 @@ export default function TransfersPage() {
           },
         ],
       },
-      url: "https://rngo.com/transfers",
+      url: "https://rngo.ro/transfers",
     };
   };
 
@@ -107,7 +107,7 @@ export default function TransfersPage() {
           content="transfer cluj-napoca, transfer aeroport cluj, transport privat cluj, servicii transfer romania, rent n go transfers"
         />
         <meta name="robots" content="index, follow" />
-        <link rel="canonical" href="https://rngo.com/transfers" />
+        <link rel="canonical" href="https://rngo.ro/transfers" />
 
         <script
           type="application/ld+json"

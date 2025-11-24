@@ -135,7 +135,7 @@ export default function CarDetailPage() {
     return {
       "@context": "https://schema.org",
       "@type": "Vehicle",
-      "@id": `https://rngo.com/cars/${vehicle._id}`,
+      "@id": `https://rngo.ro/cars/${vehicle._id}`,
       name: vehicleName,
       description: `${vehicleName} disponibil pentru închiriere în Cluj-Napoca. Masini de inchiriat cu Rent'n Go - servicii profesionale de închiriere auto.`,
       brand: {
@@ -155,10 +155,10 @@ export default function CarDetailPage() {
           ? `${vehicle.engineCapacity}L`
           : "1.6L",
       },
-      image: vehicle.images?.map((img) => `https://rngo.com${img}`) || [
-        "https://rngo.com/logo.png",
+      image: vehicle.images?.map((img) => `https://rngo.ro${img}`) || [
+        "https://rngo.ro/logo.png",
       ],
-      url: `https://rngo.com/cars/${vehicle._id}`,
+      url: `https://rngo.ro/cars/${vehicle._id}`,
       offers: {
         "@type": "Offer",
         priceCurrency: "EUR",
@@ -180,7 +180,7 @@ export default function CarDetailPage() {
         seller: {
           "@type": "Organization",
           name: "Rent'n Go",
-          url: "https://rngo.com",
+          url: "https://rngo.ro",
           address: {
             "@type": "PostalAddress",
             streetAddress:
@@ -196,7 +196,7 @@ export default function CarDetailPage() {
         "@type": "RentAction",
         target: {
           "@type": "EntryPoint",
-          urlTemplate: `https://rngo.com/reservation?vehicleId=${vehicle._id}`,
+          urlTemplate: `https://rngo.ro/reservation?vehicleId=${vehicle._id}`,
           actionPlatform: [
             "https://schema.org/DesktopWebPlatform",
             "https://schema.org/MobileWebPlatform",
@@ -223,7 +223,7 @@ export default function CarDetailPage() {
           content={`${vehicleName}, masini de inchiriat cluj-napoca, ${vehicle.make} închiriere, car rental ${vehicle.model}, rent ${vehicle.make} cluj`}
         />
         <meta name="robots" content="index, follow" />
-        <link rel="canonical" href={`https://rngo.com/cars/${vehicle._id}`} />
+        <link rel="canonical" href={`https://rngo.ro/cars/${vehicle._id}`} />
 
         {vehicleSchema && (
           <script

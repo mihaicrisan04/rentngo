@@ -18,7 +18,7 @@ export async function generateMetadata({
     title: t("title"),
     description: t("subtitle"),
     alternates: {
-      canonical: `https://rngo.com/${locale}/blog`,
+      canonical: `https://rngo.ro/${locale}/blog`,
       languages: {
         en: "/en/blog",
         ro: "/ro/blog",
@@ -28,7 +28,7 @@ export async function generateMetadata({
       title: t("title"),
       description: t("subtitle"),
       type: "website",
-      url: `https://rngo.com/${locale}/blog`,
+      url: `https://rngo.ro/${locale}/blog`,
       siteName: "Rent'n Go Cluj",
       locale: locale,
     },

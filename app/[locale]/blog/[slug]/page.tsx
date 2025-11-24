@@ -35,7 +35,7 @@ export async function generateMetadata({
     authors: [{ name: blog.author }],
     keywords: blog.tags?.join(", "),
     alternates: {
-      canonical: `https://rngo.com/${locale}/blog/${slug}`,
+      canonical: `https://rngo.ro/${locale}/blog/${slug}`,
       languages: {
         en: `/en/blog/${slug}`,
         ro: `/ro/blog/${slug}`,
@@ -45,7 +45,7 @@ export async function generateMetadata({
       title: blog.title,
       description: blog.description,
       type: "article",
-      url: `https://rngo.com/${locale}/blog/${slug}`,
+      url: `https://rngo.ro/${locale}/blog/${slug}`,
       publishedTime: blog.publishedAt
         ? new Date(blog.publishedAt).toISOString()
         : undefined,
