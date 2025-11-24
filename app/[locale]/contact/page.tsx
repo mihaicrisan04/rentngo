@@ -40,7 +40,7 @@ const ContactPage = () => {
   };
 
   const handleEmailClick = () => {
-    window.location.href = "mailto:office@rngo.com";
+    window.location.href = "mailto:office@rngo.ro";
   };
 
   return (
@@ -49,7 +49,7 @@ const ContactPage = () => {
         <title>Contact Rent'n Go - Masini de Inchiriat Cluj-Napoca</title>
         <meta
           name="description"
-          content="Contactează Rent'n Go pentru masini de inchiriat Cluj-Napoca. Telefon: +40 773 932 961. Email: office@rngo.com. Servicii profesionale de închiriere auto în Cluj."
+          content="Contactează Rent'n Go pentru masini de inchiriat Cluj-Napoca. Telefon: +40 773 932 961. Email: office@rngo.ro. Servicii profesionale de închiriere auto în Cluj."
         />
         <meta
           name="keywords"
@@ -65,7 +65,7 @@ const ContactPage = () => {
                 "@type": "Organization",
                 name: "Rent'n Go",
                 telephone: "+40-773-932-961",
-                email: "office@rngo.com",
+                email: "office@rngo.ro",
                 address: {
                   "@type": "PostalAddress",
                   streetAddress:
@@ -85,7 +85,7 @@ const ContactPage = () => {
                   },
                   {
                     "@type": "ContactPoint",
-                    email: "office@rngo.com",
+                    email: "office@rngo.ro",
                     contactType: "customer service",
                     availableLanguage: ["Romanian", "English"],
                   },

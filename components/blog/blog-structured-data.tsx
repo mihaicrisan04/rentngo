@@ -32,12 +32,12 @@ export function BlogStructuredData({
       name: "Rent'n Go Cluj",
       logo: {
         "@type": "ImageObject",
-        url: "https://rngo.com/logo.png",
+        url: "https://rngo.ro/logo.png",
       },
     },
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": `https://rngo.com/${locale}/blog/${slug}`,
+      "@id": `https://rngo.ro/${locale}/blog/${slug}`,
     },
     keywords: blog.tags?.join(", "),
     articleBody: blog.description,
@@ -73,19 +73,19 @@ export function BreadcrumbStructuredData({
         "@type": "ListItem",
         position: 1,
         name: "Home",
-        item: `https://rngo.com/${locale}`,
+        item: `https://rngo.ro/${locale}`,
       },
       {
         "@type": "ListItem",
         position: 2,
         name: "Blog",
-        item: `https://rngo.com/${locale}/blog`,
+        item: `https://rngo.ro/${locale}/blog`,
       },
       {
         "@type": "ListItem",
         position: 3,
         name: blog.title,
-        item: `https://rngo.com/${locale}/blog/${slug}`,
+        item: `https://rngo.ro/${locale}/blog/${slug}`,
       },
     ],
   };

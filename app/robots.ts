@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/admin/", "/api/"],
       },
     ],
-    sitemap: "https://rngo.com/sitemap.xml",
+    sitemap: "https://rngo.ro/sitemap.xml",
   };
 }
