@@ -60,7 +60,7 @@
     "framer-motion": "^12.12.1",
     "gray-matter": "^4.0.3",
     "input-otp": "^1.4.2",
-    "lucide-react": "^0.509.0",
+    "lucide-react": "^0.555.0",
     "motion": "^12.23.24",
     "next": "^15.5.7",
     "next-intl": "^4.3.4",
