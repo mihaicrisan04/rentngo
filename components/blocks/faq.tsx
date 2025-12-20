@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Car, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -46,6 +47,7 @@ interface FaqSectionProps extends React.HTMLAttributes<HTMLElement> {
     description: string;
     buttonText: string;
     onBrowseCars?: () => void;
+    href?: string;
   };
 }
 
@@ -105,14 +107,27 @@ const FaqSection = React.forwardRef<HTMLElement, FaqSectionProps>(
               <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
                 {ctaSection.description}
               </p>
-              <Button
-                size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                onClick={ctaSection.onBrowseCars}
-              >
-                {ctaSection.buttonText}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              {ctaSection.href ? (
+                <Button
+                  size="lg"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                  asChild
+                >
+                  <Link href={ctaSection.href}>
+                    {ctaSection.buttonText}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              ) : (
+                <Button
+                  size="lg"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                  onClick={ctaSection.onBrowseCars}
+                >
+                  {ctaSection.buttonText}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              )}
             </motion.div>
           )}
         </div>

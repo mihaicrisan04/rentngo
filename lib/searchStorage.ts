@@ -38,15 +38,23 @@ export const searchStorage = {
     if (typeof window === 'undefined') return;
     
     try {
-      const existing = searchStorage.load();
-      const updated = { ...existing, ...data };
+      // Read existing data directly from localStorage (not via load() to avoid circular calls)
+      let existing: Record<string, unknown> = {};
+      const stored = localStorage.getItem(SEARCH_STORAGE_KEY);
+      if (stored) {
+        existing = JSON.parse(stored);
+      }
       
-      // Convert dates to ISO strings for storage
-      const toStore = {
-        ...updated,
-        pickupDate: updated.pickupDate?.toISOString(),
-        returnDate: updated.returnDate?.toISOString(),
-      };
+      // Convert incoming dates to ISO strings
+      const dataToMerge: Record<string, unknown> = { ...data };
+      if (data.pickupDate instanceof Date) {
+        dataToMerge.pickupDate = data.pickupDate.toISOString();
+      }
+      if (data.returnDate instanceof Date) {
+        dataToMerge.returnDate = data.returnDate.toISOString();
+      }
+      
+      const toStore = { ...existing, ...dataToMerge };
       
       localStorage.setItem(SEARCH_STORAGE_KEY, JSON.stringify(toStore));
     } catch (error) {
@@ -85,20 +93,8 @@ export const searchStorage = {
         returnDate,
       };
       
-      // If dates were corrected or locations were defaulted, save the corrected values back
-      const hasDateCorrections = (
-        (parsed.pickupDate && pickupDate && new Date(parsed.pickupDate).getTime() !== pickupDate.getTime()) ||
-        (parsed.returnDate && returnDate && new Date(parsed.returnDate).getTime() !== returnDate.getTime())
-      );
-      const hasLocationDefaults = (
-        !parsed.deliveryLocation || parsed.deliveryLocation.trim() === "" ||
-        !parsed.restitutionLocation || parsed.restitutionLocation.trim() === ""
-      );
-      
-      if (hasDateCorrections || hasLocationDefaults) {
-        // Save corrected values back to localStorage
-        setTimeout(() => searchStorage.save(result), 0);
-      }
+      // Note: Corrected values will be saved back by the hook's useEffect when state changes
+      // Do NOT call save() here as it causes infinite loops
       
       return result;
     } catch (error) {

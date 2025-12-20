@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
-import { searchStorage } from "@/lib/searchStorage";
 
 export interface LocationWithPrice {
   name: string;
@@ -55,13 +54,7 @@ const LocationCombobox = ({ id, value, onValueChange, placeholder, disabled, loc
   const handleLocationChange = (selectedLocationName: string) => {
     const newValue = selectedLocationName === value ? "" : selectedLocationName;
     onValueChange(newValue);
-    
-    // Save to localStorage based on the component ID 
-    if (id.includes('delivery') || id.includes('pickup')) {
-      searchStorage.updateField('deliveryLocation', newValue || undefined);
-    } else if (id.includes('restitution') || id.includes('return')) {
-      searchStorage.updateField('restitutionLocation', newValue || undefined);
-    }
+    // Note: localStorage persistence is handled by the useVehicleSearch hook
   };
 
   const selectedLocation = locations.find((loc) => loc.name === value);
