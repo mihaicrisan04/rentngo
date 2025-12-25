@@ -2,13 +2,7 @@
 
 import * as React from "react";
 import { MapPin } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 
@@ -41,7 +35,7 @@ export const getLocationPrice = (locationName: string): number => {
   return location ? location.price : 0;
 };
 
-interface LocationComboboxProps {
+interface LocationSelectProps {
   id: string;
   value: string;
   onValueChange: (value: string) => void;
@@ -50,46 +44,29 @@ interface LocationComboboxProps {
   locations: LocationWithPrice[];
 }
 
-const LocationCombobox = ({ id, value, onValueChange, placeholder, disabled, locations }: LocationComboboxProps) => {
-  const handleLocationChange = (selectedLocationName: string) => {
-    const newValue = selectedLocationName === value ? "" : selectedLocationName;
-    onValueChange(newValue);
-    // Note: localStorage persistence is handled by the useVehicleSearch hook
-  };
-
-  const selectedLocation = locations.find((loc) => loc.name === value);
-
+const LocationSelect = ({ id, value, onValueChange, placeholder, disabled, locations }: LocationSelectProps) => {
   return (
-    <Select
-      value={value}
-      onValueChange={handleLocationChange}
-      disabled={disabled}
-    >
-      <SelectTrigger
-        className="text-base w-full px-2"
-        id={id}
-      >
-        <div className="flex items-center w-full min-w-0">
-          <MapPin className="mr-2 h-5 w-5 text-muted-foreground flex-shrink-0" />
-          <SelectValue placeholder={placeholder} className="truncate">
-            {selectedLocation
-              ? `${selectedLocation.name} - ${selectedLocation.price} €`
-              : placeholder}
-          </SelectValue>
-        </div>
-      </SelectTrigger>
-      <SelectContent>
-        {locations.map((loc) => (
-          <SelectItem
-            key={loc.name}
-            value={loc.name}
-            className="text-base"
-          >
-            {loc.name} - {loc.price} €
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className="relative w-full">
+      <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10 pointer-events-none" />
+      <div className="w-full [&>div]:w-full">
+        <NativeSelect
+          id={id}
+          value={value}
+          onChange={(e) => onValueChange(e.target.value)}
+          disabled={disabled}
+          className="text-base w-full pl-10 h-[50px]"
+        >
+          <NativeSelectOption value="" disabled>
+            {placeholder}
+          </NativeSelectOption>
+          {locations.map((loc) => (
+            <NativeSelectOption key={loc.name} value={loc.name}>
+              {loc.name} - {loc.price} €
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+      </div>
+    </div>
   );
 };
 
@@ -107,7 +84,7 @@ export function LocationPicker({ id, label, value, onValueChange, placeholder, d
   return (
     <div className={cn("grid gap-1.5 w-full", contentAlign === 'end' && "justify-items-end")}>
       <Label htmlFor={id} id={id + "-label"} className={cn("text-sm font-medium", contentAlign === 'end' && "text-right")}>{label}</Label>
-      <LocationCombobox
+      <LocationSelect
         id={id}
         value={value}
         onValueChange={onValueChange}
@@ -119,4 +96,4 @@ export function LocationPicker({ id, label, value, onValueChange, placeholder, d
   );
 }
 
-export default LocationPicker; 
+export default LocationPicker;
