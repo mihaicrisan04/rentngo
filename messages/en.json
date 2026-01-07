@@ -343,9 +343,74 @@
       "cancelled": "Cancelled"
     }
   },
-  "transfersPage": {
-    "comingSoon": "Coming Soon",
-    "description": "Our transfers page is under construction. Stay tuned!"
+  "transferPage": {
+    "title": "VIP Transfer Services",
+    "subtitle": "Premium private transportation in Cluj-Napoca and beyond",
+    "searchForm": {
+      "pickupLocation": "Pickup Location",
+      "pickupLocationPlaceholder": "Enter pickup address...",
+      "dropoffLocation": "Dropoff Location",
+      "dropoffLocationPlaceholder": "Enter destination address...",
+      "pickupDateTime": "Pickup Date & Time",
+      "returnDateTime": "Return Date & Time",
+      "passengers": "Number of Passengers",
+      "passengerCount": "{count} {count, plural, one {Passenger} other {Passengers}}",
+      "transferType": "Transfer Type",
+      "oneWay": "One Way",
+      "roundTrip": "Round Trip",
+      "searchTransfers": "Search Transfers",
+      "searching": "Searching..."
+    },
+    "vehicleSelection": {
+      "title": "Select Your Vehicle",
+      "subtitle": "Choose from our premium transfer fleet",
+      "distanceLabel": "Distance",
+      "durationLabel": "Est. Duration",
+      "priceFrom": "From",
+      "selectVehicle": "Select",
+      "passengers": "{count} passengers max",
+      "noVehiclesFound": "No Vehicles Available",
+      "routeEstimationNote": "Route estimate only. Actual distance and time may vary."
+    },
+    "booking": {
+      "title": "Complete Your Booking",
+      "tripDetails": "Trip Details",
+      "personalInfo": "Personal Information",
+      "paymentMethod": "Payment Method",
+      "summary": "Transfer Summary",
+      "confirmBooking": "Confirm Transfer",
+      "processing": "Processing..."
+    },
+    "confirmation": {
+      "title": "Transfer Confirmed!",
+      "subtitle": "Your VIP transfer has been booked successfully",
+      "transferNumber": "Transfer #",
+      "route": "Route",
+      "distance": "Distance",
+      "duration": "Estimated Duration",
+      "bookAnother": "Book Another Transfer"
+    },
+    "pricing": {
+      "basePrice": "Base Fare",
+      "distanceCharge": "Distance ({km} km)",
+      "totalPrice": "Total Price",
+      "roundTripNote": "Round trip pricing applied"
+    },
+    "howItWorks": {
+      "title": "How It Works",
+      "step1": {
+        "title": "Enter Your Route",
+        "description": "Tell us your pickup and dropoff locations, date, and time"
+      },
+      "step2": {
+        "title": "Choose Your Vehicle",
+        "description": "Select from our premium fleet based on your needs"
+      },
+      "step3": {
+        "title": "Confirm & Relax",
+        "description": "Complete your booking and we'll handle the rest"
+      }
+    }
   },
   "common": {
     "loading": "Loading...",
@@ -695,10 +760,7 @@
       "sendEmail": "Send Email"
     }
   },
-  "transfersPage": {
-    "title": "Coming Soon",
-    "subtitle": "Our transfers page is under construction. Stay tuned!"
-  },
+
   "email": {
     "companyName": "Rent'n Go",
     "address": "Calea Turzii 23, Cluj-Napoca, Romania",

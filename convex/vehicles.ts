@@ -191,12 +191,16 @@ export const create = mutation({
       v.literal("rented"),
       v.literal("maintenance"),
     ),
+    isTransferVehicle: v.optional(v.boolean()),
+    transferPricePerKm: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert("vehicles", {
       ...args,
       isOwner: args.isOwner ?? false, // Default to false if not provided
       images: [], // Initialize empty images array
+      isTransferVehicle: args.isTransferVehicle ?? false, // Default to false
+      transferPricePerKm: args.transferPricePerKm,
     });
   },
 });
@@ -268,6 +272,8 @@ export const update = mutation({
     ),
     images: v.optional(v.array(v.id("_storage"))),
     mainImageId: v.optional(v.id("_storage")),
+    isTransferVehicle: v.optional(v.boolean()),
+    transferPricePerKm: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
@@ -717,6 +723,9 @@ export const getAllVehiclesWithClasses = query({
       ),
       images: v.optional(v.array(v.id("_storage"))),
       mainImageId: v.optional(v.id("_storage")),
+      // Transfer-related fields
+      isTransferVehicle: v.optional(v.boolean()),
+      transferPricePerKm: v.optional(v.number()),
       // Class information
       className: v.optional(v.string()),
       classDisplayName: v.optional(v.string()),

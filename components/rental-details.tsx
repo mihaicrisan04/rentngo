@@ -83,7 +83,7 @@ export function RentalDetails({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="flex flex-col gap-6">
           {/* Pickup Details */}
           <div className="space-y-4">
             <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">

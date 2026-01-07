@@ -93,11 +93,15 @@ export default defineSchema({
     ),
     images: v.optional(v.array(v.id("_storage"))),
     mainImageId: v.optional(v.id("_storage")),
+    // Transfer-related fields
+    isTransferVehicle: v.optional(v.boolean()), // Whether this vehicle is available for transfers
+    transferPricePerKm: v.optional(v.number()), // Price per kilometer for transfers in EUR
   })
     .index("by_location", ["location"])
     .index("by_type", ["type"])
     .index("by_class", ["class"])
-    .index("by_status", ["status"]),
+    .index("by_status", ["status"])
+    .index("by_transfer", ["isTransferVehicle"]),
 
   // Reservations table - stores booking records
   reservations: defineTable({
@@ -160,6 +164,79 @@ export default defineSchema({
     .index("by_pickup_location", ["pickupLocation"])
     .index("by_restitution_location", ["restitutionLocation"])
     .index("by_payment_method", ["paymentMethod"]),
+
+  // Transfers table - stores VIP transfer bookings
+  transfers: defineTable({
+    transferNumber: v.optional(v.number()),
+    userId: v.optional(v.id("users")),
+    vehicleId: v.id("vehicles"),
+
+    // Transfer type
+    transferType: v.union(v.literal("one_way"), v.literal("round_trip")),
+
+    // Pickup details
+    pickupLocation: v.object({
+      address: v.string(),
+      coordinates: v.object({
+        lng: v.number(),
+        lat: v.number(),
+      }),
+    }),
+    pickupDate: v.number(), // Unix timestamp
+    pickupTime: v.string(), // Time in "HH:MM" format
+
+    // Dropoff details
+    dropoffLocation: v.object({
+      address: v.string(),
+      coordinates: v.object({
+        lng: v.number(),
+        lat: v.number(),
+      }),
+    }),
+
+    // Return trip (for round_trip type only)
+    returnDate: v.optional(v.number()), // Unix timestamp
+    returnTime: v.optional(v.string()), // Time in "HH:MM" format
+
+    // Trip info
+    passengers: v.number(),
+    distanceKm: v.number(),
+    estimatedDurationMinutes: v.number(),
+
+    // Pricing
+    baseFare: v.number(), // Minimum fare
+    distancePrice: v.number(), // Price calculated from distance
+    totalPrice: v.number(),
+    pricePerKm: v.number(), // Rate used for this booking
+
+    // Customer information
+    customerInfo: v.object({
+      name: v.string(),
+      email: v.string(),
+      phone: v.string(),
+      message: v.optional(v.string()),
+      flightNumber: v.optional(v.string()),
+    }),
+
+    // Payment
+    paymentMethod: v.union(
+      v.literal("cash_on_delivery"),
+      v.literal("card_on_delivery"),
+      v.literal("card_online"),
+    ),
+
+    // Status
+    status: v.union(
+      v.literal("pending"),
+      v.literal("confirmed"),
+      v.literal("cancelled"),
+      v.literal("completed"),
+    ),
+  })
+    .index("by_user", ["userId"])
+    .index("by_vehicle", ["vehicleId"])
+    .index("by_pickup_date", ["pickupDate"])
+    .index("by_status", ["status"]),
 
   // Payments table - stores payment records
   payments: defineTable({
