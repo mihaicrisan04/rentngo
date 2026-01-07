@@ -1,6 +1,38 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
+import { Metadata } from "next";
+
+interface TermsPageProps {
+  params: Promise<{ locale: string }>;
+}
+
+export async function generateMetadata({
+  params,
+}: TermsPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  const isRomanian = locale === "ro";
+
+  return {
+    title: isRomanian
+      ? "Termeni și Condiții | Rent'n Go Cluj-Napoca"
+      : "Terms and Conditions | Rent'n Go Cluj-Napoca",
+    description: isRomanian
+      ? "Termeni și condiții pentru închirierea de mașini cu Rent'n Go Cluj-Napoca. Citiți condițiile generale de închiriere auto."
+      : "Terms and conditions for car rental with Rent'n Go Cluj-Napoca. Read the general car rental conditions.",
+    alternates: {
+      canonical: `https://rngo.ro/${locale}/terms`,
+      languages: {
+        "ro-RO": "https://rngo.ro/ro/terms",
+        "en-US": "https://rngo.ro/en/terms",
+      },
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
+}
 
 export default function TermsAndConditionsPage() {
   return (

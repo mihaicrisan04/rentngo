@@ -200,6 +200,7 @@ export default defineSchema({
 
     // Trip info
     passengers: v.number(),
+    luggageCount: v.optional(v.number()), // Number of medium-size luggage items
     distanceKm: v.number(),
     estimatedDurationMinutes: v.number(),
 
@@ -324,6 +325,7 @@ export default defineSchema({
     sortIndex: v.number(), // For custom sorting of classes
     isActive: v.boolean(), // Whether this class is active/visible
     additional50kmPrice: v.optional(v.number()), // Price per extra 50km package in EUR
+    transferBaseFare: v.optional(v.number()), // Base fare for transfers in EUR
   })
     .index("by_active", ["isActive"])
     .index("by_sort_index", ["sortIndex"])

@@ -63,11 +63,15 @@ export function CarsPageClient({ initialVehicles }: CarsPageClientProps) {
               <Skeleton className="h-4 w-64 mx-auto" />
             </div>
             <div className="rounded-lg border bg-card shadow-md p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex flex-col gap-4 w-full lg:w-1/2">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+                <div className="flex flex-col gap-4 w-full lg:w-1/2">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
               </div>
             </div>
           </div>

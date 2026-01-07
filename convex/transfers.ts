@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 
 const transferStatusValidator = v.union(
   v.literal("pending"),
@@ -52,6 +53,8 @@ export const createTransfer = mutation({
     pricePerKm: v.number(),
     customerInfo: customerInfoValidator,
     paymentMethod: paymentMethodValidator,
+    luggageCount: v.optional(v.number()),
+    locale: v.optional(v.string()),
   },
   returns: v.object({
     transferId: v.id("transfers"),
@@ -85,10 +88,62 @@ export const createTransfer = mutation({
       pricePerKm: args.pricePerKm,
       customerInfo: args.customerInfo,
       paymentMethod: args.paymentMethod,
+      luggageCount: args.luggageCount,
       status: "pending" as const,
     };
 
     const transferId = await ctx.db.insert("transfers", newTransferData);
+
+    // Format pickup date for email
+    const pickupDateObj = new Date(args.pickupDate);
+    const timeZone = 'Europe/Bucharest';
+    const pickupDateString = pickupDateObj.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone });
+    
+    let returnDateString: string | undefined;
+    if (args.returnDate) {
+      const returnDateObj = new Date(args.returnDate);
+      returnDateString = returnDateObj.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone });
+    }
+
+    // Fetch vehicle info for email
+    const vehicle = await ctx.db.get(args.vehicleId);
+
+    // Schedule email sending
+    await ctx.scheduler.runAfter(0, internal.emails.sendTransferConfirmationEmail, {
+      transferNumber: nextTransferNumber,
+      customerInfo: args.customerInfo,
+      vehicleInfo: vehicle ? {
+        make: vehicle.make,
+        model: vehicle.model,
+        year: vehicle.year,
+      } : {
+        make: "Vehicle",
+        model: "Info",
+      },
+      pickupLocation: {
+        address: args.pickupLocation.address,
+      },
+      dropoffLocation: {
+        address: args.dropoffLocation.address,
+      },
+      pickupDate: pickupDateString,
+      pickupTime: args.pickupTime,
+      returnDate: returnDateString,
+      returnTime: args.returnTime,
+      transferType: args.transferType,
+      passengers: args.passengers,
+      luggageCount: args.luggageCount,
+      distanceKm: args.distanceKm,
+      estimatedDurationMinutes: args.estimatedDurationMinutes,
+      pricingDetails: {
+        baseFare: args.baseFare,
+        distancePrice: args.distancePrice,
+        totalPrice: args.totalPrice,
+        pricePerKm: args.pricePerKm,
+      },
+      paymentMethod: args.paymentMethod,
+      locale: args.locale,
+    });
 
     return {
       transferId,
@@ -507,6 +562,8 @@ export const getTransferVehicles = query({
 export const getTransferVehiclesWithImages = query({
   args: {
     minSeats: v.optional(v.number()),
+    distanceKm: v.optional(v.number()),
+    transferType: v.optional(v.union(v.literal("one_way"), v.literal("round_trip"))),
   },
   handler: async (ctx, args) => {
     const vehicles = await ctx.db
@@ -516,10 +573,19 @@ export const getTransferVehiclesWithImages = query({
 
     const availableVehicles = vehicles.filter((v) => v.status === "available");
 
-    const minSeats = args.minSeats;
-    const filteredVehicles = minSeats !== undefined
-      ? availableVehicles.filter((v) => (v.seats ?? 0) >= minSeats)
+    // Filter by seats: passengers + 2 (driver + empty seat)
+    const minSeatsRequired = args.minSeats !== undefined ? args.minSeats + 2 : undefined;
+    const filteredVehicles = minSeatsRequired !== undefined
+      ? availableVehicles.filter((v) => (v.seats ?? 0) >= minSeatsRequired)
       : availableVehicles;
+
+    // Fetch all vehicle classes for base fare lookup
+    const vehicleClasses = await ctx.db.query("vehicleClasses").collect();
+    const classMap = new Map(vehicleClasses.map((c) => [c._id, c]));
+
+    const DEFAULT_BASE_FARE = 25;
+    const DEFAULT_PRICE_PER_KM = 1.2;
+    const DISTANCE_THRESHOLD = 20;
 
     const vehiclesWithImages = await Promise.all(
       filteredVehicles.map(async (vehicle) => {
@@ -528,13 +594,39 @@ export const getTransferVehiclesWithImages = query({
         if (imageId) {
           imageUrl = await ctx.storage.getUrl(imageId);
         }
+
+        // Get base fare from vehicle class, fallback to default
+        const vehicleClass = vehicle.classId ? classMap.get(vehicle.classId) : null;
+        const transferBaseFare = vehicleClass?.transferBaseFare ?? DEFAULT_BASE_FARE;
+        const pricePerKm = vehicle.transferPricePerKm ?? DEFAULT_PRICE_PER_KM;
+
+        // Calculate price for sorting
+        // < 20km: base fare only, >= 20km: distance × pricePerKm only
+        const distanceKm = args.distanceKm ?? 0;
+        let calculatedPrice: number;
+        
+        if (distanceKm < DISTANCE_THRESHOLD) {
+          // Short distance: use base fare only
+          calculatedPrice = transferBaseFare;
+        } else {
+          // Long distance: use distance calculation only
+          calculatedPrice = distanceKm * pricePerKm;
+        }
+        
+        if (args.transferType === "round_trip") {
+          calculatedPrice = calculatedPrice * 2;
+        }
+
         return {
           ...vehicle,
           imageUrl,
+          transferBaseFare,
+          calculatedPrice: Math.round(calculatedPrice * 100) / 100,
         };
       }),
     );
 
-    return vehiclesWithImages.sort((a, b) => (a.seats ?? 0) - (b.seats ?? 0));
+    // Sort by calculated price (ascending)
+    return vehiclesWithImages.sort((a, b) => a.calculatedPrice - b.calculatedPrice);
   },
 });

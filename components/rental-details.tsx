@@ -105,7 +105,6 @@ export function RentalDetails({
                 id="pickup-datetime"
                 label={t('pickupDateTime')}
                 dateState={localPickupDate}
-                disabledDateRanges={{ before: today }}
                 setDateState={(date) => {
                   setLocalPickupDate(date);
                   handleUpdate('pickupDate', date);
@@ -167,7 +166,6 @@ export function RentalDetails({
                   handleUpdate('returnTime', time);
                 }}
                 minDate={localPickupDate || today}
-                disabledDateRanges={localPickupDate ? { before: localPickupDate } : { before: today }}
                 isLoading={!localPickupDate}
                 pickupDate={localPickupDate}
                 pickupTime={localPickupTime}

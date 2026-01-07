@@ -123,8 +123,13 @@ export default function TransfersPage() {
   ];
 
   return (
-    <div className="grow flex flex-col bg-linear-to-b from-background to-muted/30">
-      {/* Hero Section */}
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(transferSchema) }}
+      />
+      <div className="grow flex flex-col bg-linear-to-b from-background to-muted/30">
+        {/* Hero Section */}
       <section className="relative py-12 lg:py-20">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-3xl mx-auto mb-8 lg:mb-12">
@@ -180,6 +185,7 @@ export default function TransfersPage() {
           </div>
         </div>
       </section>
-    </div>
+      </div>
+    </>
   );
 }

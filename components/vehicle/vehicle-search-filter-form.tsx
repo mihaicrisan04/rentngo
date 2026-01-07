@@ -219,7 +219,7 @@ export function VehicleSearchFilterForm({
                 timeState={pickupTime}
                 setTimeState={setPickupTime}
                 minDate={today}
-                disabledDateRanges={{ before: today }}
+                disabledDateRanges={(date: Date) => date < today}
                 popoverAlign="start"
                 contentAlign="start"
                 isLoading={isLoading}
@@ -263,7 +263,7 @@ export function VehicleSearchFilterForm({
                 timeState={returnTime}
                 setTimeState={setReturnTime}
                 minDate={pickupDateState || today}
-                disabledDateRanges={{ before: pickupDateState || today }}
+                disabledDateRanges={(date: Date) => date < (pickupDateState || today)}
                 popoverAlign="start"
                 contentAlign="start"
                 isLoading={isLoading}

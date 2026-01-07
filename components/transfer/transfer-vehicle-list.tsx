@@ -68,6 +68,8 @@ export function TransferVehicleList({
 
   const vehiclesData = useQuery(api.transfers.getTransferVehiclesWithImages, {
     minSeats: passengers,
+    distanceKm: distanceKm,
+    transferType: transferType,
   });
 
   const isLoading = vehiclesData === undefined;
@@ -125,6 +127,7 @@ export function TransferVehicleList({
     transmission: v.transmission,
     fuelType: v.fuelType,
     transferPricePerKm: v.transferPricePerKm,
+    transferBaseFare: v.transferBaseFare,
     features: v.features,
     imageUrl: v.imageUrl,
   }));

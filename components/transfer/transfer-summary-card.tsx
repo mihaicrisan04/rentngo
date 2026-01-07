@@ -221,20 +221,25 @@ export function TransferSummaryCard({
         <Separator />
 
         <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">{t("pricing.basePrice")}</span>
-            <span>€{pricing.baseFare.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">
-              Distance ({distanceKm} km × €{pricing.pricePerKm.toFixed(2)})
-            </span>
-            <span>€{pricing.distancePrice.toFixed(2)}</span>
-          </div>
+          {distanceKm < 20 ? (
+            // Short distance: show base fare only
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">{t("pricing.basePrice")} ({distanceKm} km)</span>
+              <span>€{pricing.baseFare.toFixed(2)}</span>
+            </div>
+          ) : (
+            // Long distance: show distance calculation only
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">
+                Distance ({distanceKm} km × €{pricing.pricePerKm.toFixed(2)})
+              </span>
+              <span>€{pricing.distancePrice.toFixed(2)}</span>
+            </div>
+          )}
           {transferType === "round_trip" && (
-            <div className="flex justify-between text-sm text-green-600">
-              <span>Round trip discount</span>
-              <span>-10%</span>
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>Round trip (×2)</span>
+              <span>Included</span>
             </div>
           )}
         </div>

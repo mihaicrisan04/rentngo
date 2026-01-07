@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { Variants } from "framer-motion";
 import { useTranslations } from "next-intl";
-import Head from "next/head";
 
 // Define animation variants
 const sectionAnimationVariants: {
@@ -92,68 +91,58 @@ const AboutPage = () => {
     },
   ];
 
+  // Organization structured data for SEO
+  const organizationSchema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Rent'n Go",
+    alternateName: "Rent'n Go Cluj-Napoca",
+    url: "https://rngo.ro",
+    logo: "https://rngo.ro/logo.png",
+    contactPoint: {
+      "@type": "ContactPoint",
+      telephone: "+40-773-932-961",
+      contactType: "customer service",
+      areaServed: "RO",
+      availableLanguage: ["Romanian", "English"],
+    },
+    address: {
+      "@type": "PostalAddress",
+      streetAddress:
+        'Cluj "Avram Iancu" International Airport, Strada Traian Vuia 149-151',
+      addressLocality: "Cluj-Napoca",
+      postalCode: "400397",
+      addressCountry: "RO",
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: 46.7712,
+      longitude: 23.6236,
+    },
+    sameAs: [
+      "https://www.facebook.com/share/1Ad82uMtP3/?mibextid=wwXIfr",
+      "https://www.instagram.com/rentn_go.ro",
+      "https://www.tiktok.com/@rentn.go",
+    ],
+    serviceArea: {
+      "@type": "GeoCircle",
+      geoMidpoint: {
+        "@type": "GeoCoordinates",
+        latitude: 46.7712,
+        longitude: 23.6236,
+      },
+      geoRadius: "50",
+    },
+    description:
+      "Rent'n Go oferă servicii profesionale cu masini de inchiriat Cluj-Napoca. Flotă modernă de vehicule și prețuri competitive. Experți în închiriere auto Cluj cu servicii de calitate.",
+  };
+
   return (
     <>
-      <Head>
-        <title>Despre Rent&aposn Go - Masini de Inchiriat Cluj-Napoca</title>
-        <meta
-          name="description"
-          content="Află mai multe despre Rent'n Go, liderul în masini de inchiriat Cluj-Napoca. Servicii profesionale de închiriere auto în Cluj cu experiență de peste 5 ani."
-        />
-        <meta
-          name="keywords"
-          content="despre rent n go, masini de inchiriat cluj-napoca, car rentals cluj-napoca, istoric companie închiriere auto"
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Organization",
-              name: "Rent'n Go",
-              alternateName: "Rent'n Go Cluj-Napoca",
-              url: "https://rngo.ro",
-              logo: "https://rngo.ro/logo.png",
-              contactPoint: {
-                "@type": "ContactPoint",
-                telephone: "+40-773-932-961",
-                contactType: "customer service",
-                areaServed: "RO",
-                availableLanguage: ["Romanian", "English"],
-              },
-              address: {
-                "@type": "PostalAddress",
-                streetAddress:
-                  'Cluj "Avram Iancu" International Airport, Strada Traian Vuia 149-151',
-                addressLocality: "Cluj-Napoca",
-                postalCode: "400397",
-                addressCountry: "RO",
-              },
-              geo: {
-                "@type": "GeoCoordinates",
-                latitude: 46.7712,
-                longitude: 23.6236,
-              },
-              sameAs: [
-                "https://www.facebook.com/share/1Ad82uMtP3/?mibextid=wwXIfr",
-                "https://www.instagram.com/rentn_go.ro",
-                "https://www.tiktok.com/@rentn.go",
-              ],
-              serviceArea: {
-                "@type": "GeoCircle",
-                geoMidpoint: {
-                  "@type": "GeoCoordinates",
-                  latitude: 46.7712,
-                  longitude: 23.6236,
-                },
-                geoRadius: "50",
-              },
-              description:
-                "Rent'n Go oferă servicii profesionale cu masini de inchiriat Cluj-Napoca. Flotă modernă de vehicule și prețuri competitive. Experți în închiriere auto Cluj cu servicii de calitate.",
-            }),
-          }}
-        />
-      </Head>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+      />
       <BackgroundImage bottomGradient={true} />
 
       <div className="relative z-10 flex flex-col gap-8 flex-grow">

@@ -2,149 +2,139 @@ import { MetadataRoute } from "next";
 import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const blogs = await fetchQuery(api.blogs.getAll);
+const BASE_URL = "https://rngo.ro";
 
-  const blogUrls = blogs.flatMap((blog) => [
-    {
-      url: `https://rngo.ro/en/blog/${blog.slug}`,
-      lastModified: blog.publishedAt
-        ? new Date(blog.publishedAt)
-        : new Date(blog._creationTime),
-      changeFrequency: "monthly" as const,
-      priority: 0.8,
-      alternates: {
-        languages: {
-          en: `https://rngo.ro/en/blog/${blog.slug}`,
-          ro: `https://rngo.ro/ro/blog/${blog.slug}`,
-        },
-      },
-    },
-    {
-      url: `https://rngo.ro/ro/blog/${blog.slug}`,
-      lastModified: blog.publishedAt
-        ? new Date(blog.publishedAt)
-        : new Date(blog._creationTime),
-      changeFrequency: "monthly" as const,
-      priority: 0.8,
-      alternates: {
-        languages: {
-          en: `https://rngo.ro/en/blog/${blog.slug}`,
-          ro: `https://rngo.ro/ro/blog/${blog.slug}`,
-        },
-      },
-    },
-  ]);
+// Helper to create bilingual sitemap entries
+function createBilingualEntry(
+  path: string,
+  options: {
+    lastModified?: Date;
+    changeFrequency: "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never";
+    priority: number;
+  }
+): MetadataRoute.Sitemap {
+  const { lastModified = new Date(), changeFrequency, priority } = options;
 
   return [
     {
-      url: "https://rngo.ro",
+      url: `${BASE_URL}/en${path}`,
+      lastModified,
+      changeFrequency,
+      priority,
+      alternates: {
+        languages: {
+          en: `${BASE_URL}/en${path}`,
+          ro: `${BASE_URL}/ro${path}`,
+        },
+      },
+    },
+    {
+      url: `${BASE_URL}/ro${path}`,
+      lastModified,
+      changeFrequency,
+      priority,
+      alternates: {
+        languages: {
+          en: `${BASE_URL}/en${path}`,
+          ro: `${BASE_URL}/ro${path}`,
+        },
+      },
+    },
+  ];
+}
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // Fetch dynamic content
+  const [blogs, vehicles] = await Promise.all([
+    fetchQuery(api.blogs.getAll),
+    fetchQuery(api.vehicles.getAllVehicles),
+  ]);
+
+  // Generate blog URLs
+  const blogUrls = blogs.flatMap((blog) =>
+    createBilingualEntry(`/blog/${blog.slug}`, {
+      lastModified: blog.publishedAt
+        ? new Date(blog.publishedAt)
+        : new Date(blog._creationTime),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    })
+  );
+
+  // Generate vehicle/car detail URLs
+  const vehicleUrls = vehicles.flatMap((vehicle) =>
+    createBilingualEntry(`/cars/${vehicle._id}`, {
+      lastModified: new Date(vehicle._creationTime),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    })
+  );
+
+  return [
+    // Homepage (root redirect)
+    {
+      url: BASE_URL,
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 1.0,
       alternates: {
         languages: {
-          en: "https://rngo.ro/en",
-          ro: "https://rngo.ro/ro",
+          en: `${BASE_URL}/en`,
+          ro: `${BASE_URL}/ro`,
         },
       },
     },
-    {
-      url: "https://rngo.ro/en/blog",
-      lastModified: new Date(),
+
+    // Main pages - High priority
+    ...createBilingualEntry("", {
+      changeFrequency: "daily",
+      priority: 1.0,
+    }),
+
+    // Cars listing page
+    ...createBilingualEntry("/cars", {
       changeFrequency: "daily",
       priority: 0.9,
-      alternates: {
-        languages: {
-          en: "https://rngo.ro/en/blog",
-          ro: "https://rngo.ro/ro/blog",
-        },
-      },
-    },
-    {
-      url: "https://rngo.ro/ro/blog",
-      lastModified: new Date(),
+    }),
+
+    // Transfers page
+    ...createBilingualEntry("/transfers", {
+      changeFrequency: "weekly",
+      priority: 0.9,
+    }),
+
+    // Blog listing page
+    ...createBilingualEntry("/blog", {
       changeFrequency: "daily",
       priority: 0.9,
-      alternates: {
-        languages: {
-          en: "https://rngo.ro/en/blog",
-          ro: "https://rngo.ro/ro/blog",
-        },
-      },
-    },
-    {
-      url: "https://rngo.ro/en/cars",
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.9,
-      alternates: {
-        languages: {
-          en: "https://rngo.ro/en/cars",
-          ro: "https://rngo.ro/ro/cars",
-        },
-      },
-    },
-    {
-      url: "https://rngo.ro/ro/cars",
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.9,
-      alternates: {
-        languages: {
-          en: "https://rngo.ro/en/cars",
-          ro: "https://rngo.ro/ro/cars",
-        },
-      },
-    },
-    {
-      url: "https://rngo.ro/en/about",
-      lastModified: new Date(),
+    }),
+
+    // About page
+    ...createBilingualEntry("/about", {
       changeFrequency: "monthly",
       priority: 0.7,
-      alternates: {
-        languages: {
-          en: "https://rngo.ro/en/about",
-          ro: "https://rngo.ro/ro/about",
-        },
-      },
-    },
-    {
-      url: "https://rngo.ro/ro/about",
-      lastModified: new Date(),
+    }),
+
+    // Contact page
+    ...createBilingualEntry("/contact", {
       changeFrequency: "monthly",
       priority: 0.7,
-      alternates: {
-        languages: {
-          en: "https://rngo.ro/en/about",
-          ro: "https://rngo.ro/ro/about",
-        },
-      },
-    },
-    {
-      url: "https://rngo.ro/en/contact",
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.7,
-      alternates: {
-        languages: {
-          en: "https://rngo.ro/en/contact",
-          ro: "https://rngo.ro/ro/contact",
-        },
-      },
-    },
-    {
-      url: "https://rngo.ro/ro/contact",
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.7,
-      alternates: {
-        languages: {
-          en: "https://rngo.ro/en/contact",
-          ro: "https://rngo.ro/ro/contact",
-        },
-      },
-    },
+    }),
+
+    // Terms and Conditions
+    ...createBilingualEntry("/terms", {
+      changeFrequency: "yearly",
+      priority: 0.5,
+    }),
+
+    // Privacy Policy
+    ...createBilingualEntry("/privacy", {
+      changeFrequency: "yearly",
+      priority: 0.5,
+    }),
+
+    // Dynamic content
+    ...vehicleUrls,
     ...blogUrls,
   ];
 }

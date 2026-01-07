@@ -303,6 +303,14 @@ export function TransferSearchForm({
             </div>
           </div>
 
+          {passengers >= 4 && (
+            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-sm text-blue-700 dark:text-blue-400">
+                <span className="font-medium">💡 Tip:</span> For 4+ passengers, consider booking with 2 vehicles or a van for more comfort.
+              </p>
+            </div>
+          )}
+
           {routeInfo && (
             <div className="mt-4 p-4 bg-muted/50 rounded-lg">
               <div className="flex items-center justify-between text-sm">

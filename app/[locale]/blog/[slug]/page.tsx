@@ -29,6 +29,8 @@ export async function generateMetadata({
     ? await fetchQuery(api.blogs.getImageUrl, { imageId: blog.coverImage })
     : null;
 
+  const isRomanian = locale === "ro";
+
   return {
     title: `${blog.title} | Rent'n Go Blog`,
     description: blog.description,
@@ -37,8 +39,8 @@ export async function generateMetadata({
     alternates: {
       canonical: `https://rngo.ro/${locale}/blog/${slug}`,
       languages: {
-        en: `/en/blog/${slug}`,
-        ro: `/ro/blog/${slug}`,
+        "ro-RO": `https://rngo.ro/ro/blog/${slug}`,
+        "en-US": `https://rngo.ro/en/blog/${slug}`,
       },
     },
     openGraph: {
@@ -60,15 +62,22 @@ export async function generateMetadata({
               height: 630,
             },
           ]
-        : [],
-      siteName: "Rent'n Go Cluj",
-      locale: locale,
+        : [
+            {
+              url: "https://rngo.ro/logo.png",
+              alt: blog.title,
+              width: 1200,
+              height: 630,
+            },
+          ],
+      siteName: "Rent'n Go Cluj-Napoca",
+      locale: isRomanian ? "ro_RO" : "en_US",
     },
     twitter: {
       card: "summary_large_image",
       title: blog.title,
       description: blog.description,
-      images: coverImageUrl ? [coverImageUrl] : [],
+      images: coverImageUrl ? [coverImageUrl] : ["https://rngo.ro/logo.png"],
     },
   };
 }

@@ -1,6 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { getCurrentUser, getCurrentUserOrThrow } from "./users";
 
@@ -54,6 +54,19 @@ export const createReservation = mutation({
     protectionCost: v.optional(v.number()),
     seasonId: v.optional(v.id("seasons")),
     seasonalMultiplier: v.optional(v.number()),
+    // Email data fields
+    vehicleInfo: v.optional(v.object({
+      make: v.string(),
+      model: v.string(),
+      year: v.optional(v.number()),
+      type: v.optional(v.string()),
+      seats: v.optional(v.number()),
+      transmission: v.optional(v.string()),
+      fuelType: v.optional(v.string()),
+      features: v.optional(v.array(v.string())),
+    })),
+    pricePerDayUsed: v.optional(v.number()),
+    locale: v.optional(v.string()),
   },
   returns: v.object({
     reservationId: v.id("reservations"),
@@ -111,10 +124,44 @@ export const createReservation = mutation({
 
     const reservationId = await ctx.db.insert("reservations", newReservationData);
 
-    // TODO (Post-payment/confirmation flow):
-    // 1. Update reservation status to "confirmed" (e.g., via a Stripe webhook handler).
-    // 2. Trigger a "confirmation" email to the user using Resend.
-    //    Example: await ctx.runAction(api.emails.sendBookingConfirmation, { reservationId });
+    // Schedule email sending if vehicle info is provided
+    if (args.vehicleInfo) {
+      // Calculate number of days
+      const startDate = new Date(args.startDate);
+      const endDate = new Date(args.endDate);
+      const numberOfDays = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+      
+      // Format dates for email
+      const timeZone = 'Europe/Bucharest';
+      const startDateString = startDate.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone });
+      const endDateString = endDate.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone });
+
+      await ctx.scheduler.runAfter(0, internal.emails.sendReservationConfirmationEmail, {
+        reservationNumber: nextReservationNumber,
+        customerInfo: args.customerInfo,
+        vehicleInfo: args.vehicleInfo,
+        rentalDetails: {
+          startDate: startDateString,
+          endDate: endDateString,
+          pickupTime: args.pickupTime,
+          restitutionTime: args.restitutionTime,
+          pickupLocation: args.pickupLocation,
+          restitutionLocation: args.restitutionLocation,
+          numberOfDays,
+        },
+        pricingDetails: {
+          pricePerDay: args.pricePerDayUsed ?? Math.round(args.totalPrice / numberOfDays),
+          totalPrice: args.totalPrice,
+          paymentMethod: args.paymentMethod,
+          promoCode: args.promoCode,
+          additionalCharges: args.additionalCharges,
+          isSCDWSelected: args.isSCDWSelected,
+          deductibleAmount: args.deductibleAmount,
+          protectionCost: args.protectionCost,
+        },
+        locale: args.locale,
+      });
+    }
 
     return { reservationId, reservationNumber: nextReservationNumber };
   },

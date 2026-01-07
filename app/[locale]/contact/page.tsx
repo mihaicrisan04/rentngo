@@ -13,7 +13,6 @@ import {
 } from "@/lib/animations";
 import { SocialIcon } from "react-social-icons";
 import { useTranslations } from "next-intl";
-import Head from "next/head";
 import { toast } from "sonner";
 
 const ContactPage = () => {
@@ -43,58 +42,48 @@ const ContactPage = () => {
     window.location.href = "mailto:office@rngo.ro";
   };
 
+  // Contact page structured data for SEO
+  const contactSchema = {
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    mainEntity: {
+      "@type": "Organization",
+      name: "Rent'n Go",
+      telephone: "+40-773-932-961",
+      email: "office@rngo.ro",
+      address: {
+        "@type": "PostalAddress",
+        streetAddress:
+          'Cluj "Avram Iancu" International Airport, Strada Traian Vuia 149-151',
+        addressLocality: "Cluj-Napoca",
+        postalCode: "400397",
+        addressCountry: "RO",
+      },
+      openingHours: ["Mo-Su 00:00-23:59"],
+      contactPoint: [
+        {
+          "@type": "ContactPoint",
+          telephone: "+40-773-932-961",
+          contactType: "customer service",
+          availableLanguage: ["Romanian", "English"],
+          areaServed: "Cluj-Napoca",
+        },
+        {
+          "@type": "ContactPoint",
+          email: "office@rngo.ro",
+          contactType: "customer service",
+          availableLanguage: ["Romanian", "English"],
+        },
+      ],
+    },
+  };
+
   return (
     <>
-      <Head>
-        <title>Contact Rent'n Go - Masini de Inchiriat Cluj-Napoca</title>
-        <meta
-          name="description"
-          content="Contactează Rent'n Go pentru masini de inchiriat Cluj-Napoca. Telefon: +40 773 932 961. Email: office@rngo.ro. Servicii profesionale de închiriere auto în Cluj."
-        />
-        <meta
-          name="keywords"
-          content="contact rent n go, masini de inchiriat cluj-napoca, telefon închiriere auto cluj, car rentals cluj contact"
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "ContactPage",
-              mainEntity: {
-                "@type": "Organization",
-                name: "Rent'n Go",
-                telephone: "+40-773-932-961",
-                email: "office@rngo.ro",
-                address: {
-                  "@type": "PostalAddress",
-                  streetAddress:
-                    'Cluj "Avram Iancu" International Airport, Strada Traian Vuia 149-151',
-                  addressLocality: "Cluj-Napoca",
-                  postalCode: "400397",
-                  addressCountry: "RO",
-                },
-                openingHours: ["Mo-Su 00:00-23:59"],
-                contactPoint: [
-                  {
-                    "@type": "ContactPoint",
-                    telephone: "+40-773-932-961",
-                    contactType: "customer service",
-                    availableLanguage: ["Romanian", "English"],
-                    areaServed: "Cluj-Napoca",
-                  },
-                  {
-                    "@type": "ContactPoint",
-                    email: "office@rngo.ro",
-                    contactType: "customer service",
-                    availableLanguage: ["Romanian", "English"],
-                  },
-                ],
-              },
-            }),
-          }}
-        />
-      </Head>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(contactSchema) }}
+      />
 
       <div className="flex-grow bg-gradient-to-br from-background via-background to-muted/30">
         {/* Hero Section */}

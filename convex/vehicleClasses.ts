@@ -17,6 +17,7 @@ export const list = query({
       sortIndex: v.number(),
       isActive: v.boolean(),
       additional50kmPrice: v.optional(v.number()),
+      transferBaseFare: v.optional(v.number()),
     }),
   ),
   handler: async (ctx, args) => {
@@ -55,6 +56,7 @@ export const getById = query({
       sortIndex: v.number(),
       isActive: v.boolean(),
       additional50kmPrice: v.optional(v.number()),
+      transferBaseFare: v.optional(v.number()),
     }),
     v.null(),
   ),
@@ -79,6 +81,7 @@ export const getByName = query({
       sortIndex: v.number(),
       isActive: v.boolean(),
       additional50kmPrice: v.optional(v.number()),
+      transferBaseFare: v.optional(v.number()),
     }),
     v.null(),
   ),
@@ -100,10 +103,11 @@ export const create = mutation({
     description: v.optional(v.string()),
     isActive: v.optional(v.boolean()),
     additional50kmPrice: v.optional(v.number()),
+    transferBaseFare: v.optional(v.number()),
   },
   returns: v.id("vehicleClasses"),
   handler: async (ctx, args) => {
-    const { name, displayName, description, isActive = true, additional50kmPrice = 5 } = args;
+    const { name, displayName, description, isActive = true, additional50kmPrice = 5, transferBaseFare = 25 } = args;
 
     // Check if a class with this name already exists
     const existingClass = await ctx.db
@@ -132,6 +136,7 @@ export const create = mutation({
       sortIndex: maxSortIndex + 1,
       isActive,
       additional50kmPrice,
+      transferBaseFare,
     });
 
     return newClassId;
@@ -148,6 +153,7 @@ export const update = mutation({
     sortIndex: v.optional(v.number()),
     isActive: v.optional(v.boolean()),
     additional50kmPrice: v.optional(v.number()),
+    transferBaseFare: v.optional(v.number()),
   },
   returns: v.union(
     v.object({
@@ -159,11 +165,12 @@ export const update = mutation({
       sortIndex: v.number(),
       isActive: v.boolean(),
       additional50kmPrice: v.optional(v.number()),
+      transferBaseFare: v.optional(v.number()),
     }),
     v.null(),
   ),
   handler: async (ctx, args) => {
-    const { id, name, displayName, description, sortIndex, isActive, additional50kmPrice } = args;
+    const { id, name, displayName, description, sortIndex, isActive, additional50kmPrice, transferBaseFare } = args;
 
     // Check if the class exists
     const existingClass = await ctx.db.get(id);
@@ -193,6 +200,7 @@ export const update = mutation({
     if (sortIndex !== undefined) updateData.sortIndex = sortIndex;
     if (isActive !== undefined) updateData.isActive = isActive;
     if (additional50kmPrice !== undefined) updateData.additional50kmPrice = additional50kmPrice;
+    if (transferBaseFare !== undefined) updateData.transferBaseFare = transferBaseFare;
 
     await ctx.db.patch(id, updateData);
 

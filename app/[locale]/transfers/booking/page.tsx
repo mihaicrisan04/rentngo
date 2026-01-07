@@ -2,12 +2,12 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useQuery, useMutation } from "convex/react";
 import { useUser } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { ArrowLeft, Loader2, AlertCircle, User, CreditCard } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle, User, CreditCard, Info, Luggage } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -64,6 +64,7 @@ export default function TransferBookingPage() {
   const { user } = useUser();
   const t = useTranslations("transferPage");
   const tReservation = useTranslations("reservationPage");
+  const locale = useLocale();
 
   const [searchData, setSearchData] = React.useState<TransferSearchData | null>(null);
   const [isHydrated, setIsHydrated] = React.useState(false);
@@ -79,6 +80,7 @@ export default function TransferBookingPage() {
   const [paymentMethod, setPaymentMethod] = React.useState<string>("");
   const [termsAccepted, setTermsAccepted] = React.useState(false);
   const [errors, setErrors] = React.useState<FormErrors>({});
+  const [luggageCount, setLuggageCount] = React.useState<number>(0);
 
   const currentUser = useQuery(api.users.get);
   const createTransfer = useMutation(api.transfers.createTransfer);
@@ -207,6 +209,8 @@ export default function TransferBookingPage() {
           | "cash_on_delivery"
           | "card_on_delivery"
           | "card_online",
+        luggageCount: luggageCount > 0 ? luggageCount : undefined,
+        locale,
       });
 
       transferStorage.clear();
@@ -381,8 +385,33 @@ export default function TransferBookingPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="message" className="mb-2">
+                  <Label htmlFor="luggage" className="mb-2 flex items-center gap-1">
+                    <Luggage className="h-4 w-4" />
+                    Luggage Count
+                  </Label>
+                  <Input
+                    id="luggage"
+                    type="number"
+                    min={0}
+                    max={20}
+                    placeholder="Number of medium-size bags"
+                    value={luggageCount === 0 ? "" : luggageCount.toString()}
+                    onChange={(e) => setLuggageCount(parseInt(e.target.value) || 0)}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Approximate number of medium-size airport luggage
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="message" className="mb-2 flex items-center gap-2">
                     {tReservation("personalInfo.additionalMessage")}
+                    <span className="relative group">
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 p-2 bg-popover text-popover-foreground text-xs rounded-md shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity z-50">
+                        Add any special requests: stops along the way, waiting for someone, specific pickup instructions, etc.
+                      </span>
+                    </span>
                   </Label>
                   <Textarea
                     id="message"

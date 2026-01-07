@@ -57,6 +57,7 @@ import {
   MapPin,
   Users,
   ArrowRight,
+  Luggage,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -482,6 +483,12 @@ export default function AdminTransfersPage() {
                               <span>{transfer.passengers} pax</span>
                             </div>
                             <div>{transfer.distanceKm} km</div>
+                            {transfer.luggageCount !== undefined && transfer.luggageCount > 0 && (
+                              <div className="flex items-center gap-1">
+                                <Luggage className="h-3 w-3" />
+                                <span>{transfer.luggageCount} bags</span>
+                              </div>
+                            )}
                             {transfer.customerInfo.flightNumber && (
                               <div className="text-muted-foreground">
                                 ✈ {transfer.customerInfo.flightNumber}

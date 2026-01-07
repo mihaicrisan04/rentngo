@@ -28,6 +28,7 @@ import {
   Home,
   FileText,
   HelpCircle,
+  Luggage,
 } from "lucide-react";
 import Link from "next/link";
 import { TransferRouteMap } from "@/components/transfer/transfer-route-map";
@@ -177,8 +178,7 @@ export default function TransferConfirmationPage() {
                 dropoffCoordinates={transfer.dropoffLocation.coordinates}
                 pickupLabel={transfer.pickupLocation.address.split(",")[0]}
                 dropoffLabel={transfer.dropoffLocation.address.split(",")[0]}
-                className="h-[100px] w-full mt-3 opacity-75"
-                compact
+                className="h-[280px] sm:h-[350px] w-full mt-3 rounded-lg overflow-hidden"
               />
             )}
           </CardHeader>
@@ -239,6 +239,15 @@ export default function TransferConfirmationPage() {
                     <p className="font-medium">{transfer.passengers}</p>
                   </div>
                 </div>
+                {transfer.luggageCount !== undefined && transfer.luggageCount > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Luggage className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Luggage</p>
+                      <p className="font-medium">{transfer.luggageCount} bags</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {transfer.transferType === "round_trip" &&
@@ -345,20 +354,25 @@ export default function TransferConfirmationPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">{t("pricing.basePrice")}</span>
-              <span>€{transfer.baseFare.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                Distance ({transfer.distanceKm} km × €{transfer.pricePerKm.toFixed(2)})
-              </span>
-              <span>€{transfer.distancePrice.toFixed(2)}</span>
-            </div>
+            {transfer.distanceKm < 20 ? (
+              // Short distance: show base fare only
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">{t("pricing.basePrice")} ({transfer.distanceKm} km)</span>
+                <span>€{transfer.baseFare.toFixed(2)}</span>
+              </div>
+            ) : (
+              // Long distance: show distance calculation only
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">
+                  Distance ({transfer.distanceKm} km × €{transfer.pricePerKm.toFixed(2)})
+                </span>
+                <span>€{transfer.distancePrice.toFixed(2)}</span>
+              </div>
+            )}
             {transfer.transferType === "round_trip" && (
-              <div className="flex justify-between text-sm text-green-600">
-                <span>Round trip discount</span>
-                <span>-10%</span>
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>Round trip (×2)</span>
+                <span>Included</span>
               </div>
             )}
             <Separator />

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { VehicleOrderingCard } from "@/components/admin/vehicle-ordering-card";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Check } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -95,6 +96,12 @@ export default function VehicleOrderingPage() {
     }>
   >([]);
 
+  // Pricing state - separate state for each field
+  const [additional50kmPrice, setAdditional50kmPrice] = useState<string>("");
+  const [transferBaseFare, setTransferBaseFare] = useState<string>("");
+  const [isSaving50km, setIsSaving50km] = useState(false);
+  const [isSavingBaseFare, setIsSavingBaseFare] = useState(false);
+
   // Fetch vehicle class details
   const vehicleClass = useQuery(api.vehicleClasses.getById, { id: classId });
 
@@ -103,6 +110,61 @@ export default function VehicleOrderingPage() {
 
   // Mutation to reorder vehicles
   const reorderVehicles = useMutation(api.vehicles.reorder);
+
+  // Mutation to update vehicle class pricing
+  const updateVehicleClass = useMutation(api.vehicleClasses.update);
+
+  // Initialize pricing state when vehicle class data loads
+  useEffect(() => {
+    if (vehicleClass) {
+      setAdditional50kmPrice(String(vehicleClass.additional50kmPrice ?? 5));
+      setTransferBaseFare(String(vehicleClass.transferBaseFare ?? 25));
+    }
+  }, [vehicleClass]);
+
+  // Handler for saving extra 50km price
+  const handleSave50kmPrice = async () => {
+    const price = parseFloat(additional50kmPrice);
+    if (isNaN(price) || price < 0) {
+      toast.error("Please enter a valid price");
+      return;
+    }
+
+    setIsSaving50km(true);
+    try {
+      await updateVehicleClass({
+        id: classId,
+        additional50kmPrice: price,
+      });
+      toast.success("Extra 50km price updated");
+    } catch {
+      toast.error("Failed to update price");
+    } finally {
+      setIsSaving50km(false);
+    }
+  };
+
+  // Handler for saving transfer base fare
+  const handleSaveBaseFare = async () => {
+    const fare = parseFloat(transferBaseFare);
+    if (isNaN(fare) || fare < 0) {
+      toast.error("Please enter a valid base fare");
+      return;
+    }
+
+    setIsSavingBaseFare(true);
+    try {
+      await updateVehicleClass({
+        id: classId,
+        transferBaseFare: fare,
+      });
+      toast.success("Transfer base fare updated");
+    } catch {
+      toast.error("Failed to update base fare");
+    } finally {
+      setIsSavingBaseFare(false);
+    }
+  };
 
   // Sync items when vehicles data changes
   if (vehicles && items.length === 0) {
@@ -189,12 +251,88 @@ export default function VehicleOrderingPage() {
             {vehicleClass.displayName || vehicleClass.name}
           </h1>
           <p className="text-muted-foreground">
-            Drag and drop to reorder vehicles in this class
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Extra 50km: {vehicleClass.additional50kmPrice ?? 5} EUR
+            Manage pricing and vehicle ordering for this class
           </p>
         </div>
+      </div>
+
+      {/* Pricing Settings */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Pricing Settings</h2>
+
+        {/* Extra 50km Price */}
+        <div className="flex items-center gap-4 p-4 rounded-lg border bg-card">
+          <div className="flex-1">
+            <p className="font-medium">Extra 50km Price</p>
+            <p className="text-sm text-muted-foreground">
+              Price charged per additional 50km package for rentals
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={additional50kmPrice}
+              onChange={(e) => setAdditional50kmPrice(e.target.value)}
+              className="w-24"
+            />
+            <span className="text-sm text-muted-foreground">EUR</span>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={handleSave50kmPrice}
+              disabled={isSaving50km}
+            >
+              {isSaving50km ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Check className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Transfer Base Fare */}
+        <div className="flex items-center gap-4 p-4 rounded-lg border bg-card">
+          <div className="flex-1">
+            <p className="font-medium">Transfer Base Fare</p>
+            <p className="text-sm text-muted-foreground">
+              Minimum fare for transfer bookings in this class
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={transferBaseFare}
+              onChange={(e) => setTransferBaseFare(e.target.value)}
+              className="w-24"
+            />
+            <span className="text-sm text-muted-foreground">EUR</span>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={handleSaveBaseFare}
+              disabled={isSavingBaseFare}
+            >
+              {isSavingBaseFare ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Check className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Vehicle Ordering Section */}
+      <div>
+        <h2 className="text-xl font-semibold mb-2">Vehicle Ordering</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Drag and drop to reorder vehicles in this class
+        </p>
       </div>
 
       {/* Empty State */}

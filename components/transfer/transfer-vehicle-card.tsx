@@ -20,6 +20,7 @@ export interface TransferVehicle {
   transmission?: "automatic" | "manual";
   fuelType?: "diesel" | "electric" | "hybrid" | "benzina";
   transferPricePerKm?: number;
+  transferBaseFare?: number;
   features?: string[];
   imageUrl?: string | null;
 }
@@ -35,24 +36,41 @@ interface TransferVehicleCardProps {
 
 const DEFAULT_BASE_FARE = 25;
 const DEFAULT_PRICE_PER_KM = 1.2;
+const DISTANCE_THRESHOLD = 20;
 
 export function calculateTransferPrice(
   pricePerKm: number,
   distanceKm: number,
   transferType: "one_way" | "round_trip",
   baseFare: number = DEFAULT_BASE_FARE,
-): { baseFare: number; distancePrice: number; totalPrice: number } {
-  const distancePrice = Math.round(pricePerKm * distanceKm * 100) / 100;
-  let totalPrice = baseFare + distancePrice;
+): { baseFare: number; distancePrice: number; totalPrice: number; usesBaseFare: boolean } {
+  // Pricing formula:
+  // < 20km: base fare only (no distance charge)
+  // >= 20km: distance × pricePerKm only (no base fare)
+  const usesBaseFare = distanceKm < DISTANCE_THRESHOLD;
+  
+  let totalPrice: number;
+  let distancePrice = 0;
+  
+  if (usesBaseFare) {
+    // Short distance: use base fare only
+    totalPrice = baseFare;
+  } else {
+    // Long distance: use distance calculation only
+    distancePrice = Math.round(distanceKm * pricePerKm * 100) / 100;
+    totalPrice = distancePrice;
+  }
 
+  // Round trip: simply double the price (no discount)
   if (transferType === "round_trip") {
-    totalPrice = totalPrice * 2 * 0.9;
+    totalPrice = totalPrice * 2;
   }
 
   return {
-    baseFare,
+    baseFare: usesBaseFare ? baseFare : 0,
     distancePrice,
     totalPrice: Math.round(totalPrice * 100) / 100,
+    usesBaseFare,
   };
 }
 
@@ -68,11 +86,12 @@ export function TransferVehicleCard({
   const tCommon = useTranslations("common");
 
   const pricePerKm = vehicle.transferPricePerKm || DEFAULT_PRICE_PER_KM;
+  const effectiveBaseFare = vehicle.transferBaseFare ?? baseFare;
   const pricing = calculateTransferPrice(
     pricePerKm,
     distanceKm,
     transferType,
-    baseFare,
+    effectiveBaseFare,
   );
 
   return (
@@ -138,21 +157,26 @@ export function TransferVehicleCard({
         <Separator />
 
         <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">
-              {t("pricing.basePrice")}
-            </span>
-            <span>€{pricing.baseFare.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">
-              {t("pricing.distanceCharge", { km: distanceKm })}
-            </span>
-            <span>€{pricing.distancePrice.toFixed(2)}</span>
-          </div>
+          {pricing.usesBaseFare ? (
+            // Short distance: show base fare only
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">
+                {t("pricing.basePrice")} ({distanceKm} km)
+              </span>
+              <span>€{pricing.baseFare.toFixed(2)}</span>
+            </div>
+          ) : (
+            // Long distance: show distance calculation only
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">
+                Distance ({distanceKm} km × €{pricePerKm.toFixed(2)})
+              </span>
+              <span>€{pricing.distancePrice.toFixed(2)}</span>
+            </div>
+          )}
           {transferType === "round_trip" && (
             <div className="text-xs text-muted-foreground italic">
-              {t("pricing.roundTripNote")} (-10%)
+              {t("pricing.roundTripNote")} (×2)
             </div>
           )}
           <Separator />
