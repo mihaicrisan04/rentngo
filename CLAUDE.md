@@ -9,6 +9,7 @@ When making changes to the codebase:
 2. After implementing changes, update the PRD to reflect what was done
 3. Mark completed items with ✅ and add implementation details
 4. Add new requirements or changes discussed to the PRD
+5. Update `CHANGELOG.md` with a summary of changes made
 
 ## Project Overview
 
