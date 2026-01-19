@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { LocationPicker } from "@/components/location-picker";
 import { DateTimePicker } from "@/components/date-time-picker";
@@ -20,6 +21,10 @@ export function VehicleSearchForm({
   const t = useTranslations('vehicleSearchForm');
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+
+  // Calendar open states for sequential flow
+  const [pickupCalendarOpen, setPickupCalendarOpen] = React.useState(false);
+  const [returnCalendarOpen, setReturnCalendarOpen] = React.useState(false);
 
   return (
     <div className="mb-6">
@@ -51,6 +56,16 @@ export function VehicleSearchForm({
                 setTimeState={(time) => updateSearchField('pickupTime', time)}
                 minDate={today}
                 isLoading={isLoading}
+                calendarOpen={pickupCalendarOpen}
+                onCalendarOpenChange={setPickupCalendarOpen}
+                onDateSelected={() => {
+                  setTimeout(() => setReturnCalendarOpen(true), 100);
+                }}
+                onDateChange={(newDate) => {
+                  if (newDate && searchState.returnDate && searchState.returnDate < newDate) {
+                    updateSearchField('returnDate', newDate);
+                  }
+                }}
               />
             </div>
 
@@ -76,6 +91,8 @@ export function VehicleSearchForm({
                 isLoading={isLoading || !searchState.pickupDate}
                 pickupDate={searchState.pickupDate}
                 pickupTime={searchState.pickupTime || null}
+                calendarOpen={returnCalendarOpen}
+                onCalendarOpenChange={setReturnCalendarOpen}
               />
             </div>
           </div>

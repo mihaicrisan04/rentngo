@@ -37,6 +37,10 @@ export function RentalDetails({
   const [localReturnDate, setLocalReturnDate] = React.useState<Date | undefined>(returnDate);
   const [localReturnTime, setLocalReturnTime] = React.useState(returnTime || "");
 
+  // Calendar open states for sequential flow
+  const [pickupCalendarOpen, setPickupCalendarOpen] = React.useState(false);
+  const [returnCalendarOpen, setReturnCalendarOpen] = React.useState(false);
+
   // Sync local state with props when they change (after localStorage load)
   React.useEffect(() => {
     setLocalDeliveryLocation(deliveryLocation || "");
@@ -121,6 +125,11 @@ export function RentalDetails({
                 }}
                 minDate={today}
                 isLoading={false}
+                calendarOpen={pickupCalendarOpen}
+                onCalendarOpenChange={setPickupCalendarOpen}
+                onDateSelected={() => {
+                  setTimeout(() => setReturnCalendarOpen(true), 100);
+                }}
               />
             </div>
           </div>
@@ -169,6 +178,8 @@ export function RentalDetails({
                 isLoading={!localPickupDate}
                 pickupDate={localPickupDate}
                 pickupTime={localPickupTime}
+                calendarOpen={returnCalendarOpen}
+                onCalendarOpenChange={setReturnCalendarOpen}
               />
             </div>
           </div>

@@ -187,6 +187,10 @@ function ReservationPageContent() {
   );
   const [returnTime, setReturnTime] = React.useState<string | null>(null);
 
+  // Calendar open states for sequential flow
+  const [pickupCalendarOpen, setPickupCalendarOpen] = React.useState(false);
+  const [returnCalendarOpen, setReturnCalendarOpen] = React.useState(false);
+
   // Add date-based seasonal pricing
   const { multiplier: seasonalMultiplier, seasonId } =
     useDateBasedSeasonalPricing(pickupDate, returnDate);
@@ -239,15 +243,13 @@ function ReservationPageContent() {
     if (storedData.pickupDate) {
       setPickupDate(storedData.pickupDate);
     }
-    if (storedData.pickupTime) {
-      setPickupTime(storedData.pickupTime);
-    }
+    // Always set times (defaults to 10:00 from searchStorage)
+    setPickupTime(storedData.pickupTime ?? null);
     if (storedData.returnDate) {
       setReturnDate(storedData.returnDate);
     }
-    if (storedData.returnTime) {
-      setReturnTime(storedData.returnTime);
-    }
+    // Always set times (defaults to 10:00 from searchStorage)
+    setReturnTime(storedData.returnTime ?? null);
 
     setIsHydrated(true);
   }, []);
@@ -917,6 +919,11 @@ function ReservationPageContent() {
                       setTimeState={setPickupTime}
                       minDate={today}
                       isLoading={false}
+                      calendarOpen={pickupCalendarOpen}
+                      onCalendarOpenChange={setPickupCalendarOpen}
+                      onDateSelected={() => {
+                        setTimeout(() => setReturnCalendarOpen(true), 100);
+                      }}
                     />
                     {errors.rentalDetails?.pickupDate && (
                       <p className="text-sm text-red-500 mt-1 flex items-center">
@@ -981,6 +988,8 @@ function ReservationPageContent() {
                       isLoading={!pickupDate}
                       pickupDate={pickupDate}
                       pickupTime={pickupTime}
+                      calendarOpen={returnCalendarOpen}
+                      onCalendarOpenChange={setReturnCalendarOpen}
                     />
                     {errors.rentalDetails?.returnDate && (
                       <p className="text-sm text-red-500 mt-1 flex items-center">

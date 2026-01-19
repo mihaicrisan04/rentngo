@@ -125,18 +125,16 @@ export function useReservationForm(): UseReservationFormReturn {
     if (storedData.pickupDate) {
       setPickupDate(storedData.pickupDate);
     }
-    if (storedData.pickupTime) {
-      setPickupTime(storedData.pickupTime);
-    }
+    // Always set pickup time (defaults to 10:00 from searchStorage)
+    setPickupTime(storedData.pickupTime ?? null);
     if (storedData.restitutionLocation) {
       setRestitutionLocation(storedData.restitutionLocation);
     }
     if (storedData.returnDate) {
       setReturnDate(storedData.returnDate);
     }
-    if (storedData.returnTime) {
-      setReturnTime(storedData.returnTime);
-    }
+    // Always set return time (defaults to 10:00 from searchStorage)
+    setReturnTime(storedData.returnTime ?? null);
     
     setIsHydrated(true);
   }, []);

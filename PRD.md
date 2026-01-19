@@ -1,6 +1,6 @@
 # RentNGo - Product Requirements Document
 
-**Version:** 1.3
+**Version:** 1.4
 **Last Updated:** January 19, 2026
 **Status:** Active
 
@@ -256,23 +256,53 @@ The "Continue to Booking" button on the transfer vehicle selection page is hidde
 
 ---
 
-### 3.7 Rename Vehicle Classes Admin Section
+### 3.7 Rename Vehicle Classes Admin Section ✅ COMPLETED
 
-**Status:** Planned
+**Implementation Date:** January 19, 2026
 
 **Problem:**
 The current "Class Ordering" / "Manage Ordering" button and page names are confusing. This section should be a general vehicle classes management area.
 
-**Proposed Changes:**
-- Rename button from "Manage Ordering" to "Manage Classes"
-- Update page title to "Vehicle Classes" or "Manage Vehicle Classes"
-- Update navigation/breadcrumbs to reflect new naming
-- Ensure all labels and buttons use consistent terminology
+**Changes Made:**
+- Renamed folder from `ordering/` to `classes/`
+- Button text: "Manage Ordering" → "Manage Classes"
+- Page title: "Class Ordering" → "Vehicle Classes"
+- Page subtitle: "Drag and drop to reorder vehicle classes" → "Manage and reorder vehicle classes"
+- Updated breadcrumb logic in `layout.tsx`
+- Updated all internal navigation links
 
-**Pages to Update:**
-- `app/admin/vehicles/classes/page.tsx` (if exists)
-- Related navigation components
-- Any buttons/links that reference class ordering
+**Files Changed:**
+- `app/admin/vehicles/page.tsx` - Updated button text and URL
+- `app/admin/vehicles/classes/page.tsx` (renamed from ordering) - Updated titles and navigation
+- `app/admin/vehicles/classes/[classId]/page.tsx` - Updated back button URLs
+- `app/admin/layout.tsx` - Updated breadcrumb route detection
+
+---
+
+### 3.8 Vehicle Slug URLs
+
+**Status:** Planned
+
+**Problem:**
+Car detail URLs currently use Convex IDs (e.g., `/cars/jh7abc123`), which are not SEO-friendly or memorable.
+
+**Proposed Solution:**
+- Add customizable `slug` field to vehicles
+- Change car detail URLs from `/cars/[id]` to `/cars/[slug]`
+- Add slug input in admin vehicle dialogs with auto-generate button
+- Slug format: `{make}-{model}-{year}` (e.g., `bmw-x5-2024`)
+
+**Files to Update:**
+- `convex/schema.ts` - Add slug field + index
+- `convex/vehicles.ts` - Add slug to mutations, getBySlug query
+- `lib/vehicleUtils.ts` - Add generateVehicleSlug function
+- `components/admin/create-vehicle-dialog.tsx` - Add slug input
+- `components/admin/edit-vehicle-dialog.tsx` - Add slug input
+- `app/[locale]/cars/[slug]/page.tsx` - Rename from [id]
+- Vehicle card components - Use slug in URLs
+- `app/sitemap.ts` - Use slug in sitemap
+
+**Plan file:** `.claude/plans/vehicle-slug-urls.md`
 
 ---
 
@@ -285,7 +315,8 @@ The current "Class Ordering" / "Manage Ordering" button and page names are confu
 | P1 | Transfer Pricing Update | ✅ Done | Revenue impact |
 | P2 | Copy & Content Update | Planned | Brand consistency |
 | P2 | Transfer Vehicle Selection UX | Planned | UX improvement |
-| P2 | Rename Vehicle Classes Admin | Planned | Admin clarity |
+| P2 | Rename Vehicle Classes Admin | ✅ Done | Admin clarity |
+| P2 | Vehicle Slug URLs | Planned | SEO improvement |
 | P3 | Codebase Cleanup | Planned | Maintainability |
 
 ---
@@ -319,3 +350,4 @@ The current "Class Ordering" / "Manage Ordering" button and page names are confu
 | 1.1 | 2026-01-18 | Completed default times feature, cleaned up document |
 | 1.2 | 2026-01-18 | Added sequential calendar flow across all reservation pages |
 | 1.3 | 2026-01-19 | Completed transfer pricing overhaul with tiered pricing system |
+| 1.4 | 2026-01-19 | Renamed Vehicle Classes admin section (ordering → classes) |

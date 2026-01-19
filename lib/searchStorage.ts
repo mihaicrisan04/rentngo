@@ -9,6 +9,7 @@ export interface SearchData {
 
 const SEARCH_STORAGE_KEY = "carRentalSearchData";
 const DEFAULT_LOCATION = "Aeroport Cluj-Napoca";
+const DEFAULT_TIME = "10:00";
 
 
 
@@ -67,6 +68,8 @@ export const searchStorage = {
     if (typeof window === 'undefined') return {
       deliveryLocation: DEFAULT_LOCATION,
       restitutionLocation: DEFAULT_LOCATION,
+      pickupTime: DEFAULT_TIME,
+      returnTime: DEFAULT_TIME,
     };
     
     try {
@@ -85,12 +88,18 @@ export const searchStorage = {
       const deliveryLocation = getDefaultLocationIfEmpty(parsed.deliveryLocation);
       const restitutionLocation = getDefaultLocationIfEmpty(parsed.restitutionLocation);
       
+      // Apply defaults for times
+      const pickupTime = parsed.pickupTime ?? DEFAULT_TIME;
+      const returnTime = parsed.returnTime ?? DEFAULT_TIME;
+
       const result = {
         ...parsed,
         deliveryLocation,
         restitutionLocation,
         pickupDate,
         returnDate,
+        pickupTime,
+        returnTime,
       };
       
       // Note: Corrected values will be saved back by the hook's useEffect when state changes
@@ -102,6 +111,8 @@ export const searchStorage = {
       return {
         deliveryLocation: DEFAULT_LOCATION,
         restitutionLocation: DEFAULT_LOCATION,
+        pickupTime: DEFAULT_TIME,
+        returnTime: DEFAULT_TIME,
       };
     }
   },
@@ -126,5 +137,6 @@ export const searchStorage = {
   // Helper functions
   validateDate: validateAndFixDate,
   getDefaultLocation: () => DEFAULT_LOCATION,
+  getDefaultTime: () => DEFAULT_TIME,
   ensureLocationDefault: getDefaultLocationIfEmpty,
 }; 
