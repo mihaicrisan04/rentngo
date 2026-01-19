@@ -28,10 +28,10 @@ export default function AdminLayout({
   const pathname = usePathname();
   const pathSegments = pathname.split("/").filter(Boolean);
 
-  // Check if we're in ordering routes
-  const isOrderingRoute = pathSegments.includes("ordering");
+  // Check if we're in classes routes
+  const isClassesRoute = pathSegments.includes("classes");
   const classIdSegment =
-    isOrderingRoute && pathSegments.length > 3 ? pathSegments[3] : null;
+    isClassesRoute && pathSegments.length > 3 ? pathSegments[3] : null;
 
   // Fetch class name if we're on a class detail page
   const vehicleClass = useQuery(
@@ -42,8 +42,8 @@ export default function AdminLayout({
   const breadcrumbItems = pathSegments.map((item, index, array) => {
     const href = "/" + array.slice(0, index + 1).join("/");
 
-    // Special handling for class ID in ordering route
-    if (isOrderingRoute && index === 3 && vehicleClass) {
+    // Special handling for class ID in classes route
+    if (isClassesRoute && index === 3 && vehicleClass) {
       return {
         href,
         label: vehicleClass.displayName || vehicleClass.name,

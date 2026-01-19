@@ -22,10 +22,10 @@ export default function VehiclesPage() {
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            onClick={() => router.push("/admin/vehicles/ordering")}
+            onClick={() => router.push("/admin/vehicles/classes")}
           >
             <ArrowUpDown className="h-4 w-4 mr-2" />
-            Manage Ordering
+            Manage Classes
           </Button>
           <Button
             onClick={() => setCreateDialogOpen(true)}

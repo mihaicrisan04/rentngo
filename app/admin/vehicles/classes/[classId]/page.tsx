@@ -220,7 +220,7 @@ export default function VehicleOrderingPage() {
           <Button
             variant="outline"
             size="icon"
-            onClick={() => router.push("/admin/vehicles/ordering")}
+            onClick={() => router.push("/admin/vehicles/classes")}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -242,7 +242,7 @@ export default function VehicleOrderingPage() {
         <Button
           variant="outline"
           size="icon"
-          onClick={() => router.push("/admin/vehicles/ordering")}
+          onClick={() => router.push("/admin/vehicles/classes")}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>

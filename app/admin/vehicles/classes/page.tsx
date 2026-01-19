@@ -170,9 +170,9 @@ export default function ClassOrderingPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Class Ordering</h1>
+            <h1 className="text-3xl font-bold">Vehicle Classes</h1>
             <p className="text-muted-foreground">
-              Drag and drop to reorder vehicle classes
+              Manage and reorder vehicle classes
             </p>
           </div>
         </div>
@@ -188,9 +188,9 @@ export default function ClassOrderingPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Class Ordering</h1>
+          <h1 className="text-3xl font-bold">Vehicle Classes</h1>
           <p className="text-muted-foreground">
-            Drag and drop to reorder vehicle classes
+            Manage and reorder vehicle classes
           </p>
         </div>
         <Button onClick={() => setCreateDialogOpen(true)}>
@@ -231,7 +231,7 @@ export default function ClassOrderingPage() {
                     vehicleCount={count}
                     vehiclePreview={preview}
                     onNavigate={() =>
-                      router.push(`/admin/vehicles/ordering/${classItem._id}`)
+                      router.push(`/admin/vehicles/classes/${classItem._id}`)
                     }
                   />
                 );
