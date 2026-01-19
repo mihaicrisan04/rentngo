@@ -36,26 +36,6 @@ export default defineSchema({
         v.literal("van"),
       ),
     ),
-    // DEPRECATED: Use classId instead. Kept for data migration.
-    class: v.optional(
-      v.union(
-        v.literal("economy"),
-        v.literal("van"),
-        v.literal("compact"),
-        v.literal("intermediate"),
-        v.literal("standard"),
-        v.literal("business"),
-        v.literal("full-size"),
-        v.literal("premium"),
-        v.literal("luxury"),
-        v.literal("sport"),
-        v.literal("super-sport"),
-        v.literal("supercars"),
-        v.literal("executive"),
-        v.literal("commercial"),
-        v.literal("convertible"),
-      ),
-    ),
     classId: v.optional(v.id("vehicleClasses")), // Reference to vehicle class
     classSortIndex: v.optional(v.number()), // For custom sorting within a class (future feature)
     seats: v.optional(v.number()),
@@ -72,7 +52,6 @@ export default defineSchema({
     ),
     engineCapacity: v.optional(v.number()),
     engineType: v.optional(v.string()),
-    pricePerDay: v.optional(v.number()), // Legacy field - use pricingTiers instead
     pricingTiers: v.optional(
       v.array(
         v.object({
@@ -99,7 +78,6 @@ export default defineSchema({
   })
     .index("by_location", ["location"])
     .index("by_type", ["type"])
-    .index("by_class", ["class"])
     .index("by_status", ["status"])
     .index("by_transfer", ["isTransferVehicle"]),
 
@@ -237,24 +215,6 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_vehicle", ["vehicleId"])
     .index("by_pickup_date", ["pickupDate"])
-    .index("by_status", ["status"]),
-
-  // Payments table - stores payment records
-  payments: defineTable({
-    reservationId: v.id("reservations"),
-    stripePaymentId: v.string(),
-    amount: v.number(),
-    currency: v.literal("RON"),
-    status: v.union(
-      v.literal("pending"),
-      v.literal("completed"),
-      v.literal("failed"),
-      v.literal("refunded"),
-    ),
-    paymentMethod: v.string(),
-    refundAmount: v.optional(v.number()),
-  })
-    .index("by_reservation", ["reservationId"])
     .index("by_status", ["status"]),
 
   // Promotions table - stores discount codes

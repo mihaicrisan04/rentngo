@@ -344,7 +344,7 @@
     }
   },
   "transferPage": {
-    "title": "Servicii Transfer VIP",
+    "title": "Servicii Transfer",
     "subtitle": "Transport privat premium în Cluj-Napoca și împrejurimi",
     "searchForm": {
       "pickupLocation": "Locație Preluare",
@@ -384,7 +384,7 @@
     },
     "confirmation": {
       "title": "Transfer Confirmat!",
-      "subtitle": "Transferul tău VIP a fost rezervat cu succes",
+      "subtitle": "Transferul tău a fost rezervat cu succes",
       "transferNumber": "Transfer #",
       "route": "Rută",
       "distance": "Distanță",
