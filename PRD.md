@@ -1,6 +1,6 @@
 # RentNGo - Product Requirements Document
 
-**Version:** 1.6
+**Version:** 1.7
 **Last Updated:** January 19, 2026
 **Status:** Active
 
@@ -239,23 +239,42 @@ Removed 19 unused component files totaling ~2,500 lines of code (~9.8% of compon
 
 Updated `components/vehicle/index.ts` to remove stale exports.
 
-#### 3.5.2 Remaining Items
+#### 3.5.2 Deprecated Fields Cleanup ✅ COMPLETED
 
-**Deprecated Fields:**
-- `vehicles.class` - Replace with `classId`
-- `vehicles.pricePerDay` - Replace with `pricingTiers`
+**Implementation Date:** January 19, 2026
 
-**Unused Code:**
-- `hooks/useSeasonalPricing.ts` - Possibly replaced by newer hook
-- Completed migration files in `convex/migrations/`
+Removed deprecated vehicle fields and dead code:
+
+**Schema Changes:**
+- ✅ Removed `payments` table (never implemented)
+- ✅ Removed `vehicles.class` field (replaced by `classId`)
+- ✅ Removed `vehicles.pricePerDay` field (replaced by `pricingTiers`)
+- ✅ Removed `by_class` index
+
+**Code Changes:**
+- ✅ Deleted `hooks/useSeasonalPricing.ts` (replaced by `useDateBasedSeasonalPricing`)
+- ✅ Updated admin dialogs to use date-based seasonal pricing hook
+- ✅ Updated `vehicles-table.tsx` to lookup class name via `classId`
+- ✅ Removed `class` from vehicle form schemas and Convex mutations
+- ✅ Removed `pricePerDay` from vehicle form schemas and Convex mutations
+- ✅ Removed `minPrice`/`maxPrice` filtering from vehicle queries
+- ✅ Removed `VehicleClass` type from `types/vehicle.ts`
+- ✅ Removed legacy `pricePerDay` fallbacks from pricing utilities
+- ✅ Removed ~20 lines of TODO comments from `convex/reservations.ts`
+
+**Migrations Added:**
+- `convex/migrations/clearDeprecatedClassField.ts`
+- `convex/migrations/clearDeprecatedPricePerDay.ts`
+
+**Deployment Note:** Run migrations before deploying schema changes.
+
+#### 3.5.3 Remaining Items
 
 **TODO Items:**
 - Vehicle availability checking (implement or remove)
 - Email on status change (implement)
-- Stripe refund process (remove - not using Stripe)
 
 **Incomplete Features:**
-- Payment processing (schema exists but not implemented)
 - Promotional codes (field exists but no logic)
 
 **Future Consideration:**

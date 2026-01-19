@@ -344,7 +344,7 @@
     }
   },
   "transferPage": {
-    "title": "VIP Transfer Services",
+    "title": "Transfer Services",
     "subtitle": "Premium private transportation in Cluj-Napoca and beyond",
     "searchForm": {
       "pickupLocation": "Pickup Location",
@@ -384,7 +384,7 @@
     },
     "confirmation": {
       "title": "Transfer Confirmed!",
-      "subtitle": "Your VIP transfer has been booked successfully",
+      "subtitle": "Your transfer has been booked successfully",
       "transferNumber": "Transfer #",
       "route": "Route",
       "distance": "Distance",

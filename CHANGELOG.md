@@ -7,7 +7,28 @@ All notable changes to RentNGo are documented here.
 ### Planned
 - Vehicle slug URLs for SEO-friendly car detail pages (see `.claude/plans/vehicle-slug-urls.md`)
 - Copy & content review across all translations
-- Remaining codebase cleanup (deprecated fields, unused hooks, incomplete features)
+
+## [1.7.0] - 2026-01-19
+
+### Removed
+- `payments` table from schema (never implemented)
+- `vehicles.class` field (replaced by `classId`)
+- `vehicles.pricePerDay` field (replaced by `pricingTiers`)
+- `by_class` index from vehicles table
+- `hooks/useSeasonalPricing.ts` (replaced by `useDateBasedSeasonalPricing`)
+- `VehicleClass` type export from `types/vehicle.ts`
+- ~20 lines of TODO comments from `convex/reservations.ts`
+- Legacy `pricePerDay` fallbacks from pricing utilities
+
+### Added
+- `convex/migrations/clearDeprecatedClassField.ts` - Migration to clear deprecated class field
+- `convex/migrations/clearDeprecatedPricePerDay.ts` - Migration to clear deprecated pricePerDay field
+
+### Changed
+- Admin vehicle dialogs now use `useDateBasedSeasonalPricing` hook
+- `vehicles-table.tsx` now looks up class name via `classId` reference
+- Pricing logic in `types/vehicle.ts` now requires `pricingTiers` (no fallback)
+- Transfer page titles: removed "VIP" keyword from translations (en/ro)
 
 ## [1.6.0] - 2026-01-19
 
