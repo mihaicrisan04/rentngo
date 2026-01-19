@@ -94,7 +94,7 @@ function FeaturedCarSlot({
                   {currentVehicle.make} {currentVehicle.model}
                 </h4>
                 <p className="text-xs text-muted-foreground">
-                  {currentVehicle.year} • {currentVehicle.pricingTiers && currentVehicle.pricingTiers.length > 0 ? currentVehicle.pricingTiers[0].pricePerDay : (currentVehicle.pricePerDay || 'N/A')} EUR/day
+                  {currentVehicle.year} • {currentVehicle.pricingTiers && currentVehicle.pricingTiers.length > 0 ? currentVehicle.pricingTiers[0].pricePerDay : 'N/A'} EUR/day
                 </p>
                 <div className="flex gap-1 mt-1">
                   <Badge variant="secondary" className="text-xs">

@@ -39,7 +39,7 @@ import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useSeasonalPricing } from "@/hooks/useSeasonalPricing";
+import { useDateBasedSeasonalPricing } from "@/hooks/useDateBasedSeasonalPricing";
 import {
   getPriceForDurationWithSeason,
   calculateVehiclePricing,
@@ -159,10 +159,6 @@ export function EditReservationDialog({
     api.reservations.updateReservationDetails,
   );
 
-  // Get current seasonal pricing (for new calculations) or use historical data from reservation
-  const { multiplier: currentSeasonalMultiplier, currentSeason } =
-    useSeasonalPricing();
-
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<ReservationFormData>({
@@ -206,6 +202,16 @@ export function EditReservationDialog({
     "protectionCost",
     "additionalCharges",
   ]);
+
+  // Watch form dates for seasonal pricing
+  const watchedStartDate = form.watch("startDate");
+  const watchedEndDate = form.watch("endDate");
+
+  // Get seasonal pricing based on selected dates
+  const { multiplier: currentSeasonalMultiplier, seasonId: currentSeasonId } = useDateBasedSeasonalPricing(
+    watchedStartDate ? new Date(watchedStartDate) : null,
+    watchedEndDate ? new Date(watchedEndDate) : null,
+  );
 
   useEffect(() => {
     if (open && reservation) {
@@ -447,7 +453,7 @@ export function EditReservationDialog({
               }))
             : undefined,
         // Update seasonal data if dates or vehicle changed
-        seasonId: currentSeason?.seasonId,
+        seasonId: currentSeasonId as Id<"seasons"> | undefined,
         seasonalMultiplier: currentSeasonalMultiplier,
       });
 

@@ -33,8 +33,8 @@ function VehicleStructuredData({
   const isRomanian = locale === "ro";
   const vehicleName = `${vehicle.make} ${vehicle.model}${vehicle.year ? ` ${vehicle.year}` : ""}`;
 
-  // Calculate base price from pricing tiers or fallback to pricePerDay
-  let pricePerDay = vehicle.pricePerDay || 0;
+  // Calculate base price from pricing tiers
+  let pricePerDay = 0;
   if (vehicle.pricingTiers && vehicle.pricingTiers.length > 0) {
     // Get the tier with lowest minDays (base price tier)
     const sortedTiers = [...vehicle.pricingTiers].sort((a, b) => a.minDays - b.minDays);
@@ -255,7 +255,6 @@ export default async function CarDetailPage({ params }: PageProps) {
           transmission: vehicle.transmission,
           features: vehicle.features,
           pricingTiers: vehicle.pricingTiers,
-          pricePerDay: vehicle.pricePerDay,
         }}
         imageUrl={mainImageUrl || "https://rngo.ro/logo.png"}
         locale={locale}

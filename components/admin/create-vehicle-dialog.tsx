@@ -7,7 +7,6 @@ import { Id } from "@/convex/_generated/dataModel";
 import { CreateClassDialog } from "@/components/admin/create-class-dialog";
 import {
   VehicleType,
-  VehicleClass,
   TransmissionType,
   FuelType,
   VehicleStatus,
@@ -77,31 +76,6 @@ const vehicleSchema = z.object({
     required_error: "Vehicle type is required",
   }),
   classId: z.string().min(1, "Vehicle class is required"),
-  // DEPRECATED: Use classId instead. Kept for backwards compatibility during migration.
-  class: z
-    .enum(
-      [
-        "economy",
-        "compact",
-        "intermediate",
-        "standard",
-        "full-size",
-        "premium",
-        "luxury",
-        "sport",
-        "executive",
-        "commercial",
-        "convertible",
-        "super-sport",
-        "supercars",
-        "business",
-        "van",
-      ],
-      {
-        required_error: "Vehicle class is required",
-      },
-    )
-    .optional(),
   seats: z
     .string()
     .min(1, "Number of seats is required")
@@ -203,7 +177,6 @@ export function CreateVehicleDialog({
       year: new Date().getFullYear().toString(),
       type: "sedan",
       classId: "",
-      class: undefined,
       seats: "5",
       transmission: "automatic",
       fuelType: "diesel",
@@ -227,7 +200,6 @@ export function CreateVehicleDialog({
         year: new Date().getFullYear().toString(),
         type: "sedan",
         classId: "",
-        class: undefined,
         seats: "5",
         transmission: "automatic",
         fuelType: "diesel",
@@ -256,7 +228,6 @@ export function CreateVehicleDialog({
         year: parseInt(values.year),
         type: values.type as VehicleType,
         classId: values.classId as Id<"vehicleClasses">,
-        class: values.class as VehicleClass | undefined,
         seats: parseInt(values.seats),
         transmission: values.transmission as TransmissionType,
         fuelType: values.fuelType as FuelType,

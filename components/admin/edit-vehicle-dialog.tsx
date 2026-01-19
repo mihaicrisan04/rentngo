@@ -7,7 +7,6 @@ import { Id } from "@/convex/_generated/dataModel";
 import { CreateClassDialog } from "@/components/admin/create-class-dialog";
 import {
   VehicleType,
-  VehicleClass,
   TransmissionType,
   FuelType,
   VehicleStatus,
@@ -77,31 +76,6 @@ const vehicleSchema = z.object({
     required_error: "Vehicle type is required",
   }),
   classId: z.string().min(1, "Vehicle class is required"),
-  // DEPRECATED: Use classId instead. Kept for backwards compatibility during migration.
-  class: z
-    .enum(
-      [
-        "economy",
-        "compact",
-        "intermediate",
-        "standard",
-        "full-size",
-        "premium",
-        "luxury",
-        "sport",
-        "executive",
-        "commercial",
-        "convertible",
-        "super-sport",
-        "supercars",
-        "business",
-        "van",
-      ],
-      {
-        required_error: "Vehicle class is required",
-      },
-    )
-    .optional(),
   seats: z
     .string()
     .min(1, "Number of seats is required")
@@ -208,7 +182,6 @@ export function EditVehicleDialog({
       year: new Date().getFullYear().toString(),
       type: "sedan",
       classId: "",
-      class: undefined,
       seats: "5",
       transmission: "automatic",
       fuelType: "petrol",
@@ -232,7 +205,6 @@ export function EditVehicleDialog({
         year: (vehicle.year || new Date().getFullYear()).toString(),
         type: (vehicle.type as VehicleType) || "sedan",
         classId: (vehicle.classId as string) || "",
-        class: vehicle.class as VehicleClass | undefined,
         seats: (vehicle.seats || 5).toString(),
         transmission: (vehicle.transmission as TransmissionType) || "automatic",
         fuelType: (vehicle.fuelType as FuelType) || "petrol",
@@ -253,9 +225,9 @@ export function EditVehicleDialog({
               {
                 minDays: 1,
                 maxDays: 999,
-                pricePerDay: vehicle.pricePerDay || 50,
+                pricePerDay: 50,
               },
-            ]; // Create default from legacy or fallback
+            ]; // Create default fallback
       setPricingTiers(tiers);
       form.setValue("pricingTiers", tiers);
       setMainImageIdState(vehicle.mainImageId);
@@ -310,7 +282,6 @@ export function EditVehicleDialog({
         year: parseInt(values.year),
         type: values.type as VehicleType,
         classId: values.classId as Id<"vehicleClasses">,
-        class: values.class as VehicleClass | undefined,
         seats: parseInt(values.seats),
         transmission: values.transmission as TransmissionType,
         fuelType: values.fuelType as FuelType,

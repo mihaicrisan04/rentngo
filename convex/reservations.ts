@@ -76,20 +76,6 @@ export const createReservation = mutation({
     // Get the current authenticated user (if any)
     const currentUser = await getCurrentUser(ctx);
 
-    
-
-    // TODO: Implement robust availability check for the vehicle.
-    // This should query reservations using the 'by_vehicle' and/or 'by_dates' index
-    // to ensure no conflicting bookings for the given vehicleId and date range.
-    // e.g., check if any existing reservation for this vehicle overlaps with [args.startDate, args.endDate)
-    // const overlappingReservations = await ctx.db.query("reservations")
-    //   .withIndex("by_vehicle", q => q.eq("vehicleId", args.vehicleId))
-    //   .filter(q => q.and(q.lt(q.field("startDate"), args.endDate), q.gt(q.field("endDate"), args.startDate)))
-    //   .collect();
-    // if (overlappingReservations.length > 0) {
-    //   throw new Error("Vehicle not available for the selected dates.");
-    // }
-
     // Compute next reservation number
     const allReservations = await ctx.db.query("reservations").collect();
     const hasAny = allReservations.length > 0;
@@ -295,7 +281,6 @@ export const updateReservationStatus = mutation({
 
     await ctx.db.patch(args.reservationId, { status: args.newStatus });
 
-    // TODO: Trigger emails/notifications based on status change
     return { success: true };
   },
 });
@@ -345,10 +330,6 @@ export const updateReservationDetails = mutation({
       throw new Error("User not authorized to update this reservation.");
     }
 
-    
-
-    // TODO: If startDate or endDate are changing, re-run availability checks.
-
     // Construct the updates object carefully to pass to patch
     const updatesToApply: Partial<typeof reservation> = {};
     if (updatesIn.vehicleId !== undefined) updatesToApply.vehicleId = updatesIn.vehicleId;
@@ -376,8 +357,7 @@ export const updateReservationDetails = mutation({
     }
 
     await ctx.db.patch(reservationId, updatesToApply);
-    
-    // TODO: If critical details change, send an update email.
+
     return { success: true, reservationId };
   },
 });
@@ -402,10 +382,6 @@ export const cancelReservation = mutation({
 
     await ctx.db.patch(args.reservationId, { status: "cancelled" as ReservationStatusType });
 
-    // TODO: Trigger refund process via Stripe if applicable (if status was "confirmed" and payment made).
-    // TODO: Send cancellation confirmation email via Resend.
-    //       Example: await ctx.runAction(api.emails.sendBookingCancellation, { reservationId });
-
     return { success: true, message: "Reservation cancelled." };
   },
 });
@@ -426,8 +402,7 @@ export const deleteReservationPermanently = mutation({
     }
 
     await ctx.db.delete(args.reservationId);
-    // TODO: Consider cascading deletes or cleanup in related tables if necessary,
-    // though typically Stripe and Resend logs would be kept.
+
     return { success: true, message: "Reservation permanently deleted." };
   },
 });

@@ -26,25 +26,6 @@ export const getAll = query({
             v.literal("van"),
           ),
         ),
-        class: v.optional(
-          v.union(
-            v.literal("economy"),
-            v.literal("compact"),
-            v.literal("intermediate"),
-            v.literal("standard"),
-            v.literal("full-size"),
-            v.literal("premium"),
-            v.literal("luxury"),
-            v.literal("sport"),
-            v.literal("executive"),
-            v.literal("commercial"),
-            v.literal("super-sport"),
-            v.literal("supercars"),
-            v.literal("business"),
-            v.literal("van"),
-            v.literal("convertible"),
-          ),
-        ),
         transmission: v.optional(
           v.union(v.literal("automatic"), v.literal("manual")),
         ),
@@ -57,8 +38,6 @@ export const getAll = query({
             v.literal("benzina"),
           ),
         ),
-        minPrice: v.optional(v.number()),
-        maxPrice: v.optional(v.number()),
         status: v.optional(
           v.union(
             v.literal("available"),
@@ -76,19 +55,13 @@ export const getAll = query({
     if (args.filters) {
       const {
         type,
-        class: vehicleClass,
         transmission,
         fuelType,
-        minPrice,
-        maxPrice,
         status,
       } = args.filters;
 
       if (type) {
         query = query.filter((q) => q.eq(q.field("type"), type));
-      }
-      if (vehicleClass) {
-        query = query.filter((q) => q.eq(q.field("class"), vehicleClass));
       }
       if (transmission) {
         query = query.filter((q) =>
@@ -97,12 +70,6 @@ export const getAll = query({
       }
       if (fuelType) {
         query = query.filter((q) => q.eq(q.field("fuelType"), fuelType));
-      }
-      if (minPrice !== undefined) {
-        query = query.filter((q) => q.gte(q.field("pricePerDay"), minPrice));
-      }
-      if (maxPrice !== undefined) {
-        query = query.filter((q) => q.lte(q.field("pricePerDay"), maxPrice));
       }
       if (status) {
         query = query.filter((q) => q.eq(q.field("status"), status));
@@ -147,25 +114,6 @@ export const create = mutation({
     ),
     classId: v.optional(v.id("vehicleClasses")), // Reference to vehicle class
     classSortIndex: v.optional(v.number()), // For custom sorting within a class
-    class: v.optional(
-      v.union(
-        v.literal("economy"),
-        v.literal("compact"),
-        v.literal("intermediate"),
-        v.literal("standard"),
-        v.literal("full-size"),
-        v.literal("premium"),
-        v.literal("super-sport"),
-        v.literal("supercars"),
-        v.literal("business"),
-        v.literal("van"),
-        v.literal("luxury"),
-        v.literal("sport"),
-        v.literal("executive"),
-        v.literal("commercial"),
-        v.literal("convertible"),
-      ),
-    ),
     seats: v.optional(v.number()),
     transmission: v.optional(
       v.union(v.literal("automatic"), v.literal("manual")),
@@ -180,7 +128,6 @@ export const create = mutation({
     ),
     engineCapacity: v.optional(v.number()),
     engineType: v.optional(v.string()),
-    pricePerDay: v.optional(v.number()),
     pricingTiers: v.array(pricingTierValidator),
     warranty: v.optional(v.number()),
     isOwner: v.optional(v.boolean()),
@@ -224,25 +171,6 @@ export const update = mutation({
     ),
     classId: v.optional(v.id("vehicleClasses")), // Reference to vehicle class
     classSortIndex: v.optional(v.number()), // For custom sorting within a class
-    class: v.optional(
-      v.union(
-        v.literal("economy"),
-        v.literal("compact"),
-        v.literal("intermediate"),
-        v.literal("standard"),
-        v.literal("full-size"),
-        v.literal("premium"),
-        v.literal("luxury"),
-        v.literal("sport"),
-        v.literal("executive"),
-        v.literal("commercial"),
-        v.literal("super-sport"),
-        v.literal("supercars"),
-        v.literal("business"),
-        v.literal("van"),
-        v.literal("convertible"),
-      ),
-    ),
     seats: v.optional(v.number()),
     transmission: v.optional(
       v.union(v.literal("automatic"), v.literal("manual")),
@@ -257,7 +185,6 @@ export const update = mutation({
     ),
     engineCapacity: v.optional(v.number()),
     engineType: v.optional(v.string()),
-    pricePerDay: v.optional(v.number()),
     pricingTiers: v.optional(v.array(pricingTierValidator)),
     warranty: v.optional(v.number()),
     isOwner: v.optional(v.boolean()),
@@ -490,25 +417,6 @@ export const searchAvailableVehicles = query({
         v.literal("van"),
       ),
     ),
-    class: v.optional(
-      v.union(
-        v.literal("economy"),
-        v.literal("compact"),
-        v.literal("intermediate"),
-        v.literal("standard"),
-        v.literal("full-size"),
-        v.literal("premium"),
-        v.literal("luxury"),
-        v.literal("sport"),
-        v.literal("executive"),
-        v.literal("commercial"),
-        v.literal("super-sport"),
-        v.literal("supercars"),
-        v.literal("business"),
-        v.literal("van"),
-        v.literal("convertible"),
-      ),
-    ),
     transmission: v.optional(
       v.union(v.literal("automatic"), v.literal("manual")),
     ),
@@ -521,17 +429,12 @@ export const searchAvailableVehicles = query({
         v.literal("benzina"),
       ),
     ),
-    minPrice: v.optional(v.number()),
-    maxPrice: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const {
       type,
-      class: vehicleClass,
       transmission,
       fuelType,
-      minPrice,
-      maxPrice,
     } = args;
 
     let vehicleQuery = ctx.db
@@ -542,11 +445,6 @@ export const searchAvailableVehicles = query({
     if (type) {
       vehicleQuery = vehicleQuery.filter((q) => q.eq(q.field("type"), type));
     }
-    if (vehicleClass) {
-      vehicleQuery = vehicleQuery.filter((q) =>
-        q.eq(q.field("class"), vehicleClass),
-      );
-    }
     if (transmission) {
       vehicleQuery = vehicleQuery.filter((q) =>
         q.eq(q.field("transmission"), transmission),
@@ -555,16 +453,6 @@ export const searchAvailableVehicles = query({
     if (fuelType) {
       vehicleQuery = vehicleQuery.filter((q) =>
         q.eq(q.field("fuelType"), fuelType),
-      );
-    }
-    if (minPrice !== undefined) {
-      vehicleQuery = vehicleQuery.filter((q) =>
-        q.gte(q.field("pricePerDay"), minPrice),
-      );
-    }
-    if (maxPrice !== undefined) {
-      vehicleQuery = vehicleQuery.filter((q) =>
-        q.lte(q.field("pricePerDay"), maxPrice),
       );
     }
 

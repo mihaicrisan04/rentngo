@@ -6,8 +6,6 @@ export type Vehicle = Doc<"vehicles">;
 // Extract types from the schema for use in components (derived from Convex schema)
 // export type VehicleType = "sedan" | "suv" | "hatchback" | "sports" | "truck" | "van";
 export type VehicleType = Vehicle["type"];
-// export type VehicleClass = "economy" | "compact" | "intermediate" | "standard" | "full-size" | "premium" | "luxury" | "sport" | "executive" | "commercial" | "convertible" | "super-sport" | "supercars" | "business" | "van";
-export type VehicleClass = Vehicle["class"];
 // export type TransmissionType = "automatic" | "manual";
 export type TransmissionType = Vehicle["transmission"];
 // export type FuelType = "petrol" | "diesel" | "electric" | "hybrid" | "benzina";
@@ -25,7 +23,6 @@ export interface PricingTier {
 // Vehicle filters interface
 export interface VehicleFilters {
   type?: VehicleType;
-  class?: VehicleClass;
   transmission?: TransmissionType;
   fuelType?: FuelType;
   minPrice?: number;
@@ -40,15 +37,12 @@ export interface VehicleFormData {
   model: string;
   year: number;
   type: VehicleType;
-  class: VehicleClass;
   seats: number;
   transmission: TransmissionType;
   fuelType: FuelType;
   engineCapacity: number;
   engineType: string;
-  // Legacy field for backward compatibility
-  pricePerDay: number;
-  // New tiered pricing structure
+  // Tiered pricing structure
   pricingTiers: PricingTier[];
   // Warranty amount for the vehicle
   warranty: number;
@@ -104,14 +98,8 @@ export function getBasePricePerDay(vehicle: Vehicle): number {
   if (baseTier) {
     return baseTier.pricePerDay;
   }
-  
-  // Legacy fallback - this should eventually be removed
-  if (vehicle.pricePerDay) {
-    return vehicle.pricePerDay;
-  }
-  
-  // Should not happen if vehicle has been properly migrated
-  throw new Error(`Vehicle ${vehicle._id} has no pricing tiers and no legacy pricePerDay`);
+
+  throw new Error(`Vehicle ${vehicle._id} has no pricing tiers configured`);
 }
 
 // Helper function to get price for a specific rental duration

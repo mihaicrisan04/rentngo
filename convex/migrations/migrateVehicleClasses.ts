@@ -63,7 +63,9 @@ export default internalMutation({
       }
 
       // Skip if vehicle has no old class field
-      if (!vehicle.class) {
+      // Note: `class` was removed from schema, use type assertion
+      const vehicleClass = (vehicle as any).class;
+      if (!vehicleClass) {
         console.log(
           `Warning: ${vehicle.make} ${vehicle.model} - no class field, skipping`,
         );
@@ -75,7 +77,7 @@ export default internalMutation({
       }
 
       // Map old class to new class name
-      const oldClass = vehicle.class;
+      const oldClass = vehicleClass;
       const newClassName = classMapping[oldClass];
 
       if (!newClassName) {
