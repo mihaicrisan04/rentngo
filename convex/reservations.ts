@@ -1,6 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { getCurrentUser, getCurrentUserOrThrow } from "./users";
 
@@ -54,6 +54,19 @@ export const createReservation = mutation({
     protectionCost: v.optional(v.number()),
     seasonId: v.optional(v.id("seasons")),
     seasonalMultiplier: v.optional(v.number()),
+    // Email data fields
+    vehicleInfo: v.optional(v.object({
+      make: v.string(),
+      model: v.string(),
+      year: v.optional(v.number()),
+      type: v.optional(v.string()),
+      seats: v.optional(v.number()),
+      transmission: v.optional(v.string()),
+      fuelType: v.optional(v.string()),
+      features: v.optional(v.array(v.string())),
+    })),
+    pricePerDayUsed: v.optional(v.number()),
+    locale: v.optional(v.string()),
   },
   returns: v.object({
     reservationId: v.id("reservations"),
@@ -62,20 +75,6 @@ export const createReservation = mutation({
   handler: async (ctx, args) => {
     // Get the current authenticated user (if any)
     const currentUser = await getCurrentUser(ctx);
-
-    
-
-    // TODO: Implement robust availability check for the vehicle.
-    // This should query reservations using the 'by_vehicle' and/or 'by_dates' index
-    // to ensure no conflicting bookings for the given vehicleId and date range.
-    // e.g., check if any existing reservation for this vehicle overlaps with [args.startDate, args.endDate)
-    // const overlappingReservations = await ctx.db.query("reservations")
-    //   .withIndex("by_vehicle", q => q.eq("vehicleId", args.vehicleId))
-    //   .filter(q => q.and(q.lt(q.field("startDate"), args.endDate), q.gt(q.field("endDate"), args.startDate)))
-    //   .collect();
-    // if (overlappingReservations.length > 0) {
-    //   throw new Error("Vehicle not available for the selected dates.");
-    // }
 
     // Compute next reservation number
     const allReservations = await ctx.db.query("reservations").collect();
@@ -111,10 +110,44 @@ export const createReservation = mutation({
 
     const reservationId = await ctx.db.insert("reservations", newReservationData);
 
-    // TODO (Post-payment/confirmation flow):
-    // 1. Update reservation status to "confirmed" (e.g., via a Stripe webhook handler).
-    // 2. Trigger a "confirmation" email to the user using Resend.
-    //    Example: await ctx.runAction(api.emails.sendBookingConfirmation, { reservationId });
+    // Schedule email sending if vehicle info is provided
+    if (args.vehicleInfo) {
+      // Calculate number of days
+      const startDate = new Date(args.startDate);
+      const endDate = new Date(args.endDate);
+      const numberOfDays = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
+      
+      // Format dates for email
+      const timeZone = 'Europe/Bucharest';
+      const startDateString = startDate.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone });
+      const endDateString = endDate.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone });
+
+      await ctx.scheduler.runAfter(0, internal.emails.sendReservationConfirmationEmail, {
+        reservationNumber: nextReservationNumber,
+        customerInfo: args.customerInfo,
+        vehicleInfo: args.vehicleInfo,
+        rentalDetails: {
+          startDate: startDateString,
+          endDate: endDateString,
+          pickupTime: args.pickupTime,
+          restitutionTime: args.restitutionTime,
+          pickupLocation: args.pickupLocation,
+          restitutionLocation: args.restitutionLocation,
+          numberOfDays,
+        },
+        pricingDetails: {
+          pricePerDay: args.pricePerDayUsed ?? Math.round(args.totalPrice / numberOfDays),
+          totalPrice: args.totalPrice,
+          paymentMethod: args.paymentMethod,
+          promoCode: args.promoCode,
+          additionalCharges: args.additionalCharges,
+          isSCDWSelected: args.isSCDWSelected,
+          deductibleAmount: args.deductibleAmount,
+          protectionCost: args.protectionCost,
+        },
+        locale: args.locale,
+      });
+    }
 
     return { reservationId, reservationNumber: nextReservationNumber };
   },
@@ -248,7 +281,6 @@ export const updateReservationStatus = mutation({
 
     await ctx.db.patch(args.reservationId, { status: args.newStatus });
 
-    // TODO: Trigger emails/notifications based on status change
     return { success: true };
   },
 });
@@ -298,10 +330,6 @@ export const updateReservationDetails = mutation({
       throw new Error("User not authorized to update this reservation.");
     }
 
-    
-
-    // TODO: If startDate or endDate are changing, re-run availability checks.
-
     // Construct the updates object carefully to pass to patch
     const updatesToApply: Partial<typeof reservation> = {};
     if (updatesIn.vehicleId !== undefined) updatesToApply.vehicleId = updatesIn.vehicleId;
@@ -329,8 +357,7 @@ export const updateReservationDetails = mutation({
     }
 
     await ctx.db.patch(reservationId, updatesToApply);
-    
-    // TODO: If critical details change, send an update email.
+
     return { success: true, reservationId };
   },
 });
@@ -355,10 +382,6 @@ export const cancelReservation = mutation({
 
     await ctx.db.patch(args.reservationId, { status: "cancelled" as ReservationStatusType });
 
-    // TODO: Trigger refund process via Stripe if applicable (if status was "confirmed" and payment made).
-    // TODO: Send cancellation confirmation email via Resend.
-    //       Example: await ctx.runAction(api.emails.sendBookingCancellation, { reservationId });
-
     return { success: true, message: "Reservation cancelled." };
   },
 });
@@ -379,8 +402,7 @@ export const deleteReservationPermanently = mutation({
     }
 
     await ctx.db.delete(args.reservationId);
-    // TODO: Consider cascading deletes or cleanup in related tables if necessary,
-    // though typically Stripe and Resend logs would be kept.
+
     return { success: true, message: "Reservation permanently deleted." };
   },
 });

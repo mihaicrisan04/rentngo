@@ -114,7 +114,7 @@ export function Header({ logo }: HeaderProps) {
                   "transition-colors",
                   !scrolled && isOnDarkBackground
                     ? "[color:rgb(255_255_255)] hover:[color:rgb(255_255_255)] border-white/30 hover:bg-white/10"
-                    : "text-primary hover:text-foreground"
+                    : "text-foreground hover:text-foreground"
                 )}
               >
                 {t("login")}

@@ -65,8 +65,8 @@ export function Footer({ logo, brandName }: FooterProps) {
   ];
 
   return (
-    <footer className="pb-6 pt-16 lg:pb-8 px-4 lg:pt-24 bg-muted border-t">
-      <div className="container mx-auto max-w-6xl lg:px-8">
+    <footer className="pb-6 pt-16 lg:pb-8 lg:pt-24 bg-muted border-t">
+      <div className="mx-auto max-w-6xl px-4 lg:px-0">
         <div className="md:flex md:items-end md:justify-between">
           <Link
             href={`/${locale}`}

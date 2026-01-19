@@ -343,7 +343,76 @@
       "cancelled": "Anulată"
     }
   },
-
+  "transferPage": {
+    "title": "Servicii Transfer VIP",
+    "subtitle": "Transport privat premium în Cluj-Napoca și împrejurimi",
+    "searchForm": {
+      "pickupLocation": "Locație Preluare",
+      "pickupLocationPlaceholder": "Introduceți adresa de preluare...",
+      "dropoffLocation": "Locație Destinație",
+      "dropoffLocationPlaceholder": "Introduceți adresa de destinație...",
+      "pickupDateTime": "Data și Ora Preluării",
+      "returnDateTime": "Data și Ora Întoarcerii",
+      "passengers": "Număr de Pasageri",
+      "passengerCount": "{count} {count, plural, one {Pasager} other {Pasageri}}",
+      "transferType": "Tip Transfer",
+      "oneWay": "Doar Dus",
+      "roundTrip": "Dus-Întors",
+      "searchTransfers": "Caută Transferuri",
+      "searching": "Se caută..."
+    },
+    "vehicleSelection": {
+      "title": "Selectează Vehiculul",
+      "subtitle": "Alege din flota noastră premium de transfer",
+      "distanceLabel": "Distanță",
+      "durationLabel": "Durată Est.",
+      "priceFrom": "De la",
+      "selectVehicle": "Selectează",
+      "passengers": "{count} pasageri max",
+      "noVehiclesFound": "Niciun Vehicul Disponibil",
+      "routeEstimationNote": "Estimare traseu. Distanța și durata reală pot varia ușor.",
+      "selectPrompt": "Selectează un vehicul pentru a continua"
+    },
+    "booking": {
+      "title": "Finalizează Rezervarea",
+      "tripDetails": "Detalii Călătorie",
+      "personalInfo": "Informații Personale",
+      "paymentMethod": "Metodă de Plată",
+      "summary": "Sumar Transfer",
+      "confirmBooking": "Confirmă Transferul",
+      "processing": "Se procesează..."
+    },
+    "confirmation": {
+      "title": "Transfer Confirmat!",
+      "subtitle": "Transferul tău VIP a fost rezervat cu succes",
+      "transferNumber": "Transfer #",
+      "route": "Rută",
+      "distance": "Distanță",
+      "duration": "Durată Estimată",
+      "bookAnother": "Rezervă Alt Transfer"
+    },
+    "pricing": {
+      "basePrice": "Tarif de Bază",
+      "distanceCharge": "Distanță ({km} km)",
+      "totalPrice": "Preț Total",
+      "roundTripNote": "Preț dus-întors aplicat"
+    },
+    "howItWorks": {
+      "title": "Cum Funcționează",
+      "step1": {
+        "title": "Introdu Traseul",
+        "description": "Spune-ne locațiile de preluare și destinație, data și ora"
+      },
+      "step2": {
+        "title": "Alege Vehiculul",
+        "description": "Selectează din flota noastră premium în funcție de nevoile tale"
+      },
+      "step3": {
+        "title": "Confirmă și Relaxează-te",
+        "description": "Finalizează rezervarea și noi ne ocupăm de restul"
+      }
+    }
+  },
   "common": {
     "loading": "Se încarcă...",
     "error": "Eroare",
@@ -509,7 +578,7 @@
     "contact": "Contact",
     "privacy": "Confidențialitate",
     "terms": "Termeni",
-    "copyright": "© 2025 Rent'n Go Cluj",
+    "copyright": "© 2026 Rent'n Go Cluj",
     "allRightsReserved": "Toate drepturile rezervate",
     "builtBy": "Creat de"
   },
@@ -521,7 +590,9 @@
     "selectPickupLocation": "Selectează locația de ridicare",
     "selectReturnLocation": "Selectează locația de returnare",
     "pickDateTime": "Alege o dată și oră",
+    "selectDate": "Selectează data",
     "selectTime": "Selectează ora",
+    "at": "la",
     "searchCars": "Caută Masini de Inchiriat",
     "searchingCars": "Se caută masini de inchiriat...",
     "returnDateAfterPickup": "Data de returnare trebuie să fie după sau aceeași cu data de ridicare.",

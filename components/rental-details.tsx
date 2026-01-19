@@ -37,6 +37,10 @@ export function RentalDetails({
   const [localReturnDate, setLocalReturnDate] = React.useState<Date | undefined>(returnDate);
   const [localReturnTime, setLocalReturnTime] = React.useState(returnTime || "");
 
+  // Calendar open states for sequential flow
+  const [pickupCalendarOpen, setPickupCalendarOpen] = React.useState(false);
+  const [returnCalendarOpen, setReturnCalendarOpen] = React.useState(false);
+
   // Sync local state with props when they change (after localStorage load)
   React.useEffect(() => {
     setLocalDeliveryLocation(deliveryLocation || "");
@@ -83,7 +87,7 @@ export function RentalDetails({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="flex flex-col gap-6">
           {/* Pickup Details */}
           <div className="space-y-4">
             <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
@@ -105,7 +109,6 @@ export function RentalDetails({
                 id="pickup-datetime"
                 label={t('pickupDateTime')}
                 dateState={localPickupDate}
-                disabledDateRanges={{ before: today }}
                 setDateState={(date) => {
                   setLocalPickupDate(date);
                   handleUpdate('pickupDate', date);
@@ -122,6 +125,11 @@ export function RentalDetails({
                 }}
                 minDate={today}
                 isLoading={false}
+                calendarOpen={pickupCalendarOpen}
+                onCalendarOpenChange={setPickupCalendarOpen}
+                onDateSelected={() => {
+                  setTimeout(() => setReturnCalendarOpen(true), 100);
+                }}
               />
             </div>
           </div>
@@ -167,10 +175,11 @@ export function RentalDetails({
                   handleUpdate('returnTime', time);
                 }}
                 minDate={localPickupDate || today}
-                disabledDateRanges={localPickupDate ? { before: localPickupDate } : { before: today }}
                 isLoading={!localPickupDate}
                 pickupDate={localPickupDate}
                 pickupTime={localPickupTime}
+                calendarOpen={returnCalendarOpen}
+                onCalendarOpenChange={setReturnCalendarOpen}
               />
             </div>
           </div>

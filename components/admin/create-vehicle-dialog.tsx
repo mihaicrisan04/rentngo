@@ -7,7 +7,6 @@ import { Id } from "@/convex/_generated/dataModel";
 import { CreateClassDialog } from "@/components/admin/create-class-dialog";
 import {
   VehicleType,
-  VehicleClass,
   TransmissionType,
   FuelType,
   VehicleStatus,
@@ -77,31 +76,6 @@ const vehicleSchema = z.object({
     required_error: "Vehicle type is required",
   }),
   classId: z.string().min(1, "Vehicle class is required"),
-  // DEPRECATED: Use classId instead. Kept for backwards compatibility during migration.
-  class: z
-    .enum(
-      [
-        "economy",
-        "compact",
-        "intermediate",
-        "standard",
-        "full-size",
-        "premium",
-        "luxury",
-        "sport",
-        "executive",
-        "commercial",
-        "convertible",
-        "super-sport",
-        "supercars",
-        "business",
-        "van",
-      ],
-      {
-        required_error: "Vehicle class is required",
-      },
-    )
-    .optional(),
   seats: z
     .string()
     .min(1, "Number of seats is required")
@@ -146,6 +120,7 @@ const vehicleSchema = z.object({
     )
     .min(1, "At least one pricing tier is required"),
   isOwner: z.boolean(),
+  isTransferVehicle: z.boolean(),
 });
 
 type VehicleFormData = z.infer<typeof vehicleSchema>;
@@ -202,7 +177,6 @@ export function CreateVehicleDialog({
       year: new Date().getFullYear().toString(),
       type: "sedan",
       classId: "",
-      class: undefined,
       seats: "5",
       transmission: "automatic",
       fuelType: "diesel",
@@ -211,6 +185,7 @@ export function CreateVehicleDialog({
       // pricePerDay removed - using pricingTiers only
       warranty: "",
       isOwner: false,
+      isTransferVehicle: false,
       features: [],
       status: "available",
       pricingTiers: [{ minDays: 1, maxDays: 999, pricePerDay: 50 }], // Default tier
@@ -225,7 +200,6 @@ export function CreateVehicleDialog({
         year: new Date().getFullYear().toString(),
         type: "sedan",
         classId: "",
-        class: undefined,
         seats: "5",
         transmission: "automatic",
         fuelType: "diesel",
@@ -233,6 +207,8 @@ export function CreateVehicleDialog({
         engineType: "",
         // pricePerDay removed - using pricingTiers only
         warranty: "",
+        isOwner: false,
+        isTransferVehicle: false,
         features: [],
         status: "available",
         pricingTiers: [{ minDays: 1, maxDays: 999, pricePerDay: 50 }], // Default tier
@@ -252,7 +228,6 @@ export function CreateVehicleDialog({
         year: parseInt(values.year),
         type: values.type as VehicleType,
         classId: values.classId as Id<"vehicleClasses">,
-        class: values.class as VehicleClass | undefined,
         seats: parseInt(values.seats),
         transmission: values.transmission as TransmissionType,
         fuelType: values.fuelType as FuelType,
@@ -261,6 +236,7 @@ export function CreateVehicleDialog({
         // pricePerDay removed - using pricingTiers only
         warranty: values.warranty ? parseFloat(values.warranty) : 0,
         isOwner: values.isOwner,
+        isTransferVehicle: values.isTransferVehicle,
         features: values.features,
         status: values.status as VehicleStatus,
         pricingTiers: pricingTiers,
@@ -702,6 +678,28 @@ export function CreateVehicleDialog({
                             <FormLabel>Owner Vehicle</FormLabel>
                             <div className="text-sm text-muted-foreground">
                               Is this vehicle owned by the company?
+                            </div>
+                          </div>
+                          <FormControl>
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              disabled={isSubmitting}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="isTransferVehicle"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                          <div className="space-y-0.5">
+                            <FormLabel>Transfer Vehicle</FormLabel>
+                            <div className="text-sm text-muted-foreground">
+                              Is this vehicle available for transfers?
                             </div>
                           </div>
                           <FormControl>

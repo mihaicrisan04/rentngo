@@ -141,7 +141,7 @@ export function ReservationsTable() {
               <TableHead>Total Price</TableHead>
               <TableHead>Payment</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Contact</TableHead>
+              <TableHead className="w-[150px] max-w-[150px]">Contact</TableHead>
               <TableHead className="w-20">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -203,10 +203,10 @@ export function ReservationsTable() {
                     </span>
                   </TableCell>
                   <TableCell>{getStatusBadge(reservation.status)}</TableCell>
-                  <TableCell>
+                  <TableCell className="max-w-[150px]">
                     <div className="text-sm">
                       {reservation.customerInfo.flightNumber && (
-                        <div>Flight: {reservation.customerInfo.flightNumber}</div>
+                        <div className="truncate" title={`Flight: ${reservation.customerInfo.flightNumber}`}>Flight: {reservation.customerInfo.flightNumber}</div>
                       )}
                       {reservation.customerInfo.message && (
                         <div className="text-muted-foreground truncate max-w-20" title={reservation.customerInfo.message}>

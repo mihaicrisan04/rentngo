@@ -38,7 +38,7 @@ import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useSeasonalPricing } from "@/hooks/useSeasonalPricing";
+import { useDateBasedSeasonalPricing } from "@/hooks/useDateBasedSeasonalPricing";
 import { getPriceForDurationWithSeason } from "@/lib/vehicleUtils";
 
 const Tabs = TabsPrimitive.Root;
@@ -93,9 +93,6 @@ export function CreateReservationDialog({
 }: CreateReservationDialogProps) {
   const vehicles = useQuery(api.vehicles.getAllVehicles);
   const createReservation = useMutation(api.reservations.createReservation);
-  
-  // Get current seasonal pricing
-  const { multiplier: seasonalMultiplier, currentSeason } = useSeasonalPricing();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -122,6 +119,16 @@ export function CreateReservationDialog({
       protectionCost: "0",
     },
   });
+
+  // Watch form dates for seasonal pricing
+  const watchedStartDate = form.watch("startDate");
+  const watchedEndDate = form.watch("endDate");
+
+  // Get seasonal pricing based on selected dates
+  const { multiplier: seasonalMultiplier, seasonId } = useDateBasedSeasonalPricing(
+    watchedStartDate ? new Date(watchedStartDate) : null,
+    watchedEndDate ? new Date(watchedEndDate) : null,
+  );
 
   useEffect(() => {
     if (!open) {
@@ -158,7 +165,7 @@ export function CreateReservationDialog({
         isSCDWSelected: values.isSCDWSelected,
         deductibleAmount: parseFloat(values.deductibleAmount),
         protectionCost: values.protectionCost ? parseFloat(values.protectionCost) : undefined,
-        seasonId: currentSeason?.seasonId,
+        seasonId: seasonId as Id<"seasons"> | undefined,
         seasonalMultiplier: seasonalMultiplier,
       });
 
@@ -262,7 +269,7 @@ export function CreateReservationDialog({
                             <SelectContent>
                               {vehicles?.filter(v => v.status === 'available').map((vehicle) => (
                                 <SelectItem key={vehicle._id} value={vehicle._id}>
-                                  {vehicle.make} {vehicle.model} ({vehicle.year}) - {Math.round((vehicle.pricingTiers && vehicle.pricingTiers.length > 0 ? vehicle.pricingTiers[0].pricePerDay : (vehicle.pricePerDay || 50)) * seasonalMultiplier)} EUR/day
+                                  {vehicle.make} {vehicle.model} ({vehicle.year}) - {Math.round((vehicle.pricingTiers && vehicle.pricingTiers.length > 0 ? vehicle.pricingTiers[0].pricePerDay : 50) * seasonalMultiplier)} EUR/day
                                 </SelectItem>
                               ))}
                             </SelectContent>

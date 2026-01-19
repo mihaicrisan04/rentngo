@@ -48,6 +48,11 @@ export function VehicleSearchFilterForm({
 
   const [isLoading, setIsLoading] = React.useState(false);
   const [isHydrated, setIsHydrated] = React.useState(false);
+  
+  // Control which picker is open for sequential flow
+  const [pickupCalendarOpen, setPickupCalendarOpen] = React.useState(false);
+  const [returnCalendarOpen, setReturnCalendarOpen] = React.useState(false);
+  
   const router = useRouter();
   const t = useTranslations('search');
 
@@ -214,10 +219,18 @@ export function VehicleSearchFilterForm({
                 timeState={pickupTime}
                 setTimeState={setPickupTime}
                 minDate={today}
-                disabledDateRanges={{ before: today }}
+                disabledDateRanges={(date: Date) => date < today}
                 popoverAlign="start"
                 contentAlign="start"
                 isLoading={isLoading}
+                calendarOpen={pickupCalendarOpen}
+                onCalendarOpenChange={setPickupCalendarOpen}
+                onDateSelected={() => {
+                  // After pickup date is selected, open return date calendar
+                  setTimeout(() => {
+                    setReturnCalendarOpen(true);
+                  }, 100);
+                }}
                 onDateChange={(newDate) => {
                   if (newDate && returnDateState && returnDateState < newDate) {
                     setReturnDateState(newDate);
@@ -250,12 +263,14 @@ export function VehicleSearchFilterForm({
                 timeState={returnTime}
                 setTimeState={setReturnTime}
                 minDate={pickupDateState || today}
-                disabledDateRanges={{ before: pickupDateState || today }}
-                popoverAlign="end"
+                disabledDateRanges={(date: Date) => date < (pickupDateState || today)}
+                popoverAlign="start"
                 contentAlign="start"
                 isLoading={isLoading}
                 pickupDate={pickupDateState}
                 pickupTime={pickupTime}
+                calendarOpen={returnCalendarOpen}
+                onCalendarOpenChange={setReturnCalendarOpen}
               />
             </div>
           </div>

@@ -14,14 +14,16 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "blogPage" });
 
+  const isRomanian = locale === "ro";
+
   return {
     title: t("title"),
     description: t("subtitle"),
     alternates: {
       canonical: `https://rngo.ro/${locale}/blog`,
       languages: {
-        en: "/en/blog",
-        ro: "/ro/blog",
+        "ro-RO": "https://rngo.ro/ro/blog",
+        "en-US": "https://rngo.ro/en/blog",
       },
     },
     openGraph: {
@@ -29,13 +31,22 @@ export async function generateMetadata({
       description: t("subtitle"),
       type: "website",
       url: `https://rngo.ro/${locale}/blog`,
-      siteName: "Rent'n Go Cluj",
-      locale: locale,
+      siteName: "Rent'n Go Cluj-Napoca",
+      locale: isRomanian ? "ro_RO" : "en_US",
+      images: [
+        {
+          url: "https://rngo.ro/logo.png",
+          width: 1200,
+          height: 630,
+          alt: "Rent'n Go Blog",
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: t("title"),
       description: t("subtitle"),
+      images: ["https://rngo.ro/logo.png"],
     },
   };
 }

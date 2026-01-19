@@ -1,6 +1,38 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
+import { Metadata } from "next";
+
+interface PrivacyPageProps {
+  params: Promise<{ locale: string }>;
+}
+
+export async function generateMetadata({
+  params,
+}: PrivacyPageProps): Promise<Metadata> {
+  const { locale } = await params;
+  const isRomanian = locale === "ro";
+
+  return {
+    title: isRomanian
+      ? "Politica de Confidențialitate | Rent'n Go Cluj-Napoca"
+      : "Privacy Policy | Rent'n Go Cluj-Napoca",
+    description: isRomanian
+      ? "Politica de confidențialitate Rent'n Go. Informații despre colectarea și prelucrarea datelor cu caracter personal conform GDPR."
+      : "Rent'n Go Privacy Policy. Information about personal data collection and processing in accordance with GDPR.",
+    alternates: {
+      canonical: `https://rngo.ro/${locale}/privacy`,
+      languages: {
+        "ro-RO": "https://rngo.ro/ro/privacy",
+        "en-US": "https://rngo.ro/en/privacy",
+      },
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
+}
 
 export default function PrivacyPolicyPage() {
   return (

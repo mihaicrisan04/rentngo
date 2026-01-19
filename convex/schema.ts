@@ -93,11 +93,15 @@ export default defineSchema({
     ),
     images: v.optional(v.array(v.id("_storage"))),
     mainImageId: v.optional(v.id("_storage")),
+    // Transfer-related fields
+    isTransferVehicle: v.optional(v.boolean()), // Whether this vehicle is available for transfers
+    transferPricePerKm: v.optional(v.number()), // Price per kilometer for transfers in EUR
   })
     .index("by_location", ["location"])
     .index("by_type", ["type"])
     .index("by_class", ["class"])
-    .index("by_status", ["status"]),
+    .index("by_status", ["status"])
+    .index("by_transfer", ["isTransferVehicle"]),
 
   // Reservations table - stores booking records
   reservations: defineTable({
@@ -160,6 +164,80 @@ export default defineSchema({
     .index("by_pickup_location", ["pickupLocation"])
     .index("by_restitution_location", ["restitutionLocation"])
     .index("by_payment_method", ["paymentMethod"]),
+
+  // Transfers table - stores VIP transfer bookings
+  transfers: defineTable({
+    transferNumber: v.optional(v.number()),
+    userId: v.optional(v.id("users")),
+    vehicleId: v.id("vehicles"),
+
+    // Transfer type
+    transferType: v.union(v.literal("one_way"), v.literal("round_trip")),
+
+    // Pickup details
+    pickupLocation: v.object({
+      address: v.string(),
+      coordinates: v.object({
+        lng: v.number(),
+        lat: v.number(),
+      }),
+    }),
+    pickupDate: v.number(), // Unix timestamp
+    pickupTime: v.string(), // Time in "HH:MM" format
+
+    // Dropoff details
+    dropoffLocation: v.object({
+      address: v.string(),
+      coordinates: v.object({
+        lng: v.number(),
+        lat: v.number(),
+      }),
+    }),
+
+    // Return trip (for round_trip type only)
+    returnDate: v.optional(v.number()), // Unix timestamp
+    returnTime: v.optional(v.string()), // Time in "HH:MM" format
+
+    // Trip info
+    passengers: v.number(),
+    luggageCount: v.optional(v.number()), // Number of medium-size luggage items
+    distanceKm: v.number(),
+    estimatedDurationMinutes: v.number(),
+
+    // Pricing
+    baseFare: v.number(), // Minimum fare
+    distancePrice: v.number(), // Price calculated from distance
+    totalPrice: v.number(),
+    pricePerKm: v.number(), // Rate used for this booking
+
+    // Customer information
+    customerInfo: v.object({
+      name: v.string(),
+      email: v.string(),
+      phone: v.string(),
+      message: v.optional(v.string()),
+      flightNumber: v.optional(v.string()),
+    }),
+
+    // Payment
+    paymentMethod: v.union(
+      v.literal("cash_on_delivery"),
+      v.literal("card_on_delivery"),
+      v.literal("card_online"),
+    ),
+
+    // Status
+    status: v.union(
+      v.literal("pending"),
+      v.literal("confirmed"),
+      v.literal("cancelled"),
+      v.literal("completed"),
+    ),
+  })
+    .index("by_user", ["userId"])
+    .index("by_vehicle", ["vehicleId"])
+    .index("by_pickup_date", ["pickupDate"])
+    .index("by_status", ["status"]),
 
   // Payments table - stores payment records
   payments: defineTable({
@@ -247,10 +325,21 @@ export default defineSchema({
     sortIndex: v.number(), // For custom sorting of classes
     isActive: v.boolean(), // Whether this class is active/visible
     additional50kmPrice: v.optional(v.number()), // Price per extra 50km package in EUR
+    transferBaseFare: v.optional(v.number()), // Base fare for transfers in EUR
+    transferMultiplier: v.optional(v.number()), // Multiplier for transfer pricing (e.g., 1.0, 1.2, 1.5)
   })
     .index("by_active", ["isActive"])
     .index("by_sort_index", ["sortIndex"])
     .index("by_name", ["name"]),
+
+  // Transfer pricing tiers table - global admin-editable km-range pricing tiers
+  transferPricingTiers: defineTable({
+    minExtraKm: v.number(), // Min extra km (after 15km base)
+    maxExtraKm: v.optional(v.number()), // Max extra km (null = unlimited)
+    pricePerKm: v.number(), // Price in EUR (e.g., 1.60, 1.20)
+    sortIndex: v.number(), // For ordering
+    isActive: v.boolean(), // Whether this tier is active
+  }).index("by_sort_index", ["sortIndex"]),
 
   // Blogs table - stores blog posts
   blogs: defineTable({

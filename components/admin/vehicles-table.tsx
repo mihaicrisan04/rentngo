@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -32,11 +32,20 @@ const ITEMS_PER_PAGE = 10;
 export function VehiclesTable() {
   const [currentPage, setCurrentPage] = useState(1);
   const [editingVehicle, setEditingVehicle] = useState<Id<"vehicles"> | null>(null);
-  
+
   // Fetch all vehicles and paginate on the client side
   const vehicles = useQuery(api.vehicles.getAllVehicles);
+  const vehicleClasses = useQuery(api.vehicleClasses.list, { activeOnly: false });
 
   const deleteVehicle = useMutation(api.vehicles.remove);
+
+  // Create a lookup map for vehicle classes
+  const classLookup = useMemo(() => {
+    if (!vehicleClasses) return new Map<string, string>();
+    return new Map(
+      vehicleClasses.map((vc) => [vc._id, vc.displayName || vc.name])
+    );
+  }, [vehicleClasses]);
 
   const handleNextPage = (totalPages: number) => {
     setCurrentPage((p) => Math.min(totalPages, p + 1));
@@ -170,8 +179,8 @@ export function VehiclesTable() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {vehicle.class ? (
-                      <span className="capitalize">{vehicle.class.replace('-', ' ')}</span>
+                    {vehicle.classId && classLookup.get(vehicle.classId) ? (
+                      <span className="capitalize">{classLookup.get(vehicle.classId)}</span>
                     ) : (
                       <span className="text-muted-foreground">-</span>
                     )}
@@ -202,7 +211,7 @@ export function VehiclesTable() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">{vehicle.pricingTiers && vehicle.pricingTiers.length > 0 ? vehicle.pricingTiers[0].pricePerDay : (vehicle.pricePerDay || 'N/A')} EUR</div>
+                    <div className="font-medium">{vehicle.pricingTiers && vehicle.pricingTiers.length > 0 ? vehicle.pricingTiers[0].pricePerDay : 'N/A'} EUR</div>
                     {vehicle.warranty && (
                       <div className="text-xs text-muted-foreground">
                         Warranty: {vehicle.warranty} EUR

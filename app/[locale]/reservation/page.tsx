@@ -187,6 +187,10 @@ function ReservationPageContent() {
   );
   const [returnTime, setReturnTime] = React.useState<string | null>(null);
 
+  // Calendar open states for sequential flow
+  const [pickupCalendarOpen, setPickupCalendarOpen] = React.useState(false);
+  const [returnCalendarOpen, setReturnCalendarOpen] = React.useState(false);
+
   // Add date-based seasonal pricing
   const { multiplier: seasonalMultiplier, seasonId } =
     useDateBasedSeasonalPricing(pickupDate, returnDate);
@@ -239,15 +243,13 @@ function ReservationPageContent() {
     if (storedData.pickupDate) {
       setPickupDate(storedData.pickupDate);
     }
-    if (storedData.pickupTime) {
-      setPickupTime(storedData.pickupTime);
-    }
+    // Always set times (defaults to 10:00 from searchStorage)
+    setPickupTime(storedData.pickupTime ?? null);
     if (storedData.returnDate) {
       setReturnDate(storedData.returnDate);
     }
-    if (storedData.returnTime) {
-      setReturnTime(storedData.returnTime);
-    }
+    // Always set times (defaults to 10:00 from searchStorage)
+    setReturnTime(storedData.returnTime ?? null);
 
     setIsHydrated(true);
   }, []);
@@ -762,97 +764,26 @@ function ReservationPageContent() {
           currentProtectionCost > 0 ? currentProtectionCost : undefined,
         seasonId: seasonId as Id<"seasons"> | undefined,
         seasonalMultiplier: seasonalMultiplier,
+        // Email data - triggers email sending from Convex backend
+        vehicleInfo: {
+          make: vehicle.make,
+          model: vehicle.model,
+          year: vehicle.year,
+          type: vehicle.type,
+          seats: vehicle.seats,
+          transmission: vehicle.transmission,
+          fuelType: vehicle.fuelType,
+          features: vehicle.features || [],
+        },
+        pricePerDayUsed: currentPricePerDay,
+        locale,
       });
       const reservationId = created?.reservationId ?? created;
-      const reservationNumber = created?.reservationNumber;
-
-      // Send confirmation email
-      try {
-        const emailResponse = await fetch("/api/send/request-confirmation", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            reservationId: reservationId,
-            reservationNumber: reservationNumber,
-            startDate: pickupDate.getTime() / 1000, // Convert to Unix timestamp
-            endDate: returnDate.getTime() / 1000, // Convert to Unix timestamp
-            startDateString: pickupDate
-              ? `${String(pickupDate.getDate()).padStart(2, "0")}.${String(pickupDate.getMonth() + 1).padStart(2, "0")}.${pickupDate.getFullYear()}`
-              : undefined,
-            endDateString: returnDate
-              ? `${String(returnDate.getDate()).padStart(2, "0")}.${String(returnDate.getMonth() + 1).padStart(2, "0")}.${returnDate.getFullYear()}`
-              : undefined,
-            pickupTime: pickupTime || "00:00",
-            restitutionTime: returnTime || "00:00",
-            pickupLocation: deliveryLocation.trim(),
-            restitutionLocation: restitutionLocation.trim(),
-            paymentMethod: paymentMethod,
-            status: "pending",
-            totalPrice: totalPrice,
-            pricePerDayUsed: currentPricePerDay,
-            vehicle: {
-              make: vehicle.make,
-              model: vehicle.model,
-              year: vehicle.year,
-              type: vehicle.type,
-              seats: vehicle.seats,
-              transmission: vehicle.transmission,
-              fuelType: vehicle.fuelType,
-              pricePerDay: getBasePricePerDay(vehicle),
-              features: vehicle.features || [],
-            },
-            locale,
-            customerInfo: {
-              name: personalInfo.name.trim(),
-              email: personalInfo.email.trim(),
-              phone: personalInfo.phone.trim(),
-              message:
-                personalInfo.message && personalInfo.message.trim()
-                  ? personalInfo.message.trim()
-                  : undefined,
-              flightNumber:
-                personalInfo.flightNumber && personalInfo.flightNumber.trim()
-                  ? personalInfo.flightNumber.trim()
-                  : undefined,
-            },
-            promoCode: undefined,
-            additionalCharges:
-              additionalCharges.length > 0 ? additionalCharges : undefined,
-            isSCDWSelected: isSCDWSelected,
-            deductibleAmount: currentDeductibleAmount,
-            protectionCost:
-              currentProtectionCost > 0 ? currentProtectionCost : undefined,
-          }),
-        });
-
-        if (!emailResponse.ok) {
-          console.error(
-            "Failed to send confirmation email:",
-            await emailResponse.text(),
-          );
-          // Don't throw error - reservation was successful, just email failed
-        } else {
-          console.log("Confirmation email sent successfully");
-        }
-      } catch (emailError) {
-        console.error("Error sending confirmation email:", emailError);
-        // Don't throw error - reservation was successful, just email failed
-      }
 
       // Success notification
       toast(t("reservation.success"), {
-        description: t("reservation.successDescription"),
-        action: {
-          label: t("reservation.viewReservation"),
-          onClick: () =>
-            router.push(
-              `/reservation/confirmation?reservationId=${reservationId}`,
-            ),
-        },
+        description: t("reservation.successDescription")
       });
-      console.log("Reservation created successfully!");
 
       // Clear localStorage and redirect
       searchStorage.clear();
@@ -867,7 +798,7 @@ function ReservationPageContent() {
 
   if (!vehicleId) {
     return (
-      <div className="flex-grow flex items-center justify-center p-4 md:p-8">
+      <div className="grow flex items-center justify-center p-4 md:p-8">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">
             {t("reservation.invalid.title")}
@@ -888,7 +819,7 @@ function ReservationPageContent() {
 
   if (vehicle === undefined) {
     return (
-      <div className="flex-grow flex items-center justify-center p-4 md:p-8">
+      <div className="grow flex items-center justify-center p-4 md:p-8">
         <p className="text-muted-foreground">
           {t("reservation.loadingDetails")}
         </p>
@@ -898,7 +829,7 @@ function ReservationPageContent() {
 
   if (vehicle === null) {
     return (
-      <div className="flex-grow flex items-center justify-center p-4 md:p-8">
+      <div className="grow flex items-center justify-center p-4 md:p-8">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">
             {t("reservation.vehicleNotFound.title")}
@@ -918,7 +849,7 @@ function ReservationPageContent() {
   }
 
   return (
-    <div className="flex-grow p-4 md:p-8">
+    <div className="grow p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <Link href={`/cars/${vehicleId}`}>
@@ -973,7 +904,6 @@ function ReservationPageContent() {
                       id="res-pickup-datetime"
                       label={t("rentalDetails.pickupDateTime")}
                       dateState={pickupDate}
-                      disabledDateRanges={{ before: today }}
                       setDateState={(date) => {
                         setPickupDate(date);
                         // Auto-adjust return date if needed
@@ -989,6 +919,11 @@ function ReservationPageContent() {
                       setTimeState={setPickupTime}
                       minDate={today}
                       isLoading={false}
+                      calendarOpen={pickupCalendarOpen}
+                      onCalendarOpenChange={setPickupCalendarOpen}
+                      onDateSelected={() => {
+                        setTimeout(() => setReturnCalendarOpen(true), 100);
+                      }}
                     />
                     {errors.rentalDetails?.pickupDate && (
                       <p className="text-sm text-red-500 mt-1 flex items-center">
@@ -1050,12 +985,11 @@ function ReservationPageContent() {
                       timeState={returnTime}
                       setTimeState={setReturnTime}
                       minDate={pickupDate || today}
-                      disabledDateRanges={
-                        pickupDate ? { before: pickupDate } : { before: today }
-                      }
                       isLoading={!pickupDate}
                       pickupDate={pickupDate}
                       pickupTime={pickupTime}
+                      calendarOpen={returnCalendarOpen}
+                      onCalendarOpenChange={setReturnCalendarOpen}
                     />
                     {errors.rentalDetails?.returnDate && (
                       <p className="text-sm text-red-500 mt-1 flex items-center">
