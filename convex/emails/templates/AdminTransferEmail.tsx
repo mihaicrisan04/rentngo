@@ -70,10 +70,8 @@ export const AdminTransferEmail: React.FC<AdminTransferEmailProps> = ({
     },
     pricing: {
       heading: isRo ? "Detalii Preț" : "Pricing Details",
-      baseFare: isRo ? "Tarif de Bază:" : "Base Fare:",
-      distanceCharge: isRo ? "Taxa Distanță" : "Distance Charge",
+      distance: isRo ? "Distanță:" : "Distance:",
       roundTrip: isRo ? "Dus-Întors" : "Round Trip",
-      included: isRo ? "Inclus" : "Included",
       totalAmount: isRo ? "Sumă Totală:" : "Total Amount:",
       paymentMethod: isRo ? "Metoda de Plată:" : "Payment Method:",
     },
@@ -140,10 +138,8 @@ export const AdminTransferEmail: React.FC<AdminTransferEmailProps> = ({
             distanceKm={distanceKm}
             labels={{
               heading: t.pricing.heading,
-              baseFare: t.pricing.baseFare,
-              distanceCharge: t.pricing.distanceCharge,
+              distance: t.pricing.distance,
               roundTrip: t.pricing.roundTrip,
-              included: t.pricing.included,
               totalAmount: t.pricing.totalAmount,
               paymentMethod: t.pricing.paymentMethod,
             }}

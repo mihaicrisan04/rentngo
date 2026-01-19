@@ -326,10 +326,20 @@ export default defineSchema({
     isActive: v.boolean(), // Whether this class is active/visible
     additional50kmPrice: v.optional(v.number()), // Price per extra 50km package in EUR
     transferBaseFare: v.optional(v.number()), // Base fare for transfers in EUR
+    transferMultiplier: v.optional(v.number()), // Multiplier for transfer pricing (e.g., 1.0, 1.2, 1.5)
   })
     .index("by_active", ["isActive"])
     .index("by_sort_index", ["sortIndex"])
     .index("by_name", ["name"]),
+
+  // Transfer pricing tiers table - global admin-editable km-range pricing tiers
+  transferPricingTiers: defineTable({
+    minExtraKm: v.number(), // Min extra km (after 15km base)
+    maxExtraKm: v.optional(v.number()), // Max extra km (null = unlimited)
+    pricePerKm: v.number(), // Price in EUR (e.g., 1.60, 1.20)
+    sortIndex: v.number(), // For ordering
+    isActive: v.boolean(), // Whether this tier is active
+  }).index("by_sort_index", ["sortIndex"]),
 
   // Blogs table - stores blog posts
   blogs: defineTable({

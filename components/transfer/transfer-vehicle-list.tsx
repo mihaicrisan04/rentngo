@@ -128,6 +128,9 @@ export function TransferVehicleList({
     fuelType: v.fuelType,
     transferPricePerKm: v.transferPricePerKm,
     transferBaseFare: v.transferBaseFare,
+    classMultiplier: v.classMultiplier,
+    distanceCharge: v.distanceCharge,
+    calculatedPrice: v.calculatedPrice,
     features: v.features,
     imageUrl: v.imageUrl,
   }));

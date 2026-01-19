@@ -354,27 +354,17 @@ export default function TransferConfirmationPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {transfer.distanceKm < 20 ? (
-              // Short distance: show base fare only
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">{t("pricing.basePrice")} ({transfer.distanceKm} km)</span>
-                <span>€{transfer.baseFare.toFixed(2)}</span>
+            <div className="flex justify-between items-center text-sm">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <MapPin className="h-4 w-4" />
+                <span>{transfer.distanceKm} km</span>
               </div>
-            ) : (
-              // Long distance: show distance calculation only
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">
-                  Distance ({transfer.distanceKm} km × €{transfer.pricePerKm.toFixed(2)})
-                </span>
-                <span>€{transfer.distancePrice.toFixed(2)}</span>
-              </div>
-            )}
-            {transfer.transferType === "round_trip" && (
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>Round trip (×2)</span>
-                <span>Included</span>
-              </div>
-            )}
+              {transfer.transferType === "round_trip" && (
+                <Badge variant="outline" className="text-xs">
+                  {t("searchForm.roundTrip")}
+                </Badge>
+              )}
+            </div>
             <Separator />
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">{tConfirmation("paymentMethod")}</span>

@@ -17,10 +17,8 @@ interface TransferPricingSectionProps {
   distanceKm: number;
   labels?: {
     heading?: string;
-    baseFare?: string;
-    distanceCharge?: string;
+    distance?: string;
     roundTrip?: string;
-    included?: string;
     totalAmount?: string;
     paymentMethod?: string;
   };
@@ -42,44 +40,18 @@ export const TransferPricingSection: React.FC<TransferPricingSectionProps> = ({
       <Row className="mb-[8px]">
         <Column className="w-2/3">
           <Text className="text-[16px] text-gray-800 m-0">
-            {labels?.baseFare ?? "Base Fare:"}
+            {labels?.distance ?? "Distance:"}
           </Text>
         </Column>
         <Column className="w-1/3 text-right">
           <Text className="text-[16px] text-gray-800 m-0">
-            {formatCurrency(pricingDetails.baseFare)}
+            {distanceKm} km
+            {transferType === "round_trip" && (
+              <span className="text-gray-600 text-[14px]"> ({labels?.roundTrip ?? "Round Trip"})</span>
+            )}
           </Text>
         </Column>
       </Row>
-
-      <Row className="mb-[8px]">
-        <Column className="w-2/3">
-          <Text className="text-[16px] text-gray-800 m-0">
-            {labels?.distanceCharge ?? "Distance Charge"}
-            {distanceKm >= 20 ? ` (${distanceKm - 20} km):` : ":"}
-          </Text>
-        </Column>
-        <Column className="w-1/3 text-right">
-          <Text className="text-[16px] text-gray-800 m-0">
-            {formatCurrency(pricingDetails.distancePrice)}
-          </Text>
-        </Column>
-      </Row>
-
-      {transferType === "round_trip" && (
-        <Row className="mb-[8px]">
-          <Column className="w-2/3">
-            <Text className="text-[16px] text-gray-800 m-0">
-              {labels?.roundTrip ?? "Round Trip"} (×2):
-            </Text>
-          </Column>
-          <Column className="w-1/3 text-right">
-            <Text className="text-[16px] text-gray-600 m-0">
-              {labels?.included ?? "Included"}
-            </Text>
-          </Column>
-        </Row>
-      )}
 
       <Hr className="border-gray-300 my-[12px]" />
 

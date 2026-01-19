@@ -48,12 +48,7 @@ interface TransferSummaryCardProps {
     model: string;
     year?: number;
   } | null;
-  pricing: {
-    baseFare: number;
-    distancePrice: number;
-    totalPrice: number;
-    pricePerKm: number;
-  };
+  totalPrice: number;
   className?: string;
 }
 
@@ -71,7 +66,7 @@ export function TransferSummaryCard({
   distanceKm,
   estimatedDurationMinutes,
   vehicle,
-  pricing,
+  totalPrice,
   className,
 }: TransferSummaryCardProps) {
   const t = useTranslations("transferPage");
@@ -220,34 +215,23 @@ export function TransferSummaryCard({
 
         <Separator />
 
-        <div className="space-y-2">
-          {distanceKm < 20 ? (
-            // Short distance: show base fare only
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">{t("pricing.basePrice")} ({distanceKm} km)</span>
-              <span>€{pricing.baseFare.toFixed(2)}</span>
-            </div>
-          ) : (
-            // Long distance: show distance calculation only
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                Distance ({distanceKm} km × €{pricing.pricePerKm.toFixed(2)})
-              </span>
-              <span>€{pricing.distancePrice.toFixed(2)}</span>
-            </div>
-          )}
+        {/* Simplified pricing display */}
+        <div className="flex justify-between items-center text-sm">
+          <div className="flex items-center gap-1.5 text-muted-foreground">
+            <MapPin className="h-4 w-4" />
+            <span>{distanceKm} km</span>
+          </div>
           {transferType === "round_trip" && (
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>Round trip (×2)</span>
-              <span>Included</span>
-            </div>
+            <Badge variant="outline" className="text-xs">
+              {t("searchForm.roundTrip")}
+            </Badge>
           )}
         </div>
       </CardContent>
       <CardFooter className="flex justify-between items-baseline border-t pt-4">
         <span className="font-semibold">{t("pricing.totalPrice")}</span>
         <span className="text-2xl font-bold text-primary">
-          €{pricing.totalPrice.toFixed(2)}
+          €{totalPrice.toFixed(2)}
         </span>
       </CardFooter>
     </Card>

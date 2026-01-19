@@ -19,7 +19,6 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { transferStorage, TransferSearchData } from "@/lib/transferStorage";
 import { TransferSummaryCard } from "@/components/transfer/transfer-summary-card";
-import { calculateTransferPrice } from "@/components/transfer/transfer-vehicle-card";
 
 interface PersonalInfo {
   name: string;
@@ -56,9 +55,6 @@ const paymentMethods = [
   },
 ];
 
-const DEFAULT_BASE_FARE = 25;
-const DEFAULT_PRICE_PER_KM = 1.2;
-
 export default function TransferBookingPage() {
   const router = useRouter();
   const { user } = useUser();
@@ -89,6 +85,21 @@ export default function TransferBookingPage() {
   const vehicle = useQuery(
     api.vehicles.getById,
     vehicleId ? { id: vehicleId } : "skip"
+  );
+
+  const distanceKm = searchData?.distanceKm ?? 0;
+  const transferType = searchData?.transferType ?? "one_way";
+
+  // Use server-side pricing calculation by vehicleId
+  const pricing = useQuery(
+    api.transferPricing.calculateTransferPriceByVehicle,
+    vehicleId && isHydrated && searchData
+      ? {
+          distanceKm,
+          vehicleId,
+          transferType,
+        }
+      : "skip"
   );
 
   React.useEffect(() => {
@@ -158,7 +169,8 @@ export default function TransferBookingPage() {
       !searchData?.dropoffLocation ||
       !searchData?.pickupDate ||
       !searchData?.pickupTime ||
-      !vehicleId
+      !vehicleId ||
+      !pricing
     ) {
       toast.error("Missing required transfer information");
       return;
@@ -167,16 +179,6 @@ export default function TransferBookingPage() {
     setIsSubmitting(true);
 
     try {
-      const pricePerKm = vehicle?.transferPricePerKm || DEFAULT_PRICE_PER_KM;
-      const distanceKm = searchData.distanceKm || 0;
-      const transferType = searchData.transferType || "one_way";
-      const pricing = calculateTransferPrice(
-        pricePerKm,
-        distanceKm,
-        transferType,
-        DEFAULT_BASE_FARE
-      );
-
       const result = await createTransfer({
         userId: currentUser?._id,
         vehicleId: vehicleId,
@@ -195,9 +197,9 @@ export default function TransferBookingPage() {
         distanceKm: distanceKm,
         estimatedDurationMinutes: searchData.estimatedDurationMinutes || 0,
         baseFare: pricing.baseFare,
-        distancePrice: pricing.distancePrice,
+        distancePrice: pricing.distanceCharge,
         totalPrice: pricing.totalPrice,
-        pricePerKm: pricePerKm,
+        pricePerKm: pricing.tierPricePerKm,
         customerInfo: {
           name: personalInfo.name,
           email: personalInfo.email,
@@ -264,15 +266,8 @@ export default function TransferBookingPage() {
     );
   }
 
-  const pricePerKm = vehicle?.transferPricePerKm || DEFAULT_PRICE_PER_KM;
-  const distanceKm = searchData.distanceKm || 0;
-  const transferType = searchData.transferType || "one_way";
-  const pricing = calculateTransferPrice(
-    pricePerKm,
-    distanceKm,
-    transferType,
-    DEFAULT_BASE_FARE
-  );
+  // Show loading state while pricing is being calculated
+  const totalPrice = pricing?.totalPrice ?? 0;
 
   return (
     <div className="container mx-auto px-4 lg:px-0 py-8 max-w-4xl">
@@ -543,10 +538,7 @@ export default function TransferBookingPage() {
                     }
                   : null
               }
-              pricing={{
-                ...pricing,
-                pricePerKm,
-              }}
+              totalPrice={totalPrice}
             />
           </div>
         </div>

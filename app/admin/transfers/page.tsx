@@ -58,9 +58,11 @@ import {
   Users,
   ArrowRight,
   Luggage,
+  Settings,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { TransferPricingDialog } from "@/components/admin/transfer-pricing-dialog";
 
 const chartConfig = {
   transfers: {
@@ -77,6 +79,7 @@ const ITEMS_PER_PAGE = 10;
 
 export default function AdminTransfersPage() {
   const [currentPage, setCurrentPage] = useState(1);
+  const [showPricingDialog, setShowPricingDialog] = useState(false);
 
   const stats = useQuery(api.transfers.getTransferStats);
   const monthlyData = useQuery(api.transfers.getMonthlyTransferChartData);
@@ -262,7 +265,16 @@ export default function AdminTransfersPage() {
             Manage VIP transfers and track performance metrics
           </p>
         </div>
+        <Button variant="outline" onClick={() => setShowPricingDialog(true)}>
+          <Settings className="h-4 w-4 mr-2" />
+          Pricing Tiers
+        </Button>
       </div>
+
+      <TransferPricingDialog
+        open={showPricingDialog}
+        onOpenChange={setShowPricingDialog}
+      />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>

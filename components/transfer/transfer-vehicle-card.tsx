@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Users, Fuel, Icon, Check } from "lucide-react";
+import { Users, Fuel, Icon, Check, MapPin } from "lucide-react";
 import { gearbox } from "@lucide/lab";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
@@ -21,6 +21,9 @@ export interface TransferVehicle {
   fuelType?: "diesel" | "electric" | "hybrid" | "benzina";
   transferPricePerKm?: number;
   transferBaseFare?: number;
+  classMultiplier?: number;
+  distanceCharge?: number;
+  calculatedPrice?: number;
   features?: string[];
   imageUrl?: string | null;
 }
@@ -31,47 +34,6 @@ interface TransferVehicleCardProps {
   transferType: "one_way" | "round_trip";
   isSelected?: boolean;
   onSelect: (vehicleId: Id<"vehicles">) => void;
-  baseFare?: number;
-}
-
-const DEFAULT_BASE_FARE = 25;
-const DEFAULT_PRICE_PER_KM = 1.2;
-const DISTANCE_THRESHOLD = 20;
-
-export function calculateTransferPrice(
-  pricePerKm: number,
-  distanceKm: number,
-  transferType: "one_way" | "round_trip",
-  baseFare: number = DEFAULT_BASE_FARE,
-): { baseFare: number; distancePrice: number; totalPrice: number; usesBaseFare: boolean } {
-  // Pricing formula:
-  // < 20km: base fare only (no distance charge)
-  // >= 20km: distance × pricePerKm only (no base fare)
-  const usesBaseFare = distanceKm < DISTANCE_THRESHOLD;
-  
-  let totalPrice: number;
-  let distancePrice = 0;
-  
-  if (usesBaseFare) {
-    // Short distance: use base fare only
-    totalPrice = baseFare;
-  } else {
-    // Long distance: use distance calculation only
-    distancePrice = Math.round(distanceKm * pricePerKm * 100) / 100;
-    totalPrice = distancePrice;
-  }
-
-  // Round trip: simply double the price (no discount)
-  if (transferType === "round_trip") {
-    totalPrice = totalPrice * 2;
-  }
-
-  return {
-    baseFare: usesBaseFare ? baseFare : 0,
-    distancePrice,
-    totalPrice: Math.round(totalPrice * 100) / 100,
-    usesBaseFare,
-  };
 }
 
 export function TransferVehicleCard({
@@ -80,19 +42,12 @@ export function TransferVehicleCard({
   transferType,
   isSelected = false,
   onSelect,
-  baseFare = DEFAULT_BASE_FARE,
 }: TransferVehicleCardProps) {
   const t = useTranslations("transferPage");
   const tCommon = useTranslations("common");
 
-  const pricePerKm = vehicle.transferPricePerKm || DEFAULT_PRICE_PER_KM;
-  const effectiveBaseFare = vehicle.transferBaseFare ?? baseFare;
-  const pricing = calculateTransferPrice(
-    pricePerKm,
-    distanceKm,
-    transferType,
-    effectiveBaseFare,
-  );
+  // Use server-calculated price if available
+  const totalPrice = vehicle.calculatedPrice ?? 0;
 
   return (
     <div
@@ -156,34 +111,24 @@ export function TransferVehicleCard({
 
         <Separator />
 
+        {/* Simplified pricing display */}
         <div className="space-y-2">
-          {pricing.usesBaseFare ? (
-            // Short distance: show base fare only
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {t("pricing.basePrice")} ({distanceKm} km)
-              </span>
-              <span>€{pricing.baseFare.toFixed(2)}</span>
+          <div className="flex justify-between items-center text-sm">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <MapPin className="h-4 w-4" />
+              <span>{distanceKm} km</span>
             </div>
-          ) : (
-            // Long distance: show distance calculation only
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                Distance ({distanceKm} km × €{pricePerKm.toFixed(2)})
-              </span>
-              <span>€{pricing.distancePrice.toFixed(2)}</span>
-            </div>
-          )}
-          {transferType === "round_trip" && (
-            <div className="text-xs text-muted-foreground italic">
-              {t("pricing.roundTripNote")} (×2)
-            </div>
-          )}
+            {transferType === "round_trip" && (
+              <Badge variant="outline" className="text-xs">
+                {t("searchForm.roundTrip")}
+              </Badge>
+            )}
+          </div>
           <Separator />
           <div className="flex justify-between items-baseline">
             <span className="font-medium">{t("pricing.totalPrice")}</span>
             <span className="text-2xl font-bold text-primary">
-              €{pricing.totalPrice.toFixed(2)}
+              €{totalPrice.toFixed(2)}
             </span>
           </div>
         </div>

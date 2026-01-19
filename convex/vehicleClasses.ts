@@ -18,6 +18,7 @@ export const list = query({
       isActive: v.boolean(),
       additional50kmPrice: v.optional(v.number()),
       transferBaseFare: v.optional(v.number()),
+      transferMultiplier: v.optional(v.number()),
     }),
   ),
   handler: async (ctx, args) => {
@@ -57,6 +58,7 @@ export const getById = query({
       isActive: v.boolean(),
       additional50kmPrice: v.optional(v.number()),
       transferBaseFare: v.optional(v.number()),
+      transferMultiplier: v.optional(v.number()),
     }),
     v.null(),
   ),
@@ -82,6 +84,7 @@ export const getByName = query({
       isActive: v.boolean(),
       additional50kmPrice: v.optional(v.number()),
       transferBaseFare: v.optional(v.number()),
+      transferMultiplier: v.optional(v.number()),
     }),
     v.null(),
   ),
@@ -104,10 +107,11 @@ export const create = mutation({
     isActive: v.optional(v.boolean()),
     additional50kmPrice: v.optional(v.number()),
     transferBaseFare: v.optional(v.number()),
+    transferMultiplier: v.optional(v.number()),
   },
   returns: v.id("vehicleClasses"),
   handler: async (ctx, args) => {
-    const { name, displayName, description, isActive = true, additional50kmPrice = 5, transferBaseFare = 25 } = args;
+    const { name, displayName, description, isActive = true, additional50kmPrice = 5, transferBaseFare = 25, transferMultiplier = 1.0 } = args;
 
     // Check if a class with this name already exists
     const existingClass = await ctx.db
@@ -137,6 +141,7 @@ export const create = mutation({
       isActive,
       additional50kmPrice,
       transferBaseFare,
+      transferMultiplier,
     });
 
     return newClassId;
@@ -154,6 +159,7 @@ export const update = mutation({
     isActive: v.optional(v.boolean()),
     additional50kmPrice: v.optional(v.number()),
     transferBaseFare: v.optional(v.number()),
+    transferMultiplier: v.optional(v.number()),
   },
   returns: v.union(
     v.object({
@@ -166,11 +172,12 @@ export const update = mutation({
       isActive: v.boolean(),
       additional50kmPrice: v.optional(v.number()),
       transferBaseFare: v.optional(v.number()),
+      transferMultiplier: v.optional(v.number()),
     }),
     v.null(),
   ),
   handler: async (ctx, args) => {
-    const { id, name, displayName, description, sortIndex, isActive, additional50kmPrice, transferBaseFare } = args;
+    const { id, name, displayName, description, sortIndex, isActive, additional50kmPrice, transferBaseFare, transferMultiplier } = args;
 
     // Check if the class exists
     const existingClass = await ctx.db.get(id);
@@ -201,6 +208,7 @@ export const update = mutation({
     if (isActive !== undefined) updateData.isActive = isActive;
     if (additional50kmPrice !== undefined) updateData.additional50kmPrice = additional50kmPrice;
     if (transferBaseFare !== undefined) updateData.transferBaseFare = transferBaseFare;
+    if (transferMultiplier !== undefined) updateData.transferMultiplier = transferMultiplier;
 
     await ctx.db.patch(id, updateData);
 

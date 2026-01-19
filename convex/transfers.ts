@@ -579,13 +579,18 @@ export const getTransferVehiclesWithImages = query({
       ? availableVehicles.filter((v) => (v.seats ?? 0) >= minSeatsRequired)
       : availableVehicles;
 
-    // Fetch all vehicle classes for base fare lookup
+    // Fetch all vehicle classes for base fare and multiplier lookup
     const vehicleClasses = await ctx.db.query("vehicleClasses").collect();
     const classMap = new Map(vehicleClasses.map((c) => [c._id, c]));
 
+    // Fetch all active pricing tiers
+    const pricingTiers = await ctx.db.query("transferPricingTiers").collect();
+    const activeTiers = pricingTiers.filter((t) => t.isActive);
+
+    const BASE_KM_INCLUDED = 15;
     const DEFAULT_BASE_FARE = 25;
-    const DEFAULT_PRICE_PER_KM = 1.2;
-    const DISTANCE_THRESHOLD = 20;
+    const DEFAULT_MULTIPLIER = 1.0;
+    const DEFAULT_PRICE_PER_KM = 1.0;
 
     const vehiclesWithImages = await Promise.all(
       filteredVehicles.map(async (vehicle) => {
@@ -595,24 +600,37 @@ export const getTransferVehiclesWithImages = query({
           imageUrl = await ctx.storage.getUrl(imageId);
         }
 
-        // Get base fare from vehicle class, fallback to default
+        // Get base fare and multiplier from vehicle class
         const vehicleClass = vehicle.classId ? classMap.get(vehicle.classId) : null;
         const transferBaseFare = vehicleClass?.transferBaseFare ?? DEFAULT_BASE_FARE;
-        const pricePerKm = vehicle.transferPricePerKm ?? DEFAULT_PRICE_PER_KM;
+        const classMultiplier = vehicleClass?.transferMultiplier ?? DEFAULT_MULTIPLIER;
 
-        // Calculate price for sorting
-        // < 20km: base fare only, >= 20km: distance × pricePerKm only
+        // Calculate price using new tiered formula
         const distanceKm = args.distanceKm ?? 0;
+        const extraKm = Math.max(distanceKm - BASE_KM_INCLUDED, 0);
+
         let calculatedPrice: number;
-        
-        if (distanceKm < DISTANCE_THRESHOLD) {
-          // Short distance: use base fare only
+        let distanceCharge = 0;
+
+        if (extraKm === 0) {
+          // Trip within base fare (≤ 15km)
           calculatedPrice = transferBaseFare;
         } else {
-          // Long distance: use distance calculation only
-          calculatedPrice = distanceKm * pricePerKm;
+          // Find applicable tier based on extra km
+          const tier = activeTiers.find(
+            (t) =>
+              extraKm >= t.minExtraKm &&
+              (t.maxExtraKm === undefined || extraKm < t.maxExtraKm),
+          );
+
+          const tierPricePerKm = tier?.pricePerKm ?? DEFAULT_PRICE_PER_KM;
+
+          // Calculate: baseFare + (extraKm × tierPrice × classMultiplier)
+          distanceCharge = extraKm * tierPricePerKm * classMultiplier;
+          calculatedPrice = transferBaseFare + distanceCharge;
         }
-        
+
+        // Apply round trip multiplier
         if (args.transferType === "round_trip") {
           calculatedPrice = calculatedPrice * 2;
         }
@@ -621,6 +639,8 @@ export const getTransferVehiclesWithImages = query({
           ...vehicle,
           imageUrl,
           transferBaseFare,
+          classMultiplier,
+          distanceCharge: Math.round(distanceCharge * 100) / 100,
           calculatedPrice: Math.round(calculatedPrice * 100) / 100,
         };
       }),
