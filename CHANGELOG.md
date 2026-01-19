@@ -7,7 +7,19 @@ All notable changes to RentNGo are documented here.
 ### Planned
 - Vehicle slug URLs for SEO-friendly car detail pages (see `.claude/plans/vehicle-slug-urls.md`)
 - Copy & content review across all translations
-- Codebase cleanup (deprecated fields, unused code)
+- Remaining codebase cleanup (deprecated fields, unused hooks, incomplete features)
+
+## [1.6.0] - 2026-01-19
+
+### Removed
+- 19 unused component files (~2,500 lines of code):
+  - Vehicle: `edit-vehicle-form`, `create-vehicle-form`, `vehicle-image-carrousel` (typo), 4 skeletons
+  - UI (shadcn): `input-otp`, `navigation-menu`, `display-cards`, `slideshow`, `collapsible`, `drawer`, `progressive-blur`
+  - Admin: `team-switcher`, `nav-projects`
+  - Top-level: `location-search-input`, `rental-details-skeleton`, `login-form`
+
+### Changed
+- Updated `components/vehicle/index.ts` to remove stale exports
 
 ## [1.5.0] - 2026-01-19
 

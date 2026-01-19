@@ -1,6 +1,6 @@
 # RentNGo - Product Requirements Document
 
-**Version:** 1.5
+**Version:** 1.6
 **Last Updated:** January 19, 2026
 **Status:** Active
 
@@ -214,9 +214,32 @@ For round trips: `total_price × 2`
 
 ### 3.5 Codebase Cleanup
 
-**Status:** Planned
+**Status:** In Progress
 
-**Items to Address:**
+#### 3.5.1 Remove Unused Components ✅ COMPLETED
+
+**Implementation Date:** January 19, 2026
+
+Removed 19 unused component files totaling ~2,500 lines of code (~9.8% of components directory):
+
+| Category | Files Removed | Lines |
+|----------|---------------|-------|
+| Vehicle components | 7 | ~1,323 |
+| UI components (shadcn) | 7 | ~702 |
+| Admin components | 2 | ~180 |
+| Top-level components | 3 | ~297 |
+
+**Files Deleted:**
+- `edit-vehicle-form.tsx`, `create-vehicle-form.tsx` (admin uses dialogs)
+- `vehicle-image-carrousel.tsx` (typo version, unused)
+- 4 vehicle skeleton components (never imported)
+- 7 shadcn UI components (installed but never used)
+- `team-switcher.tsx`, `nav-projects.tsx` (admin sidebar unused)
+- `location-search-input.tsx`, `rental-details-skeleton.tsx`, `login-form.tsx`
+
+Updated `components/vehicle/index.ts` to remove stale exports.
+
+#### 3.5.2 Remaining Items
 
 **Deprecated Fields:**
 - `vehicles.class` - Replace with `classId`
@@ -234,6 +257,9 @@ For round trips: `total_price × 2`
 **Incomplete Features:**
 - Payment processing (schema exists but not implemented)
 - Promotional codes (field exists but no logic)
+
+**Future Consideration:**
+- Component directory restructuring (145 files could benefit from feature-based organization)
 
 ---
 
@@ -329,7 +355,7 @@ Car detail URLs currently use Convex IDs (e.g., `/cars/jh7abc123`), which are no
 | P2 | Transfer Vehicle Selection UX | ✅ Done | UX improvement |
 | P2 | Rename Vehicle Classes Admin | ✅ Done | Admin clarity |
 | P2 | Vehicle Slug URLs | Planned | SEO improvement |
-| P3 | Codebase Cleanup | Planned | Maintainability |
+| P3 | Codebase Cleanup | In Progress | Maintainability |
 
 ---
 
@@ -364,3 +390,4 @@ Car detail URLs currently use Convex IDs (e.g., `/cars/jh7abc123`), which are no
 | 1.3 | 2026-01-19 | Completed transfer pricing overhaul with tiered pricing system |
 | 1.4 | 2026-01-19 | Renamed Vehicle Classes admin section (ordering → classes) |
 | 1.5 | 2026-01-19 | Added sticky sidebar and mobile bottom bar to transfer vehicle selection page |
+| 1.6 | 2026-01-19 | Completed unused component removal (~2,500 lines) |
