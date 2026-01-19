@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import type { Id } from "@/convex/_generated/dataModel";
 import { TransferVehicleList } from "@/components/transfer/transfer-vehicle-list";
 import { TransferRouteMap } from "@/components/transfer/transfer-route-map";
+import { TransferBookingFloatingCard } from "@/components/transfer/transfer-booking-sidebar";
 import { transferStorage, type TransferSearchData } from "@/lib/transferStorage";
 import { formatDistance, formatDuration } from "@/lib/mapbox";
+import type { TransferVehicle } from "@/components/transfer/transfer-vehicle-card";
 
 export default function TransferVehiclesPage() {
   const router = useRouter();
@@ -21,6 +23,16 @@ export default function TransferVehiclesPage() {
   const [selectedVehicleId, setSelectedVehicleId] =
     React.useState<Id<"vehicles"> | null>(null);
   const [isHydrated, setIsHydrated] = React.useState(false);
+  const [vehicles, setVehicles] = React.useState<TransferVehicle[]>([]);
+
+  const selectedVehicle = React.useMemo(
+    () => vehicles.find((v) => v._id === selectedVehicleId) || null,
+    [vehicles, selectedVehicleId]
+  );
+
+  const handleVehiclesLoaded = React.useCallback((loadedVehicles: TransferVehicle[]) => {
+    setVehicles(loadedVehicles);
+  }, []);
 
   React.useEffect(() => {
     const stored = transferStorage.load();
@@ -145,34 +157,22 @@ export default function TransferVehiclesPage() {
         </div>
       </div>
 
+      {/* Vehicle list */}
       <TransferVehicleList
         passengers={passengers}
         distanceKm={distanceKm}
         transferType={transferType}
         selectedVehicleId={selectedVehicleId}
         onSelectVehicle={handleSelectVehicle}
+        onVehiclesLoaded={handleVehiclesLoaded}
       />
 
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 lg:relative lg:border-t-0 lg:p-0 lg:mt-8">
-        <div className="container mx-auto flex justify-between items-center gap-4">
-          <Button variant="outline" onClick={handleBack} className="lg:hidden">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div className="flex-1 lg:flex-none" />
-          <Button
-            size="lg"
-            onClick={handleContinue}
-            disabled={!selectedVehicleId}
-            className="min-w-[200px]"
-          >
-            Continue to Booking
-            <ArrowRight className="h-4 w-4 ml-2" />
-          </Button>
-        </div>
-      </div>
-
-      <div className="h-20 lg:hidden" />
+      {/* Floating booking card - stays at bottom, stops at footer */}
+      <TransferBookingFloatingCard
+        selectedVehicle={selectedVehicle}
+        onContinue={handleContinue}
+        onBack={handleBack}
+      />
     </div>
   );
 }

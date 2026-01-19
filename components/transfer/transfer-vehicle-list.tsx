@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -17,6 +18,7 @@ interface TransferVehicleListProps {
   transferType: "one_way" | "round_trip";
   selectedVehicleId?: Id<"vehicles"> | null;
   onSelectVehicle: (vehicleId: Id<"vehicles">) => void;
+  onVehiclesLoaded?: (vehicles: TransferVehicle[]) => void;
 }
 
 function VehicleCardSkeleton() {
@@ -63,6 +65,7 @@ export function TransferVehicleList({
   transferType,
   selectedVehicleId,
   onSelectVehicle,
+  onVehiclesLoaded,
 }: TransferVehicleListProps) {
   const t = useTranslations("transferPage");
 
@@ -73,6 +76,35 @@ export function TransferVehicleList({
   });
 
   const isLoading = vehiclesData === undefined;
+
+  // Transform vehicles data - must be called before any early returns (Rules of Hooks)
+  const vehicles: TransferVehicle[] = React.useMemo(
+    () =>
+      vehiclesData?.map((v) => ({
+        _id: v._id,
+        make: v.make,
+        model: v.model,
+        year: v.year,
+        seats: v.seats,
+        transmission: v.transmission,
+        fuelType: v.fuelType,
+        transferPricePerKm: v.transferPricePerKm,
+        transferBaseFare: v.transferBaseFare,
+        classMultiplier: v.classMultiplier,
+        distanceCharge: v.distanceCharge,
+        calculatedPrice: v.calculatedPrice,
+        features: v.features,
+        imageUrl: v.imageUrl,
+      })) ?? [],
+    [vehiclesData]
+  );
+
+  // Notify parent when vehicles are loaded - must be called before any early returns
+  React.useEffect(() => {
+    if (vehicles.length > 0 && onVehiclesLoaded) {
+      onVehiclesLoaded(vehicles);
+    }
+  }, [vehicles, onVehiclesLoaded]);
 
   if (isLoading) {
     return (
@@ -117,23 +149,6 @@ export function TransferVehicleList({
       </div>
     );
   }
-
-  const vehicles: TransferVehicle[] = vehiclesData.map((v) => ({
-    _id: v._id,
-    make: v.make,
-    model: v.model,
-    year: v.year,
-    seats: v.seats,
-    transmission: v.transmission,
-    fuelType: v.fuelType,
-    transferPricePerKm: v.transferPricePerKm,
-    transferBaseFare: v.transferBaseFare,
-    classMultiplier: v.classMultiplier,
-    distanceCharge: v.distanceCharge,
-    calculatedPrice: v.calculatedPrice,
-    features: v.features,
-    imageUrl: v.imageUrl,
-  }));
 
   return (
     <div className="space-y-6">

@@ -370,7 +370,8 @@
       "selectVehicle": "Select",
       "passengers": "{count} passengers max",
       "noVehiclesFound": "No Vehicles Available",
-      "routeEstimationNote": "Route estimate only. Actual distance and time may vary."
+      "routeEstimationNote": "Route estimate only. Actual distance and time may vary.",
+      "selectPrompt": "Select a vehicle to continue"
     },
     "booking": {
       "title": "Complete Your Booking",

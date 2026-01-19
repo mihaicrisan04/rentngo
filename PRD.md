@@ -1,6 +1,6 @@
 # RentNGo - Product Requirements Document
 
-**Version:** 1.4
+**Version:** 1.5
 **Last Updated:** January 19, 2026
 **Status:** Active
 
@@ -237,22 +237,34 @@ For round trips: `total_price × 2`
 
 ---
 
-### 3.6 Transfer Vehicle Selection UX Improvement
+### 3.6 Transfer Vehicle Selection UX Improvement ✅ COMPLETED
 
-**Status:** Planned
+**Implementation Date:** January 19, 2026
 
 **Problem:**
-The "Continue to Booking" button on the transfer vehicle selection page is hidden at the bottom and requires scrolling to find. This is confusing for users.
+The "Continue to Booking" button on the transfer vehicle selection page was hidden at the bottom and required scrolling to find.
 
-**Proposed Solution:**
-- Make the booking action always visible on screen
-- Consider a sticky aside/sidebar or floating action bar
-- Should be accessible and responsive across all screen sizes
-- Show selected vehicle info and price in the sticky element
+**Solution Implemented:**
+- **Sticky Floating Card:** A glassmorphic card using CSS `position: sticky` with `bottom: 0`
+  - Sticks to the bottom of the viewport while scrolling within the page container
+  - Naturally scrolls away when the container ends (before the footer)
+  - Shows selected vehicle image (desktop only), name, seats, and total price
+  - Empty state prompts user to select a vehicle with disabled continue button
+  - Glass effect with `bg-background/80 backdrop-blur-xl`
+  - Safe area padding for iPhone home indicator
+  - Responsive: compact on mobile, more spacious on desktop
 
-**Pages to Update:**
-- `app/[locale]/transfers/vehicles/page.tsx`
-- Possibly add new component for sticky booking bar
+**Files Changed:**
+- `components/transfer/transfer-booking-sidebar.tsx` - New `TransferBookingFloatingCard` component
+- `components/transfer/transfer-vehicle-list.tsx` - Added `onVehiclesLoaded` callback to expose vehicles data
+- `app/[locale]/transfers/vehicles/page.tsx` - Simplified layout (full-width vehicle grid + sticky floating card)
+- `messages/en.json` - Added `selectPrompt` translation
+- `messages/ro.json` - Added `selectPrompt` translation
+
+**Layout Changes:**
+- Vehicle grid takes full page width
+- Floating card is centered with `max-w-2xl` container
+- Pure CSS sticky positioning (no JavaScript needed)
 
 ---
 
@@ -314,7 +326,7 @@ Car detail URLs currently use Convex IDs (e.g., `/cars/jh7abc123`), which are no
 | P1 | Sequential Calendar Flow | ✅ Done | UX improvement |
 | P1 | Transfer Pricing Update | ✅ Done | Revenue impact |
 | P2 | Copy & Content Update | Planned | Brand consistency |
-| P2 | Transfer Vehicle Selection UX | Planned | UX improvement |
+| P2 | Transfer Vehicle Selection UX | ✅ Done | UX improvement |
 | P2 | Rename Vehicle Classes Admin | ✅ Done | Admin clarity |
 | P2 | Vehicle Slug URLs | Planned | SEO improvement |
 | P3 | Codebase Cleanup | Planned | Maintainability |
@@ -351,3 +363,4 @@ Car detail URLs currently use Convex IDs (e.g., `/cars/jh7abc123`), which are no
 | 1.2 | 2026-01-18 | Added sequential calendar flow across all reservation pages |
 | 1.3 | 2026-01-19 | Completed transfer pricing overhaul with tiered pricing system |
 | 1.4 | 2026-01-19 | Renamed Vehicle Classes admin section (ordering → classes) |
+| 1.5 | 2026-01-19 | Added sticky sidebar and mobile bottom bar to transfer vehicle selection page |

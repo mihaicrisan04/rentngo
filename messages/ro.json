@@ -370,7 +370,8 @@
       "selectVehicle": "Selectează",
       "passengers": "{count} pasageri max",
       "noVehiclesFound": "Niciun Vehicul Disponibil",
-      "routeEstimationNote": "Estimare traseu. Distanța și durata reală pot varia ușor."
+      "routeEstimationNote": "Estimare traseu. Distanța și durata reală pot varia ușor.",
+      "selectPrompt": "Selectează un vehicul pentru a continua"
     },
     "booking": {
       "title": "Finalizează Rezervarea",
