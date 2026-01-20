@@ -7,8 +7,16 @@ All notable changes to RentNGo are documented here.
 ### Planned
 - Copy & content review across all translations
 - React performance optimization (Vercel best practices)
-- Transfer booking: Add Terms & Privacy links
 - Transfer vehicle seats: Separate seat count for transfers
+
+## [2.2.0] - 2026-01-20
+
+### Added
+- **Transfer booking Terms & Privacy links**: Added links to Terms & Conditions and Privacy Policy
+  - Links open in new tab with proper `rel="noopener noreferrer"`
+  - Locale-based translations (Romanian/English)
+  - Styling matches the reservation page implementation
+  - Added border-top separator for visual distinction from payment methods
 
 ## [2.1.0] - 2026-01-20
 

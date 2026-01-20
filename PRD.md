@@ -1,6 +1,6 @@
 # RentNGo - Product Requirements Document
 
-**Version:** 2.0
+**Version:** 2.2
 **Last Updated:** January 20, 2026
 **Status:** Active
 
@@ -569,24 +569,29 @@ Added full vehicle details section to transfer confirmation emails, reusing the 
 
 ---
 
-### 3.11 Transfer Booking - Terms & Privacy Links
+### 3.11 Transfer Booking - Terms & Privacy Links ✅ COMPLETED
 
-**Status:** Planned
+**Implementation Date:** January 20, 2026
 
 **Problem:**
 The transfer booking page doesn't have links to Terms & Conditions and Privacy Policy, unlike the car reservation page which has proper links.
 
-**Scope:**
-Add Terms & Conditions and Privacy Policy links to the transfer booking page, matching the style used in the reservation flow.
+**Solution Implemented:**
+Added Terms & Conditions and Privacy Policy links to the transfer booking page, matching the exact style and implementation from the reservation page.
 
-**Tasks:**
-- [ ] Identify how T&C and Privacy links are implemented in reservation page
-- [ ] Add similar links to the transfer booking page
-- [ ] Ensure links open in new tab and are properly translated
-- [ ] Match styling with existing implementation
+**Changes Made:**
+- Added `Link` import from `next/link`
+- Replaced plain text terms acceptance label with locale-based conditional rendering
+- Links to `/terms` and `/privacy` open in new tabs
+- Styling matches reservation page (primary color, underline, hover effect)
+- Added border-top separator to visually distinguish from payment methods
 
-**Files to Modify:**
+**Files Modified:**
 - `app/[locale]/transfers/booking/page.tsx`
+
+**Translations:**
+- Romanian: "Accept Termenii și Condițiile și Politica de Confidențialitate"
+- English: "I accept the Terms and Conditions and Privacy Policy"
 
 ---
 
@@ -646,7 +651,7 @@ Add a separate `transferSeats` field to vehicles that can be configured independ
 | P3 | React Performance Optimization | Planned | Performance |
 | P2 | Vehicle Class Multiplier Management | ✅ Done | Admin UX |
 | P2 | Transfer Email - Vehicle Details | ✅ Done | Customer communication |
-| P2 | Transfer Booking - T&C Links | Planned | Legal compliance |
+| P2 | Transfer Booking - T&C Links | ✅ Done | Legal compliance |
 | P2 | Transfer Vehicle Seats | Planned | Transfer filtering |
 
 ---
@@ -688,3 +693,4 @@ Add a separate `transferSeats` field to vehicles that can be configured independ
 | 1.9 | 2026-01-20 | Added planned tasks: Windows dark theme time picker fix, class multiplier management |
 | 2.0 | 2026-01-20 | Completed class multiplier management UI; added planned tasks: transfer email vehicle details, transfer T&C links, transfer seats configuration |
 | 2.1 | 2026-01-20 | Added vehicle details section to transfer confirmation emails |
+| 2.2 | 2026-01-20 | Added Terms & Privacy links to transfer booking page |
