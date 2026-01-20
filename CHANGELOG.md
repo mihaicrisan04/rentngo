@@ -7,7 +7,24 @@ All notable changes to RentNGo are documented here.
 ### Planned
 - Copy & content review across all translations
 - React performance optimization (Vercel best practices)
-- Transfer vehicle seats: Separate seat count for transfers
+
+## [2.3.0] - 2026-01-20
+
+### Added
+- **Transfer vehicle seats configuration**: Added `transferSeats` field for accurate passenger capacity filtering
+  - New `transferSeats` field on vehicles schema (optional number)
+  - Field only visible in admin when "Is Transfer Vehicle" is checked
+  - Filtering logic: uses `transferSeats` if set, otherwise falls back to `seats - 2`
+  - Transfer vehicle cards and emails show `transferSeats ?? seats`
+  - Admin dialogs show regular seats value as placeholder for reference
+
+### Changed
+- Transfer vehicle filtering now uses effective capacity (`transferSeats ?? (seats - 2)`) instead of adding +2 buffer
+- Transfer confirmation emails pass effective seats for vehicle info section
+- Transfer vehicle list component now passes `transferSeats` to vehicle cards
+
+### Fixed
+- Removed cursor-pointer from terms acceptance text on transfer booking page (only checkbox and links are clickable)
 
 ## [2.2.0] - 2026-01-20
 

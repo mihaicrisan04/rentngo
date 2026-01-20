@@ -180,6 +180,7 @@ export const create = mutation({
     ),
     isTransferVehicle: v.optional(v.boolean()),
     transferPricePerKm: v.optional(v.number()),
+    transferSeats: v.optional(v.number()),
     slug: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -200,6 +201,7 @@ export const create = mutation({
       images: [], // Initialize empty images array
       isTransferVehicle: args.isTransferVehicle ?? false, // Default to false
       transferPricePerKm: args.transferPricePerKm,
+      transferSeats: args.transferSeats,
       slug: args.slug,
     });
   },
@@ -254,6 +256,7 @@ export const update = mutation({
     mainImageId: v.optional(v.id("_storage")),
     isTransferVehicle: v.optional(v.boolean()),
     transferPricePerKm: v.optional(v.number()),
+    transferSeats: v.optional(v.number()),
     slug: v.optional(v.string()),
   },
   handler: async (ctx, args) => {

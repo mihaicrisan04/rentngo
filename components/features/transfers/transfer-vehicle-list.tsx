@@ -86,6 +86,7 @@ export function TransferVehicleList({
         model: v.model,
         year: v.year,
         seats: v.seats,
+        transferSeats: v.transferSeats,
         transmission: v.transmission,
         fuelType: v.fuelType,
         transferPricePerKm: v.transferPricePerKm,

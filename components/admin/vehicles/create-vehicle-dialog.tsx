@@ -129,6 +129,16 @@ const vehicleSchema = z.object({
     .min(1, "At least one pricing tier is required"),
   isOwner: z.boolean(),
   isTransferVehicle: z.boolean(),
+  transferSeats: z
+    .string()
+    .regex(/^\d*$/, "Must be a number")
+    .refine((val) => {
+      if (!val) return true;
+      const seats = parseInt(val);
+      return seats >= 1 && seats <= 15;
+    }, "Must be between 1 and 15")
+    .optional()
+    .or(z.literal("")),
 });
 
 type VehicleFormData = z.infer<typeof vehicleSchema>;
@@ -236,6 +246,7 @@ export function CreateVehicleDialog({
       warranty: "",
       isOwner: false,
       isTransferVehicle: false,
+      transferSeats: "",
       features: [],
       status: "available",
       pricingTiers: [{ minDays: 1, maxDays: 999, pricePerDay: 50 }], // Default tier
@@ -260,6 +271,7 @@ export function CreateVehicleDialog({
         warranty: "",
         isOwner: false,
         isTransferVehicle: false,
+        transferSeats: "",
         features: [],
         status: "available",
         pricingTiers: [{ minDays: 1, maxDays: 999, pricePerDay: 50 }], // Default tier
@@ -291,6 +303,7 @@ export function CreateVehicleDialog({
         warranty: values.warranty ? parseFloat(values.warranty) : 0,
         isOwner: values.isOwner,
         isTransferVehicle: values.isTransferVehicle,
+        transferSeats: values.transferSeats ? parseInt(values.transferSeats) : undefined,
         features: values.features,
         status: values.status as VehicleStatus,
         pricingTiers: pricingTiers,
@@ -826,6 +839,33 @@ export function CreateVehicleDialog({
                         </FormItem>
                       )}
                     />
+
+                    {form.watch("isTransferVehicle") && (
+                      <FormField
+                        control={form.control}
+                        name="transferSeats"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Transfer Passenger Capacity</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                type="number"
+                                min={1}
+                                max={15}
+                                disabled={isSubmitting}
+                                placeholder={form.watch("seats") || "e.g., 4"}
+                              />
+                            </FormControl>
+                            <p className="text-xs text-muted-foreground">
+                              Actual passenger capacity for transfers (excluding driver).
+                              If empty, uses regular seats minus 2.
+                            </p>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
 
                     <FormField
                       control={form.control}

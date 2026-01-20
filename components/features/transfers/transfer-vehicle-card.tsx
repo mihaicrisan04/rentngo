@@ -17,6 +17,7 @@ export interface TransferVehicle {
   model: string;
   year?: number;
   seats?: number;
+  transferSeats?: number;
   transmission?: "automatic" | "manual";
   fuelType?: "diesel" | "electric" | "hybrid" | "benzina";
   transferPricePerKm?: number;
@@ -94,7 +95,7 @@ export function TransferVehicleCard({
           </div>
           <Badge variant="secondary" className="flex items-center gap-1">
             <Users className="h-3 w-3" />
-            <span>{vehicle.seats || "–"}</span>
+            <span>{vehicle.transferSeats ?? vehicle.seats ?? "–"}</span>
           </Badge>
         </div>
 

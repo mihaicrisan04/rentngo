@@ -479,7 +479,7 @@ export default function TransferBookingPage() {
                         setTermsAccepted(checked as boolean)
                       }
                     />
-                    <div className="text-sm cursor-pointer leading-relaxed">
+                    <div className="text-sm leading-relaxed">
                       {locale === "ro" ? (
                         <>
                           Accept{" "}

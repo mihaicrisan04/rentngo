@@ -1,6 +1,6 @@
 # RentNGo - Product Requirements Document
 
-**Version:** 2.2
+**Version:** 2.3
 **Last Updated:** January 20, 2026
 **Status:** Active
 
@@ -595,39 +595,38 @@ Added Terms & Conditions and Privacy Policy links to the transfer booking page, 
 
 ---
 
-### 3.12 Transfer Vehicle Seats Configuration
+### 3.12 Transfer Vehicle Seats Configuration ✅ COMPLETED
 
-**Status:** Planned
+**Implementation Date:** January 20, 2026
 
 **Problem:**
-Currently, transfer vehicle filtering uses the vehicle's registered seat count. However, for transfers, the available passenger capacity may differ (e.g., a 5-seat car might only accommodate 4 passengers for transfers due to luggage space).
+Currently, transfer vehicle filtering uses the vehicle's registered seat count. However, for transfers, the available passenger capacity may differ (e.g., a 7-seat minivan might only accommodate 5 passengers for transfers due to driver seat and luggage space).
 
-**Scope:**
-Add a separate `transferSeats` field to vehicles that can be configured independently of the regular seat count, used specifically for transfer passenger filtering.
+**Solution Implemented:**
+Added a separate `transferSeats` field to vehicles that represents actual passenger capacity for VIP transfers (excluding driver).
 
-**Requirements:**
-- New `transferSeats` field on vehicles schema
-- Only visible in admin when "Is Transfer Vehicle" is checked
-- Default value: falls back to regular `seats` if not set
-- Used for passenger count filtering on transfer vehicle selection
-- Refactor admin vehicle settings dialog layout for better organization
+**Filtering Logic:**
+- If `transferSeats` is set: Use it directly as passenger capacity (no buffer needed)
+- If not set: Fall back to `seats - 2` (maintains backward compatibility with existing +2 buffer logic)
 
-**Tasks:**
-- [ ] Add `transferSeats` field to vehicles schema (optional number)
-- [ ] Update vehicle create/update mutations to handle `transferSeats`
-- [ ] Update admin vehicle dialog:
-  - [ ] Only show `transferSeats` field when `isTransferVehicle` is checked
-  - [ ] Refactor dialog layout for better organization of transfer-specific fields
-  - [ ] Default to showing regular `seats` value as placeholder
-- [ ] Update transfer vehicle query to filter by `transferSeats ?? seats`
-- [ ] Test filtering works correctly with new field
+**Admin UX:**
+- `transferSeats` field only visible when "Is Transfer Vehicle" is checked
+- Placeholder shows the regular `seats` value for reference
+- Helper text explains the field's purpose
 
-**Files to Modify:**
-- `convex/schema.ts` - Add `transferSeats` field
-- `convex/vehicles.ts` - Update mutations and queries
-- `components/admin/vehicles/create-vehicle-dialog.tsx`
-- `components/admin/vehicles/edit-vehicle-dialog.tsx`
-- `convex/transfers.ts` - Update `getTransferVehiclesWithImages` filtering
+**Customer Display:**
+- Transfer vehicle cards show `transferSeats ?? seats`
+- Email confirmations use `transferSeats ?? seats`
+
+**Files Modified:**
+- `convex/schema.ts` - Added `transferSeats` field
+- `convex/vehicles.ts` - Added to create/update mutations
+- `convex/transfers.ts` - Updated `getTransferVehicles` and `getTransferVehiclesWithImages` filtering logic; email data passes effective seats
+- `components/admin/vehicles/create-vehicle-dialog.tsx` - Added conditional `transferSeats` input
+- `components/admin/vehicles/edit-vehicle-dialog.tsx` - Added conditional `transferSeats` input
+- `components/features/transfers/transfer-vehicle-card.tsx` - Display prefers `transferSeats`
+- `components/features/transfers/transfer-vehicle-list.tsx` - Pass `transferSeats` to vehicle cards
+- `app/[locale]/transfers/booking/page.tsx` - Removed cursor-pointer from terms text (only checkbox/links clickable)
 
 ---
 
@@ -652,7 +651,7 @@ Add a separate `transferSeats` field to vehicles that can be configured independ
 | P2 | Vehicle Class Multiplier Management | ✅ Done | Admin UX |
 | P2 | Transfer Email - Vehicle Details | ✅ Done | Customer communication |
 | P2 | Transfer Booking - T&C Links | ✅ Done | Legal compliance |
-| P2 | Transfer Vehicle Seats | Planned | Transfer filtering |
+| P2 | Transfer Vehicle Seats | ✅ Done | Transfer filtering |
 
 ---
 
@@ -694,3 +693,4 @@ Add a separate `transferSeats` field to vehicles that can be configured independ
 | 2.0 | 2026-01-20 | Completed class multiplier management UI; added planned tasks: transfer email vehicle details, transfer T&C links, transfer seats configuration |
 | 2.1 | 2026-01-20 | Added vehicle details section to transfer confirmation emails |
 | 2.2 | 2026-01-20 | Added Terms & Privacy links to transfer booking page |
+| 2.3 | 2026-01-20 | Implemented transfer vehicle seats configuration for accurate passenger filtering |

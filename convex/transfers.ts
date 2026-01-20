@@ -117,7 +117,7 @@ export const createTransfer = mutation({
         model: vehicle.model,
         year: vehicle.year,
         type: vehicle.type,
-        seats: vehicle.seats,
+        seats: vehicle.transferSeats ?? vehicle.seats,
         transmission: vehicle.transmission,
         fuelType: vehicle.fuelType,
       } : {
@@ -556,7 +556,10 @@ export const getTransferVehicles = query({
 
     const minSeats = args.minSeats;
     if (minSeats !== undefined) {
-      return availableVehicles.filter((v) => (v.seats ?? 0) >= minSeats);
+      return availableVehicles.filter((v) => {
+        const effectiveCapacity = v.transferSeats ?? ((v.seats ?? 0) - 2);
+        return effectiveCapacity >= minSeats;
+      });
     }
 
     return availableVehicles;
@@ -577,10 +580,13 @@ export const getTransferVehiclesWithImages = query({
 
     const availableVehicles = vehicles.filter((v) => v.status === "available");
 
-    // Filter by seats: passengers + 2 (driver + empty seat)
-    const minSeatsRequired = args.minSeats !== undefined ? args.minSeats + 2 : undefined;
-    const filteredVehicles = minSeatsRequired !== undefined
-      ? availableVehicles.filter((v) => (v.seats ?? 0) >= minSeatsRequired)
+    // Filter by transferSeats (if set) or fallback to seats - 2
+    const minSeats = args.minSeats;
+    const filteredVehicles = minSeats !== undefined
+      ? availableVehicles.filter((v) => {
+          const effectiveCapacity = v.transferSeats ?? ((v.seats ?? 0) - 2);
+          return effectiveCapacity >= minSeats;
+        })
       : availableVehicles;
 
     // Fetch all vehicle classes for base fare and multiplier lookup
