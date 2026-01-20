@@ -3,9 +3,9 @@ import { api } from "@/convex/_generated/api";
 import { CarDetailClient } from "./CarDetailClient";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Id } from "@/convex/_generated/dataModel";
+
 interface PageProps {
-  params: Promise<{ id: string; locale: string }>;
+  params: Promise<{ slug: string; locale: string }>;
 }
 
 // Vehicle structured data component for SEO
@@ -16,6 +16,7 @@ function VehicleStructuredData({
 }: {
   vehicle: {
     _id: string;
+    slug?: string;
     make: string;
     model: string;
     year?: number;
@@ -32,6 +33,7 @@ function VehicleStructuredData({
 }) {
   const isRomanian = locale === "ro";
   const vehicleName = `${vehicle.make} ${vehicle.model}${vehicle.year ? ` ${vehicle.year}` : ""}`;
+  const urlSlug = vehicle.slug || vehicle._id;
 
   // Calculate base price from pricing tiers
   let pricePerDay = 0;
@@ -66,7 +68,7 @@ function VehicleStructuredData({
       price: pricePerDay,
       priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
       availability: "https://schema.org/InStock",
-      url: `https://rngo.ro/${locale}/cars/${vehicle._id}`,
+      url: `https://rngo.ro/${locale}/cars/${urlSlug}`,
       seller: {
         "@type": "AutoRental",
         name: "Rent'n Go",
@@ -111,13 +113,11 @@ function VehicleStructuredData({
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
-  const { id, locale } = await params;
+  const { slug, locale } = await params;
   const isRomanian = locale === "ro";
 
   try {
-    const vehicle = await fetchQuery(api.vehicles.getById, {
-      id: id as Id<"vehicles">,
-    });
+    const vehicle = await fetchQuery(api.vehicles.getBySlug, { slug });
 
     if (!vehicle) {
       return {
@@ -163,17 +163,17 @@ export async function generateMetadata({
       description,
       keywords,
       alternates: {
-        canonical: `https://rngo.ro/${locale}/cars/${id}`,
+        canonical: `https://rngo.ro/${locale}/cars/${slug}`,
         languages: {
-          "ro-RO": `https://rngo.ro/ro/cars/${id}`,
-          "en-US": `https://rngo.ro/en/cars/${id}`,
+          "ro-RO": `https://rngo.ro/ro/cars/${slug}`,
+          "en-US": `https://rngo.ro/en/cars/${slug}`,
         },
       },
       openGraph: {
         title,
         description,
         type: "website",
-        url: `https://rngo.ro/${locale}/cars/${id}`,
+        url: `https://rngo.ro/${locale}/cars/${slug}`,
         siteName: "Rent'n Go Cluj-Napoca",
         locale: isRomanian ? "ro_RO" : "en_US",
         images: [
@@ -207,11 +207,9 @@ export async function generateMetadata({
 }
 
 export default async function CarDetailPage({ params }: PageProps) {
-  const { id, locale } = await params;
+  const { slug, locale } = await params;
 
-  const vehicle = await fetchQuery(api.vehicles.getById, {
-    id: id as Id<"vehicles">,
-  });
+  const vehicle = await fetchQuery(api.vehicles.getBySlug, { slug });
 
   if (!vehicle) {
     notFound();
@@ -246,6 +244,7 @@ export default async function CarDetailPage({ params }: PageProps) {
       <VehicleStructuredData
         vehicle={{
           _id: vehicle._id,
+          slug: vehicle.slug,
           make: vehicle.make,
           model: vehicle.model,
           year: vehicle.year,

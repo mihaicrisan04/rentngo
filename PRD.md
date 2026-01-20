@@ -1,7 +1,7 @@
 # RentNGo - Product Requirements Document
 
-**Version:** 1.7
-**Last Updated:** January 19, 2026
+**Version:** 1.8
+**Last Updated:** January 20, 2026
 **Status:** Active
 
 ---
@@ -474,30 +474,41 @@ The current "Class Ordering" / "Manage Ordering" button and page names are confu
 
 ---
 
-### 3.8 Vehicle Slug URLs
+### 3.8 Vehicle Slug URLs ✅ COMPLETED
 
-**Status:** Planned
+**Implementation Date:** January 20, 2026
 
 **Problem:**
 Car detail URLs currently use Convex IDs (e.g., `/cars/jh7abc123`), which are not SEO-friendly or memorable.
 
-**Proposed Solution:**
-- Add customizable `slug` field to vehicles
-- Change car detail URLs from `/cars/[id]` to `/cars/[slug]`
-- Add slug input in admin vehicle dialogs with auto-generate button
+**Solution Implemented:**
+- Added customizable `slug` field to vehicles schema with unique index
+- Changed car detail URLs from `/cars/[id]` to `/cars/[slug]`
+- Added slug input in admin vehicle dialogs with auto-generate button (sparkle icon)
 - Slug format: `{make}-{model}-{year}` (e.g., `bmw-x5-2024`)
+- Backwards compatible: existing vehicles without slugs fall back to `_id`
 
-**Files to Update:**
-- `convex/schema.ts` - Add slug field + index
-- `convex/vehicles.ts` - Add slug to mutations, getBySlug query
-- `lib/vehicleUtils.ts` - Add generateVehicleSlug function
-- `components/admin/create-vehicle-dialog.tsx` - Add slug input
-- `components/admin/edit-vehicle-dialog.tsx` - Add slug input
-- `app/[locale]/cars/[slug]/page.tsx` - Rename from [id]
-- Vehicle card components - Use slug in URLs
-- `app/sitemap.ts` - Use slug in sitemap
+**Files Changed:**
+- `convex/schema.ts` - Added `slug` field + `by_slug` index
+- `convex/vehicles.ts` - Added slug to create/update mutations, added `getBySlug` query with validation
+- `lib/vehicleUtils.ts` - Added `generateVehicleSlug()` and `validateVehicleSlug()` functions
+- `components/admin/vehicles/create-vehicle-dialog.tsx` - Added slug input with generate button
+- `components/admin/vehicles/edit-vehicle-dialog.tsx` - Added slug input with generate button
+- `app/[locale]/cars/[slug]/page.tsx` - Renamed from `[id]`, uses `getBySlug` query
+- `components/features/vehicles/vehicle-card.tsx` - Uses `slug || _id` for URLs
+- `components/features/vehicles/vehicle-card-with-preloaded-image.tsx` - Uses `slug || _id` for URLs
+- `app/[locale]/reservation/page.tsx` - Back link uses `slug || vehicleId`
+- `app/sitemap.ts` - Uses `slug || _id` for vehicle URLs
 
-**Plan file:** `.claude/plans/vehicle-slug-urls.md`
+**Admin Experience:**
+- Slug field appears after model in create/edit dialogs
+- Click sparkle button to auto-generate from make, model, year
+- Validation ensures lowercase with hyphens only (regex: `^[a-z0-9]+(?:-[a-z0-9]+)*$`)
+- Real-time slug uniqueness validation with 500ms debounce
+  - Shows "Checking availability..." while validating
+  - Shows error message and red border if slug exists
+  - Submit button disabled while checking or when slug exists
+- `checkSlugExists` query added for real-time validation
 
 ---
 
@@ -511,7 +522,7 @@ Car detail URLs currently use Convex IDs (e.g., `/cars/jh7abc123`), which are no
 | P2 | Copy & Content Update | Planned | Brand consistency |
 | P2 | Transfer Vehicle Selection UX | ✅ Done | UX improvement |
 | P2 | Rename Vehicle Classes Admin | ✅ Done | Admin clarity |
-| P2 | Vehicle Slug URLs | Planned | SEO improvement |
+| P2 | Vehicle Slug URLs | ✅ Done | SEO improvement |
 | P3 | Codebase Cleanup | In Progress | Maintainability |
 | P3 | Component Directory Restructuring | ✅ Done | Maintainability |
 | P3 | Email Components Consolidation | ✅ Done | Maintainability |
@@ -554,3 +565,5 @@ Car detail URLs currently use Convex IDs (e.g., `/cars/jh7abc123`), which are no
 | 1.4 | 2026-01-19 | Renamed Vehicle Classes admin section (ordering → classes) |
 | 1.5 | 2026-01-19 | Added sticky sidebar and mobile bottom bar to transfer vehicle selection page |
 | 1.6 | 2026-01-19 | Completed unused component removal (~2,500 lines) |
+| 1.7 | 2026-01-20 | Component directory restructuring, email consolidation |
+| 1.8 | 2026-01-20 | Implemented vehicle slug URLs for SEO-friendly car detail pages |

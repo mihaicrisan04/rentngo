@@ -852,7 +852,7 @@ function ReservationPageContent() {
     <div className="grow p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <Link href={`/cars/${vehicleId}`}>
+          <Link href={`/cars/${vehicle?.slug || vehicleId}`}>
             <Button variant="outline" size="sm">
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t("backToVehicleDetails")}

@@ -96,6 +96,46 @@ export const getById = query({
   },
 });
 
+// Get vehicle by slug
+export const getBySlug = query({
+  args: { slug: v.string() },
+  handler: async (ctx, args) => {
+    const vehicle = await ctx.db
+      .query("vehicles")
+      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .first();
+    return vehicle;
+  },
+});
+
+// Check if a slug already exists (for real-time validation)
+// Returns the vehicle ID if slug exists, null otherwise
+// Optionally excludes a specific vehicle (for edit mode)
+export const checkSlugExists = query({
+  args: {
+    slug: v.string(),
+    excludeVehicleId: v.optional(v.id("vehicles")),
+  },
+  returns: v.union(v.id("vehicles"), v.null()),
+  handler: async (ctx, args) => {
+    if (!args.slug) return null;
+
+    const vehicle = await ctx.db
+      .query("vehicles")
+      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .first();
+
+    if (!vehicle) return null;
+
+    // If we're excluding a vehicle (edit mode), check if it's the same one
+    if (args.excludeVehicleId && vehicle._id === args.excludeVehicleId) {
+      return null;
+    }
+
+    return vehicle._id;
+  },
+});
+
 // Create a new vehicle
 export const create = mutation({
   args: {
@@ -140,14 +180,27 @@ export const create = mutation({
     ),
     isTransferVehicle: v.optional(v.boolean()),
     transferPricePerKm: v.optional(v.number()),
+    slug: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    // Validate slug uniqueness if provided
+    if (args.slug) {
+      const existing = await ctx.db
+        .query("vehicles")
+        .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+        .first();
+      if (existing) {
+        throw new Error(`A vehicle with slug "${args.slug}" already exists`);
+      }
+    }
+
     return await ctx.db.insert("vehicles", {
       ...args,
       isOwner: args.isOwner ?? false, // Default to false if not provided
       images: [], // Initialize empty images array
       isTransferVehicle: args.isTransferVehicle ?? false, // Default to false
       transferPricePerKm: args.transferPricePerKm,
+      slug: args.slug,
     });
   },
 });
@@ -201,9 +254,22 @@ export const update = mutation({
     mainImageId: v.optional(v.id("_storage")),
     isTransferVehicle: v.optional(v.boolean()),
     transferPricePerKm: v.optional(v.number()),
+    slug: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
+
+    // Validate slug uniqueness if provided and changed
+    if (updates.slug !== undefined) {
+      const existing = await ctx.db
+        .query("vehicles")
+        .withIndex("by_slug", (q) => q.eq("slug", updates.slug))
+        .first();
+      if (existing && existing._id !== id) {
+        throw new Error(`A vehicle with slug "${updates.slug}" already exists`);
+      }
+    }
+
     return await ctx.db.patch(id, updates);
   },
 });
@@ -614,6 +680,8 @@ export const getAllVehiclesWithClasses = query({
       // Transfer-related fields
       isTransferVehicle: v.optional(v.boolean()),
       transferPricePerKm: v.optional(v.number()),
+      // SEO slug
+      slug: v.optional(v.string()),
       // Class information
       className: v.optional(v.string()),
       classDisplayName: v.optional(v.string()),

@@ -29,8 +29,8 @@ interface VehicleCardProps {
   returnTime?: string | null;
 }
 
-function buildCarDetailsUrl(vehicleId: string): string {
-  return `/cars/${vehicleId}`;
+function buildCarDetailsUrl(vehicleSlug: string | undefined, vehicleId: string): string {
+  return `/cars/${vehicleSlug || vehicleId}`;
 }
 
 export function VehicleCard({
@@ -103,7 +103,7 @@ export function VehicleCard({
 
   const reservationUrl = buildReservationUrl(vehicle._id);
 
-  const carDetailsUrl = buildCarDetailsUrl(vehicle._id);
+  const carDetailsUrl = buildCarDetailsUrl(vehicle.slug, vehicle._id);
 
   const handleImageClick = () => {
     // Navigate to car details page

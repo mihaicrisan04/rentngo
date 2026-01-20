@@ -226,4 +226,33 @@ export function calculateExtraKilometersPrice(
  */
 export function getMaxExtraKilometers(): number {
   return 5000;
-} 
+}
+
+/**
+ * Generate a URL-friendly slug from vehicle make, model, and year
+ * Format: make-model-year (e.g., "bmw-x5-2024")
+ */
+export function generateVehicleSlug(make: string, model: string, year?: number): string {
+  const parts = [make, model];
+  if (year) {
+    parts.push(year.toString());
+  }
+
+  return parts
+    .join("-")
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "") // Remove special characters except hyphens
+    .replace(/[\s_]+/g, "-")  // Replace spaces and underscores with hyphens
+    .replace(/-+/g, "-")      // Collapse multiple hyphens
+    .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
+}
+
+/**
+ * Validate that a slug follows the correct format
+ * Valid slugs: lowercase alphanumeric with hyphens, no consecutive hyphens
+ */
+export function validateVehicleSlug(slug: string): boolean {
+  const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+  return slugRegex.test(slug);
+}

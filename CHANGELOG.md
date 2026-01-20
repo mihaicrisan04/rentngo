@@ -5,9 +5,24 @@ All notable changes to RentNGo are documented here.
 ## [Unreleased]
 
 ### Planned
-- Vehicle slug URLs for SEO-friendly car detail pages (see `.claude/plans/vehicle-slug-urls.md`)
 - Copy & content review across all translations
 - React performance optimization (Vercel best practices)
+
+## [1.9.0] - 2026-01-20
+
+### Added
+- **Vehicle slug URLs**: SEO-friendly car detail page URLs
+  - Added `slug` field to vehicles schema with unique index
+  - Car detail pages now use `/cars/[slug]` instead of `/cars/[id]`
+  - Admin dialogs include slug input with auto-generate button (sparkle icon)
+  - Slug format: `{make}-{model}-{year}` (e.g., `bmw-x5-2024`)
+  - Added `getBySlug` query with uniqueness validation
+  - Added `generateVehicleSlug()` and `validateVehicleSlug()` utilities
+
+### Changed
+- Vehicle cards now link to slug-based URLs (falls back to `_id` for backwards compatibility)
+- Reservation page back button uses slug-based URL
+- Sitemap generates slug-based URLs for vehicles
 
 ## [1.8.1] - 2026-01-20
 

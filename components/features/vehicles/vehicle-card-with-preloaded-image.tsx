@@ -28,8 +28,8 @@ interface VehicleCardWithPreloadedImageProps {
   returnTime?: string | null;
 }
 
-function buildCarDetailsUrl(vehicleId: string): string {
-  return `/cars/${vehicleId}`;
+function buildCarDetailsUrl(vehicleSlug: string | undefined, vehicleId: string): string {
+  return `/cars/${vehicleSlug || vehicleId}`;
 }
 
 export function VehicleCardWithPreloadedImage({
@@ -94,7 +94,7 @@ export function VehicleCardWithPreloadedImage({
 
   const currency = "EUR";
   const reservationUrl = vehicle ? buildReservationUrl(vehicle._id) : "#";
-  const carDetailsUrl = vehicle ? buildCarDetailsUrl(vehicle._id) : "#";
+  const carDetailsUrl = vehicle ? buildCarDetailsUrl(vehicle.slug, vehicle._id) : "#";
 
   if (!vehicle || typeof vehicle._id !== "string") {
     return (

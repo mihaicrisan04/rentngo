@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -47,8 +47,9 @@ import { ModernImageUpload } from "@/components/ui/modern-image-upload";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { toast } from "sonner";
-import { Plus, X, FolderPlus } from "lucide-react";
+import { Plus, X, FolderPlus, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { generateVehicleSlug, validateVehicleSlug } from "@/lib/vehicleUtils";
 
 const Tabs = TabsPrimitive.Root;
 const TabsList = TabsPrimitive.List;
@@ -64,6 +65,14 @@ const vehicleSchema = z.object({
     .string()
     .min(1, "Model is required")
     .max(50, "Model must be less than 50 characters"),
+  slug: z
+    .string()
+    .max(100, "Slug must be less than 100 characters")
+    .refine((val) => val === "" || validateVehicleSlug(val), {
+      message: "Slug must be lowercase with hyphens only (e.g., bmw-x5-2024)",
+    })
+    .optional()
+    .or(z.literal("")),
   year: z
     .string()
     .min(1, "Year is required")
@@ -174,11 +183,53 @@ export function EditVehicleDialog({
     Id<"_storage"> | undefined
   >();
 
+  // Slug validation state
+  const [slugToCheck, setSlugToCheck] = useState<string>("");
+  const [isCheckingSlug, setIsCheckingSlug] = useState(false);
+  const slugCheckTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Query to check if slug exists (only runs when slugToCheck is set)
+  const existingSlugVehicleId = useQuery(
+    api.vehicles.checkSlugExists,
+    slugToCheck ? { slug: slugToCheck, excludeVehicleId: vehicleId } : "skip"
+  );
+
+  // Debounced slug check
+  const debouncedSlugCheck = useCallback((slug: string) => {
+    if (slugCheckTimeoutRef.current) {
+      clearTimeout(slugCheckTimeoutRef.current);
+    }
+
+    if (!slug || !validateVehicleSlug(slug)) {
+      setSlugToCheck("");
+      setIsCheckingSlug(false);
+      return;
+    }
+
+    setIsCheckingSlug(true);
+    slugCheckTimeoutRef.current = setTimeout(() => {
+      setSlugToCheck(slug);
+      setIsCheckingSlug(false);
+    }, 500);
+  }, []);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (slugCheckTimeoutRef.current) {
+        clearTimeout(slugCheckTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const slugExists = existingSlugVehicleId !== null && existingSlugVehicleId !== undefined;
+
   const form = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
     defaultValues: {
       make: "",
       model: "",
+      slug: "",
       year: new Date().getFullYear().toString(),
       type: "sedan",
       classId: "",
@@ -202,6 +253,7 @@ export function EditVehicleDialog({
       form.reset({
         make: vehicle.make || "",
         model: vehicle.model || "",
+        slug: vehicle.slug || "",
         year: (vehicle.year || new Date().getFullYear()).toString(),
         type: (vehicle.type as VehicleType) || "sedan",
         classId: (vehicle.classId as string) || "",
@@ -279,6 +331,7 @@ export function EditVehicleDialog({
         id: vehicleId,
         make: values.make,
         model: values.model,
+        slug: values.slug || undefined,
         year: parseInt(values.year),
         type: values.type as VehicleType,
         classId: values.classId as Id<"vehicleClasses">,
@@ -303,7 +356,12 @@ export function EditVehicleDialog({
       onOpenChange(false);
     } catch (error) {
       console.error("Error updating vehicle:", error);
-      toast.error("Failed to update vehicle");
+      const errorMessage = error instanceof Error ? error.message : "Failed to update vehicle";
+      if (errorMessage.includes("slug")) {
+        toast.error("This slug is already in use by another vehicle");
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -471,6 +529,61 @@ export function EditVehicleDialog({
                           <FormControl>
                             <Input {...field} disabled={isSubmitting} />
                           </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="slug"
+                      render={({ field }) => (
+                        <FormItem className="md:col-span-2">
+                          <FormLabel>URL Slug</FormLabel>
+                          <div className="flex gap-2">
+                            <FormControl>
+                              <Input
+                                {...field}
+                                disabled={isSubmitting}
+                                placeholder="e.g., bmw-x5-2024"
+                                className={slugExists ? "border-destructive focus-visible:ring-destructive" : ""}
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  debouncedSlugCheck(e.target.value);
+                                }}
+                              />
+                            </FormControl>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => {
+                                const make = form.getValues("make");
+                                const model = form.getValues("model");
+                                const year = form.getValues("year");
+                                const slug = generateVehicleSlug(
+                                  make,
+                                  model,
+                                  year ? parseInt(year) : undefined
+                                );
+                                form.setValue("slug", slug, { shouldValidate: true });
+                                debouncedSlugCheck(slug);
+                              }}
+                              disabled={isSubmitting}
+                              title="Generate slug from make, model, and year"
+                            >
+                              <Sparkles className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            SEO-friendly URL slug. Used in car detail pages: /cars/[slug]
+                          </p>
+                          {isCheckingSlug && (
+                            <p className="text-xs text-muted-foreground">Checking availability...</p>
+                          )}
+                          {slugExists && (
+                            <p className="text-xs text-destructive">This slug is already in use by another vehicle</p>
+                          )}
                           <FormMessage />
                         </FormItem>
                       )}
@@ -972,7 +1085,7 @@ export function EditVehicleDialog({
           <Button
             type="submit"
             onClick={form.handleSubmit(onSubmit)}
-            disabled={isSubmitting}
+            disabled={isSubmitting || slugExists || isCheckingSlug}
           >
             {isSubmitting ? "Saving..." : "Save Changes"}
           </Button>
