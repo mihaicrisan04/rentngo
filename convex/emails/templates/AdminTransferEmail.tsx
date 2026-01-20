@@ -4,6 +4,7 @@ import { TransferEmailData } from "../types";
 import { EmailHeader } from "../components/email_header";
 import { EmailFooter } from "../components/email_footer";
 import { CustomerInfoSection } from "../components/customer_info_section";
+import { VehicleInfoSection } from "../components/vehicle_info_section";
 import { TransferDetailsSection } from "../components/transfer_details_section";
 import { TransferPricingSection } from "../components/transfer_pricing_section";
 
@@ -66,7 +67,10 @@ export const AdminTransferEmail: React.FC<AdminTransferEmailProps> = ({
       duration: isRo ? "Durată Est.:" : "Est. Duration:",
     },
     vehicle: {
-      heading: isRo ? "Vehicul" : "Vehicle",
+      heading: isRo ? "Detalii Vehicul" : "Vehicle Details",
+      seats: isRo ? "Locuri:" : "Seats:",
+      transmission: isRo ? "Transmisie:" : "Transmission:",
+      fuel: isRo ? "Combustibil:" : "Fuel Type:",
     },
     pricing: {
       heading: isRo ? "Detalii Preț" : "Pricing Details",
@@ -126,6 +130,24 @@ export const AdminTransferEmail: React.FC<AdminTransferEmailProps> = ({
               luggage: t.transfer.luggage,
               distance: t.transfer.distance,
               duration: t.transfer.duration,
+            }}
+          />
+
+          <VehicleInfoSection
+            vehicleInfo={{
+              make: vehicleInfo.make,
+              model: vehicleInfo.model,
+              year: vehicleInfo.year,
+              type: vehicleInfo.type,
+              seats: vehicleInfo.seats,
+              transmission: vehicleInfo.transmission,
+              fuelType: vehicleInfo.fuelType,
+            }}
+            labels={{
+              heading: t.vehicle.heading,
+              seats: t.vehicle.seats,
+              transmission: t.vehicle.transmission,
+              fuel: t.vehicle.fuel,
             }}
           />
 

@@ -537,25 +537,35 @@ Added Transfer Multiplier field to the vehicle class detail page (`/admin/vehicl
 
 ---
 
-### 3.10 Transfer Email - Vehicle Details
+### 3.10 Transfer Email - Vehicle Details ✅ COMPLETED
 
-**Status:** Planned
+**Implementation Date:** January 20, 2026
 
 **Problem:**
-The transfer confirmation email doesn't include any information about the selected vehicle. The transfer entry has a `vehicleId` reference that can be used to fetch vehicle details.
+The transfer confirmation email didn't include any information about the selected vehicle beyond make, model, and year.
 
-**Scope:**
-Add a vehicle details section to the transfer confirmation email, similar to how the reservation email includes vehicle info.
+**Solution Implemented:**
+Added full vehicle details section to transfer confirmation emails, reusing the existing `VehicleInfoSection` component from reservation emails.
 
-**Tasks:**
-- [ ] Fetch vehicle details in transfer email template using `transfer.vehicleId`
-- [ ] Add vehicle section showing: make, model, year, image (if available)
-- [ ] Style consistently with reservation email vehicle section
-- [ ] Test email rendering with vehicle details
+**Changes Made:**
+- Extended `TransferVehicleInfo` type with: type, seats, transmission, fuelType
+- Updated `createTransfer` to pass full vehicle details to email function
+- Updated `sendTransferConfirmationEmail` args validator for extended fields
+- Added `VehicleInfoSection` component to both user and admin transfer email templates
+- Added vehicle translations (heading, seats, transmission, fuel) in both templates
 
-**Files to Modify:**
-- `convex/emails/transfer-confirmation.tsx`
-- Potentially add a vehicle details component if reusable
+**Files Modified:**
+- `convex/emails/types.ts` - Extended `TransferVehicleInfo` interface
+- `convex/transfers.ts` - Pass full vehicle details in email data
+- `convex/emails.ts` - Updated `transferVehicleInfoValidator`
+- `convex/emails/templates/UserTransferEmail.tsx` - Added `VehicleInfoSection`
+- `convex/emails/templates/AdminTransferEmail.tsx` - Added `VehicleInfoSection`
+
+**Email Display:**
+- Vehicle name: Year Make Model
+- Vehicle type (capitalized)
+- 3-column layout: Seats, Transmission, Fuel Type
+- Consistent styling with reservation emails
 
 ---
 
@@ -635,7 +645,7 @@ Add a separate `transferSeats` field to vehicles that can be configured independ
 | P3 | Translation Files Cleanup | Planned | Maintainability |
 | P3 | React Performance Optimization | Planned | Performance |
 | P2 | Vehicle Class Multiplier Management | ✅ Done | Admin UX |
-| P2 | Transfer Email - Vehicle Details | Planned | Customer communication |
+| P2 | Transfer Email - Vehicle Details | ✅ Done | Customer communication |
 | P2 | Transfer Booking - T&C Links | Planned | Legal compliance |
 | P2 | Transfer Vehicle Seats | Planned | Transfer filtering |
 
@@ -677,3 +687,4 @@ Add a separate `transferSeats` field to vehicles that can be configured independ
 | 1.8 | 2026-01-20 | Implemented vehicle slug URLs for SEO-friendly car detail pages |
 | 1.9 | 2026-01-20 | Added planned tasks: Windows dark theme time picker fix, class multiplier management |
 | 2.0 | 2026-01-20 | Completed class multiplier management UI; added planned tasks: transfer email vehicle details, transfer T&C links, transfer seats configuration |
+| 2.1 | 2026-01-20 | Added vehicle details section to transfer confirmation emails |

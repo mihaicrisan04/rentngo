@@ -7,9 +7,17 @@ All notable changes to RentNGo are documented here.
 ### Planned
 - Copy & content review across all translations
 - React performance optimization (Vercel best practices)
-- Transfer email: Add vehicle details section
 - Transfer booking: Add Terms & Privacy links
 - Transfer vehicle seats: Separate seat count for transfers
+
+## [2.1.0] - 2026-01-20
+
+### Added
+- **Transfer email vehicle details**: Added full vehicle information to transfer confirmation emails
+  - Extended `TransferVehicleInfo` type with type, seats, transmission, fuelType
+  - Reused `VehicleInfoSection` component from reservation emails
+  - Both user and admin transfer emails now display vehicle details
+  - Includes Romanian and English translations for vehicle section labels
 
 ## [2.0.0] - 2026-01-20
 

@@ -116,6 +116,10 @@ export const createTransfer = mutation({
         make: vehicle.make,
         model: vehicle.model,
         year: vehicle.year,
+        type: vehicle.type,
+        seats: vehicle.seats,
+        transmission: vehicle.transmission,
+        fuelType: vehicle.fuelType,
       } : {
         make: "Vehicle",
         model: "Info",
