@@ -62,7 +62,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { TransferPricingDialog } from "@/components/admin/transfer-pricing-dialog";
+import { TransferPricingDialog } from "@/components/admin/transfers/transfer-pricing-dialog";
 
 const chartConfig = {
   transfers: {

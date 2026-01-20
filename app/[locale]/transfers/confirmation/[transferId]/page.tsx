@@ -31,7 +31,7 @@ import {
   Luggage,
 } from "lucide-react";
 import Link from "next/link";
-import { TransferRouteMap } from "@/components/transfer/transfer-route-map";
+import { TransferRouteMap } from "@/components/features/transfers/transfer-route-map";
 
 export default function TransferConfirmationPage() {
   const params = useParams();

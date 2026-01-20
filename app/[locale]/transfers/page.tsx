@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { TransferSearchForm } from "@/components/transfer-search-form";
+import { TransferSearchForm } from "@/components/features/transfers/transfer-search-form";
 import { Car, Shield, Clock, MapPin } from "lucide-react";
 
 export default function TransfersPage() {

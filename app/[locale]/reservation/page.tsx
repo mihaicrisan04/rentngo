@@ -31,8 +31,8 @@ import {
   AlertCircle,
   Info,
 } from "lucide-react";
-import { LocationPicker } from "@/components/location-picker";
-import { DateTimePicker } from "@/components/date-time-picker";
+import { LocationPicker } from "@/components/shared/search-filters/location-picker";
+import { DateTimePicker } from "@/components/shared/search-filters/date-time-picker";
 import { searchStorage } from "@/lib/searchStorage";
 import {
   calculateVehiclePricingWithSeason,

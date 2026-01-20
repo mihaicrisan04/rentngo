@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { UserProfileForm } from "@/components/user-profile-form";
-import { UserReservationsTable } from "@/components/user-reservations-table";
+import { UserProfileForm } from "@/components/shared/auth/user-profile-form";
+import { UserReservationsTable } from "@/components/features/reservations/user-reservations-table";
 import { Separator } from "@/components/ui/separator";
 
 export default function ProfilePage() {

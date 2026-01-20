@@ -270,15 +270,108 @@ Removed deprecated vehicle fields and dead code:
 
 #### 3.5.3 Remaining Items
 
-**TODO Items:**
-- Vehicle availability checking (implement or remove)
-- Email on status change (implement)
-
 **Incomplete Features:**
-- Promotional codes (field exists but no logic)
+- Promotional codes (field exists but no logic - keep for future implementation)
 
-**Future Consideration:**
-- Component directory restructuring (145 files could benefit from feature-based organization)
+#### 3.5.4 Component Directory Restructuring ✅ COMPLETED
+
+**Implementation Date:** January 20, 2026
+
+**Problem:**
+~130 component files were organized by type rather than feature, with 14 files scattered at the top level.
+
+**New Feature-Based Structure:**
+```
+components/
+├── ui/                    # Design system (47 files, unchanged)
+├── shared/                # Cross-cutting utilities
+│   ├── auth/              # user-button, user-ensurer, user-profile-form
+│   ├── search-filters/    # date-time-picker, location-picker, mapbox
+│   ├── email/             # Consolidated email templates (9 files)
+│   ├── providers/         # convex-client-provider
+│   └── navigation/        # language-selector, rental-details
+├── features/              # Feature-specific components
+│   ├── vehicles/          # Vehicle components (15 files)
+│   ├── reservations/      # Checkout + user reservations (4 files)
+│   ├── transfers/         # Transfer booking (6 files)
+│   ├── blog/              # Blog display (9 files)
+│   └── landing/           # Landing page blocks (3 files)
+├── admin/                 # Reorganized by resource
+│   ├── vehicles/          # Vehicle CRUD (5 files)
+│   ├── reservations/      # Reservation management (4 files)
+│   ├── transfers/         # Transfer pricing (1 file)
+│   ├── vehicle-classes/   # Class management (2 files)
+│   ├── seasons/           # Season management (5 files)
+│   └── blog/              # Blog management (3 files)
+│   └── nav-main.tsx, nav-user.tsx, admin-sidebar.tsx
+└── layout/                # Layout wrapper (1 file)
+```
+
+**Changes Made:**
+- Created `shared/` directory for cross-feature utilities
+- Created `features/` directory for feature-specific components
+- Reorganized `admin/` into resource-based subdirectories
+- Moved 14 scattered top-level components to proper homes
+- Consolidated email templates from 2 locations into `shared/email/`
+- Added barrel exports (index.ts) for cleaner imports
+- Updated all import paths across the codebase
+
+**Benefits Achieved:**
+- Clear feature boundaries
+- Easier onboarding (find all vehicle code in one place)
+- Parallel structure between `features/` and `admin/`
+- Barrel exports enable cleaner imports like `from '@/components/features/vehicles'`
+
+#### 3.5.5 React Performance Optimization
+
+**Status:** Planned
+
+**Scope:**
+Apply Vercel React best practices for performance optimization across the codebase.
+
+**Areas to Review:**
+- Component memoization (`React.memo`, `useMemo`, `useCallback`)
+- Bundle splitting and lazy loading for routes/components
+- Image optimization with `next/image`
+- Data fetching patterns (avoid waterfalls, use streaming)
+- Client vs Server component boundaries
+- Reducing unnecessary re-renders
+- Proper use of Suspense boundaries
+- Font loading optimization
+
+**Reference:** `/vercel-react-best-practices` skill
+
+#### 3.5.6 Email Components Consolidation
+
+**Status:** Planned
+
+**Problem:**
+Email templates may exist in two places:
+- `components/shared/email/` (Next.js app)
+- `convex/emails/` (Convex backend)
+
+The intent is to have all email templates live in `convex/emails/` since emails are sent from the backend. The Next.js email components may be unused/duplicate.
+
+**Tasks:**
+- [ ] Audit `components/shared/email/` - check if any components are actually imported/used
+- [ ] If unused, remove the entire `shared/email/` directory
+- [ ] If partially used, consolidate everything into `convex/emails/`
+- [ ] Update any remaining imports
+
+#### 3.5.7 File Naming Convention Cleanup
+
+**Status:** Planned
+
+**Problem:**
+Some files use camelCase naming (`fileNameEtc.tsx`) instead of the project standard kebab-case (`file-name-etc.tsx`).
+
+**Standard:** All files should use kebab-case: `my-component.tsx`, not `MyComponent.tsx` or `myComponent.tsx`
+
+**Tasks:**
+- [ ] Scan codebase for files not following kebab-case convention
+- [ ] Rename files to kebab-case
+- [ ] Update all imports referencing renamed files
+- [ ] Verify build passes
 
 ---
 
@@ -375,6 +468,10 @@ Car detail URLs currently use Convex IDs (e.g., `/cars/jh7abc123`), which are no
 | P2 | Rename Vehicle Classes Admin | ✅ Done | Admin clarity |
 | P2 | Vehicle Slug URLs | Planned | SEO improvement |
 | P3 | Codebase Cleanup | In Progress | Maintainability |
+| P3 | Component Directory Restructuring | ✅ Done | Maintainability |
+| P3 | Email Components Consolidation | Planned | Maintainability |
+| P3 | File Naming Convention Cleanup | Planned | Consistency |
+| P3 | React Performance Optimization | Planned | Performance |
 
 ---
 

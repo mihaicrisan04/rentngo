@@ -1,5 +1,5 @@
-import RentalRequestEmail from '@/components/email-request-reservation';
-import UserReservationEmail from '@/components/email-request-user';
+import RentalRequestEmail from '@/components/shared/email/email-request-reservation';
+import UserReservationEmail from '@/components/shared/email/email-request-user';
 import { Resend } from 'resend';
 import type * as React from 'react';
 import { NextResponse } from 'next/server';

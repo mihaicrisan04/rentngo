@@ -6,12 +6,12 @@ import { useTranslations } from "next-intl";
 import { ArrowLeft, ArrowRight, Clock, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Id } from "@/convex/_generated/dataModel";
-import { TransferVehicleList } from "@/components/transfer/transfer-vehicle-list";
-import { TransferRouteMap } from "@/components/transfer/transfer-route-map";
-import { TransferBookingFloatingCard } from "@/components/transfer/transfer-booking-sidebar";
+import { TransferVehicleList } from "@/components/features/transfers/transfer-vehicle-list";
+import { TransferRouteMap } from "@/components/features/transfers/transfer-route-map";
+import { TransferBookingFloatingCard } from "@/components/features/transfers/transfer-booking-sidebar";
 import { transferStorage, type TransferSearchData } from "@/lib/transferStorage";
 import { formatDistance, formatDuration } from "@/lib/mapbox";
-import type { TransferVehicle } from "@/components/transfer/transfer-vehicle-card";
+import type { TransferVehicle } from "@/components/features/transfers/transfer-vehicle-card";
 
 export default function TransferVehiclesPage() {
   const router = useRouter();

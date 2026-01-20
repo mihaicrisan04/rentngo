@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, ArrowUpDown } from "lucide-react";
-import { VehiclesTable } from "@/components/admin/vehicles-table";
-import { CreateVehicleDialog } from "@/components/admin/create-vehicle-dialog";
-import { FeaturedCarsManagement } from "@/components/admin/featured-cars-management";
+import { VehiclesTable } from "@/components/admin/vehicles/vehicles-table";
+import { CreateVehicleDialog } from "@/components/admin/vehicles/create-vehicle-dialog";
+import { FeaturedCarsManagement } from "@/components/admin/vehicles/featured-cars-management";
 import { useRouter } from "next/navigation";
 
 export default function VehiclesPage() {

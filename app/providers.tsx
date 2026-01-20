@@ -1,9 +1,9 @@
 'use client'
 
-import ConvexClientProvider from "@/components/convex-client-provider";
+import ConvexClientProvider from "@/components/shared/providers/convex-client-provider";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "next-themes";
-import { UserEnsurer } from "@/components/user-ensurer";
+import { UserEnsurer } from "@/components/shared/auth/user-ensurer";
 import { Toaster } from "@/components/ui/sonner";
 import { NextIntlClientProvider } from 'next-intl';
 

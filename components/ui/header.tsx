@@ -6,9 +6,9 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
-import { LanguageSelector } from "@/components/language-selector";
+import { LanguageSelector } from "@/components/shared/navigation/language-selector";
 import { useLocale, useTranslations } from "next-intl";
-import { UserButton } from "@/components/user-button";
+import { UserButton } from "@/components/shared/auth/user-button";
 import { MenuToggleIcon } from "@/components/ui/menu-toggle-icon";
 import { useScroll } from "@/components/ui/use-scroll";
 

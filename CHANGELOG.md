@@ -7,6 +7,19 @@ All notable changes to RentNGo are documented here.
 ### Planned
 - Vehicle slug URLs for SEO-friendly car detail pages (see `.claude/plans/vehicle-slug-urls.md`)
 - Copy & content review across all translations
+- React performance optimization (Vercel best practices)
+
+## [1.8.0] - 2026-01-20
+
+### Changed
+- **Component directory restructuring**: Reorganized ~130 components from type-based to feature-based structure
+  - Created `shared/` directory with `auth/`, `search-filters/`, `email/`, `providers/`, `navigation/`
+  - Created `features/` directory with `vehicles/`, `reservations/`, `transfers/`, `blog/`, `landing/`
+  - Reorganized `admin/` into resource-based subdirectories: `vehicles/`, `reservations/`, `transfers/`, `vehicle-classes/`, `seasons/`, `blog/`
+  - Moved 14 scattered top-level components to proper locations
+  - Consolidated email templates from 2 locations into `shared/email/`
+  - Added barrel exports (index.ts) for cleaner imports
+  - Updated all import paths across the codebase
 
 ## [1.7.0] - 2026-01-19
 

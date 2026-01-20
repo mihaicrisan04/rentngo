@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { VehicleFilters } from "@/components/vehicle/vehicle-filters";
-import { VehicleSearchForm } from "@/components/vehicle/vehicle-search-form";
-import { VehicleListDisplayWithPreloadedImages } from "@/components/vehicle/vehicle-list-display-with-preloaded-images";
+import { VehicleFilters } from "@/components/features/vehicles/vehicle-filters";
+import { VehicleSearchForm } from "@/components/features/vehicles/vehicle-search-form";
+import { VehicleListDisplayWithPreloadedImages } from "@/components/features/vehicles/vehicle-list-display-with-preloaded-images";
 import { useVehicleSearch } from "@/hooks/useVehicleSearch";
 import { Vehicle } from "@/types/vehicle";
 import { Skeleton } from "@/components/ui/skeleton";

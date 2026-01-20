@@ -12,16 +12,16 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { ArrowLeft } from "lucide-react";
-import { VehicleImageCarouselWithPreloadedImages } from "@/components/vehicle/vehicle-image-carousel-with-preloaded-images";
-import { VehicleSpecifications } from "@/components/vehicle/vehicle-specifications";
-import { VehiclePricingCard } from "@/components/vehicle/vehicle-pricing-card";
-import { PricingTiersTable } from "@/components/vehicle/pricing-tiers-table";
+import { VehicleImageCarouselWithPreloadedImages } from "@/components/features/vehicles/vehicle-image-carousel-with-preloaded-images";
+import { VehicleSpecifications } from "@/components/features/vehicles/vehicle-specifications";
+import { VehiclePricingCard } from "@/components/features/vehicles/vehicle-pricing-card";
+import { PricingTiersTable } from "@/components/features/vehicles/pricing-tiers-table";
 import {
   formatVehicleName,
   getVehicleTypeLabel,
   calculateVehiclePricingWithSeason,
 } from "@/lib/vehicleUtils";
-import { RentalDetails } from "@/components/rental-details";
+import { RentalDetails } from "@/components/shared/navigation/rental-details";
 import { useTranslations } from "next-intl";
 import { Vehicle } from "@/types/vehicle";
 import React, { useState, useEffect, useCallback } from "react";

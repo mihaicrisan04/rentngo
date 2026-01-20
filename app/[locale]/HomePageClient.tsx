@@ -3,13 +3,13 @@
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { FeaturesSectionWithHoverEffects } from "@/components/blocks/feature-section-with-hover-effects";
+import { FeaturesSectionWithHoverEffects } from "@/components/features/landing/feature-section-with-hover-effects";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { TestimonialsSection } from "@/components/blocks/testimonials-with-marquee";
-import { VehicleSearchFilterForm } from "@/components/vehicle/vehicle-search-filter-form";
-import { VehicleCardWithPreloadedImage } from "@/components/vehicle/vehicle-card-with-preloaded-image";
-import { FaqSection } from "@/components/blocks/faq";
+import { TestimonialsSection } from "@/components/features/landing/testimonials-with-marquee";
+import { VehicleSearchFilterForm } from "@/components/features/vehicles/vehicle-search-filter-form";
+import { VehicleCardWithPreloadedImage } from "@/components/features/vehicles/vehicle-card-with-preloaded-image";
+import { FaqSection } from "@/components/features/landing/faq";
 import { BackgroundImage } from "@/components/ui/BackgroundImage";
 import { AnimatedGroup } from "@/components/ui/animated-group";
 import {

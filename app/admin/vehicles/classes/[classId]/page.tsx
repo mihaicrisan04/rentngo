@@ -6,7 +6,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { VehicleOrderingCard } from "@/components/admin/vehicle-ordering-card";
+import { VehicleOrderingCard } from "@/components/admin/vehicles/vehicle-ordering-card";
 import { ArrowLeft, Loader2, Check } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
