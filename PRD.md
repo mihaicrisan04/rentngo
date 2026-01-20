@@ -341,22 +341,29 @@ Apply Vercel React best practices for performance optimization across the codeba
 
 **Reference:** `/vercel-react-best-practices` skill
 
-#### 3.5.6 Email Components Consolidation
+#### 3.5.6 Email Components Consolidation ✅ COMPLETED
 
-**Status:** Planned
+**Implementation Date:** January 20, 2026
+
+**Status:** Done
 
 **Problem:**
-Email templates may exist in two places:
-- `components/shared/email/` (Next.js app)
-- `convex/emails/` (Convex backend)
+Email templates existed in two places:
+- `components/shared/email/` (Next.js app) - UNUSED
+- `convex/emails/` (Convex backend) - ACTIVE
 
-The intent is to have all email templates live in `convex/emails/` since emails are sent from the backend. The Next.js email components may be unused/duplicate.
+**Solution Implemented:**
+- Audited `components/shared/email/` - confirmed all 10 files were unused legacy code
+- Removed the deprecated `/api/send/request-confirmation` route (only consumer of shared/email)
+- Deleted entire `components/shared/email/` directory (10 files)
+- Kept `convex/emails/` as the single source of truth for email templates
+- `/api/send/reservation-email` route retained (uses inline HTML, no shared/email dependency)
 
 **Tasks:**
-- [ ] Audit `components/shared/email/` - check if any components are actually imported/used
-- [ ] If unused, remove the entire `shared/email/` directory
-- [ ] If partially used, consolidate everything into `convex/emails/`
-- [ ] Update any remaining imports
+- [x] Audit `components/shared/email/` - check if any components are actually imported/used
+- [x] If unused, remove the entire `shared/email/` directory
+- [x] If partially used, consolidate everything into `convex/emails/`
+- [x] Update any remaining imports
 
 #### 3.5.7 File Naming Convention Cleanup
 
@@ -372,6 +379,44 @@ Some files use camelCase naming (`fileNameEtc.tsx`) instead of the project stand
 - [ ] Rename files to kebab-case
 - [ ] Update all imports referencing renamed files
 - [ ] Verify build passes
+
+#### 3.5.8 Time Picker Native Select Visibility (Windows)
+
+**Status:** Planned
+
+**Problem:**
+The native `<select>` component used for time pickers renders with a font color on Windows that makes available times difficult to see. Unavailable times render correctly and are visible.
+
+**Affected Components:**
+- Time picker selects in reservation flow
+- Time picker selects in transfer booking flow
+
+**Tasks:**
+- [ ] Reproduce the issue on Windows
+- [ ] Identify which CSS styles affect native select text color on Windows
+- [ ] Fix the font color to ensure available times are clearly visible
+- [ ] Test on Windows to verify the fix
+- [ ] Ensure fix doesn't break styling on other platforms (macOS, iOS, Android)
+
+#### 3.5.9 Translation Files Cleanup
+
+**Status:** Planned
+
+**Problem:**
+The translation files in `messages/` (en.json, ro.json) may contain:
+- Duplicate keys or redundant translations
+- Unused translation keys (orphaned after code changes)
+- Inconsistent structure between languages
+- Overly nested or poorly organized sections
+
+**Tasks:**
+- [ ] Audit all translation keys in `messages/en.json` and `messages/ro.json`
+- [ ] Search codebase for each translation key usage to identify unused keys
+- [ ] Remove unused/orphaned translation keys
+- [ ] Identify and consolidate duplicate translations
+- [ ] Restructure for better organization if needed
+- [ ] Ensure both language files have identical structure
+- [ ] Verify all translations still work after cleanup
 
 ---
 
@@ -469,8 +514,10 @@ Car detail URLs currently use Convex IDs (e.g., `/cars/jh7abc123`), which are no
 | P2 | Vehicle Slug URLs | Planned | SEO improvement |
 | P3 | Codebase Cleanup | In Progress | Maintainability |
 | P3 | Component Directory Restructuring | ✅ Done | Maintainability |
-| P3 | Email Components Consolidation | Planned | Maintainability |
+| P3 | Email Components Consolidation | ✅ Done | Maintainability |
 | P3 | File Naming Convention Cleanup | Planned | Consistency |
+| P3 | Time Picker Select Visibility (Windows) | Planned | Cross-platform UX |
+| P3 | Translation Files Cleanup | Planned | Maintainability |
 | P3 | React Performance Optimization | Planned | Performance |
 
 ---

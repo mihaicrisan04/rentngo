@@ -9,15 +9,23 @@ All notable changes to RentNGo are documented here.
 - Copy & content review across all translations
 - React performance optimization (Vercel best practices)
 
+## [1.8.1] - 2026-01-20
+
+### Removed
+- **Email components consolidation**: Removed unused legacy email system
+  - Deleted `components/shared/email/` directory (10 files) - legacy code from before Convex migration
+  - Deleted deprecated `/api/send/request-confirmation` route (only consumer of shared/email)
+  - Production email system lives in `convex/emails/` (self-contained with 4 templates and 8 components)
+  - Kept `/api/send/reservation-email` route (used by admin for manual resends, has inline HTML)
+
 ## [1.8.0] - 2026-01-20
 
 ### Changed
 - **Component directory restructuring**: Reorganized ~130 components from type-based to feature-based structure
-  - Created `shared/` directory with `auth/`, `search-filters/`, `email/`, `providers/`, `navigation/`
+  - Created `shared/` directory with `auth/`, `search-filters/`, `providers/`, `navigation/`
   - Created `features/` directory with `vehicles/`, `reservations/`, `transfers/`, `blog/`, `landing/`
   - Reorganized `admin/` into resource-based subdirectories: `vehicles/`, `reservations/`, `transfers/`, `vehicle-classes/`, `seasons/`, `blog/`
   - Moved 14 scattered top-level components to proper locations
-  - Consolidated email templates from 2 locations into `shared/email/`
   - Added barrel exports (index.ts) for cleaner imports
   - Updated all import paths across the codebase
 
