@@ -1,6 +1,6 @@
 # RentNGo - Product Requirements Document
 
-**Version:** 1.8
+**Version:** 2.0
 **Last Updated:** January 20, 2026
 **Status:** Active
 
@@ -380,23 +380,26 @@ Some files use camelCase naming (`fileNameEtc.tsx`) instead of the project stand
 - [ ] Update all imports referencing renamed files
 - [ ] Verify build passes
 
-#### 3.5.8 Time Picker Native Select Visibility (Windows)
+#### 3.5.8 Time Picker Native Select Visibility (Windows Dark Theme)
 
 **Status:** Planned
 
 **Problem:**
-The native `<select>` component used for time pickers renders with a font color on Windows that makes available times difficult to see. Unavailable times render correctly and are visible.
+The native `<select>` component used for time pickers has a visual bug in dark theme on Windows. Available time slots render with white font on a light/white background, making them nearly invisible. Unavailable times render correctly and are visible.
+
+This appears to be caused by the dark theme styling not properly overriding native select dropdown colors on Windows, where the OS renders the dropdown background differently than on macOS.
 
 **Affected Components:**
 - Time picker selects in reservation flow
 - Time picker selects in transfer booking flow
 
 **Tasks:**
-- [ ] Reproduce the issue on Windows
-- [ ] Identify which CSS styles affect native select text color on Windows
-- [ ] Fix the font color to ensure available times are clearly visible
+- [ ] Reproduce the issue on Windows in dark theme
+- [ ] Identify which CSS styles affect native select text/background color on Windows
+- [ ] Fix the font/background color combination to ensure available times are clearly visible in dark theme
 - [ ] Test on Windows to verify the fix
 - [ ] Ensure fix doesn't break styling on other platforms (macOS, iOS, Android)
+- [ ] Test in both light and dark themes
 
 #### 3.5.9 Translation Files Cleanup
 
@@ -512,6 +515,107 @@ Car detail URLs currently use Convex IDs (e.g., `/cars/jh7abc123`), which are no
 
 ---
 
+### 3.9 Vehicle Class Multiplier Management ✅ COMPLETED
+
+**Implementation Date:** January 20, 2026
+
+**Problem:**
+The transfer multiplier for vehicle classes is configured via the database (`vehicleClasses.transferMultiplier`), but there's no dedicated UI to manage it.
+
+**Solution Implemented:**
+Added Transfer Multiplier field to the vehicle class detail page (`/admin/vehicles/classes/[classId]`) using the existing inline edit pattern.
+
+**UI Changes:**
+- Separated pricing settings into two sections:
+  - **Rental Pricing**: Extra 50km Price (for car rentals)
+  - **Transfer Pricing**: Base Fare + Rate Multiplier (for VIP transfers)
+- Each field has inline editing with save button and loading state
+- Validation ensures multiplier is a positive number
+
+**Files Changed:**
+- `app/admin/vehicles/classes/[classId]/page.tsx` - Added transfer multiplier state, handler, and UI
+
+---
+
+### 3.10 Transfer Email - Vehicle Details
+
+**Status:** Planned
+
+**Problem:**
+The transfer confirmation email doesn't include any information about the selected vehicle. The transfer entry has a `vehicleId` reference that can be used to fetch vehicle details.
+
+**Scope:**
+Add a vehicle details section to the transfer confirmation email, similar to how the reservation email includes vehicle info.
+
+**Tasks:**
+- [ ] Fetch vehicle details in transfer email template using `transfer.vehicleId`
+- [ ] Add vehicle section showing: make, model, year, image (if available)
+- [ ] Style consistently with reservation email vehicle section
+- [ ] Test email rendering with vehicle details
+
+**Files to Modify:**
+- `convex/emails/transfer-confirmation.tsx`
+- Potentially add a vehicle details component if reusable
+
+---
+
+### 3.11 Transfer Booking - Terms & Privacy Links
+
+**Status:** Planned
+
+**Problem:**
+The transfer booking page doesn't have links to Terms & Conditions and Privacy Policy, unlike the car reservation page which has proper links.
+
+**Scope:**
+Add Terms & Conditions and Privacy Policy links to the transfer booking page, matching the style used in the reservation flow.
+
+**Tasks:**
+- [ ] Identify how T&C and Privacy links are implemented in reservation page
+- [ ] Add similar links to the transfer booking page
+- [ ] Ensure links open in new tab and are properly translated
+- [ ] Match styling with existing implementation
+
+**Files to Modify:**
+- `app/[locale]/transfers/booking/page.tsx`
+
+---
+
+### 3.12 Transfer Vehicle Seats Configuration
+
+**Status:** Planned
+
+**Problem:**
+Currently, transfer vehicle filtering uses the vehicle's registered seat count. However, for transfers, the available passenger capacity may differ (e.g., a 5-seat car might only accommodate 4 passengers for transfers due to luggage space).
+
+**Scope:**
+Add a separate `transferSeats` field to vehicles that can be configured independently of the regular seat count, used specifically for transfer passenger filtering.
+
+**Requirements:**
+- New `transferSeats` field on vehicles schema
+- Only visible in admin when "Is Transfer Vehicle" is checked
+- Default value: falls back to regular `seats` if not set
+- Used for passenger count filtering on transfer vehicle selection
+- Refactor admin vehicle settings dialog layout for better organization
+
+**Tasks:**
+- [ ] Add `transferSeats` field to vehicles schema (optional number)
+- [ ] Update vehicle create/update mutations to handle `transferSeats`
+- [ ] Update admin vehicle dialog:
+  - [ ] Only show `transferSeats` field when `isTransferVehicle` is checked
+  - [ ] Refactor dialog layout for better organization of transfer-specific fields
+  - [ ] Default to showing regular `seats` value as placeholder
+- [ ] Update transfer vehicle query to filter by `transferSeats ?? seats`
+- [ ] Test filtering works correctly with new field
+
+**Files to Modify:**
+- `convex/schema.ts` - Add `transferSeats` field
+- `convex/vehicles.ts` - Update mutations and queries
+- `components/admin/vehicles/create-vehicle-dialog.tsx`
+- `components/admin/vehicles/edit-vehicle-dialog.tsx`
+- `convex/transfers.ts` - Update `getTransferVehiclesWithImages` filtering
+
+---
+
 ## 4. Implementation Priorities
 
 | Priority | Change | Status | Impact |
@@ -527,9 +631,13 @@ Car detail URLs currently use Convex IDs (e.g., `/cars/jh7abc123`), which are no
 | P3 | Component Directory Restructuring | ✅ Done | Maintainability |
 | P3 | Email Components Consolidation | ✅ Done | Maintainability |
 | P3 | File Naming Convention Cleanup | Planned | Consistency |
-| P3 | Time Picker Select Visibility (Windows) | Planned | Cross-platform UX |
+| P3 | Time Picker Select Visibility (Windows Dark Theme) | Planned | Cross-platform UX |
 | P3 | Translation Files Cleanup | Planned | Maintainability |
 | P3 | React Performance Optimization | Planned | Performance |
+| P2 | Vehicle Class Multiplier Management | ✅ Done | Admin UX |
+| P2 | Transfer Email - Vehicle Details | Planned | Customer communication |
+| P2 | Transfer Booking - T&C Links | Planned | Legal compliance |
+| P2 | Transfer Vehicle Seats | Planned | Transfer filtering |
 
 ---
 
@@ -567,3 +675,5 @@ Car detail URLs currently use Convex IDs (e.g., `/cars/jh7abc123`), which are no
 | 1.6 | 2026-01-19 | Completed unused component removal (~2,500 lines) |
 | 1.7 | 2026-01-20 | Component directory restructuring, email consolidation |
 | 1.8 | 2026-01-20 | Implemented vehicle slug URLs for SEO-friendly car detail pages |
+| 1.9 | 2026-01-20 | Added planned tasks: Windows dark theme time picker fix, class multiplier management |
+| 2.0 | 2026-01-20 | Completed class multiplier management UI; added planned tasks: transfer email vehicle details, transfer T&C links, transfer seats configuration |

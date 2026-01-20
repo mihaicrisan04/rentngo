@@ -7,6 +7,22 @@ All notable changes to RentNGo are documented here.
 ### Planned
 - Copy & content review across all translations
 - React performance optimization (Vercel best practices)
+- Transfer email: Add vehicle details section
+- Transfer booking: Add Terms & Privacy links
+- Transfer vehicle seats: Separate seat count for transfers
+
+## [2.0.0] - 2026-01-20
+
+### Added
+- **Vehicle class transfer multiplier UI**: Admin can now edit transfer multiplier per class
+  - Added "Transfer Pricing" section to class detail page (`/admin/vehicles/classes/[classId]`)
+  - Includes Base Fare and Rate Multiplier fields with inline editing
+  - Separated pricing settings into "Rental Pricing" and "Transfer Pricing" sections
+
+### Changed
+- Class detail page pricing UI reorganized for better clarity
+  - "Rental Pricing" section: Extra 50km Price
+  - "Transfer Pricing" section: Base Fare, Rate Multiplier
 
 ## [1.9.0] - 2026-01-20
 
