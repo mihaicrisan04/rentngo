@@ -2,14 +2,19 @@
 
 ## Important: PRD Workflow
 
-**Always read `prd.md` at the start of any session.** This document contains the current state of features, planned changes, and business rules.
+**Always read `prd.md` at the start of any session.** This document tracks tasks and their status.
 
 When making changes to the codebase:
 1. Check if the change relates to a planned item in the PRD
-2. After implementing changes, update the PRD to reflect what was done
-3. Mark completed items with ✅ and add implementation details
-4. Add new requirements or changes discussed to the PRD
-5. Update `CHANGELOG.md` with a summary of changes made
+2. After implementing, move the task to "Completed" with date and brief note
+3. Add new tasks to "Planned" section
+4. Update `CHANGELOG.md` with a summary of changes
+
+**Keep the PRD concise and task-focused:**
+- Use tables for task lists (not long paragraphs)
+- Brief notes only (1 line per task)
+- No detailed implementation specs - those belong in code comments or separate docs
+- Focus on: what was done, what's planned, current status
 
 ## Project Overview
 
