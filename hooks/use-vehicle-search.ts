@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { searchStorage, SearchData } from "@/lib/searchStorage";
+import { searchStorage, SearchData } from "@/lib/search-storage";
 
 interface UseVehicleSearchReturn {
   searchState: SearchData & { isHydrated: boolean };

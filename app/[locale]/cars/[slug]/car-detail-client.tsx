@@ -20,13 +20,13 @@ import {
   formatVehicleName,
   getVehicleTypeLabel,
   calculateVehiclePricingWithSeason,
-} from "@/lib/vehicleUtils";
+} from "@/lib/vehicle-utils";
 import { RentalDetails } from "@/components/shared/navigation/rental-details";
 import { useTranslations } from "next-intl";
 import { Vehicle } from "@/types/vehicle";
 import React, { useState, useEffect, useCallback } from "react";
-import { searchStorage, SearchData } from "@/lib/searchStorage";
-import { useDateBasedSeasonalPricing } from "@/hooks/useDateBasedSeasonalPricing";
+import { searchStorage, SearchData } from "@/lib/search-storage";
+import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
 
 
 

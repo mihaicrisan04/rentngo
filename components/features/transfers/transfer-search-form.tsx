@@ -17,7 +17,7 @@ import { DateTimePicker } from "@/components/shared/search-filters/date-time-pic
 import {
   transferStorage,
   TransferSearchData,
-} from "@/lib/transferStorage";
+} from "@/lib/transfer-storage";
 import { getRouteInfo, RouteInfo } from "@/lib/mapbox";
 
 interface TransferSearchFormProps {

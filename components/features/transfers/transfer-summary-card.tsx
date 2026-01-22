@@ -21,7 +21,7 @@ import {
   ArrowRight,
   Route,
 } from "lucide-react";
-import { LocationData } from "@/lib/transferStorage";
+import { LocationData } from "@/lib/transfer-storage";
 import { cn } from "@/lib/utils";
 import { TransferRouteMap } from "@/components/features/transfers/transfer-route-map";
 

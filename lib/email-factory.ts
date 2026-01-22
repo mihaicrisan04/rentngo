@@ -1,9 +1,9 @@
 import { ReservationEmailData, EmailType } from '@/types/email';
-import { transformReservationForEmail } from './emailUtils';
+import { transformReservationForEmail } from './email-utils';
 import { differenceInDays } from 'date-fns';
 import { Vehicle } from '@/types/vehicle';
 import { Reservation } from '@/types/reservation';
-import { calculateVehiclePricingWithSeason, calculateRentalDays } from './vehicleUtils';
+import { calculateVehiclePricingWithSeason, calculateRentalDays } from './vehicle-utils';
 
 /**
  * Email Factory for creating different types of reservation emails

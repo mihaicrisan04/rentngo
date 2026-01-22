@@ -1,6 +1,6 @@
 "use client";
 
-import { useEnsureUser } from "@/hooks/useEnsureUser";
+import { useEnsureUser } from "@/hooks/use-ensure-user";
 
 interface UserEnsurerProps {
   children: React.ReactNode;

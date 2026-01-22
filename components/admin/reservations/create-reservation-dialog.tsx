@@ -38,8 +38,8 @@ import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useDateBasedSeasonalPricing } from "@/hooks/useDateBasedSeasonalPricing";
-import { getPriceForDurationWithSeason } from "@/lib/vehicleUtils";
+import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
+import { getPriceForDurationWithSeason } from "@/lib/vehicle-utils";
 
 const Tabs = TabsPrimitive.Root;
 const TabsList = TabsPrimitive.List;

@@ -1,6 +1,6 @@
 import { differenceInDays } from "date-fns";
 import { getLocationPrice } from "@/components/shared/search-filters/location-picker";
-import { AdditionalFeatures } from "./useReservationForm";
+import { AdditionalFeatures } from "./use-reservation-form";
 import { getBasePricePerDay } from "@/types/vehicle";
 
 export interface PricingDetails {

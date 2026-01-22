@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Eye } from "lucide-react";
-import { formatPublishDate } from "@/lib/blogUtils";
+import { formatPublishDate } from "@/lib/blog-utils";
 import { BlogListItem } from "@/types/blog";
 import { useTranslations } from "next-intl";
 

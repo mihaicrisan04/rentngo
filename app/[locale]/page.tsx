@@ -1,6 +1,6 @@
 import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
-import { HomePageClient } from "./HomePageClient";
+import { HomePageClient } from "./home-page-client";
 import { Metadata } from "next";
 
 interface HomePageProps {

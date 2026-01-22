@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Edit, Trash2, Eye } from "lucide-react";
 // import { useTranslations } from "next-intl";
-import { formatPublishDate } from "@/lib/blogUtils";
+import { formatPublishDate } from "@/lib/blog-utils";
 import { toast } from "sonner";
 import { Id } from "@/convex/_generated/dataModel";
 

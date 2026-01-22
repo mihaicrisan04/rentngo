@@ -1,6 +1,6 @@
 import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
-import { CarDetailClient } from "./CarDetailClient";
+import { CarDetailClient } from "./car-detail-client";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 

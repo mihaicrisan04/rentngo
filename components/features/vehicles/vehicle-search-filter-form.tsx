@@ -14,7 +14,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { LocationPicker } from "@/components/shared/search-filters/location-picker";
 import { DateTimePicker } from "@/components/shared/search-filters/date-time-picker";
-import { searchStorage, SearchData } from "@/lib/searchStorage";
+import { searchStorage, SearchData } from "@/lib/search-storage";
 
 
 

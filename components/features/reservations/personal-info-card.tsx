@@ -9,7 +9,7 @@ import { AlertCircle, User } from "lucide-react";
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
  
-import { PersonalInfo, FormErrors } from "@/hooks/useReservationForm";
+import { PersonalInfo, FormErrors } from "@/hooks/use-reservation-form";
 
 interface PersonalInfoCardProps {
   personalInfo: PersonalInfo;

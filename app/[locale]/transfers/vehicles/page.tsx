@@ -9,7 +9,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { TransferVehicleList } from "@/components/features/transfers/transfer-vehicle-list";
 import { TransferRouteMap } from "@/components/features/transfers/transfer-route-map";
 import { TransferBookingFloatingCard } from "@/components/features/transfers/transfer-booking-sidebar";
-import { transferStorage, type TransferSearchData } from "@/lib/transferStorage";
+import { transferStorage, type TransferSearchData } from "@/lib/transfer-storage";
 import { formatDistance, formatDuration } from "@/lib/mapbox";
 import type { TransferVehicle } from "@/components/features/transfers/transfer-vehicle-card";
 

@@ -38,7 +38,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { toast } from "sonner";
 import { Plus, X, Upload, Wand2 } from "lucide-react";
-import { generateSlugFromTitle, calculateReadingTime } from "@/lib/blogUtils";
+import { generateSlugFromTitle, calculateReadingTime } from "@/lib/blog-utils";
 import { Badge } from "@/components/ui/badge";
 import { BlogPreview } from "@/components/features/blog/blog-preview";
 

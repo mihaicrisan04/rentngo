@@ -1,4 +1,4 @@
-import { FormErrors, PersonalInfo } from "@/hooks/useReservationForm";
+import { FormErrors, PersonalInfo } from "@/hooks/use-reservation-form";
  
 
 export const paymentMethods = [

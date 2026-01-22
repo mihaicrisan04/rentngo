@@ -12,7 +12,7 @@ import { useTranslations } from "next-intl";
 import {
   useVehicleFilters,
   FilterOption,
-} from "@/hooks/useVehicleFilters";
+} from "@/hooks/use-vehicle-filters";
 
 interface VehicleFiltersProps {
   allVehicles: Vehicle[] | null;

@@ -39,11 +39,11 @@ import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useDateBasedSeasonalPricing } from "@/hooks/useDateBasedSeasonalPricing";
+import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
 import {
   getPriceForDurationWithSeason,
   calculateVehiclePricing,
-} from "@/lib/vehicleUtils";
+} from "@/lib/vehicle-utils";
 import { Trash2, Plus } from "lucide-react";
 
 const Tabs = TabsPrimitive.Root;

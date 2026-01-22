@@ -4,7 +4,7 @@ import * as React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { LocationPicker } from "@/components/shared/search-filters/location-picker";
 import { DateTimePicker } from "@/components/shared/search-filters/date-time-picker";
-import { SearchData } from "@/lib/searchStorage";
+import { SearchData } from "@/lib/search-storage";
 import { useTranslations } from 'next-intl';
 
 interface VehicleSearchFormProps {

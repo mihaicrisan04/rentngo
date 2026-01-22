@@ -10,7 +10,7 @@ import { TestimonialsSection } from "@/components/features/landing/testimonials-
 import { VehicleSearchFilterForm } from "@/components/features/vehicles/vehicle-search-filter-form";
 import { VehicleCardWithPreloadedImage } from "@/components/features/vehicles/vehicle-card-with-preloaded-image";
 import { FaqSection } from "@/components/features/landing/faq";
-import { BackgroundImage } from "@/components/ui/BackgroundImage";
+import { BackgroundImage } from "@/components/ui/background-image";
 import { AnimatedGroup } from "@/components/ui/animated-group";
 import {
   ProgressSlider,
@@ -22,8 +22,8 @@ import {
 import { Vehicle } from "@/types/vehicle";
 import { sectionAnimationVariants } from "@/lib/animations";
 import { useTranslations } from "next-intl";
-import { useVehicleSearch } from "@/hooks/useVehicleSearch";
-import { SearchData } from "@/lib/searchStorage";
+import { useVehicleSearch } from "@/hooks/use-vehicle-search";
+import { SearchData } from "@/lib/search-storage";
 
 interface VehicleWithImageUrl extends Vehicle {
   imageUrl: string | null;

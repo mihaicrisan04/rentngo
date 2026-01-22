@@ -2,14 +2,14 @@ import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
-import { searchStorage, SearchData } from "@/lib/searchStorage";
+import { searchStorage, SearchData } from "@/lib/search-storage";
 import {
   calculateVehiclePricing,
   calculateVehiclePricingWithSeason,
   getPriceForDurationWithSeason,
   PriceDetails,
-} from "@/lib/vehicleUtils";
-import { useDateBasedSeasonalPricing } from "./useDateBasedSeasonalPricing";
+} from "@/lib/vehicle-utils";
+import { useDateBasedSeasonalPricing } from "./use-date-based-seasonal-pricing";
 
 interface RentalState extends SearchData {
   isHydrated: boolean;

@@ -13,7 +13,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { searchStorage } from "@/lib/searchStorage";
+import { searchStorage } from "@/lib/search-storage";
 import { useTranslations } from "next-intl";
 
 const generateTimeSlots = () => {

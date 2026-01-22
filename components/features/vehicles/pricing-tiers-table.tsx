@@ -10,7 +10,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PricingTier } from "@/types/vehicle";
-import { useDateBasedSeasonalPricing } from "@/hooks/useDateBasedSeasonalPricing";
+import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
 import { useTranslations, useLocale } from 'next-intl';
 
 interface PricingTiersTableProps {

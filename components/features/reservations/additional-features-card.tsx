@@ -6,8 +6,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Info } from "lucide-react";
-import { AdditionalFeatures } from "@/hooks/useReservationForm";
-import { calculateIncludedKilometers, calculateExtraKilometersPrice, getMaxExtraKilometers } from "@/lib/vehicleUtils";
+import { AdditionalFeatures } from "@/hooks/use-reservation-form";
+import { calculateIncludedKilometers, calculateExtraKilometersPrice, getMaxExtraKilometers } from "@/lib/vehicle-utils";
 import { getBasePricePerDay } from "@/types/vehicle";
 
 interface AdditionalFeaturesCardProps {

@@ -14,9 +14,9 @@ import { Vehicle } from "@/types/vehicle";
 import {
   buildReservationUrl,
   calculateVehiclePricingWithSeason,
-} from "@/lib/vehicleUtils";
+} from "@/lib/vehicle-utils";
 import { getBasePricePerDay } from "@/types/vehicle";
-import { useDateBasedSeasonalPricing } from "@/hooks/useDateBasedSeasonalPricing";
+import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
 import { useTranslations, useLocale } from "next-intl";
 
 interface VehicleCardProps {

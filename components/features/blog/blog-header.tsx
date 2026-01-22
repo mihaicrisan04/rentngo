@@ -2,7 +2,7 @@
 
 import { Clock, Calendar, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { formatPublishDate } from "@/lib/blogUtils";
+import { formatPublishDate } from "@/lib/blog-utils";
 import { useTranslations } from "next-intl";
 
 interface BlogHeaderProps {

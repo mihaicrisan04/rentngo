@@ -1,5 +1,5 @@
 import * as React from "react";
-import { searchStorage } from "@/lib/searchStorage";
+import { searchStorage } from "@/lib/search-storage";
 import { useUser } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";

@@ -49,7 +49,7 @@ import { CheckedState } from "@radix-ui/react-checkbox";
 import { toast } from "sonner";
 import { Plus, X, FolderPlus, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { generateVehicleSlug, validateVehicleSlug } from "@/lib/vehicleUtils";
+import { generateVehicleSlug, validateVehicleSlug } from "@/lib/vehicle-utils";
 
 const Tabs = TabsPrimitive.Root;
 const TabsList = TabsPrimitive.List;

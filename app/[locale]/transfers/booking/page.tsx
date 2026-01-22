@@ -18,7 +18,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { transferStorage, TransferSearchData } from "@/lib/transferStorage";
+import { transferStorage, TransferSearchData } from "@/lib/transfer-storage";
 import { TransferSummaryCard } from "@/components/features/transfers/transfer-summary-card";
 
 interface PersonalInfo {

@@ -1,8 +1,8 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useDateBasedSeasonalPricing } from "@/hooks/useDateBasedSeasonalPricing";
-import { PriceDetails, calculateIncludedKilometers } from "@/lib/vehicleUtils";
+import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
+import { PriceDetails, calculateIncludedKilometers } from "@/lib/vehicle-utils";
 import { getPriceForDuration, getBasePricePerDay } from "@/types/vehicle";
 import { Vehicle } from "@/types/vehicle";
 import { useTranslations, useLocale } from "next-intl";

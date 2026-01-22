@@ -2,7 +2,7 @@
 
 import { VehicleCardWithPreloadedImage } from "@/components/features/vehicles/vehicle-card-with-preloaded-image";
 import { Vehicle } from "@/types/vehicle";
-import { SearchData } from "@/lib/searchStorage";
+import { SearchData } from "@/lib/search-storage";
 import { useTranslations } from "next-intl";
 import { Separator } from "@/components/ui/separator";
 

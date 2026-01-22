@@ -6,8 +6,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { AlertCircle, CreditCard } from "lucide-react";
-import { paymentMethods } from "@/lib/reservationUtils";
-import { FormErrors } from "@/hooks/useReservationForm";
+import { paymentMethods } from "@/lib/reservation-utils";
+import { FormErrors } from "@/hooks/use-reservation-form";
 
 interface PaymentMethodCardProps {
   paymentMethod: string;
