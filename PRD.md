@@ -39,6 +39,7 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | File Naming Cleanup | Jan 22 | 24 files renamed to kebab-case, typo fixed |
 | Translation Files Cleanup | Jan 22 | Removed unused namespaces, consolidated keys, ~18% reduction |
 | Barrel Import Optimization | Jan 22 | Added optimizePackageImports for lucide-react, date-fns in next.config.ts |
+| Dynamic Import Admin Dialogs | Jan 22 | 10 admin dialogs now lazy-loaded with next/dynamic |
 
 ---
 
@@ -51,9 +52,9 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | P2 | Replace next lint | next lint deprecated in Next.js 16; migrate to ESLint CLI |
 | P3 | Time Picker Dark Theme Fix | White-on-white text on Windows in dark mode |
 | P3 | React Performance Optimization | Apply Vercel best practices (memoization, splitting, etc.) |
-| P3.1 | └─ Dynamic Import Heavy Components | Use next/dynamic for heavy admin components (editors, tables, dialogs) |
-| P3.2 | └─ Memoize Expensive Components | Extract/memo vehicle cards, pricing calculations, filter components |
-| P3.3 | └─ Lazy State Initialization | Use function form for useState with expensive initial values |
+| P3.1 | └─ Memoize Expensive Components | Extract/memo vehicle cards, pricing calculations, filter components |
+| P3.2 | └─ Lazy State Initialization | Use function form for useState with expensive initial values |
+| P3.3 | └─ Functional setState Updates | Use functional setState for stable callbacks and prevent stale closures |
 
 ---
 
@@ -86,3 +87,4 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | 3.2 | Jan 22 | File naming cleanup; added lint migration task |
 | 3.3 | Jan 22 | Translation files cleanup and consolidation |
 | 3.4 | Jan 22 | Barrel import optimization; added React perf subtasks |
+| 3.5 | Jan 22 | Dynamic import admin dialogs |

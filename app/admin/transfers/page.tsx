@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -62,7 +63,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { TransferPricingDialog } from "@/components/admin/transfers/transfer-pricing-dialog";
+
+const TransferPricingDialog = dynamic(
+  () => import("@/components/admin/transfers/transfer-pricing-dialog").then(m => m.TransferPricingDialog),
+  { ssr: false }
+);
 
 const chartConfig = {
   transfers: {

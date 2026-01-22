@@ -10,6 +10,14 @@ All notable changes to RentNGo are documented here.
   - Reduces cold start by 200-800ms, speeds up dev server boot
   - Automatically transforms barrel imports to direct imports at build time
 
+- **Dynamic import admin dialogs**: Converted 10 admin dialogs to lazy-load with `next/dynamic`
+  - CreateVehicleDialog, EditVehicleDialog
+  - CreateBlogDialog, EditBlogDialog
+  - CreateReservationDialog, EditReservationDialog, ReservationEmailDialog
+  - CreateSeasonDialog, EditSeasonDialog
+  - TransferPricingDialog, CreateClassDialog
+  - Dialogs now load on-demand when opened, reducing initial page bundle
+
 ### Planned
 - Copy & content review across all translations
 - React performance optimization (dynamic imports, memoization, lazy state init)

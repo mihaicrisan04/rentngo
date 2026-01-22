@@ -1,12 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus } from "lucide-react";
 import { CurrentSeasonSelector } from "@/components/admin/seasons/current-season-selector";
 import { SeasonsTable } from "@/components/admin/seasons/seasons-table";
-import { CreateSeasonDialog } from "@/components/admin/seasons/create-season-dialog";
+
+const CreateSeasonDialog = dynamic(
+  () => import("@/components/admin/seasons/create-season-dialog").then(m => m.CreateSeasonDialog),
+  { ssr: false }
+);
 
 export function SeasonsManagement() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);

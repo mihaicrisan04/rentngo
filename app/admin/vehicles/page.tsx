@@ -1,12 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Plus, ArrowUpDown } from "lucide-react";
 import { VehiclesTable } from "@/components/admin/vehicles/vehicles-table";
-import { CreateVehicleDialog } from "@/components/admin/vehicles/create-vehicle-dialog";
 import { FeaturedCarsManagement } from "@/components/admin/vehicles/featured-cars-management";
 import { useRouter } from "next/navigation";
+
+const CreateVehicleDialog = dynamic(
+  () => import("@/components/admin/vehicles/create-vehicle-dialog").then(m => m.CreateVehicleDialog),
+  { ssr: false }
+);
 
 export default function VehiclesPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -21,8 +22,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { EditSeasonDialog } from "@/components/admin/seasons/edit-season-dialog";
 import { toast } from "sonner";
+
+const EditSeasonDialog = dynamic(
+  () => import("@/components/admin/seasons/edit-season-dialog").then(m => m.EditSeasonDialog),
+  { ssr: false }
+);
 
 export function SeasonsTable() {
   const [editingSeason, setEditingSeason] = useState<Id<"seasons"> | null>(null);
