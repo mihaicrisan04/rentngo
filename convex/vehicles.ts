@@ -683,6 +683,7 @@ export const getAllVehiclesWithClasses = query({
       // Transfer-related fields
       isTransferVehicle: v.optional(v.boolean()),
       transferPricePerKm: v.optional(v.number()),
+      transferSeats: v.optional(v.number()),
       // SEO slug
       slug: v.optional(v.string()),
       // Class information
