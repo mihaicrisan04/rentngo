@@ -258,6 +258,7 @@ export function DateTimePicker({
               onChange={(e) => handleTimeChange(e.target.value)}
               disabled={isLoading || !dateState}
               className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
+              style={{ color: 'CanvasText', backgroundColor: 'Canvas' }}
             >
               <option value="" disabled>
                 {t("selectTime")}
