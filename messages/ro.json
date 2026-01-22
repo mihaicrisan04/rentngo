@@ -3,13 +3,6 @@
     "title": "Masini de Inchiriat Cluj-Napoca",
     "subtitle": "Explorează Cluj-Napoca cu gama noastră largă de masini de inchiriat. Rezervare ușoară, prețuri competitive, servicii de încredere.",
     "viewAllCars": "Vezi Toate Mașinile",
-    "ourStory": {
-      "title": "Povestea Noastră",
-      "subtitle": "Partenerul tău de încredere pentru masini de inchiriat în Cluj-Napoca și nu numai",
-      "description1": "La Rent'n Go, credem că fiecare călătorie ar trebui să fie memorabilă. Fondată cu o pasiune pentru călătorii și un angajament pentru excelență, servim comunitatea din Cluj-Napoca cu soluții fiabile și accesibile pentru masini de inchiriat.",
-      "description2": "Indiferent dacă explorezi străzile istorice ale Cluj-Napoca, te aventurezi în frumoasa țară transilvăneană sau ai nevoie de un vehicul de încredere pentru afaceri, suntem aici să-ți facem călătoria lină și plăcută.",
-      "description3": "Flota noastră atent selectată de vehicule moderne, combinată cu prețuri transparente și servicii excepționale pentru clienți, asigură că experiența ta de închiriere depășește așteptările de fiecare dată."
-    },
     "faq": {
       "title": "Întrebări Frecvente",
       "description": "Găsește răspunsuri la întrebări comune despre închirierea unei mașini cu noi.",
@@ -122,9 +115,7 @@
     "businessHours": {
       "title": "Program de Lucru",
       "mondayToSunday": "Luni - Duminică",
-      "sunday": "Duminică",
-      "mondayToSundayTime": "24/7",
-      "sundayTime": "24/7"
+      "mondayToSundayTime": "24/7"
     }
   },
   "reservationPage": {
@@ -278,7 +269,6 @@
       "paymentMethodRequired": "Metoda de plată este obligatorie",
       "paymentMethodInvalid": "Vă rugăm să selectați o metodă de plată validă",
       "termsAcceptanceRequired": "Trebuie să acceptați termenii și condițiile",
-      "fixErrorsBeforeSubmitting": "Vă rugăm să corectați erorile din formular înainte de a trimite.",
       "returnTimeSameDay": "Ora de returnare trebuie să fie după ora de ridicare când returnezi în aceeași zi",
       "formErrors": "Vă rugăm să corectați erorile din formular înainte de a trimite."
     }
@@ -336,11 +326,6 @@
       "cashOnDelivery": "Plata Cash la Livrare",
       "cardOnDelivery": "Plata cu Cardul la Livrare",
       "cardOnline": "Plata cu Cardul Online"
-    },
-    "status": {
-      "confirmed": "Confirmată",
-      "pending": "În Așteptare",
-      "cancelled": "Anulată"
     }
   },
   "transferPage": {
@@ -422,6 +407,11 @@
     "noFeaturedCarsAvailable": "Nu sunt disponibile mașini recomandate momentan.",
     "browseCars": "Răsfoiește Mașinile",
     "home": "Acasă",
+    "cars": "Mașini",
+    "transfers": "Transferuri",
+    "about": "Despre",
+    "contact": "Contact",
+    "blog": "Blog",
     "goBack": "Înapoi",
     "cancel": "Anulează",
     "save": "Salvează",
@@ -436,15 +426,15 @@
     "required": "Obligatoriu",
     "optional": "Opțional",
     "noImage": "Fără Imagine",
-    "invalidData": "Date invalide"
+    "invalidData": "Date invalide",
+    "status": {
+      "confirmed": "Confirmată",
+      "pending": "În Așteptare",
+      "cancelled": "Anulată",
+      "completed": "Finalizată"
+    }
   },
   "navigation": {
-    "home": "Acasă",
-    "cars": "Mașini",
-    "transfers": "Transferuri",
-    "about": "Despre",
-    "contact": "Contact",
-    "blog": "Blog",
     "login": "Conectare",
     "signUp": "Înregistrare",
     "language": "Limba",
@@ -472,66 +462,6 @@
     "relatedPosts": "Articole Similare",
     "tags": "Etichete"
   },
-  "blogAdmin": {
-    "title": "Administrare Blog",
-    "description": "Creează și gestionează articole de blog",
-    "createBlog": "Creează Articol",
-    "editBlog": "Editează Articol",
-    "deleteBlog": "Șterge Articol",
-    "deleteConfirmTitle": "Șterge Articol",
-    "deleteConfirmDescription": "Sigur doriți să ștergeți acest articol? Această acțiune nu poate fi anulată.",
-    "status": {
-      "draft": "Ciornă",
-      "published": "Publicat"
-    },
-    "table": {
-      "title": "Titlu",
-      "author": "Autor",
-      "status": "Status",
-      "published": "Publicat",
-      "views": "Vizualizări",
-      "actions": "Acțiuni"
-    },
-    "form": {
-      "basicInfo": "Informații de Bază",
-      "content": "Conținut",
-      "images": "Imagini",
-      "metadata": "Metadata",
-      "title": "Titlu",
-      "titlePlaceholder": "Introduceți titlul articolului",
-      "slug": "Slug",
-      "slugPlaceholder": "url-prietenos-slug",
-      "slugHelper": "Identificator prietenos URL pentru acest articol",
-      "generateSlug": "Generează din Titlu",
-      "author": "Autor",
-      "authorPlaceholder": "Introduceți numele autorului",
-      "description": "Descriere",
-      "descriptionPlaceholder": "Scurtă descriere sau extras din articol",
-      "content": "Conținut (MDX)",
-      "contentPlaceholder": "Scrieți conținutul articolului în format MDX...",
-      "contentHelper": "Puteți folosi sintaxa Markdown și referi imaginile încărcate",
-      "coverImage": "Imagine de Copertă",
-      "coverImageHelper": "Imaginea principală pentru articol",
-      "additionalImages": "Imagini Adiționale",
-      "additionalImagesHelper": "Încărcați imagini și copiați ID-urile lor de stocare pentru a le folosi în conținut",
-      "uploadImages": "Încarcă Imagini",
-      "tags": "Etichete",
-      "tagsPlaceholder": "Adăugați etichete (apăsați Enter după fiecare etichetă)",
-      "status": "Status",
-      "publishDate": "Data Publicării",
-      "publishDateHelper": "Lăsați gol pentru publicare imediată",
-      "readingTime": "Timp de Citire (minute)",
-      "readingTimeHelper": "Timp estimat de citire",
-      "autoCalculate": "Calculează automat",
-      "preview": "Previzualizare",
-      "creating": "Se creează...",
-      "updating": "Se actualizează...",
-      "created": "Articolul a fost creat cu succes",
-      "updated": "Articolul a fost actualizat cu succes",
-      "deleted": "Articolul a fost șters cu succes",
-      "error": "A apărut o eroare. Vă rugăm să încercați din nou."
-    }
-  },
   "profile": {
     "title": "Profilul Meu",
     "subtitle": "Gestionează setările contului și vezi rezervările tale",
@@ -556,12 +486,6 @@
     "noReservationsDescription": "Nu ai făcut încă nicio rezervare. Începe prin a răsfoi mașinile noastre disponibile.",
     "pleaseSignIn": "Te rugăm să te conectezi pentru a-ți vedea profilul",
     "signInButton": "Conectează-te",
-    "status": {
-      "pending": "În Așteptare",
-      "confirmed": "Confirmată",
-      "cancelled": "Anulată",
-      "completed": "Finalizată"
-    },
     "table": {
       "vehicle": "Vehicul",
       "dates": "Perioada Închirierii",
@@ -571,11 +495,6 @@
     }
   },
   "footer": {
-    "home": "Acasă",
-    "cars": "Mașini",
-    "transfers": "Transferuri",
-    "about": "Despre",
-    "contact": "Contact",
     "privacy": "Confidențialitate",
     "terms": "Termeni",
     "copyright": "© 2026 Rent'n Go Cluj",
@@ -702,85 +621,12 @@
       }
     }
   },
-  "admin": {
-    "reservationsManagement": "Gestionarea Rezervărilor",
-    "reservationsDescription": "Vizualizează și gestionează toate cererile de rezervare și rezervările",
-    "addReservation": "Adaugă Rezervare",
-    "createReservation": "Creează Rezervare",
-    "editReservation": "Editează Rezervare",
-    "vehicleDetails": "Detalii Vehicul",
-    "customerInformation": "Informații Client",
-    "rentalPeriod": "Perioada de Închiriere",
-    "tabs": {
-      "basic": "Info de Bază",
-      "customer": "Client",
-      "rental": "Închiriere",
-      "pricing": "Prețuri"
-    },
-    "form": {
-      "selectVehicle": "Selectează Vehicul",
-      "customerName": "Numele Clientului",
-      "customerEmail": "Email Client",
-      "customerPhone": "Telefon Client",
-      "flightNumber": "Numărul Zborului (Opțional)",
-      "flightPlaceholder": "ex: RO 123",
-      "customerMessage": "Mesajul Clientului (Opțional)",
-      "customerMessagePlaceholder": "Orice cereri speciale sau note...",
-      "pickupDate": "Data de Ridicare",
-      "pickupTime": "Ora de Ridicare",
-      "pickupLocation": "Locația de Ridicare",
-      "returnDate": "Data de Returnare",
-      "returnTime": "Ora de Returnare",
-      "returnLocation": "Locația de Returnare",
-      "paymentMethod": "Metoda de Plată",
-      "totalPrice": "Preț Total (EUR)",
-      "totalPricePlaceholder": "ex: 250.00",
-      "autoCalculate": "Auto",
-      "recalculate": "Recalculează",
-      "creating": "Se creează...",
-      "updating": "Se actualizează...",
-      "autoUpdates": "Se actualizează automat când se schimbă factorii de preț"
-    },
-    "pricing": {
-      "baseRental": "Închiriere de bază ({days} zi{plural})",
-      "protection": "Protecție ({type})",
-      "scdw": "SCDW",
-      "standard": "Standard",
-      "total": "Total",
-      "zeroDeductible": "Franciză zero",
-      "standardWarranty": "Depozit Standard ({amount} EUR franciză)"
-    },
-    "emailDialog": {
-      "title": "Trimite Email către Client",
-      "subject": "Subiect",
-      "message": "Mesaj",
-      "messagePlaceholder": "Introduceți mesajul aici... (detaliile rezervării vor fi incluse automat)",
-      "templateNote": "Un șablon de email profesional cu detaliile rezervării va fi generat automat.",
-      "sending": "Se trimite...",
-      "sendEmail": "Trimite Email"
-    }
-  },
-  "transfersPage": {
-    "title": "În Curând",
-    "subtitle": "Pagina noastră de transferuri este în construcție. Rămâneți aproape!"
-  },
-  "email": {
-    "companyName": "Rent'n Go",
-    "address": "Calea Turzii 23, Cluj-Napoca, România",
-    "automatedMessage": "Aceasta este o notificare automată de la sistemul de rezervări Rent'n Go.",
-    "carRentalServices": "Servicii de Închiriere Auto",
-    "copyright": "© 2025 {companyName}. Toate drepturile rezervate."
-  },
   "carDetailPage": {
     "loading": "Se încarcă detaliile vehiculului...",
     "vehicleNotFound": {
       "title": "Vehicul Negăsit",
       "description": "Vehiculul pe care îl cauți nu există sau a fost eliminat.",
       "backToCars": "Înapoi la Mașini"
-    },
-    "breadcrumb": {
-      "home": "Acasă",
-      "cars": "Mașini"
     },
     "reserveThisCar": "Rezervă Această Mașină",
     "reserveDescription": "Apasă pentru a continua cu rezervarea"

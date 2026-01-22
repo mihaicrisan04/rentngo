@@ -63,6 +63,10 @@ export interface TransferVehicleInfo {
   make: string;
   model: string;
   year?: number;
+  type?: "sedan" | "suv" | "hatchback" | "sports" | "truck" | "van";
+  seats?: number;
+  transmission?: "automatic" | "manual";
+  fuelType?: "petrol" | "diesel" | "electric" | "hybrid" | "benzina";
 }
 
 export interface TransferPricingDetails {

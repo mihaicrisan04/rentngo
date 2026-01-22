@@ -5,11 +5,18 @@ import createMiddleware from 'next-intl/middleware';
 // Admin routes that require admin role
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 
-const ADMIN_USER_IDS = [
-  "user_2wrgqldXONHGnBJvkeLqTMisRiZ", // mihai dev env
-  "user_2ysDX4oi6GmtJ9xKYVBSFFFjflH", // tudor prod env
-  "user_2xbWHVNoaZTbon4ptfxvjwet6lT", // mihai prod env
-];
+/**
+ * ADMIN CONFIGURATION
+ *
+ * Admin access is controlled via Clerk publicMetadata.
+ * To grant admin access:
+ * 1. Go to Clerk Dashboard → Users → Select user
+ * 2. Edit "Public metadata" → Set: { "role": "admin" }
+ * 3. Save
+ *
+ * Session token must include metadata (configured in Clerk Dashboard → Sessions):
+ * { "metadata": "{{user.public_metadata}}" }
+ */
 
 // Create the internationalization middleware
 const intlMiddleware = createMiddleware({
@@ -20,33 +27,34 @@ const intlMiddleware = createMiddleware({
 
 export default clerkMiddleware(async (auth, req) => {
   const pathname = req.nextUrl.pathname;
-  
+
   // Skip internationalization for admin routes, API routes, and static files
-  if (isAdminRoute(req) || 
-      pathname.startsWith('/api/') || 
+  if (isAdminRoute(req) ||
+      pathname.startsWith('/api/') ||
       pathname.startsWith('/_next/') ||
       pathname.includes('.')) {
-    
+
     // Handle admin routes
     if (isAdminRoute(req)) {
-      const { userId } = await auth();
-      
+      const { userId, sessionClaims } = await auth();
+
       // If no user is authenticated, redirect to sign-in
       if (!userId) {
         const homeUrl = new URL("/", req.url);
         return NextResponse.redirect(homeUrl);
       }
-      
-      // If user is authenticated but not an admin, redirect to home
-      if (!ADMIN_USER_IDS.includes(userId)) {
+
+      // Check admin role from session claims (set via Clerk publicMetadata)
+      const isAdmin = sessionClaims?.metadata?.role === "admin";
+      if (!isAdmin) {
         const homeUrl = new URL("/", req.url);
         return NextResponse.redirect(homeUrl);
       }
     }
-    
+
     return NextResponse.next();
   }
-  
+
   // Apply internationalization to other routes
   return intlMiddleware(req);
 });

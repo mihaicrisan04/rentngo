@@ -1,6 +1,6 @@
 "use client";
 
-import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import {
   Breadcrumb,
   BreadcrumbItem,

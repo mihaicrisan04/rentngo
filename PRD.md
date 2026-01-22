@@ -1,412 +1,82 @@
 # RentNGo - Product Requirements Document
 
-**Version:** 1.7
-**Last Updated:** January 19, 2026
-**Status:** Active
+**Last Updated:** January 22, 2026
 
 ---
 
-## 1. Product Overview
+## Product Overview
 
-### 1.1 Description
+RentNGo is a car rental platform with VIP transfer services for the Romanian market. Built with Next.js 15, Convex, and Clerk. Supports Romanian (default) and English.
 
-RentNGo is a car rental platform with VIP transfer services serving the Romanian market. The platform enables customers to:
-- Browse and reserve rental vehicles
-- Book VIP transfer services (airport transfers, city transfers)
-- View seasonal pricing and promotions
-- Manage reservations through user profiles
-
-### 1.2 Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| Frontend | Next.js 15, React 19, TypeScript |
-| Backend | Convex (database + serverless) |
-| Authentication | Clerk |
-| Styling | TailwindCSS, Radix UI |
-| Email | React Email + Resend |
-| Maps | Mapbox GL |
-
-### 1.3 Supported Languages
-
-- Romanian (default)
-- English
+**Core Features:**
+- Vehicle browsing and reservations with tiered pricing
+- VIP transfer bookings with distance-based pricing
+- Seasonal pricing multipliers
+- Admin dashboard for managing all resources
+- Email notifications for bookings
 
 ---
 
-## 2. Current Features
+## Completed Tasks ✅
 
-### 2.1 Vehicle Reservations
-
-**Booking Flow:**
-1. Browse vehicles on `/cars` page
-2. Select vehicle and dates/times
-3. Choose pickup and return locations
-4. Enter personal information
-5. Select protection options and extras
-6. Choose payment method and confirm
-
-**Pricing Components:**
-- Base price (tiered by rental duration - longer = cheaper per day)
-- Seasonal multiplier (configured per time period)
-- Location fees (pickup and return)
-- SCDW protection (optional damage waiver)
-- Additional items (snow chains, child seats)
-
-**Defaults:**
-- Default location: Aeroport Cluj-Napoca
-- Default pickup time: 10:00
-- Default return time: 10:00
-
-**Day Calculation:**
-- Same-day rental counts as 1 day
-- If return time exceeds pickup time by 2+ hours, an extra day is charged
-
-### 2.2 VIP Transfers
-
-**Booking Flow:**
-1. Enter pickup and dropoff locations (Mapbox search)
-2. Select date, time, and passenger count
-3. Choose one-way or round-trip
-4. Select vehicle from available options
-5. Enter customer info and confirm
-
-**Current Pricing Formula:**
-- Under 20km: Base fare only (no distance charge)
-- 20km or more: Distance × price per km (no base fare)
-- Round trip: 2× one-way price
-
-**Issues with Current Formula:**
-- No base fare for long distances
-- No minimum fare for very short trips
-- No round-trip discount incentive
-
-### 2.3 Seasonal Pricing
-
-- Admin configures seasons with date periods and multipliers
-- Multipliers range from 0.8 (20% off) to 1.5 (50% markup)
-- System selects season with most overlap to rental dates
-- Multiplier stored in reservation for historical accuracy
-
-### 2.4 Admin Dashboard
-
-| Feature | Description |
-|---------|-------------|
-| Overview | Stats, charts, recent activity |
-| Vehicles | Add/edit vehicles, manage images |
-| Reservations | View and manage all bookings |
-| Transfers | View and manage transfer bookings |
-| Seasons | Configure seasonal pricing periods |
-| Blogs | Create and publish blog posts |
-
-### 2.5 Email Notifications
-
-- Reservation confirmation (to customer + admin)
-- Transfer confirmation (to customer + admin)
-- Status change notifications (planned)
+| Task | Date | Notes |
+|------|------|-------|
+| Default Pickup/Drop Times | Jan 18 | Both default to 10:00 |
+| Sequential Calendar Flow | Jan 18 | Return calendar opens after pickup selection |
+| Transfer Pricing Update | Jan 19 | Tiered km pricing + class multipliers |
+| Remove Unused Components | Jan 19 | ~2,500 lines removed |
+| Deprecated Fields Cleanup | Jan 19 | Removed `class`, `pricePerDay`, `payments` table |
+| Transfer Vehicle Selection UX | Jan 19 | Sticky floating card for selection |
+| Rename Vehicle Classes Admin | Jan 19 | "Ordering" → "Classes" |
+| Component Directory Restructuring | Jan 20 | Feature-based organization |
+| Email Components Consolidation | Jan 20 | Single source in `convex/emails/` |
+| Vehicle Slug URLs | Jan 20 | SEO-friendly `/cars/[slug]` routes |
+| Vehicle Class Multiplier Management | Jan 20 | UI in class detail page |
+| Transfer Email - Vehicle Details | Jan 20 | Full vehicle info in confirmation |
+| Transfer Booking - T&C Links | Jan 20 | Terms & Privacy links added |
+| Transfer Vehicle Seats Config | Jan 20 | Separate `transferSeats` field |
+| Admin Role Authorization | Jan 22 | Clerk publicMetadata role check in middleware |
+| File Naming Cleanup | Jan 22 | 24 files renamed to kebab-case, typo fixed |
+| Translation Files Cleanup | Jan 22 | Removed unused namespaces, consolidated keys, ~18% reduction |
 
 ---
 
-## 3. Planned Changes
+## Planned Tasks
 
-### 3.1 Default Pickup/Drop Times ✅ COMPLETED
-
-**Implementation Date:** January 18, 2026
-
-Both pickup and return times now default to **10:00** for car rental reservations. Users can still change the time if needed.
-
----
-
-### 3.2 Sequential Calendar Flow ✅ COMPLETED
-
-**Implementation Date:** January 18, 2026
-
-When user selects a pickup date, the return date calendar automatically opens. This creates a smoother booking flow and reduces clicks.
-
-**Behavior:**
-- User clicks pickup date → calendar opens
-- User selects date → pickup calendar closes → return calendar opens automatically
-- Works consistently across all reservation pages
-
-**Pages Updated:**
-- Homepage (`vehicle-search-filter-form.tsx`) - Already had this behavior
-- `/cars` page (`vehicle-search-form.tsx`) - Added
-- `/cars/[id]` page (`rental-details.tsx`) - Added
-- `/reservation` page - Added
+| Priority | Task | Description |
+|----------|------|-------------|
+| P2 | Copy & Content Update | Review translations for tone, grammar, consistency |
+| P2 | Replace next lint | next lint deprecated in Next.js 16; migrate to ESLint CLI |
+| P3 | Time Picker Dark Theme Fix | White-on-white text on Windows in dark mode |
+| P3 | React Performance Optimization | Apply Vercel best practices (memoization, splitting, etc.) |
 
 ---
 
-### 3.3 Transfer Pricing Update ✅ COMPLETED
-
-**Implementation Date:** January 19, 2026
-
-**New Tiered Pricing System:**
-
-The transfer pricing now uses a tiered system with global km-range pricing tiers and vehicle class multipliers.
-
-**Pricing Formula:**
-```
-total_price = base_fare + max(total_km - 15, 0) × tier_price_per_km × class_multiplier
-```
-
-For round trips: `total_price × 2`
-
-**Components:**
-- **Base fare**: Always included, covers first 15km (configured per vehicle class in `vehicleClasses.transferBaseFare`)
-- **Tier price per km**: From `transferPricingTiers` table based on extra km range
-- **Class multiplier**: Applied on top of tier pricing (configured per vehicle class in `vehicleClasses.transferMultiplier`)
-
-**Default Tier Configuration (Admin Editable):**
-
-| Extra KM Range | Price per KM |
-|----------------|--------------|
-| 0-25 km        | €1.60        |
-| 25-65 km       | €1.20        |
-| 65-185 km      | €1.00        |
-| 185-285 km     | €0.97        |
-| 285-385 km     | €0.95        |
-| 385+ km        | €0.90        |
-
-**Admin Configuration:**
-- Access via **Admin > Transfers > Pricing Tiers** button
-- Add, edit, delete, and toggle tiers
-- Seed default tiers if none exist
-- Configure class multipliers in **Admin > Vehicles > Classes**
-
-**Files Changed:**
-- `convex/schema.ts` - Added `transferPricingTiers` table and `transferMultiplier` to vehicleClasses
-- `convex/transferPricing.ts` - New module with CRUD and calculation functions
-- `convex/transfers.ts` - Updated `getTransferVehiclesWithImages` to use new pricing
-- `convex/vehicleClasses.ts` - Added `transferMultiplier` field
-- `components/admin/transfer-pricing-dialog.tsx` - New admin dialog
-- `app/admin/transfers/page.tsx` - Added pricing tiers button
-- `components/transfer/transfer-vehicle-card.tsx` - Simplified display (distance + total only)
-- `components/transfer/transfer-summary-card.tsx` - Simplified display
-- `app/[locale]/transfers/booking/page.tsx` - Uses server-side pricing
-- `app/[locale]/transfers/confirmation/[transferId]/page.tsx` - Simplified display
-- `convex/emails/components/transfer_pricing_section.tsx` - Simplified display
-
-**Client Display:**
-- Shows only distance (X km) and total price (€Y.YY)
-- No pricing breakdown or per-km rates shown to customers
-
----
-
-### 3.4 Copy & Content Update
-
-**Status:** Planned
-
-**Scope:**
-- Review all text in `messages/en.json` and `messages/ro.json`
-- Ensure consistent tone and brand voice
-- Fix grammatical or translation errors
-- Make error messages helpful and actionable
-
-**Sections to Review:**
-- Homepage (hero, FAQ, CTAs)
-- About page (company story, values)
-- Reservation flow (form labels, confirmation)
-- Transfer flow (search, booking)
-- Common elements (buttons, navigation)
-- Validation messages
-
----
-
-### 3.5 Codebase Cleanup
-
-**Status:** In Progress
-
-#### 3.5.1 Remove Unused Components ✅ COMPLETED
-
-**Implementation Date:** January 19, 2026
-
-Removed 19 unused component files totaling ~2,500 lines of code (~9.8% of components directory):
-
-| Category | Files Removed | Lines |
-|----------|---------------|-------|
-| Vehicle components | 7 | ~1,323 |
-| UI components (shadcn) | 7 | ~702 |
-| Admin components | 2 | ~180 |
-| Top-level components | 3 | ~297 |
-
-**Files Deleted:**
-- `edit-vehicle-form.tsx`, `create-vehicle-form.tsx` (admin uses dialogs)
-- `vehicle-image-carrousel.tsx` (typo version, unused)
-- 4 vehicle skeleton components (never imported)
-- 7 shadcn UI components (installed but never used)
-- `team-switcher.tsx`, `nav-projects.tsx` (admin sidebar unused)
-- `location-search-input.tsx`, `rental-details-skeleton.tsx`, `login-form.tsx`
-
-Updated `components/vehicle/index.ts` to remove stale exports.
-
-#### 3.5.2 Deprecated Fields Cleanup ✅ COMPLETED
-
-**Implementation Date:** January 19, 2026
-
-Removed deprecated vehicle fields and dead code:
-
-**Schema Changes:**
-- ✅ Removed `payments` table (never implemented)
-- ✅ Removed `vehicles.class` field (replaced by `classId`)
-- ✅ Removed `vehicles.pricePerDay` field (replaced by `pricingTiers`)
-- ✅ Removed `by_class` index
-
-**Code Changes:**
-- ✅ Deleted `hooks/useSeasonalPricing.ts` (replaced by `useDateBasedSeasonalPricing`)
-- ✅ Updated admin dialogs to use date-based seasonal pricing hook
-- ✅ Updated `vehicles-table.tsx` to lookup class name via `classId`
-- ✅ Removed `class` from vehicle form schemas and Convex mutations
-- ✅ Removed `pricePerDay` from vehicle form schemas and Convex mutations
-- ✅ Removed `minPrice`/`maxPrice` filtering from vehicle queries
-- ✅ Removed `VehicleClass` type from `types/vehicle.ts`
-- ✅ Removed legacy `pricePerDay` fallbacks from pricing utilities
-- ✅ Removed ~20 lines of TODO comments from `convex/reservations.ts`
-
-**Migrations Added:**
-- `convex/migrations/clearDeprecatedClassField.ts`
-- `convex/migrations/clearDeprecatedPricePerDay.ts`
-
-**Deployment Note:** Run migrations before deploying schema changes.
-
-#### 3.5.3 Remaining Items
-
-**TODO Items:**
-- Vehicle availability checking (implement or remove)
-- Email on status change (implement)
-
-**Incomplete Features:**
-- Promotional codes (field exists but no logic)
-
-**Future Consideration:**
-- Component directory restructuring (145 files could benefit from feature-based organization)
-
----
-
-### 3.6 Transfer Vehicle Selection UX Improvement ✅ COMPLETED
-
-**Implementation Date:** January 19, 2026
-
-**Problem:**
-The "Continue to Booking" button on the transfer vehicle selection page was hidden at the bottom and required scrolling to find.
-
-**Solution Implemented:**
-- **Sticky Floating Card:** A glassmorphic card using CSS `position: sticky` with `bottom: 0`
-  - Sticks to the bottom of the viewport while scrolling within the page container
-  - Naturally scrolls away when the container ends (before the footer)
-  - Shows selected vehicle image (desktop only), name, seats, and total price
-  - Empty state prompts user to select a vehicle with disabled continue button
-  - Glass effect with `bg-background/80 backdrop-blur-xl`
-  - Safe area padding for iPhone home indicator
-  - Responsive: compact on mobile, more spacious on desktop
-
-**Files Changed:**
-- `components/transfer/transfer-booking-sidebar.tsx` - New `TransferBookingFloatingCard` component
-- `components/transfer/transfer-vehicle-list.tsx` - Added `onVehiclesLoaded` callback to expose vehicles data
-- `app/[locale]/transfers/vehicles/page.tsx` - Simplified layout (full-width vehicle grid + sticky floating card)
-- `messages/en.json` - Added `selectPrompt` translation
-- `messages/ro.json` - Added `selectPrompt` translation
-
-**Layout Changes:**
-- Vehicle grid takes full page width
-- Floating card is centered with `max-w-2xl` container
-- Pure CSS sticky positioning (no JavaScript needed)
-
----
-
-### 3.7 Rename Vehicle Classes Admin Section ✅ COMPLETED
-
-**Implementation Date:** January 19, 2026
-
-**Problem:**
-The current "Class Ordering" / "Manage Ordering" button and page names are confusing. This section should be a general vehicle classes management area.
-
-**Changes Made:**
-- Renamed folder from `ordering/` to `classes/`
-- Button text: "Manage Ordering" → "Manage Classes"
-- Page title: "Class Ordering" → "Vehicle Classes"
-- Page subtitle: "Drag and drop to reorder vehicle classes" → "Manage and reorder vehicle classes"
-- Updated breadcrumb logic in `layout.tsx`
-- Updated all internal navigation links
-
-**Files Changed:**
-- `app/admin/vehicles/page.tsx` - Updated button text and URL
-- `app/admin/vehicles/classes/page.tsx` (renamed from ordering) - Updated titles and navigation
-- `app/admin/vehicles/classes/[classId]/page.tsx` - Updated back button URLs
-- `app/admin/layout.tsx` - Updated breadcrumb route detection
-
----
-
-### 3.8 Vehicle Slug URLs
-
-**Status:** Planned
-
-**Problem:**
-Car detail URLs currently use Convex IDs (e.g., `/cars/jh7abc123`), which are not SEO-friendly or memorable.
-
-**Proposed Solution:**
-- Add customizable `slug` field to vehicles
-- Change car detail URLs from `/cars/[id]` to `/cars/[slug]`
-- Add slug input in admin vehicle dialogs with auto-generate button
-- Slug format: `{make}-{model}-{year}` (e.g., `bmw-x5-2024`)
-
-**Files to Update:**
-- `convex/schema.ts` - Add slug field + index
-- `convex/vehicles.ts` - Add slug to mutations, getBySlug query
-- `lib/vehicleUtils.ts` - Add generateVehicleSlug function
-- `components/admin/create-vehicle-dialog.tsx` - Add slug input
-- `components/admin/edit-vehicle-dialog.tsx` - Add slug input
-- `app/[locale]/cars/[slug]/page.tsx` - Rename from [id]
-- Vehicle card components - Use slug in URLs
-- `app/sitemap.ts` - Use slug in sitemap
-
-**Plan file:** `.claude/plans/vehicle-slug-urls.md`
-
----
-
-## 4. Implementation Priorities
-
-| Priority | Change | Status | Impact |
-|----------|--------|--------|--------|
-| P1 | Default Pickup/Drop Times | ✅ Done | UX improvement |
-| P1 | Sequential Calendar Flow | ✅ Done | UX improvement |
-| P1 | Transfer Pricing Update | ✅ Done | Revenue impact |
-| P2 | Copy & Content Update | Planned | Brand consistency |
-| P2 | Transfer Vehicle Selection UX | ✅ Done | UX improvement |
-| P2 | Rename Vehicle Classes Admin | ✅ Done | Admin clarity |
-| P2 | Vehicle Slug URLs | Planned | SEO improvement |
-| P3 | Codebase Cleanup | In Progress | Maintainability |
-
----
-
-## 5. Key Business Rules
-
-### Reservation Rules
-- Minimum rental: 1 day
-- Locations: Predefined list with fixed fees
-- Payment: Cash on delivery, card on delivery, or card online
-- Status flow: pending → confirmed → completed (or cancelled)
-
-### Transfer Rules
-- Uses real-time distance calculation via Mapbox
-- Supports one-way and round-trip
-- Payment: Cash or card on delivery only
-- Status flow: Same as reservations
-
-### Seasonal Pricing Rules
-- Multiple seasons can be active simultaneously
-- Season with most overlap to rental dates applies
-- Default multiplier is 1.0 (no change)
+## Key Business Rules
+
+**Reservations:**
+- Minimum 1 day rental
+- Same-day = 1 day; return 2+ hours late = extra day
+- Payment: cash, card on delivery, or card online
+
+**Transfers:**
+- Distance via Mapbox; supports one-way and round-trip
+- Pricing: base fare (covers first 15km) + tiered per-km rate × class multiplier
+- Payment: cash or card on delivery only
+
+**Seasonal Pricing:**
+- Season with most overlap applies
+- Default multiplier: 1.0
 
 ---
 
 ## Revision History
 
-| Version | Date | Changes |
+| Version | Date | Summary |
 |---------|------|---------|
-| 1.0 | 2026-01-18 | Initial PRD creation |
-| 1.1 | 2026-01-18 | Completed default times feature, cleaned up document |
-| 1.2 | 2026-01-18 | Added sequential calendar flow across all reservation pages |
-| 1.3 | 2026-01-19 | Completed transfer pricing overhaul with tiered pricing system |
-| 1.4 | 2026-01-19 | Renamed Vehicle Classes admin section (ordering → classes) |
-| 1.5 | 2026-01-19 | Added sticky sidebar and mobile bottom bar to transfer vehicle selection page |
-| 1.6 | 2026-01-19 | Completed unused component removal (~2,500 lines) |
+| 1.0 | Jan 18 | Initial PRD |
+| 2.0 | Jan 20 | Major features complete |
+| 3.0 | Jan 22 | Simplified to task-focused format |
+| 3.1 | Jan 22 | Admin role authorization via Clerk publicMetadata |
+| 3.2 | Jan 22 | File naming cleanup; added lint migration task |
+| 3.3 | Jan 22 | Translation files cleanup and consolidation |

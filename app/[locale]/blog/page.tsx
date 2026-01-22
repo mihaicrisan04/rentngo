@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
-import { BlogListClient } from "@/components/blog/blog-list-client";
+import { BlogListClient } from "@/components/features/blog/blog-list-client";
 import { getTranslations } from "next-intl/server";
 
 interface BlogPageProps {

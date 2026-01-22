@@ -28,7 +28,7 @@ import {
   Plane,
 } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
-import { getPriceForDurationWithSeason } from "@/lib/vehicleUtils";
+import { getPriceForDurationWithSeason } from "@/lib/vehicle-utils";
 
 function ReservationConfirmationContent() {
   const searchParams = useSearchParams();

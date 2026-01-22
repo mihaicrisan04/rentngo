@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { useQuery, useMutation } from "convex/react";
@@ -17,8 +18,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { transferStorage, TransferSearchData } from "@/lib/transferStorage";
-import { TransferSummaryCard } from "@/components/transfer/transfer-summary-card";
+import { transferStorage, TransferSearchData } from "@/lib/transfer-storage";
+import { TransferSummaryCard } from "@/components/features/transfers/transfer-summary-card";
 
 interface PersonalInfo {
   name: string;
@@ -469,28 +470,67 @@ export default function TransferBookingPage() {
                   </p>
                 )}
 
-                <div className="flex items-start space-x-3 pt-4">
-                  <Checkbox
-                    id="terms"
-                    checked={termsAccepted}
-                    onCheckedChange={(checked) =>
-                      setTermsAccepted(checked as boolean)
-                    }
-                  />
-                  <div className="grid gap-1.5 leading-none">
-                    <Label
-                      htmlFor="terms"
-                      className="text-sm font-normal cursor-pointer"
-                    >
-                      {tReservation("paymentMethod.termsAcceptance")}
-                    </Label>
-                    {errors.termsAccepted && (
-                      <p className="text-sm text-red-500 flex items-center">
-                        <AlertCircle className="h-4 w-4 mr-1" />
-                        {errors.termsAccepted}
-                      </p>
-                    )}
+                <div className="pt-4 border-t">
+                  <div className="flex items-start space-x-2">
+                    <Checkbox
+                      id="terms"
+                      checked={termsAccepted}
+                      onCheckedChange={(checked) =>
+                        setTermsAccepted(checked as boolean)
+                      }
+                    />
+                    <div className="text-sm leading-relaxed">
+                      {locale === "ro" ? (
+                        <>
+                          Accept{" "}
+                          <Link
+                            href="/terms"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:text-primary/80 underline"
+                          >
+                            Termenii și Condițiile
+                          </Link>{" "}
+                          și{" "}
+                          <Link
+                            href="/privacy"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:text-primary/80 underline"
+                          >
+                            Politica de Confidențialitate
+                          </Link>
+                        </>
+                      ) : (
+                        <>
+                          I accept the{" "}
+                          <Link
+                            href="/terms"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:text-primary/80 underline"
+                          >
+                            Terms and Conditions
+                          </Link>{" "}
+                          and{" "}
+                          <Link
+                            href="/privacy"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:text-primary/80 underline"
+                          >
+                            Privacy Policy
+                          </Link>
+                        </>
+                      )}
+                    </div>
                   </div>
+                  {errors.termsAccepted && (
+                    <p className="text-sm text-red-500 mt-1 flex items-center">
+                      <AlertCircle className="h-4 w-4 mr-1" />
+                      {errors.termsAccepted}
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>

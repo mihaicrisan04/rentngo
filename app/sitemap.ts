@@ -61,9 +61,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })
   );
 
-  // Generate vehicle/car detail URLs
+  // Generate vehicle/car detail URLs using slug (falls back to _id for backwards compatibility)
   const vehicleUrls = vehicles.flatMap((vehicle) =>
-    createBilingualEntry(`/cars/${vehicle._id}`, {
+    createBilingualEntry(`/cars/${vehicle.slug || vehicle._id}`, {
       lastModified: new Date(vehicle._creationTime),
       changeFrequency: "weekly",
       priority: 0.8,

@@ -5,9 +5,9 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { CreateBlogDialog } from "@/components/admin/create-blog-dialog";
-import { EditBlogDialog } from "@/components/admin/edit-blog-dialog";
-import { BlogTable } from "@/components/admin/blog-table";
+import { CreateBlogDialog } from "@/components/admin/blog/create-blog-dialog";
+import { EditBlogDialog } from "@/components/admin/blog/edit-blog-dialog";
+import { BlogTable } from "@/components/admin/blog/blog-table";
 import { BlogListItem } from "@/types/blog";
 import {
   Card,

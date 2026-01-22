@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { AnimatedGroup } from "@/components/ui/animated-group";
-import { BackgroundImage } from "@/components/ui/BackgroundImage";
+import { BackgroundImage } from "@/components/ui/background-image";
 import {
   Car,
   Users,

@@ -1,11 +1,11 @@
 import { Metadata } from "next";
 import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
-import { BlogDetailClient } from "@/components/blog/blog-detail-client";
+import { BlogDetailClient } from "@/components/features/blog/blog-detail-client";
 import {
   BlogStructuredData,
   BreadcrumbStructuredData,
-} from "@/components/blog/blog-structured-data";
+} from "@/components/features/blog/blog-structured-data";
 import { notFound } from "next/navigation";
 // import { getTranslations } from "next-intl/server";
 

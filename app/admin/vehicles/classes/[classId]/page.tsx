@@ -6,7 +6,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { VehicleOrderingCard } from "@/components/admin/vehicle-ordering-card";
+import { VehicleOrderingCard } from "@/components/admin/vehicles/vehicle-ordering-card";
 import { ArrowLeft, Loader2, Check } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "sonner";
@@ -101,6 +101,8 @@ export default function VehicleOrderingPage() {
   const [transferBaseFare, setTransferBaseFare] = useState<string>("");
   const [isSaving50km, setIsSaving50km] = useState(false);
   const [isSavingBaseFare, setIsSavingBaseFare] = useState(false);
+  const [transferMultiplier, setTransferMultiplier] = useState<string>("");
+  const [isSavingMultiplier, setIsSavingMultiplier] = useState(false);
 
   // Fetch vehicle class details
   const vehicleClass = useQuery(api.vehicleClasses.getById, { id: classId });
@@ -119,6 +121,9 @@ export default function VehicleOrderingPage() {
     if (vehicleClass) {
       setAdditional50kmPrice(String(vehicleClass.additional50kmPrice ?? 5));
       setTransferBaseFare(String(vehicleClass.transferBaseFare ?? 25));
+      setTransferMultiplier(
+        vehicleClass.transferMultiplier?.toString() ?? "1.0"
+      );
     }
   }, [vehicleClass]);
 
@@ -163,6 +168,28 @@ export default function VehicleOrderingPage() {
       toast.error("Failed to update base fare");
     } finally {
       setIsSavingBaseFare(false);
+    }
+  };
+
+  // Handler for saving transfer multiplier
+  const handleSaveMultiplier = async () => {
+    const value = parseFloat(transferMultiplier);
+    if (isNaN(value) || value <= 0) {
+      toast.error("Multiplier must be a positive number");
+      return;
+    }
+
+    setIsSavingMultiplier(true);
+    try {
+      await updateVehicleClass({
+        id: classId,
+        transferMultiplier: Math.round(value * 100) / 100,
+      });
+      toast.success("Transfer multiplier updated");
+    } catch {
+      toast.error("Failed to update multiplier");
+    } finally {
+      setIsSavingMultiplier(false);
     }
   };
 
@@ -256,9 +283,14 @@ export default function VehicleOrderingPage() {
         </div>
       </div>
 
-      {/* Pricing Settings */}
+      {/* Rental Pricing */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Pricing Settings</h2>
+        <div>
+          <h2 className="text-xl font-semibold">Rental Pricing</h2>
+          <p className="text-sm text-muted-foreground">
+            Pricing settings for car rentals
+          </p>
+        </div>
 
         {/* Extra 50km Price */}
         <div className="flex items-center gap-4 p-4 rounded-lg border bg-card">
@@ -292,11 +324,21 @@ export default function VehicleOrderingPage() {
             </Button>
           </div>
         </div>
+      </div>
+
+      {/* Transfer Pricing */}
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold">Transfer Pricing</h2>
+          <p className="text-sm text-muted-foreground">
+            Pricing settings for VIP transfer services
+          </p>
+        </div>
 
         {/* Transfer Base Fare */}
         <div className="flex items-center gap-4 p-4 rounded-lg border bg-card">
           <div className="flex-1">
-            <p className="font-medium">Transfer Base Fare</p>
+            <p className="font-medium">Base Fare</p>
             <p className="text-sm text-muted-foreground">
               Minimum fare for transfer bookings in this class
             </p>
@@ -318,6 +360,40 @@ export default function VehicleOrderingPage() {
               disabled={isSavingBaseFare}
             >
               {isSavingBaseFare ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Check className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Transfer Multiplier */}
+        <div className="flex items-center gap-4 p-4 rounded-lg border bg-card">
+          <div className="flex-1">
+            <p className="font-medium">Rate Multiplier</p>
+            <p className="text-sm text-muted-foreground">
+              Adjusts the per-km rate for this class (e.g., 1.2 = 20% higher)
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              min="0.1"
+              step="0.1"
+              value={transferMultiplier}
+              onChange={(e) => setTransferMultiplier(e.target.value)}
+              className="w-24"
+              placeholder="1.0"
+            />
+            <span className="text-sm text-muted-foreground">x</span>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={handleSaveMultiplier}
+              disabled={isSavingMultiplier}
+            >
+              {isSavingMultiplier ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Check className="h-4 w-4" />

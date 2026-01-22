@@ -133,6 +133,10 @@ const transferVehicleInfoValidator = v.object({
   make: v.string(),
   model: v.string(),
   year: v.optional(v.number()),
+  type: v.optional(v.string()),
+  seats: v.optional(v.number()),
+  transmission: v.optional(v.string()),
+  fuelType: v.optional(v.string()),
 });
 
 const transferPricingDetailsValidator = v.object({
@@ -169,7 +173,7 @@ export const sendTransferConfirmationEmail = internalAction({
     const emailData: TransferEmailData = {
       transferNumber: args.transferNumber,
       customerInfo: args.customerInfo,
-      vehicleInfo: args.vehicleInfo,
+      vehicleInfo: args.vehicleInfo as TransferEmailData["vehicleInfo"],
       pickupLocation: args.pickupLocation,
       dropoffLocation: args.dropoffLocation,
       pickupDate: args.pickupDate,

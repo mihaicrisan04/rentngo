@@ -5,8 +5,93 @@ All notable changes to RentNGo are documented here.
 ## [Unreleased]
 
 ### Planned
-- Vehicle slug URLs for SEO-friendly car detail pages (see `.claude/plans/vehicle-slug-urls.md`)
 - Copy & content review across all translations
+- React performance optimization (Vercel best practices)
+
+## [2.3.0] - 2026-01-20
+
+### Added
+- **Transfer vehicle seats configuration**: Added `transferSeats` field for accurate passenger capacity filtering
+  - New `transferSeats` field on vehicles schema (optional number)
+  - Field only visible in admin when "Is Transfer Vehicle" is checked
+  - Filtering logic: uses `transferSeats` if set, otherwise falls back to `seats - 2`
+  - Transfer vehicle cards and emails show `transferSeats ?? seats`
+  - Admin dialogs show regular seats value as placeholder for reference
+
+### Changed
+- Transfer vehicle filtering now uses effective capacity (`transferSeats ?? (seats - 2)`) instead of adding +2 buffer
+- Transfer confirmation emails pass effective seats for vehicle info section
+- Transfer vehicle list component now passes `transferSeats` to vehicle cards
+
+### Fixed
+- Removed cursor-pointer from terms acceptance text on transfer booking page (only checkbox and links are clickable)
+
+## [2.2.0] - 2026-01-20
+
+### Added
+- **Transfer booking Terms & Privacy links**: Added links to Terms & Conditions and Privacy Policy
+  - Links open in new tab with proper `rel="noopener noreferrer"`
+  - Locale-based translations (Romanian/English)
+  - Styling matches the reservation page implementation
+  - Added border-top separator for visual distinction from payment methods
+
+## [2.1.0] - 2026-01-20
+
+### Added
+- **Transfer email vehicle details**: Added full vehicle information to transfer confirmation emails
+  - Extended `TransferVehicleInfo` type with type, seats, transmission, fuelType
+  - Reused `VehicleInfoSection` component from reservation emails
+  - Both user and admin transfer emails now display vehicle details
+  - Includes Romanian and English translations for vehicle section labels
+
+## [2.0.0] - 2026-01-20
+
+### Added
+- **Vehicle class transfer multiplier UI**: Admin can now edit transfer multiplier per class
+  - Added "Transfer Pricing" section to class detail page (`/admin/vehicles/classes/[classId]`)
+  - Includes Base Fare and Rate Multiplier fields with inline editing
+  - Separated pricing settings into "Rental Pricing" and "Transfer Pricing" sections
+
+### Changed
+- Class detail page pricing UI reorganized for better clarity
+  - "Rental Pricing" section: Extra 50km Price
+  - "Transfer Pricing" section: Base Fare, Rate Multiplier
+
+## [1.9.0] - 2026-01-20
+
+### Added
+- **Vehicle slug URLs**: SEO-friendly car detail page URLs
+  - Added `slug` field to vehicles schema with unique index
+  - Car detail pages now use `/cars/[slug]` instead of `/cars/[id]`
+  - Admin dialogs include slug input with auto-generate button (sparkle icon)
+  - Slug format: `{make}-{model}-{year}` (e.g., `bmw-x5-2024`)
+  - Added `getBySlug` query with uniqueness validation
+  - Added `generateVehicleSlug()` and `validateVehicleSlug()` utilities
+
+### Changed
+- Vehicle cards now link to slug-based URLs (falls back to `_id` for backwards compatibility)
+- Reservation page back button uses slug-based URL
+- Sitemap generates slug-based URLs for vehicles
+
+## [1.8.1] - 2026-01-20
+
+### Removed
+- **Email components consolidation**: Removed unused legacy email system
+  - Deleted `components/shared/email/` directory (10 files) - legacy code from before Convex migration
+  - Deleted deprecated `/api/send/request-confirmation` route (only consumer of shared/email)
+  - Production email system lives in `convex/emails/` (self-contained with 4 templates and 8 components)
+  - Kept `/api/send/reservation-email` route (used by admin for manual resends, has inline HTML)
+
+## [1.8.0] - 2026-01-20
+
+### Changed
+- **Component directory restructuring**: Reorganized ~130 components from type-based to feature-based structure
+  - Created `shared/` directory with `auth/`, `search-filters/`, `providers/`, `navigation/`
+  - Created `features/` directory with `vehicles/`, `reservations/`, `transfers/`, `blog/`, `landing/`
+  - Reorganized `admin/` into resource-based subdirectories: `vehicles/`, `reservations/`, `transfers/`, `vehicle-classes/`, `seasons/`, `blog/`
+  - Moved 14 scattered top-level components to proper locations
+  - Added barrel exports (index.ts) for cleaner imports
+  - Updated all import paths across the codebase
 
 ## [1.7.0] - 2026-01-19
 

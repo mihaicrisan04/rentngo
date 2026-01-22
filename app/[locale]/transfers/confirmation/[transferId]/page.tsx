@@ -31,13 +31,14 @@ import {
   Luggage,
 } from "lucide-react";
 import Link from "next/link";
-import { TransferRouteMap } from "@/components/transfer/transfer-route-map";
+import { TransferRouteMap } from "@/components/features/transfers/transfer-route-map";
 
 export default function TransferConfirmationPage() {
   const params = useParams();
   const router = useRouter();
   const t = useTranslations("transferPage");
   const tConfirmation = useTranslations("confirmationPage");
+  const tCommon = useTranslations("common");
 
   const transferId = params.transferId as Id<"transfers">;
 
@@ -67,22 +68,22 @@ export default function TransferConfirmationPage() {
       pending: {
         variant: "secondary" as const,
         className: "bg-yellow-100 text-yellow-800 border-yellow-200",
-        label: tConfirmation("status.pending"),
+        label: tCommon("status.pending"),
       },
       confirmed: {
         variant: "default" as const,
         className: "bg-green-100 text-green-800 border-green-200",
-        label: tConfirmation("status.confirmed"),
+        label: tCommon("status.confirmed"),
       },
       cancelled: {
         variant: "destructive" as const,
         className: "bg-red-100 text-red-800 border-red-200",
-        label: tConfirmation("status.cancelled"),
+        label: tCommon("status.cancelled"),
       },
       completed: {
         variant: "secondary" as const,
         className: "bg-blue-100 text-blue-800 border-blue-200",
-        label: "Completed",
+        label: tCommon("status.completed"),
       },
     };
 

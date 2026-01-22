@@ -31,25 +31,25 @@ import {
   AlertCircle,
   Info,
 } from "lucide-react";
-import { LocationPicker } from "@/components/location-picker";
-import { DateTimePicker } from "@/components/date-time-picker";
-import { searchStorage } from "@/lib/searchStorage";
+import { LocationPicker } from "@/components/shared/search-filters/location-picker";
+import { DateTimePicker } from "@/components/shared/search-filters/date-time-picker";
+import { searchStorage } from "@/lib/search-storage";
 import {
   calculateVehiclePricingWithSeason,
   getPriceForDurationWithSeason,
   calculateIncludedKilometers,
   calculateExtraKilometersPrice,
-} from "@/lib/vehicleUtils";
+} from "@/lib/vehicle-utils";
 import { getBasePricePerDay } from "@/types/vehicle";
 import { useUser, SignInButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 import { Progress } from "@/components/ui/progress";
-import { useDateBasedSeasonalPricing } from "@/hooks/useDateBasedSeasonalPricing";
+import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
 import { useTranslations, useLocale } from "next-intl";
 import { z } from "zod";
-import { isValidInternationalPhoneNumber } from "@/lib/phoneValidation";
+import { isValidInternationalPhoneNumber } from "@/lib/phone-validation";
 
 // Validation schema for reservation form - will be updated with translations
 const createReservationSchema = (t: ReturnType<typeof useTranslations>) =>
@@ -852,7 +852,7 @@ function ReservationPageContent() {
     <div className="grow p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <Link href={`/cars/${vehicleId}`}>
+          <Link href={`/cars/${vehicle?.slug || vehicleId}`}>
             <Button variant="outline" size="sm">
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t("backToVehicleDetails")}

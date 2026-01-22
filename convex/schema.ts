@@ -75,11 +75,15 @@ export default defineSchema({
     // Transfer-related fields
     isTransferVehicle: v.optional(v.boolean()), // Whether this vehicle is available for transfers
     transferPricePerKm: v.optional(v.number()), // Price per kilometer for transfers in EUR
+    transferSeats: v.optional(v.number()), // Passenger capacity for transfers (excluding driver)
+    // SEO-friendly URL slug
+    slug: v.optional(v.string()), // URL slug for car detail pages (e.g., "bmw-x5-2024")
   })
     .index("by_location", ["location"])
     .index("by_type", ["type"])
     .index("by_status", ["status"])
-    .index("by_transfer", ["isTransferVehicle"]),
+    .index("by_transfer", ["isTransferVehicle"])
+    .index("by_slug", ["slug"]),
 
   // Reservations table - stores booking records
   reservations: defineTable({

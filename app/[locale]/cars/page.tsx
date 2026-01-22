@@ -1,6 +1,6 @@
 import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
-import { CarsPageClient } from "./CarsPageClient";
+import { CarsPageClient } from "./cars-page-client";
 import { Metadata } from "next";
 
 interface CarsPageProps {
