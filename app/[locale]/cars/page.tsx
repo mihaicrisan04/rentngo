@@ -70,22 +70,8 @@ export async function generateMetadata({
 }
 
 export default async function CarsPage() {
+  // Query now includes imageUrl directly, eliminating N+1 queries
   const vehicles = await fetchQuery(api.vehicles.getAllVehiclesWithClasses, {});
 
-  const vehiclesWithImageUrls = await Promise.all(
-    vehicles.map(async (vehicle) => {
-      let imageUrl: string | null = null;
-      if (vehicle.mainImageId) {
-        imageUrl = await fetchQuery(api.vehicles.getImageUrl, {
-          imageId: vehicle.mainImageId,
-        });
-      }
-      return {
-        ...vehicle,
-        imageUrl,
-      };
-    })
-  );
-
-  return <CarsPageClient initialVehicles={vehiclesWithImageUrls} />;
+  return <CarsPageClient initialVehicles={vehicles} />;
 }

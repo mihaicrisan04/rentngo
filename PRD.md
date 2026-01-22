@@ -41,6 +41,7 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | Barrel Import Optimization | Jan 22 | Added optimizePackageImports for lucide-react, date-fns in next.config.ts |
 | Dynamic Import Admin Dialogs | Jan 22 | 10 admin dialogs now lazy-loaded with next/dynamic |
 | Memoize Expensive Components | Jan 22 | React.memo() for 6 components, useMemo() for 5 calculations |
+| Reduce getImageUrl Calls | Jan 22 | Moved imageUrl into queries (getAllVehiclesWithClasses, getFeaturedVehicles) |
 
 ---
 
@@ -48,7 +49,6 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 
 | Priority | Task | Description |
 |----------|------|-------------|
-| P1 | Reduce getImageUrl Calls | Optimize image URL fetching - too many mutation calls causing high bandwidth usage |
 | P2 | Copy & Content Update | Review translations for tone, grammar, consistency |
 | P2 | Replace next lint | next lint deprecated in Next.js 16; migrate to ESLint CLI |
 | P3 | Time Picker Dark Theme Fix | White-on-white text on Windows in dark mode |
@@ -56,6 +56,7 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | ~~P3.1~~ | ~~└─ Memoize Expensive Components~~ | ✅ Completed Jan 22 |
 | P3.2 | └─ Lazy State Initialization | Use function form for useState with expensive initial values |
 | P3.3 | └─ Functional setState Updates | Use functional setState for stable callbacks and prevent stale closures |
+| P3.4 | └─ CSS content-visibility for Lists | Apply content-visibility: auto to vehicle/blog grids for faster initial render |
 
 ---
 
@@ -89,3 +90,4 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | 3.3 | Jan 22 | Translation files cleanup and consolidation |
 | 3.4 | Jan 22 | Barrel import optimization; added React perf subtasks |
 | 3.5 | Jan 22 | Dynamic import admin dialogs |
+| 3.6 | Jan 22 | Reduced getImageUrl calls - imageUrl now included in queries |

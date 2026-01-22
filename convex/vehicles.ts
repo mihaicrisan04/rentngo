@@ -690,6 +690,8 @@ export const getAllVehiclesWithClasses = query({
       className: v.optional(v.string()),
       classDisplayName: v.optional(v.string()),
       classSortIndexFromClass: v.optional(v.number()),
+      // Image URL (fetched directly to avoid N+1 queries)
+      imageUrl: v.union(v.string(), v.null()),
     }),
   ),
   handler: async (ctx) => {
@@ -700,19 +702,29 @@ export const getAllVehiclesWithClasses = query({
     const vehicleClasses = await ctx.db.query("vehicleClasses").collect();
     const classMap = new Map(vehicleClasses.map((c) => [c._id, c]));
 
-    // Combine vehicle data with class information
-    const vehiclesWithClasses = vehicles.map((vehicle) => {
-      const vehicleClass = vehicle.classId
-        ? classMap.get(vehicle.classId)
-        : undefined;
+    // Combine vehicle data with class information and fetch image URLs in parallel
+    const vehiclesWithClasses = await Promise.all(
+      vehicles.map(async (vehicle) => {
+        const vehicleClass = vehicle.classId
+          ? classMap.get(vehicle.classId)
+          : undefined;
 
-      return {
-        ...vehicle,
-        className: vehicleClass?.name,
-        classDisplayName: vehicleClass?.displayName,
-        classSortIndexFromClass: vehicleClass?.sortIndex,
-      };
-    });
+        // Fetch image URL directly using ctx.storage.getUrl()
+        let imageUrl: string | null = null;
+        const imageId = vehicle.mainImageId || vehicle.images?.[0];
+        if (imageId) {
+          imageUrl = await ctx.storage.getUrl(imageId);
+        }
+
+        return {
+          ...vehicle,
+          imageUrl,
+          className: vehicleClass?.name,
+          classDisplayName: vehicleClass?.displayName,
+          classSortIndexFromClass: vehicleClass?.sortIndex,
+        };
+      })
+    );
 
     // Sort vehicles by class sortIndex (ascending), then by vehicle classSortIndex (ascending)
     return vehiclesWithClasses.sort((a, b) => {
