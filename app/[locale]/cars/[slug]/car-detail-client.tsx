@@ -46,6 +46,7 @@ export function CarDetailClient({
   imageUrls,
 }: CarDetailClientProps) {
   const t = useTranslations("carDetailPage");
+  const tCommon = useTranslations("common");
 
   const [rentalState, setRentalState] = useState<RentalState>({
     deliveryLocation: searchStorage.getDefaultLocation(),
@@ -138,13 +139,13 @@ export function CarDetailClient({
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link href="/">{t("breadcrumb.home")}</Link>
+                  <Link href="/">{tCommon("home")}</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link href="/cars">{t("breadcrumb.cars")}</Link>
+                  <Link href="/cars">{tCommon("cars")}</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />

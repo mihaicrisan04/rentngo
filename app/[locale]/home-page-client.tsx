@@ -80,6 +80,7 @@ export function HomePageClient({
   initialTitle,
 }: HomePageClientProps) {
   const t = useTranslations("homepage");
+  const tAbout = useTranslations("aboutPage");
   const tTestimonials = useTranslations("testimonials");
   const tFaq = useTranslations("faq");
 
@@ -273,23 +274,23 @@ export function HomePageClient({
               <div className="max-w-6xl mx-auto">
                 <div className="text-center mb-12">
                   <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                    {t("ourStory.title")}
+                    {tAbout("ourStory.title")}
                   </h2>
                   <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-                    {t("ourStory.subtitle")}
+                    {tAbout("ourStory.subtitle")}
                   </p>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-12 items-center">
                   <div className="space-y-6">
                     <p className="text-lg text-muted-foreground leading-relaxed">
-                      {t("ourStory.description1")}
+                      {tAbout("ourStory.description1")}
                     </p>
                     <p className="text-lg text-muted-foreground leading-relaxed">
-                      {t("ourStory.description2")}
+                      {tAbout("ourStory.description2")}
                     </p>
                     <p className="text-lg text-muted-foreground leading-relaxed">
-                      {t("ourStory.description3")}
+                      {tAbout("ourStory.description3")}
                     </p>
                   </div>
                   <div className="relative">

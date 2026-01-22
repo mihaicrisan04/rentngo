@@ -3,13 +3,6 @@
     "title": "Car Rentals Cluj-Napoca",
     "subtitle": "Explore Cluj-Napoca with our wide range of rental cars. Easy booking, competitive prices, reliable service.",
     "viewAllCars": "View All Cars",
-    "ourStory": {
-      "title": "Our Story",
-      "subtitle": "Your trusted partner for car rentals in Cluj-Napoca and beyond",
-      "description1": "At Rent'n Go, we believe that every journey should be memorable. Founded with a passion for travel and a commitment to excellence, we've been serving the Cluj-Napoca community with reliable, affordable car rental solutions.",
-      "description2": "Whether you're exploring the historic streets of Cluj-Napoca, venturing into the beautiful Transylvanian countryside, or need a reliable vehicle for business, we're here to make your journey smooth and enjoyable.",
-      "description3": "Our carefully curated fleet of modern vehicles, combined with transparent pricing and exceptional customer service, ensures that your rental experience exceeds expectations every time."
-    },
     "faq": {
       "title": "Frequently Asked Questions",
       "description": "Find answers to common questions about renting a car with us.",
@@ -122,9 +115,7 @@
     "businessHours": {
       "title": "Business Hours",
       "mondayToSunday": "Monday - Sunday",
-      "sunday": "Sunday",
-      "mondayToSundayTime": "24/7",
-      "sundayTime": "24/7"
+      "mondayToSundayTime": "24/7"
     }
   },
   "reservationPage": {
@@ -278,7 +269,6 @@
       "paymentMethodRequired": "Payment method is required",
       "paymentMethodInvalid": "Please select a valid payment method",
       "termsAcceptanceRequired": "You must accept the terms and conditions",
-      "fixErrorsBeforeSubmitting": "Please fix the errors in the form before submitting.",
       "returnTimeSameDay": "Return time must be after pick-up time when returning on the same day",
       "formErrors": "Please fix the errors in the form before submitting."
     }
@@ -336,11 +326,6 @@
       "cashOnDelivery": "Cash on Delivery",
       "cardOnDelivery": "Card Payment on Delivery",
       "cardOnline": "Card Payment Online"
-    },
-    "status": {
-      "confirmed": "Confirmed",
-      "pending": "Pending",
-      "cancelled": "Cancelled"
     }
   },
   "transferPage": {
@@ -422,6 +407,11 @@
     "noFeaturedCarsAvailable": "No featured cars available at the moment.",
     "browseCars": "Browse Cars",
     "home": "Home",
+    "cars": "Cars",
+    "transfers": "Transfers",
+    "about": "About",
+    "contact": "Contact",
+    "blog": "Blog",
     "goBack": "Go Back",
     "cancel": "Cancel",
     "save": "Save",
@@ -436,15 +426,15 @@
     "required": "Required",
     "optional": "Optional",
     "noImage": "No Image",
-    "invalidData": "Invalid data"
+    "invalidData": "Invalid data",
+    "status": {
+      "confirmed": "Confirmed",
+      "pending": "Pending",
+      "cancelled": "Cancelled",
+      "completed": "Completed"
+    }
   },
   "navigation": {
-    "home": "Home",
-    "cars": "Cars",
-    "transfers": "Transfers",
-    "about": "About",
-    "contact": "Contact",
-    "blog": "Blog",
     "login": "Login",
     "signUp": "Sign Up",
     "language": "Language",
@@ -472,66 +462,6 @@
     "relatedPosts": "Related Posts",
     "tags": "Tags"
   },
-  "blogAdmin": {
-    "title": "Blog Management",
-    "description": "Create and manage blog posts",
-    "createBlog": "Create Blog Post",
-    "editBlog": "Edit Blog Post",
-    "deleteBlog": "Delete Blog Post",
-    "deleteConfirmTitle": "Delete Blog Post",
-    "deleteConfirmDescription": "Are you sure you want to delete this blog post? This action cannot be undone.",
-    "status": {
-      "draft": "Draft",
-      "published": "Published"
-    },
-    "table": {
-      "title": "Title",
-      "author": "Author",
-      "status": "Status",
-      "published": "Published",
-      "views": "Views",
-      "actions": "Actions"
-    },
-    "form": {
-      "basicInfo": "Basic Info",
-      "content": "Content",
-      "images": "Images",
-      "metadata": "Metadata",
-      "title": "Title",
-      "titlePlaceholder": "Enter blog post title",
-      "slug": "Slug",
-      "slugPlaceholder": "url-friendly-slug",
-      "slugHelper": "URL-friendly identifier for this post",
-      "generateSlug": "Generate from Title",
-      "author": "Author",
-      "authorPlaceholder": "Enter author name",
-      "description": "Description",
-      "descriptionPlaceholder": "Brief description or excerpt of the blog post",
-      "content": "Content (MDX)",
-      "contentPlaceholder": "Write your blog post content in MDX format...",
-      "contentHelper": "You can use Markdown syntax and reference uploaded images",
-      "coverImage": "Cover Image",
-      "coverImageHelper": "Main image for the blog post",
-      "additionalImages": "Additional Images",
-      "additionalImagesHelper": "Upload images and copy their storage IDs to use in your content",
-      "uploadImages": "Upload Images",
-      "tags": "Tags",
-      "tagsPlaceholder": "Add tags (press Enter after each tag)",
-      "status": "Status",
-      "publishDate": "Publish Date",
-      "publishDateHelper": "Leave empty for immediate publishing",
-      "readingTime": "Reading Time (minutes)",
-      "readingTimeHelper": "Estimated reading time",
-      "autoCalculate": "Auto-calculate",
-      "preview": "Preview",
-      "creating": "Creating...",
-      "updating": "Updating...",
-      "created": "Blog post created successfully",
-      "updated": "Blog post updated successfully",
-      "deleted": "Blog post deleted successfully",
-      "error": "An error occurred. Please try again."
-    }
-  },
   "profile": {
     "title": "My Profile",
     "subtitle": "Manage your account settings and view your reservations",
@@ -556,12 +486,6 @@
     "noReservationsDescription": "You haven't made any reservations yet. Start by browsing our available cars.",
     "pleaseSignIn": "Please sign in to view your profile",
     "signInButton": "Sign In",
-    "status": {
-      "pending": "Pending",
-      "confirmed": "Confirmed",
-      "cancelled": "Cancelled",
-      "completed": "Completed"
-    },
     "table": {
       "vehicle": "Vehicle",
       "dates": "Rental Period",
@@ -571,11 +495,6 @@
     }
   },
   "footer": {
-    "home": "Home",
-    "cars": "Cars",
-    "transfers": "Transfers",
-    "about": "About",
-    "contact": "Contact",
     "privacy": "Privacy",
     "terms": "Terms",
     "copyright": "© 2026 Rent'n Go Cluj",
@@ -702,83 +621,12 @@
       }
     }
   },
-  "admin": {
-    "reservationsManagement": "Reservations Management",
-    "reservationsDescription": "View and manage all reservation requests and bookings",
-    "addReservation": "Add Reservation",
-    "createReservation": "Create Reservation",
-    "editReservation": "Edit Reservation",
-    "vehicleDetails": "Vehicle Details",
-    "customerInformation": "Customer Information",
-    "rentalPeriod": "Rental Period",
-    "pricing": "Pricing",
-    "tabs": {
-      "basic": "Basic Info",
-      "customer": "Customer",
-      "rental": "Rental",
-      "pricing": "Pricing"
-    },
-    "form": {
-      "selectVehicle": "Select Vehicle",
-      "customerName": "Customer Name",
-      "customerEmail": "Customer Email",
-      "customerPhone": "Customer Phone",
-      "flightNumber": "Flight Number (Optional)",
-      "flightPlaceholder": "e.g., RO 123",
-      "customerMessage": "Customer Message (Optional)",
-      "customerMessagePlaceholder": "Any special requests or notes...",
-      "pickupDate": "Pickup Date",
-      "pickupTime": "Pickup Time",
-      "pickupLocation": "Pickup Location",
-      "returnDate": "Return Date",
-      "returnTime": "Return Time",
-      "returnLocation": "Return Location",
-      "paymentMethod": "Payment Method",
-      "totalPrice": "Total Price (EUR)",
-      "totalPricePlaceholder": "e.g., 250.00",
-      "autoCalculate": "Auto",
-      "recalculate": "Recalc",
-      "creating": "Creating...",
-      "updating": "Updating...",
-      "autoUpdates": "Updates automatically when pricing factors change"
-    },
-    "pricing": {
-      "baseRental": "Base rental ({days} day{plural})",
-      "protection": "Protection ({type})",
-      "scdw": "SCDW",
-      "standard": "Standard",
-      "total": "Total",
-      "zeroDeductible": "Zero deductible",
-      "standardWarranty": "Standard Deposit ({amount} EUR deductible)"
-    },
-    "emailDialog": {
-      "title": "Send Email to Customer",
-      "subject": "Subject",
-      "message": "Message",
-      "messagePlaceholder": "Enter your message here... (reservation details will be automatically included)",
-      "templateNote": "A professional email template with reservation details will be automatically generated.",
-      "sending": "Sending...",
-      "sendEmail": "Send Email"
-    }
-  },
-
-  "email": {
-    "companyName": "Rent'n Go",
-    "address": "Calea Turzii 23, Cluj-Napoca, Romania",
-    "automatedMessage": "This is an automated notification from Rent'n Go reservation system.",
-    "carRentalServices": "Car Rental Services",
-    "copyright": "© 2025 {companyName}. All rights reserved."
-  },
   "carDetailPage": {
     "loading": "Loading vehicle details...",
     "vehicleNotFound": {
       "title": "Vehicle Not Found",
       "description": "The vehicle you're looking for doesn't exist or has been removed.",
       "backToCars": "Back to Cars"
-    },
-    "breadcrumb": {
-      "home": "Home",
-      "cars": "Cars"
     },
     "reserveThisCar": "Reserve This Car",
     "reserveDescription": "Click to proceed with your reservation"

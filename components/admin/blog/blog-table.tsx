@@ -37,7 +37,6 @@ interface BlogTableProps {
 }
 
 export function BlogTable({ blogs, onEdit, locale }: BlogTableProps) {
-  // const t = useTranslations("blogAdmin");
   const [deleteId, setDeleteId] = useState<Id<"blogs"> | null>(null);
   const deleteBlog = useMutation(api.blogs.remove);
 

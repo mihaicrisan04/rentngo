@@ -21,7 +21,8 @@ export function Header({ logo }: HeaderProps) {
   const scrolled = useScroll(10);
   const locale = useLocale();
   const pathname = usePathname();
-  const t = useTranslations("navigation");
+  const t = useTranslations("common");
+  const tNav = useTranslations("navigation");
 
   const links = [
     { name: t("home"), href: `/${locale}` },
@@ -117,11 +118,11 @@ export function Header({ logo }: HeaderProps) {
                     : "text-foreground hover:text-foreground"
                 )}
               >
-                {t("login")}
+                {tNav("login")}
               </Button>
             </SignInButton>
             <SignInButton mode="modal">
-              <Button size="sm">{t("signUp")}</Button>
+              <Button size="sm">{tNav("signUp")}</Button>
             </SignInButton>
           </SignedOut>
         </div>
@@ -176,7 +177,7 @@ export function Header({ logo }: HeaderProps) {
 
           <div className="flex flex-col gap-3 pt-2">
             <div className="mb-2 text-sm font-medium text-muted-foreground">
-              {t("language")}
+              {tNav("language")}
             </div>
             <LanguageSelector />
 
@@ -187,12 +188,12 @@ export function Header({ logo }: HeaderProps) {
             <SignedOut>
               <SignInButton mode="modal">
                 <Button variant="outline" className="w-full" onClick={handleLinkClick}>
-                  {t("login")}
+                  {tNav("login")}
                 </Button>
               </SignInButton>
               <SignInButton mode="modal">
                 <Button className="w-full" onClick={handleLinkClick}>
-                  {t("signUp")}
+                  {tNav("signUp")}
                 </Button>
               </SignInButton>
             </SignedOut>

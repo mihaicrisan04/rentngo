@@ -22,15 +22,16 @@ const ITEMS_PER_PAGE = 10;
 export function UserReservationsTable() {
   const [currentPage, setCurrentPage] = useState(1);
   const t = useTranslations('profile');
-  
+  const tCommon = useTranslations('common');
+
   const reservations = useQuery(api.reservations.getCurrentUserReservations);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      pending: { color: "bg-yellow-100 text-yellow-800 border-yellow-200", label: t('status.pending') },
-      confirmed: { color: "bg-green-100 text-green-800 border-green-200", label: t('status.confirmed') },
-      cancelled: { color: "bg-red-100 text-red-800 border-red-200", label: t('status.cancelled') },
-      completed: { color: "bg-blue-100 text-blue-800 border-blue-200", label: t('status.completed') },
+      pending: { color: "bg-yellow-100 text-yellow-800 border-yellow-200", label: tCommon('status.pending') },
+      confirmed: { color: "bg-green-100 text-green-800 border-green-200", label: tCommon('status.confirmed') },
+      cancelled: { color: "bg-red-100 text-red-800 border-red-200", label: tCommon('status.cancelled') },
+      completed: { color: "bg-blue-100 text-blue-800 border-blue-200", label: tCommon('status.completed') },
     };
     
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;

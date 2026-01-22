@@ -48,7 +48,8 @@ const socialLinks = [
 ];
 
 export function Footer({ logo, brandName }: FooterProps) {
-  const t = useTranslations("footer");
+  const t = useTranslations("common");
+  const tFooter = useTranslations("footer");
   const locale = useLocale();
 
   const mainLinks = [
@@ -60,8 +61,8 @@ export function Footer({ logo, brandName }: FooterProps) {
   ];
 
   const legalLinks = [
-    { href: `/${locale}/privacy`, label: t("privacy") },
-    { href: `/${locale}/terms`, label: t("terms") },
+    { href: `/${locale}/privacy`, label: tFooter("privacy") },
+    { href: `/${locale}/terms`, label: tFooter("terms") },
   ];
 
   return (
@@ -119,10 +120,10 @@ export function Footer({ logo, brandName }: FooterProps) {
             </ul>
           </div>
           <div className="mt-6 text-sm leading-6 text-muted-foreground whitespace-nowrap lg:mt-0 lg:row-start-1 lg:col-span-4 xl:col-span-5">
-            <div>{t("copyright")}</div>
-            <div>{t("allRightsReserved")}</div>
+            <div>{tFooter("copyright")}</div>
+            <div>{tFooter("allRightsReserved")}</div>
             <div className="flex items-center gap-1 mt-2">
-              <span>{t("builtBy")}</span>
+              <span>{tFooter("builtBy")}</span>
               <Link
                 href="https://mihaicrisan.com/"
                 target="_blank"
