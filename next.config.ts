@@ -9,6 +9,9 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 const withNextIntl = createNextIntlPlugin("./i18n.ts");
 
 const nextConfig: NextConfig = {
+  experimental: {
+    optimizePackageImports: ["lucide-react", "date-fns"],
+  },
   eslint: {
     // Disable ESLint during builds to allow deployment
     ignoreDuringBuilds: true,

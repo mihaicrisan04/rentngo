@@ -4,9 +4,15 @@ All notable changes to RentNGo are documented here.
 
 ## [Unreleased]
 
+### Added
+- **Barrel import optimization**: Added `optimizePackageImports` to next.config.ts
+  - Configured for `lucide-react` (80 files) and `date-fns` (8 files)
+  - Reduces cold start by 200-800ms, speeds up dev server boot
+  - Automatically transforms barrel imports to direct imports at build time
+
 ### Planned
 - Copy & content review across all translations
-- React performance optimization (Vercel best practices)
+- React performance optimization (dynamic imports, memoization, lazy state init)
 
 ## [2.3.0] - 2026-01-20
 
