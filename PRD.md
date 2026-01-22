@@ -36,6 +36,8 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | Transfer Booking - T&C Links | Jan 20 | Terms & Privacy links added |
 | Transfer Vehicle Seats Config | Jan 20 | Separate `transferSeats` field |
 | Admin Role Authorization | Jan 22 | Clerk publicMetadata role check in middleware |
+| File Naming Cleanup | Jan 22 | 24 files renamed to kebab-case, typo fixed |
+| Translation Files Cleanup | Jan 22 | Removed unused namespaces, consolidated keys, ~18% reduction |
 
 ---
 
@@ -44,9 +46,8 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | Priority | Task | Description |
 |----------|------|-------------|
 | P2 | Copy & Content Update | Review translations for tone, grammar, consistency |
-| P3 | File Naming Cleanup | Convert camelCase files to kebab-case |
+| P2 | Replace next lint | next lint deprecated in Next.js 16; migrate to ESLint CLI |
 | P3 | Time Picker Dark Theme Fix | White-on-white text on Windows in dark mode |
-| P3 | Translation Files Cleanup | Remove unused keys, consolidate duplicates |
 | P3 | React Performance Optimization | Apply Vercel best practices (memoization, splitting, etc.) |
 
 ---
@@ -77,3 +78,5 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | 2.0 | Jan 20 | Major features complete |
 | 3.0 | Jan 22 | Simplified to task-focused format |
 | 3.1 | Jan 22 | Admin role authorization via Clerk publicMetadata |
+| 3.2 | Jan 22 | File naming cleanup; added lint migration task |
+| 3.3 | Jan 22 | Translation files cleanup and consolidation |
