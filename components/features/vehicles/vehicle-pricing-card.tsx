@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
 import { PriceDetails, calculateIncludedKilometers } from "@/lib/vehicle-utils";
@@ -17,7 +18,7 @@ interface VehiclePricingCardProps {
   returnDate?: Date | null;
 }
 
-export function VehiclePricingCard({
+export const VehiclePricingCard = React.memo(function VehiclePricingCard({
   vehicle,
   priceDetails,
   currency = "EUR",
@@ -47,8 +48,8 @@ export function VehiclePricingCard({
       ? Math.round(basePrice / days)
       : Math.round(getBasePricePerDay(vehicle) * seasonalMultiplier);
 
-  // Calculate potential savings for longer rentals
-  const getPricingTip = () => {
+  // Calculate potential savings for longer rentals (memoized)
+  const pricingTip = React.useMemo(() => {
     if (!vehicle.pricingTiers || vehicle.pricingTiers.length <= 1) return null;
 
     // Calculate prices with seasonal adjustment for each tier
@@ -76,9 +77,7 @@ export function VehiclePricingCard({
       };
     }
     return null;
-  };
-
-  const pricingTip = getPricingTip();
+  }, [vehicle.pricingTiers, seasonalMultiplier, currentPricePerDay]);
 
   return (
     <Card>
@@ -282,4 +281,4 @@ export function VehiclePricingCard({
       </CardContent>
     </Card>
   );
-}
+});

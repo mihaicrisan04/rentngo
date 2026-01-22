@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { Vehicle } from "@/types/vehicle";
@@ -21,25 +22,38 @@ export function useHomepageFeaturedVehicles(): UseHomepageFeaturedVehiclesReturn
 
   const isLoading = featuredVehicles === undefined || (featuredVehicles?.length === 0 && fallbackVehiclesQuery === undefined);
   const error = featuredVehicles === null || (featuredVehicles?.length === 0 && fallbackVehiclesQuery === null);
-  
-  // Determine vehicles to display
-  let vehiclesToDisplay: Vehicle[] = [];
-  let currentTitle = "Loading...";
 
-  if (!isLoading && !error) {
+  // Memoize vehicles to display and title calculation
+  const { vehiclesToDisplay, currentTitle } = useMemo(() => {
+    if (isLoading || error) {
+      return {
+        vehiclesToDisplay: [] as Vehicle[],
+        currentTitle: "Loading...",
+      };
+    }
+
     if (featuredVehicles && featuredVehicles.length > 0) {
       // Use featured cars from backend
-      vehiclesToDisplay = featuredVehicles;
-      currentTitle = "Featured Cars";
-    } else if (fallbackVehiclesQuery?.page) {
-      // Fallback to random selection
-      vehiclesToDisplay = fallbackVehiclesQuery.page as Vehicle[];
-      currentTitle = vehiclesToDisplay.length > 0 ? "Our Latest Cars" : "No Cars Available";
-    } else {
-      vehiclesToDisplay = [];
-      currentTitle = "No Cars Available";
+      return {
+        vehiclesToDisplay: featuredVehicles,
+        currentTitle: "Featured Cars",
+      };
     }
-  }
+
+    if (fallbackVehiclesQuery?.page) {
+      // Fallback to random selection
+      const vehicles = fallbackVehiclesQuery.page as Vehicle[];
+      return {
+        vehiclesToDisplay: vehicles,
+        currentTitle: vehicles.length > 0 ? "Our Latest Cars" : "No Cars Available",
+      };
+    }
+
+    return {
+      vehiclesToDisplay: [] as Vehicle[],
+      currentTitle: "No Cars Available",
+    };
+  }, [isLoading, error, featuredVehicles, fallbackVehiclesQuery?.page]);
 
   return {
     vehiclesToDisplay,

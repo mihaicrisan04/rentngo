@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -90,10 +90,17 @@ export function UserReservationsTable() {
     );
   }
 
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const paginatedReservations = reservations.slice(startIndex, endIndex);
-  const totalPages = Math.ceil(reservations.length / ITEMS_PER_PAGE);
+  // Memoize pagination calculations
+  const { paginatedReservations, totalPages, startIndex, endIndex } = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    return {
+      startIndex: start,
+      endIndex: end,
+      paginatedReservations: reservations.slice(start, end),
+      totalPages: Math.ceil(reservations.length / ITEMS_PER_PAGE),
+    };
+  }, [reservations, currentPage]);
 
   return (
     <div className="space-y-4">

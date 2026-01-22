@@ -18,6 +18,11 @@ All notable changes to RentNGo are documented here.
   - TransferPricingDialog, CreateClassDialog
   - Dialogs now load on-demand when opened, reducing initial page bundle
 
+- **Memoize expensive components**: Applied React.memo() and useMemo() optimizations
+  - Components wrapped with React.memo(): VehicleCard, TransferVehicleCard, BlogCard, FilterCheckboxItem, VehiclePricingCard, TransferBookingFloatingCard
+  - Calculations memoized with useMemo(): pricing tip in VehiclePricingCard, vehicle grouping in VehicleListDisplay, reservation pricing hook, pagination in UserReservationsTable, featured vehicles hook
+  - Prevents unnecessary re-renders in list-rendered components and expensive calculations
+
 ### Planned
 - Copy & content review across all translations
 - React performance optimization (dynamic imports, memoization, lazy state init)

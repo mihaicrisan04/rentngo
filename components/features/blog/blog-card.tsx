@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useQuery } from "convex/react";
@@ -21,7 +22,7 @@ interface BlogCardProps {
   locale: string;
 }
 
-export function BlogCard({ blog, locale }: BlogCardProps) {
+export const BlogCard = React.memo(function BlogCard({ blog, locale }: BlogCardProps) {
   const t = useTranslations("blogPage");
 
   const coverImageUrl = useQuery(
@@ -84,4 +85,4 @@ export function BlogCard({ blog, locale }: BlogCardProps) {
       </Card>
     </Link>
   );
-}
+});

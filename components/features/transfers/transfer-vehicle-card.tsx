@@ -37,7 +37,7 @@ interface TransferVehicleCardProps {
   onSelect: (vehicleId: Id<"vehicles">) => void;
 }
 
-export function TransferVehicleCard({
+export const TransferVehicleCard = React.memo(function TransferVehicleCard({
   vehicle,
   distanceKm,
   transferType,
@@ -151,6 +151,6 @@ export function TransferVehicleCard({
       </div>
     </div>
   );
-}
+});
 
 export default TransferVehicleCard;

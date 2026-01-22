@@ -15,7 +15,7 @@ interface TransferBookingFloatingCardProps {
   className?: string;
 }
 
-export function TransferBookingFloatingCard({
+export const TransferBookingFloatingCard = React.memo(function TransferBookingFloatingCard({
   selectedVehicle,
   onContinue,
   onBack,
@@ -121,6 +121,6 @@ export function TransferBookingFloatingCard({
       </div>
     </div>
   );
-}
+});
 
 export default TransferBookingFloatingCard;

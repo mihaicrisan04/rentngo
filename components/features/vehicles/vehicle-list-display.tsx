@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { VehicleCard } from "@/components/features/vehicles/vehicle-card";
 import { VehicleCardSkeleton } from "@/components/features/vehicles/vehicle-card-skeleton";
 import { Vehicle } from "@/types/vehicle";
@@ -138,14 +139,25 @@ function VehiclesByClass({
   vehicles: VehicleWithClass[];
   searchState: SearchData;
 }) {
-  const groupedVehicles = groupVehiclesByClass(vehicles);
-  const orderedClasses = getOrderedClasses(vehicles);
+  // Memoize expensive grouping and ordering calculations
+  const groupedVehicles = React.useMemo(
+    () => groupVehiclesByClass(vehicles),
+    [vehicles]
+  );
+  const orderedClasses = React.useMemo(
+    () => getOrderedClasses(vehicles),
+    [vehicles]
+  );
 
-  // Filter to only show classes that have vehicles
-  const availableClasses = orderedClasses.filter((classInfo) => {
-    const vehiclesInClass = groupedVehicles[classInfo.key];
-    return vehiclesInClass && vehiclesInClass.length > 0;
-  });
+  // Memoize filtered classes
+  const availableClasses = React.useMemo(
+    () =>
+      orderedClasses.filter((classInfo) => {
+        const vehiclesInClass = groupedVehicles[classInfo.key];
+        return vehiclesInClass && vehiclesInClass.length > 0;
+      }),
+    [orderedClasses, groupedVehicles]
+  );
 
   return (
     <div>

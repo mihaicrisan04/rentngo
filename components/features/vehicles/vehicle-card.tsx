@@ -33,7 +33,7 @@ function buildCarDetailsUrl(vehicleSlug: string | undefined, vehicleId: string):
   return `/cars/${vehicleSlug || vehicleId}`;
 }
 
-export function VehicleCard({
+export const VehicleCard = React.memo(function VehicleCard({
   vehicle,
   pickupDate,
   returnDate,
@@ -225,6 +225,6 @@ export function VehicleCard({
       </div>
     </div>
   );
-}
+});
 
 export default VehicleCard;
