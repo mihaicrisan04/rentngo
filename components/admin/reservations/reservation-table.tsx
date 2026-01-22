@@ -22,7 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ReservationEmailDialog } from "@/components/admin/reservations/reservtaion-email-dialog";
+import { ReservationEmailDialog } from "@/components/admin/reservations/reservation-email-dialog";
 import { toast } from "sonner";
 import { EditReservationDialog } from "./edit-reservation-dialog";
 
