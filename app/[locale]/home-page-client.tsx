@@ -83,8 +83,16 @@ export function HomePageClient({
   const tAbout = useTranslations("aboutPage");
   const tTestimonials = useTranslations("testimonials");
   const tFaq = useTranslations("faq");
+  const tFeatures = useTranslations("features");
 
   const { searchState, updateSearchField } = useVehicleSearch();
+
+  const storyDescriptions = [
+    tAbout("ourStory.description1"),
+    tAbout("ourStory.description2"),
+    tAbout("ourStory.description3"),
+    tAbout("ourStory.description4"),
+  ].filter((description) => description.trim().length > 0);
 
   const faqItems = [
     {
@@ -283,15 +291,14 @@ export function HomePageClient({
 
                 <div className="grid md:grid-cols-2 gap-12 items-center">
                   <div className="space-y-6">
-                    <p className="text-lg text-muted-foreground leading-relaxed">
-                      {tAbout("ourStory.description1")}
-                    </p>
-                    <p className="text-lg text-muted-foreground leading-relaxed">
-                      {tAbout("ourStory.description2")}
-                    </p>
-                    <p className="text-lg text-muted-foreground leading-relaxed">
-                      {tAbout("ourStory.description3")}
-                    </p>
+                    {storyDescriptions.map((description, index) => (
+                      <p
+                        key={`story-description-${index}`}
+                        className="text-lg text-muted-foreground leading-relaxed"
+                      >
+                        {description}
+                      </p>
+                    ))}
                   </div>
                   <div className="relative">
                     <Card className="overflow-hidden shadow-xl p-0 relative h-96">
@@ -315,6 +322,11 @@ export function HomePageClient({
           triggerOnce={true}
         >
           <div className="py-16 px-4 mx-auto bg-muted/20">
+            <div className="max-w-6xl mx-auto text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+                {tFeatures("title")}
+              </h2>
+            </div>
             <FeaturesSectionWithHoverEffects />
           </div>
         </AnimatedGroup>

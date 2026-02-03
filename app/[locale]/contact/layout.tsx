@@ -13,14 +13,14 @@ export async function generateMetadata({
 
   return {
     title: isRomanian
-      ? "Contact Rent'n Go - Masini de Inchiriat Cluj-Napoca"
-      : "Contact Rent'n Go - Car Rentals Cluj-Napoca",
+      ? "Contact Rent’n Go – Rent a Car în Cluj-Napoca și Aeroportul Cluj"
+      : "Contact Rent’n Go – Car Rentals in Cluj-Napoca & Cluj Airport",
     description: isRomanian
-      ? "Contactează Rent'n Go pentru masini de inchiriat Cluj-Napoca. Telefon: +40 773 932 961. Email: office@rngo.ro. Servicii profesionale de închiriere auto în Cluj."
-      : "Contact Rent'n Go for car rentals in Cluj-Napoca. Phone: +40 773 932 961. Email: office@rngo.ro. Professional car rental services in Cluj.",
+      ? "Contactează Rent’n Go pentru rent a car în Cluj-Napoca și preluare din Aeroportul Cluj. Telefon: +40 773 932 961. Email: office@rngo.ro."
+      : "Contact Rent’n Go for car rentals in Cluj-Napoca and at Cluj Airport. Phone: +40 773 932 961. Email: office@rngo.ro.",
     keywords: isRomanian
-      ? "contact rent n go, masini de inchiriat cluj-napoca, telefon închiriere auto cluj, car rentals cluj contact"
-      : "contact rent n go, car rentals cluj-napoca, car hire phone cluj, car rental contact",
+      ? "contact rent’n go, rent a car cluj-napoca, închirieri auto aeroport cluj, telefon închirieri auto cluj"
+      : "contact rent’n go, car rental cluj-napoca, cluj airport car rental contact, car hire cluj phone",
     alternates: {
       canonical: `https://rngo.ro/${locale}/contact`,
       languages: {
@@ -30,11 +30,11 @@ export async function generateMetadata({
     },
     openGraph: {
       title: isRomanian
-        ? "Contact Rent'n Go - Masini de Inchiriat Cluj-Napoca"
-        : "Contact Rent'n Go - Car Rentals Cluj-Napoca",
+        ? "Contact Rent’n Go – Rent a Car în Cluj-Napoca și Aeroportul Cluj"
+        : "Contact Rent’n Go – Car Rentals in Cluj-Napoca & Cluj Airport",
       description: isRomanian
-        ? "Contactează Rent'n Go pentru masini de inchiriat Cluj-Napoca. Telefon: +40 773 932 961."
-        : "Contact Rent'n Go for car rentals in Cluj-Napoca. Phone: +40 773 932 961.",
+        ? "Suntem disponibili 24/7 pentru rezervări, întrebări și suport pentru rent a car în Cluj-Napoca și Aeroportul Cluj."
+        : "Available 24/7 for bookings, questions and support for car rentals in Cluj-Napoca and at Cluj Airport.",
       type: "website",
       url: `https://rngo.ro/${locale}/contact`,
       siteName: "Rent'n Go Cluj-Napoca",
@@ -51,11 +51,11 @@ export async function generateMetadata({
     twitter: {
       card: "summary_large_image",
       title: isRomanian
-        ? "Contact Rent'n Go - Masini de Inchiriat Cluj-Napoca"
-        : "Contact Rent'n Go - Car Rentals Cluj-Napoca",
+        ? "Contact Rent’n Go – Rent a Car în Cluj-Napoca și Aeroportul Cluj"
+        : "Contact Rent’n Go – Car Rentals in Cluj-Napoca & Cluj Airport",
       description: isRomanian
-        ? "Contactează Rent'n Go pentru masini de inchiriat Cluj-Napoca."
-        : "Contact Rent'n Go for car rentals in Cluj-Napoca.",
+        ? "Rent a car în Cluj-Napoca și preluare din Aeroportul Cluj, cu suport 24/7."
+        : "Contact Rent’n Go for car rentals in Cluj-Napoca and at Cluj Airport.",
       images: ["https://rngo.ro/logo.png"],
     },
   };

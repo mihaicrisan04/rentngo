@@ -1,63 +1,67 @@
 {
   "homepage": {
-    "title": "Car Rentals Cluj-Napoca",
-    "subtitle": "Explore Cluj-Napoca with our wide range of rental cars. Easy booking, competitive prices, reliable service.",
+    "title": "Car Rental Cluj-Napoca & Cluj Airport – Premium Rent a Car",
+    "subtitle": "Reliable car rental in Cluj-Napoca and Cluj Airport, with clean, modern vehicles, transparent pricing and fast pickup. Book in minutes and enjoy a smooth, stress-free driving experience from the first kilometer.",
+    "featuredCarsTitle": "Featured Cars",
+    "latestCarsTitle": "Our Latest Cars",
+    "noCarsTitle": "No Cars Available",
     "viewAllCars": "View All Cars",
     "faq": {
       "title": "Frequently Asked Questions",
       "description": "Find answers to common questions about renting a car with us.",
       "cta": {
-        "title": "Ready to Hit the Road?",
-        "description": "Browse our extensive fleet of vehicles and find the perfect car for your next adventure in Cluj-Napoca.",
-        "buttonText": "Browse Our Cars"
+        "title": "Start Your Journey with Our Car Rental in Cluj-Napoca & Cluj Airport",
+        "description": "Choose from our premium fleet for car rental in Cluj-Napoca or fast pickup at Cluj Airport. Clean vehicles, transparent pricing and instant booking in just a few clicks.",
+        "buttonText": "Book Your Car Now"
       }
     }
   },
   "aboutPage": {
-    "title": "About Rent'n Go - Car Rentals Cluj-Napoca",
-    "heroTitle": "Your Journey, Our Passion",
-    "heroDescription": "Since 2020, we've been dedicated to providing exceptional car rental experiences in Cluj-Napoca. Combining quality vehicles with outstanding customer service.",
+    "title": "About Rent’n Go",
+    "heroTitle": "Premium Car Rental in Cluj-Napoca & Cluj Airport",
+    "heroDescription": "Since 2020, Rent’n Go has been delivering trusted car rental services in Cluj-Napoca and at Cluj Airport, combining clean, modern vehicles with transparent pricing and premium customer support. Your Journey. Our Commitment to Excellence.",
     "stats": {
-      "vehicles": "Vehicles",
-      "customers": "Happy Customers",
-      "experience": "Years Experience",
-      "rating": "Average Rating"
+      "vehicles": "Rental Cars Available",
+      "customers": "Happy Car Rental Clients",
+      "experience": "Years of Car Rental Experience",
+      "rating": "Average Customer Rating"
     },
     "values": {
-      "title": "Our Values",
-      "subtitle": "The principles that guide everything we do",
+      "title": "Our Values – What Defines Our Car Rental in Cluj-Napoca",
+      "subtitle": "The core principles behind our car rental services in Cluj-Napoca and at Cluj Airport.",
       "safetyFirst": {
         "title": "Safety First",
-        "description": "All our vehicles undergo rigorous safety inspections and maintenance to ensure your peace of mind on every journey."
+        "description": "All our vehicles go through strict safety checks and professional maintenance to guarantee a safe and worry-free car rental experience in Cluj-Napoca and at Cluj Airport."
       },
       "customerCare": {
         "title": "Customer Care",
-        "description": "We believe in building lasting relationships with our customers through exceptional service and personalized attention."
+        "description": "We focus on long-term relationships built on trust, fast communication and personalized service, from the moment you book until you return your car."
       },
       "reliability": {
         "title": "Reliability",
-        "description": "Count on us for punctual service, well-maintained vehicles, and transparent pricing with no hidden fees."
+        "description": "You can count on punctual delivery, clean and well-maintained cars, and transparent pricing with no hidden fees, every time you rent with us."
       },
       "localExpertise": {
         "title": "Local Expertise",
-        "description": "As Cluj-Napoca locals, we know the best routes and can provide insider tips for your travels."
+        "description": "As a local car rental company in Cluj-Napoca, we know the best routes, traffic patterns and destinations, and we are always ready to offer insider travel advice."
       }
     },
     "mission": {
-      "title": "Our Mission",
-      "description": "To provide exceptional car rental experiences that empower our customers to explore with confidence, comfort, and peace of mind. We strive to be more than just a car rental service – we're your trusted travel partner.",
-      "buttonText": "Get in Touch"
+      "title": "Our Mission – Premium Car Rental in Cluj-Napoca & Cluj Airport",
+      "description": "Our mission is to deliver exceptional car rental services in Cluj-Napoca and at Cluj Airport, built on trust, transparency and real customer care. We help our clients travel with confidence, comfort and complete peace of mind.\n\nWe aim to be more than just a car rental company. Rent’n Go is your reliable travel partner, offering clean, well-maintained vehicles, fair pricing and fast support whenever you need it.",
+      "buttonText": "Contact Our Car Rental Team"
     },
     "ourStory": {
-      "title": "Our Story",
-      "subtitle": "Your trusted partner for exploring Cluj-Napoca and beyond",
-      "description1": "At Rent'n Go, we believe that every journey should be memorable. Founded with a passion for travel and a commitment to excellence, we've been serving the Cluj-Napoca community with reliable, affordable car rental solutions.",
-      "description2": "Whether you're exploring the historic streets of Cluj-Napoca, venturing into the beautiful Transylvanian countryside, or need a reliable vehicle for business, we're here to make your journey smooth and enjoyable.",
-      "description3": "Our carefully curated fleet of modern vehicles, combined with transparent pricing and exceptional customer service, ensures that your rental experience exceeds expectations every time."
+      "title": "Our Story – Premium Car Rental in Cluj-Napoca & Cluj Airport",
+      "subtitle": "Your trusted partner for car rental in Cluj-Napoca and at Cluj Airport, focused on comfort, transparency and stress-free travel.",
+      "description1": "At Rent’n Go, we believe that every journey should begin with confidence and comfort. We provide premium car rental services in Cluj-Napoca and Cluj Airport, built on transparency, reliability and real attention to our clients’ needs.",
+      "description2": "Whether you are arriving in Cluj for business, vacation, or a quick city break, we offer fast car rental at Cluj Airport, clean and well-maintained vehicles, and a smooth pickup process without delays or hidden costs.",
+      "description3": "From exploring the historic streets of Cluj-Napoca to discovering the beautiful landscapes of Transylvania, our fleet is carefully selected to meet every type of journey. Each car is thoroughly checked, professionally cleaned and ready for the road.",
+      "description4": "At Rent’n Go, car rental is more than a service. It is a commitment to quality, fairness and a stress-free experience from the first kilometer to the last."
     },
     "whyChoose": {
-      "title": "Why Choose Rent'n Go?",
-      "subtitle": "Experience the difference that sets us apart",
+      "title": "Why Choose Rent’n Go – Car Rental in Cluj-Napoca & Cluj Airport",
+      "subtitle": "Discover the real differences that make Rent’n Go the premium choice for car rental in Cluj-Napoca, whether you arrive in the city or at Cluj Airport.",
       "transparentPricing": {
         "title": "Transparent Pricing",
         "description": "No hidden fees, no surprises. What you see is what you pay, with competitive rates and flexible packages."
@@ -73,45 +77,46 @@
     }
   },
   "contactPage": {
-    "title": "Contact - Car Rentals Cluj-Napoca",
-    "subtitle": "Ready to rent a car in Cluj-Napoca? We're here to make your experience smooth and memorable.",
-    "meetTheMan": "Meet the Man",
-    "visionaryTitle": "The Visionary Behind the Wheels",
-    "visionarySubtitle": "Driven by passion",
+    "title": "Contact Rent’n Go – Car Rentals in Cluj-Napoca & Cluj Airport",
+    "subtitle": "Need a reliable car rental in Cluj-Napoca or Cluj Airport? Our team is here 24/7 to help you book the perfect vehicle quickly, easily, and without hidden fees.",
+    "meetTheMan": "The Visionary",
+    "visionaryTitle": "The Visionary Behind Rent’n Go",
+    "visionarySubtitle": "Built on passion. Driven by excellence.",
     "founder": {
       "name": "Tudor",
-      "title": "Founder & CEO",
-      "description": "With over a decade of experience in the automotive industry, Tudor founded Rent'n Go with a simple mission: to provide premium vehicles and exceptional service that exceeds expectations. His attention to detail and commitment to customer satisfaction drives every aspect of our business.",
+      "title": "Founder",
+      "description": "With over a decade of hands-on experience in the automotive industry, Tudor founded Rent’n Go with a clear vision: to redefine the car rental experience in Cluj-Napoca through honesty, quality, and genuine customer care.\n\nWhat started as a passion for cars and mobility has grown into a trusted rental brand, built on transparency, perfectly maintained vehicles, and real respect for every client. Tudor personally oversees every detail of the business to ensure that every rental is smooth, safe, and stress-free.\n\nFor him, Rent’n Go is not just about cars — it’s about people, trust, and unforgettable journeys.",
       "badges": {
-        "expert": "Automotive Expert",
-        "customerFirst": "Customer-First"
+        "expert": "Automotive Industry Leader",
+        "customerFirst": "Customer-First Philosophy"
       }
     },
     "letsConnect": {
-      "title": "Let's Connect",
-      "subtitle": "Multiple ways to reach us - choose what works best for you"
+      "title": "Contact Our Car Rental Team",
+      "subtitle": "Choose the contact method that works best for you — whether you want fast booking via WhatsApp, a direct phone call, or detailed assistance by email. Rent’n Go offers premium customer support for car rentals in Cluj-Napoca and Cluj Airport."
     },
     "contactMethods": {
       "phone": {
         "title": "Phone",
-        "description": "Call us directly",
+        "description": "Call us directly. Best for urgent bookings or last-minute rentals in Cluj-Napoca or at Cluj Airport.",
         "buttonText": "+40 773 932 961"
       },
       "whatsapp": {
         "title": "WhatsApp",
-        "description": "Quick & easy messaging",
+        "description": "Quick & easy messaging. Perfect for fast quotes, availability checks, or sending your travel details.",
         "buttonText": "Message Us"
       },
       "email": {
         "title": "Email",
-        "description": "Detailed inquiries",
+        "description": "Detailed inquiries. Ideal for long-term rentals, business requests, invoices, or special requirements.",
         "buttonText": "office@rngo.ro"
       }
     },
     "followUs": "Follow Us",
-    "ourLocation": "Our Location",
-    "locationDescription": "Located in the most convenient location for you",
-    "openInMaps": "Open in Google Maps",
+    "ourLocation": "Rent’n Go – Car Rental Location in Cluj-Napoca Airport",
+    "locationDescription": "Find us in a strategic area for car rentals in Cluj-Napoca, with quick access from the city and direct pickup at Cluj International Airport.",
+    "openInMaps": "See Location on Google Maps – Rent’n Go Cluj",
+    "locationCardTitle": "Our Location",
     "businessHours": {
       "title": "Business Hours",
       "mondayToSunday": "Monday - Sunday",
@@ -442,8 +447,8 @@
     "logout": "Logout"
   },
   "blogPage": {
-    "title": "Blog - Rent'n Go",
-    "subtitle": "Tips, guides, and stories from the world of car rentals",
+    "title": "Car Rental Blog – Cluj-Napoca & Cluj Airport Travel Tips",
+    "subtitle": "Practical guides, travel tips and expert advice for car rental in Cluj-Napoca and at Cluj Airport, created to help you drive smarter, safer and more confidently.",
     "loading": "Loading blogs...",
     "noBlogsFound": "No blog posts found",
     "noBlogsDescription": "We haven't published any blog posts yet. Check back soon!",
@@ -552,41 +557,42 @@
     "noTypes": "No types available"
   },
   "features": {
+    "title": "Why Choose Rent’n Go – Car Rental in Cluj-Napoca & Cluj Airport",
     "wideVehicleSelection": {
       "title": "Wide Vehicle Selection",
-      "description": "From compact cars for city trips to spacious SUVs for family adventures, find the perfect ride."
+      "description": "From compact city cars to spacious SUVs for family trips, find the perfect vehicle for your journey in Cluj-Napoca or Cluj Airport."
     },
     "transparentPricing": {
       "title": "Transparent Pricing",
-      "description": "No hidden fees, ever. Enjoy competitive rates and clear billing for your rental."
+      "description": "No hidden fees — ever. Enjoy competitive rates, clear billing, and a fully transparent rental experience from start to finish."
     },
     "effortlessBooking": {
       "title": "Effortless Online Booking",
-      "description": "Book your car in minutes through our user-friendly website or mobile app."
+      "description": "Reserve your car in minutes with our user-friendly website or mobile-friendly process. Fast confirmation for airport pickups."
     },
     "flexibleRental": {
       "title": "Flexible Rental Options",
-      "description": "Choose daily, weekly, or monthly rentals. We offer plans that fit your schedule."
+      "description": "Choose daily, weekly, or monthly rentals. We offer flexible plans tailored to your schedule and travel needs."
     },
     "convenientLocations": {
       "title": "Convenient Locations",
-      "description": "Pick up and drop off your vehicle at numerous locations, including airports and city centers."
+      "description": "Pick up and drop off your vehicle at multiple locations, including Cluj Airport and city-center areas, for maximum convenience."
     },
     "roadsideSupport": {
       "title": "24/7 Roadside Support",
-      "description": "Drive with confidence. Our dedicated support team is always ready to assist you."
+      "description": "Drive with confidence. Our dedicated support team is available 24/7 to assist you anywhere in Cluj-Napoca or across Romania."
     },
     "comprehensiveInsurance": {
       "title": "Comprehensive Insurance",
-      "description": "Select from a range of insurance options for complete peace of mind on the road."
+      "description": "Choose from a range of insurance packages for complete peace of mind throughout your rental period."
     },
     "memberPerks": {
       "title": "Exclusive Member Perks",
-      "description": "Join our loyalty program to unlock special discounts, upgrades, and more."
+      "description": "Join our loyalty program to unlock discounts, upgrades, priority service and other exclusive benefits."
     }
   },
   "testimonials": {
-    "title": "What Our Customers Say",
+    "title": "Trusted by Customers – Car Rental in Cluj-Napoca & Cluj Airport",
     "description": "Read what our customers have to say about us."
   },
   "faq": {
@@ -692,8 +698,8 @@
     "selectReturnLocation": "Select return location"
   },
   "vehicleSearchForm": {
-    "title": "Car Rentals Cluj-Napoca - Find Your Perfect Vehicle",
-    "subtitle": "Explore Cluj-Napoca with our wide range of rental cars. Easy booking, competitive prices, reliable service.",
+    "title": "Car Rental in Cluj-Napoca & Cluj Airport – Find Your Perfect Car",
+    "subtitle": "Browse our full selection of rental cars in Cluj-Napoca and at Cluj Airport. Enjoy fast booking, transparent pricing and clean, well-maintained vehicles ready for your trip.",
     "pickupLocation": "Pick-up Location",
     "pickupDateTime": "Pick-up Date & Time",
     "returnLocation": "Return Location",

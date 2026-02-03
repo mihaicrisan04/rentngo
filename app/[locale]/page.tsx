@@ -2,6 +2,7 @@ import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { HomePageClient } from "./home-page-client";
 import { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
 interface HomePageProps {
   params: Promise<{ locale: string }>;
@@ -15,14 +16,14 @@ export async function generateMetadata({
 
   return {
     title: isRomanian
-      ? "Rent'n Go Cluj-Napoca | Masini de Inchiriat Cluj"
-      : "Rent'n Go Cluj-Napoca | Car Rentals Cluj",
+      ? "Închirieri Auto Aeroport Cluj – Rent a Car Premium în Cluj-Napoca"
+      : "Car Rental Cluj-Napoca & Cluj Airport – Premium Rent a Car",
     description: isRomanian
-      ? "Masini de inchiriat Cluj-Napoca cu Rent'n Go. Închiriere auto la prețuri competitive, flotă modernă, rezervare online rapidă. Cel mai bun serviciu de car rentals Cluj-Napoca."
-      : "Car rentals Cluj-Napoca with Rent'n Go. Competitive prices, modern fleet, quick online booking. Best car rental service in Cluj-Napoca.",
+      ? "Servicii de rent a car în Cluj-Napoca și preluare directă din Aeroportul Cluj. Flotă diversificată, prețuri corecte și rezervare rapidă, fără stres."
+      : "Reliable car rental in Cluj-Napoca and Cluj Airport, with clean vehicles, transparent pricing and fast pickup. Book in minutes for a smooth, stress-free journey.",
     keywords: isRomanian
-      ? "masini de inchiriat cluj-napoca, car rentals cluj, închiriere auto cluj, rent car cluj-napoca, rental cars cluj"
-      : "car rentals cluj-napoca, rent car cluj, car hire cluj, vehicle rental cluj-napoca",
+      ? "rent a car cluj-napoca, închirieri auto aeroport cluj, mașini de închiriat cluj, închirieri auto cluj-napoca, rent a car cluj"
+      : "car rental cluj-napoca, car rental cluj airport, rent a car cluj, car hire cluj-napoca, cluj airport car rental",
     alternates: {
       canonical: `https://rngo.ro/${locale}`,
       languages: {
@@ -32,11 +33,11 @@ export async function generateMetadata({
     },
     openGraph: {
       title: isRomanian
-        ? "Rent'n Go Cluj-Napoca | Masini de Inchiriat"
-        : "Rent'n Go Cluj-Napoca | Car Rentals",
+        ? "Închirieri Auto Aeroport Cluj – Rent a Car Premium în Cluj-Napoca"
+        : "Car Rental Cluj-Napoca & Cluj Airport – Premium Rent a Car",
       description: isRomanian
-        ? "Masini de inchiriat Cluj-Napoca cu Rent'n Go. Prețuri competitive și flotă modernă."
-        : "Car rentals Cluj-Napoca with Rent'n Go. Competitive prices and modern fleet.",
+        ? "Servicii de rent a car în Cluj-Napoca și preluare directă din Aeroportul Cluj, cu flotă diversificată și prețuri corecte."
+        : "Reliable car rental in Cluj-Napoca and Cluj Airport with clean vehicles, transparent pricing and fast pickup.",
       type: "website",
       url: `https://rngo.ro/${locale}`,
       siteName: "Rent'n Go Cluj-Napoca",
@@ -53,11 +54,11 @@ export async function generateMetadata({
     twitter: {
       card: "summary_large_image",
       title: isRomanian
-        ? "Rent'n Go Cluj-Napoca | Masini de Inchiriat"
-        : "Rent'n Go Cluj-Napoca | Car Rentals",
+        ? "Închirieri Auto Aeroport Cluj – Rent a Car Premium în Cluj-Napoca"
+        : "Car Rental Cluj-Napoca & Cluj Airport – Premium Rent a Car",
       description: isRomanian
-        ? "Masini de inchiriat Cluj-Napoca cu Rent'n Go."
-        : "Car rentals Cluj-Napoca with Rent'n Go.",
+        ? "Servicii de rent a car în Cluj-Napoca și preluare directă din Aeroportul Cluj, fără stres."
+        : "Reliable car rental in Cluj-Napoca and Cluj Airport with fast pickup and transparent pricing.",
       images: ["https://rngo.ro/logo.png"],
     },
   };
@@ -72,8 +73,8 @@ function CarRentalSchema({ locale }: { locale: string }) {
     name: "Rent'n Go",
     alternateName: "Rent'n Go Cluj-Napoca",
     description: isRomanian
-      ? "Servicii profesionale de închiriere auto în Cluj-Napoca. Flotă modernă, prețuri competitive, rezervare online."
-      : "Professional car rental services in Cluj-Napoca. Modern fleet, competitive prices, online booking.",
+      ? "Servicii de rent a car în Cluj-Napoca și preluare directă din Aeroportul Cluj. Flotă diversificată, prețuri corecte și rezervare rapidă."
+      : "Car rental services in Cluj-Napoca and Cluj Airport with clean vehicles, transparent pricing and fast booking.",
     url: "https://rngo.ro",
     logo: "https://rngo.ro/logo.png",
     image: "https://rngo.ro/logo.png",
@@ -135,17 +136,18 @@ function CarRentalSchema({ locale }: { locale: string }) {
 
 export default async function HomePage({ params }: HomePageProps) {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "homepage" });
   // Query now includes imageUrl directly, eliminating N+1 queries
   const featuredVehicles = await fetchQuery(api.featuredCars.getFeaturedVehicles);
 
   let vehicles = featuredVehicles;
-  let title = "Featured Cars";
+  let title = t("featuredCarsTitle");
 
   if (!vehicles || vehicles.length === 0) {
     // Fallback to all vehicles (also includes imageUrl now)
     const allVehicles = await fetchQuery(api.vehicles.getAllVehiclesWithClasses, {});
     vehicles = allVehicles.slice(0, 3);
-    title = vehicles.length > 0 ? "Our Latest Cars" : "No Cars Available";
+    title = vehicles.length > 0 ? t("latestCarsTitle") : t("noCarsTitle");
   }
 
   return (

@@ -20,18 +20,18 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://rngo.ro"),
   title: {
-    default: "Rent'n Go Cluj-Napoca | Masini de Inchiriat",
+    default: "Rent’n Go | Rent a Car Cluj-Napoca & Aeroportul Cluj",
     template: "%s | Rent'n Go Cluj-Napoca",
   },
   description:
-    "Masini de inchiriat Cluj-Napoca cu Rent'n Go. Car rentals Cluj-Napoca cu prețuri competitive. Servicii profesionale de închiriere auto în Cluj-Napoca.",
+    "Servicii de rent a car în Cluj-Napoca și preluare directă din Aeroportul Cluj. Flotă modernă, prețuri corecte și rezervare rapidă.",
   keywords: [
-    "masini de inchiriat Cluj-Napoca",
-    "car rentals Cluj-Napoca",
-    "rent car Cluj",
-    "închiriere auto Cluj",
-    "rental cars Cluj-Napoca",
-    "închiriat mașini Cluj",
+    "rent a car Cluj-Napoca",
+    "închirieri auto Aeroportul Cluj",
+    "mașini de închiriat Cluj",
+    "rent a car Cluj",
+    "car rental Cluj-Napoca",
+    "Cluj Airport car rental",
   ],
   authors: [{ name: "Rent'n Go" }],
   creator: "Rent'n Go",
@@ -53,9 +53,9 @@ export const metadata: Metadata = {
     alternateLocale: ["en_US"],
     url: "https://rngo.ro",
     siteName: "Rent'n Go Cluj-Napoca",
-    title: "Rent'n Go Cluj-Napoca | Masini de Inchiriat",
+    title: "Rent’n Go | Rent a Car Cluj-Napoca & Aeroportul Cluj",
     description:
-      "Masini de inchiriat Cluj-Napoca cu Rent'n Go. Servicii profesionale de închiriere auto cu prețuri competitive.",
+      "Servicii de rent a car în Cluj-Napoca și preluare directă din Aeroportul Cluj, cu flotă modernă și prețuri corecte.",
     images: [
       {
         url: "/logo.png",
@@ -67,9 +67,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Rent'n Go Cluj-Napoca | Masini de Inchiriat",
+    title: "Rent’n Go | Rent a Car Cluj-Napoca & Aeroportul Cluj",
     description:
-      "Masini de inchiriat Cluj-Napoca cu Rent'n Go. Car rentals Cluj-Napoca cu servicii de calitate.",
+      "Rent a car în Cluj-Napoca și preluare directă din Aeroportul Cluj, fără stres.",
     images: ["/logo.png"],
   },
   icons: {

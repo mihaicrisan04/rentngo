@@ -90,6 +90,16 @@ const AboutPage = () => {
       description: t("values.localExpertise.description"),
     },
   ];
+  const storyDescriptions = [
+    t("ourStory.description1"),
+    t("ourStory.description2"),
+    t("ourStory.description3"),
+    t("ourStory.description4"),
+  ].filter((description) => description.trim().length > 0);
+  const missionParagraphs = t("mission.description")
+    .split("\n\n")
+    .map((paragraph) => paragraph.trim())
+    .filter((paragraph) => paragraph.length > 0);
 
   // Organization structured data for SEO
   const organizationSchema = {
@@ -220,15 +230,14 @@ const AboutPage = () => {
 
                 <div className="grid md:grid-cols-2 gap-12 items-center">
                   <div className="space-y-6">
-                    <p className="text-lg text-muted-foreground leading-relaxed">
-                      {t("ourStory.description1")}
-                    </p>
-                    <p className="text-lg text-muted-foreground leading-relaxed">
-                      {t("ourStory.description2")}
-                    </p>
-                    <p className="text-lg text-muted-foreground leading-relaxed">
-                      {t("ourStory.description3")}
-                    </p>
+                    {storyDescriptions.map((description, index) => (
+                      <p
+                        key={`story-description-${index}`}
+                        className="text-lg text-muted-foreground leading-relaxed"
+                      >
+                        {description}
+                      </p>
+                    ))}
                   </div>
                   <div className="relative">
                     <Card className="overflow-hidden shadow-xl p-0 relative h-96">
@@ -307,9 +316,11 @@ const AboutPage = () => {
                     <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
                       {t("mission.title")}
                     </h2>
-                    <p className="text-xl text-muted-foreground leading-relaxed mb-8">
-                      {t("mission.description")}
-                    </p>
+                    <div className="space-y-4 text-xl text-muted-foreground leading-relaxed mb-8">
+                      {missionParagraphs.map((paragraph, index) => (
+                        <p key={`mission-paragraph-${index}`}>{paragraph}</p>
+                      ))}
+                    </div>
                     <Button
                       size="lg"
                       className="bg-primary hover:bg-primary/90 text-primary-foreground"

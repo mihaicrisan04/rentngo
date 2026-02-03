@@ -17,6 +17,10 @@ import { toast } from "sonner";
 
 const ContactPage = () => {
   const t = useTranslations("contactPage");
+  const founderParagraphs = t("founder.description")
+    .split("\n\n")
+    .map((paragraph) => paragraph.trim())
+    .filter((paragraph) => paragraph.length > 0);
 
   const handleMapClick = () => {
     // Replace with your actual Google Maps coordinates
@@ -254,9 +258,11 @@ const ContactPage = () => {
                         <p className="text-lg text-primary font-semibold mb-6">
                           {t("founder.title")}
                         </p>
-                        <p className="text-muted-foreground leading-relaxed mb-6">
-                          {t("founder.description")}
-                        </p>
+                        <div className="space-y-4 text-muted-foreground leading-relaxed mb-6">
+                          {founderParagraphs.map((paragraph, index) => (
+                            <p key={`founder-paragraph-${index}`}>{paragraph}</p>
+                          ))}
+                        </div>
                         <div className="flex flex-wrap gap-2">
                           <Badge variant="secondary">
                             {t("founder.badges.expert")}
@@ -310,7 +316,7 @@ const ContactPage = () => {
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                           <div>
                             <h3 className="text-xl font-semibold text-foreground mb-2">
-                              Our Location
+                              {t("locationCardTitle")}
                             </h3>
                             <p className="text-muted-foreground flex items-center">
                               <MapPin className="w-4 h-4 mr-2" />
