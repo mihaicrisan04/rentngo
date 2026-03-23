@@ -175,9 +175,6 @@
     @apply bg-background text-foreground;
   }
 
-  html {
-    scroll-behavior: smooth;
-  }
 
   * {
     scrollbar-width: thin;

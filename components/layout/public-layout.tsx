@@ -13,13 +13,13 @@ export function PublicLayout({ children }: PublicLayoutProps) {
     <div className="relative flex flex-col min-h-screen">
       <Header
         logo={
-          <Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} />
+          <Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} style={{ height: 'auto' }} />
         }
       />
       <main className="flex-1">{children}</main>
       <Footer
         logo={
-          <Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} />
+          <Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} style={{ height: 'auto' }} />
         }
         brandName=""
       />

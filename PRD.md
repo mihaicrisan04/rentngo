@@ -53,7 +53,39 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 
 ---
 
-## Planned Tasks
+## Planned Tasks — Convex Hardening
+
+Tasks from a full audit of Convex functions against official guidelines and best practices.
+
+### P0 — Security & Correctness
+
+| Task | Description |
+|------|-------------|
+| Auth guards on admin mutations | `vehicles`, `seasons`, `blogs`, `vehicleClasses`, `transferPricing` mutations are all public with zero auth — anyone can create/delete data. Add auth checks or convert to `internalMutation` |
+| Stop accepting `userId` as argument | `createReservation` and `createTransfer` accept `userId` in args — must derive from `ctx.auth.getUserIdentity()` server-side per Convex guidelines |
+| Replace `.filter()` with `.withIndex()` | `.filter()` causes full table scans. Violations in `vehicles.getAll`, `searchAvailableVehicles`, `getByClass`, `blogs.getAll`, `featuredCars.setFeaturedCar`, `vehicleClasses.remove`. Add missing indexes (`classId`, `transmission`, `fuelType`, `vehicleId` on featuredCars) |
+| Switch `identity.subject` → `tokenIdentifier` | All user lookups use `identity.subject` — guidelines say to prefer `tokenIdentifier` as the canonical stable identifier |
+
+### P1 — Performance & Scalability
+
+| Task | Description |
+|------|-------------|
+| Reservation/transfer number via counter doc | `createReservation` and `createTransfer` `.collect()` the entire table to compute `max + 1`. Use a dedicated counter document instead |
+| Bound unbounded `.collect()` calls | Multiple queries collect full tables with no limits — `getAllVehicles`, `searchAvailableVehicles`, `getAllVehiclesWithClasses`, `getAllReservations`, `getAllTransfers`, stats/chart queries. Add `.take(n)` or pagination |
+| Standardize auth pattern | `transfers.ts` does raw `ctx.auth` + manual user lookup everywhere. `reservations.ts` uses `getCurrentUser` helpers. Standardize on the helper pattern across all files |
+
+### P2 — Code Quality
+
+| Task | Description |
+|------|-------------|
+| Add `returns` validators | Many functions missing `returns` — inconsistent with others that have them. Add across `vehicles.ts`, `reservations.ts`, `transfers.ts`, `featuredCars.ts` |
+| Fix `seasons.ts` broken filter | `Object.entries(updates).filter(([value]) => ...)` — destructuring bug, checks key instead of value. Should be `([_, value])` |
+| Replace `v.any()` in blog uploads | `blogs.uploadImages` uses `v.array(v.any())` — should be `v.array(v.bytes())` |
+| Remove `as any` casts | `reservations.ts:83` uses `(r as any).reservationNumber`, `blogs.ts:286` uses `any` for updates object. Use proper types |
+
+---
+
+## Planned Tasks — Other
 
 | Priority | Task | Description |
 |----------|------|-------------|
@@ -97,3 +129,4 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | 3.5 | Jan 22 | Dynamic import admin dialogs |
 | 3.6 | Jan 22 | Reduced getImageUrl calls - imageUrl now included in queries |
 | 4.0 | Mar 23 | Major dependency upgrades + post-upgrade improvements |
+| 4.1 | Mar 23 | Added Convex Hardening phase from full guidelines audit |

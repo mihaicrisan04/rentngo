@@ -97,7 +97,7 @@ export default async function RootLayout({
   const lang = pathname.startsWith("/en") ? "en" : "ro";
 
   return (
-    <html lang={lang} suppressHydrationWarning>
+    <html lang={lang} suppressHydrationWarning data-scroll-behavior="smooth">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
