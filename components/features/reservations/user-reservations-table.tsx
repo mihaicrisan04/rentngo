@@ -70,6 +70,21 @@ export function UserReservationsTable() {
     );
   };
 
+  // Memoize pagination calculations (must be before early returns to respect Rules of Hooks)
+  const { paginatedReservations, totalPages, startIndex, endIndex } = useMemo(() => {
+    if (!reservations || reservations.length === 0) {
+      return { paginatedReservations: [], totalPages: 0, startIndex: 0, endIndex: 0 };
+    }
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    return {
+      startIndex: start,
+      endIndex: end,
+      paginatedReservations: reservations.slice(start, end),
+      totalPages: Math.ceil(reservations.length / ITEMS_PER_PAGE),
+    };
+  }, [reservations, currentPage]);
+
   if (reservations === undefined) {
     return (
       <div className="flex justify-center py-8">
@@ -89,18 +104,6 @@ export function UserReservationsTable() {
       </div>
     );
   }
-
-  // Memoize pagination calculations
-  const { paginatedReservations, totalPages, startIndex, endIndex } = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    return {
-      startIndex: start,
-      endIndex: end,
-      paginatedReservations: reservations.slice(start, end),
-      totalPages: Math.ceil(reservations.length / ITEMS_PER_PAGE),
-    };
-  }, [reservations, currentPage]);
 
   return (
     <div className="space-y-4">

@@ -57,16 +57,9 @@ export const VehicleCard = React.memo(function VehicleCard({
     returnDate,
   );
 
-  if (!vehicle || typeof vehicle._id !== "string") {
-    return (
-      <div className="p-4 border rounded-lg shadow-md bg-card text-card-foreground">
-        {tCommon("invalidData")}
-      </div>
-    );
-  }
-
-  // Memoize price details to prevent recalculation with stale multiplier values
+  // Memoize price details (must be before early returns to respect Rules of Hooks)
   const priceDetails = React.useMemo(() => {
+    if (!vehicle) return { days: 0, basePrice: null, totalPrice: null, pricePerDay: 0 };
     return calculateVehiclePricingWithSeason(
       vehicle,
       currentMultiplier,
@@ -88,16 +81,22 @@ export const VehicleCard = React.memo(function VehicleCard({
     returnTime,
   ]);
 
-  // Calculate the current price per day - extract from priceDetails instead of recalculating
   const currentPricePerDay = React.useMemo(() => {
+    if (!vehicle) return 0;
     if (priceDetails.days && priceDetails.basePrice !== null) {
-      // Use the already-calculated seasonal price from priceDetails
       return Math.round(priceDetails.basePrice / priceDetails.days);
     }
-    // Fallback: Use the base price tier with seasonal adjustment
     const basePrice = getBasePricePerDay(vehicle);
     return Math.round(basePrice * currentMultiplier);
   }, [priceDetails.days, priceDetails.basePrice, vehicle, currentMultiplier]);
+
+  if (!vehicle || typeof vehicle._id !== "string") {
+    return (
+      <div className="p-4 border rounded-lg shadow-md bg-card text-card-foreground">
+        {tCommon("invalidData")}
+      </div>
+    );
+  }
 
   const currency = "EUR";
 
