@@ -849,11 +849,11 @@ function ReservationPageContent() {
   }
 
   return (
-    <div className="grow p-4 md:p-8">
+    <div className="grow py-8 px-4 md:px-8">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <Link href={`/cars/${vehicle?.slug || vehicleId}`}>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="rounded-xl">
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t("backToVehicleDetails")}
             </Button>
@@ -1863,7 +1863,7 @@ function ReservationPageContent() {
               <Button
                 onClick={handleSendReservation}
                 size="lg"
-                className="w-full bg-[#055E3B] hover:bg-[#055E3B]/80 text-white font-bold py-4 text-lg"
+                className="w-full bg-[#055E3B] hover:bg-[#055E3B]/80 text-white font-bold py-4 text-lg rounded-xl h-14"
                 disabled={isSubmitting}
               >
                 <Send className="mr-2 h-4 w-4" />

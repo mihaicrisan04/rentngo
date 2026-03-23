@@ -95,15 +95,21 @@ function VehicleClassSection({
   const sortedVehicles = sortVehiclesInClass(vehicles);
 
   return (
-    <div className="mb-8">
-      <div className="flex items-center gap-3 mb-4">
-        <h2 className="text-xl font-semibold text-foreground whitespace-nowrap">
-          {displayName}
-        </h2>
+    <div className="mb-10">
+      <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-1 h-6 rounded-full bg-primary"></div>
+          <h2 className="text-xl font-bold text-foreground whitespace-nowrap tracking-tight">
+            {displayName}
+          </h2>
+        </div>
         <Separator className="flex-1" />
+        <span className="text-sm text-muted-foreground whitespace-nowrap">
+          {vehicles.length}
+        </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {sortedVehicles.map((vehicle) => (
           <VehicleCardWithPreloadedImage
             key={vehicle._id}

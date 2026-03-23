@@ -102,14 +102,14 @@ export default function TransferVehiclesPage() {
   const transferType = searchData.transferType || "one_way";
 
   return (
-    <div className="container mx-auto py-8 max-w-6xl px-4 lg:px-0">
-      <div className="mb-6">
-        <Button variant="ghost" onClick={handleBack} className="mb-4">
+    <div className="container mx-auto py-10 max-w-6xl px-4 lg:px-0">
+      <div className="mb-8">
+        <Button variant="ghost" onClick={handleBack} className="mb-4 rounded-xl">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Search
         </Button>
 
-        <div className="bg-muted/50 rounded-lg p-4 mb-6">
+        <div className="bg-muted/30 border border-border/50 rounded-2xl p-5 mb-6">
           <div className="flex flex-wrap items-center gap-4 text-sm">
             <div>
               <span className="text-muted-foreground">From: </span>
@@ -134,9 +134,9 @@ export default function TransferVehiclesPage() {
           dropoffCoordinates={searchData.dropoffLocation.coordinates}
           pickupLabel={searchData.pickupLocation.address.split(",")[0]}
           dropoffLabel={searchData.dropoffLocation.address.split(",")[0]}
-          className="h-[280px] sm:h-[350px] w-full"
+          className="h-[280px] sm:h-[350px] w-full rounded-2xl overflow-hidden"
         />
-        <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-muted/50 rounded-lg px-4 py-3">
+        <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-muted/30 border border-border/50 rounded-2xl px-4 py-3">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5 text-sm">
               <MapPin className="h-4 w-4 text-muted-foreground" />

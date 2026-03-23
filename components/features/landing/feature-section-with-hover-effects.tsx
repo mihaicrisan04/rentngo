@@ -1,3 +1,5 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 import {
   IconCurrencyDollar,
@@ -9,57 +11,70 @@ import {
   IconShieldCheck,
   IconAward,
 } from "@tabler/icons-react";
-import { useTranslations } from 'next-intl';
+import { useTranslations } from "next-intl";
+import { motion, useInView } from "framer-motion";
+import { useRef } from "react";
 
 export function FeaturesSectionWithHoverEffects() {
-  const t = useTranslations('features');
-  
+  const t = useTranslations("features");
+  const ref = useRef(null);
+  const isInView = useInView(ref, { amount: 0.15, once: true });
+
   const features = [
     {
-      title: t('wideVehicleSelection.title'),
-      description: t('wideVehicleSelection.description'),
+      title: t("wideVehicleSelection.title"),
+      description: t("wideVehicleSelection.description"),
       icon: <IconCar />,
     },
     {
-      title: t('transparentPricing.title'),
-      description: t('transparentPricing.description'),
+      title: t("transparentPricing.title"),
+      description: t("transparentPricing.description"),
       icon: <IconCurrencyDollar />,
     },
     {
-      title: t('effortlessBooking.title'),
-      description: t('effortlessBooking.description'),
+      title: t("effortlessBooking.title"),
+      description: t("effortlessBooking.description"),
       icon: <IconDeviceMobileMessage />,
     },
     {
-      title: t('flexibleRental.title'),
-      description: t('flexibleRental.description'),
+      title: t("flexibleRental.title"),
+      description: t("flexibleRental.description"),
       icon: <IconCalendarStats />,
     },
     {
-      title: t('convenientLocations.title'),
-      description: t('convenientLocations.description'),
+      title: t("convenientLocations.title"),
+      description: t("convenientLocations.description"),
       icon: <IconMapPin />,
     },
     {
-      title: t('roadsideSupport.title'),
-      description: t('roadsideSupport.description'),
+      title: t("roadsideSupport.title"),
+      description: t("roadsideSupport.description"),
       icon: <IconHeadset />,
     },
     {
-      title: t('comprehensiveInsurance.title'),
-      description: t('comprehensiveInsurance.description'),
+      title: t("comprehensiveInsurance.title"),
+      description: t("comprehensiveInsurance.description"),
       icon: <IconShieldCheck />,
     },
     {
-      title: t('memberPerks.title'),
-      description: t('memberPerks.description'),
+      title: t("memberPerks.title"),
+      description: t("memberPerks.description"),
       icon: <IconAward />,
     },
   ];
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4  relative z-10 py-10 w-full lg:max-w-5xl mx-auto lg:p-8 px-4">
+    <div
+      ref={ref}
+      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 relative z-10 py-10 w-full lg:max-w-5xl mx-auto lg:p-8 px-4"
+    >
       {features.map((feature, index) => (
-        <Feature key={feature.title} {...feature} index={index} />
+        <Feature
+          key={feature.title}
+          {...feature}
+          index={index}
+          isInView={isInView}
+        />
       ))}
     </div>
   );
@@ -70,17 +85,32 @@ const Feature = ({
   description,
   icon,
   index,
+  isInView,
 }: {
   title: string;
   description: string;
   icon: React.ReactNode;
   index: number;
+  isInView: boolean;
 }) => {
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 24, filter: "blur(6px)" }}
+      animate={
+        isInView
+          ? { opacity: 1, y: 0, filter: "blur(0px)" }
+          : { opacity: 0, y: 24, filter: "blur(6px)" }
+      }
+      transition={{
+        type: "spring",
+        stiffness: 120,
+        damping: 18,
+        delay: index * 0.08 + 0.1,
+      }}
       className={cn(
         "flex flex-col lg:border-r md:border-r py-10 relative group/feature border-border",
-        (index === 0 || index === 4) && "lg:border-l md:border-l border-border",
+        (index === 0 || index === 4) &&
+          "lg:border-l md:border-l border-border",
         index < 4 && "lg:border-b md:border-b border-border"
       )}
     >
@@ -102,6 +132,6 @@ const Feature = ({
       <p className="text-sm text-foreground/70 max-w-xs relative z-10 px-10">
         {description}
       </p>
-    </div>
+    </motion.div>
   );
 };

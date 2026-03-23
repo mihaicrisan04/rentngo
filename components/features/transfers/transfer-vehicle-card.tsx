@@ -53,8 +53,8 @@ export const TransferVehicleCard = React.memo(function TransferVehicleCard({
   return (
     <div
       className={cn(
-        "relative flex flex-col bg-accent text-card-foreground overflow-hidden rounded-lg shadow-lg w-full transition-all duration-300 hover:shadow-xl hover:scale-105 group before:absolute before:inset-0 before:rounded-lg before:border-2 before:border-primary/20 before:scale-110 before:opacity-0 before:transition-all before:duration-300 group-hover:before:opacity-100 before:pointer-events-none",
-        isSelected && "ring-2 ring-primary shadow-lg",
+        "relative flex flex-col bg-card text-card-foreground overflow-hidden rounded-2xl border border-border/50 shadow-md w-full transition-all duration-300 hover:shadow-xl hover:scale-[1.03] hover:border-primary/25 group",
+        isSelected && "ring-2 ring-primary shadow-lg border-primary/30",
       )}
     >
       {isSelected && (

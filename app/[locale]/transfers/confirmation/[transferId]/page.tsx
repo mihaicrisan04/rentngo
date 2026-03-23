@@ -149,16 +149,16 @@ export default function TransferConfirmationPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 max-w-3xl px-4 lg:px-0">
+    <div className="container mx-auto py-10 max-w-3xl px-4 lg:px-0">
       {/* Success Header */}
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
-          <CheckCircle className="h-8 w-8 text-green-600" />
+      <div className="text-center mb-10">
+        <div className="inline-flex items-center justify-center h-18 w-18 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 mb-5">
+          <CheckCircle className="h-9 w-9 text-emerald-600 dark:text-emerald-400" />
         </div>
-        <h1 className="text-3xl font-bold mb-2">{t("confirmation.title")}</h1>
+        <h1 className="text-3xl md:text-4xl font-bold mb-3 tracking-tight">{t("confirmation.title")}</h1>
         <p className="text-muted-foreground">{t("confirmation.subtitle")}</p>
-        <div className="flex items-center justify-center gap-4 mt-4">
-          <Badge variant="outline" className="text-lg px-4 py-1">
+        <div className="flex items-center justify-center gap-4 mt-5">
+          <Badge variant="outline" className="text-lg px-4 py-1.5 rounded-xl">
             {t("confirmation.transferNumber")} {transfer.transferNumber}
           </Badge>
           {getStatusBadge(transfer.status)}
@@ -179,7 +179,7 @@ export default function TransferConfirmationPage() {
                 dropoffCoordinates={transfer.dropoffLocation.coordinates}
                 pickupLabel={transfer.pickupLocation.address.split(",")[0]}
                 dropoffLabel={transfer.dropoffLocation.address.split(",")[0]}
-                className="h-[280px] sm:h-[350px] w-full mt-3 rounded-lg overflow-hidden"
+                className="h-[280px] sm:h-[350px] w-full mt-3 rounded-2xl overflow-hidden"
               />
             )}
           </CardHeader>
@@ -391,8 +391,8 @@ export default function TransferConfirmationPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-start gap-3">
-              <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-xs font-semibold text-primary">1</span>
+              <div className="h-7 w-7 rounded-xl bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-bold">1</span>
               </div>
               <div>
                 <p className="font-medium">{tConfirmation("requestReview")}</p>
@@ -402,8 +402,8 @@ export default function TransferConfirmationPage() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-xs font-semibold text-primary">2</span>
+              <div className="h-7 w-7 rounded-xl bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-bold">2</span>
               </div>
               <div>
                 <p className="font-medium">{tConfirmation("emailConfirmation")}</p>
@@ -413,8 +413,8 @@ export default function TransferConfirmationPage() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <span className="text-xs font-semibold text-primary">3</span>
+              <div className="h-7 w-7 rounded-xl bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs font-bold">3</span>
               </div>
               <div>
                 <p className="font-medium">Driver Assignment</p>
@@ -450,13 +450,13 @@ export default function TransferConfirmationPage() {
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button variant="outline" asChild>
+          <Button variant="outline" className="rounded-xl h-12 px-6" asChild>
             <Link href="/">
               <Home className="h-4 w-4 mr-2" />
               {tConfirmation("goBack")}
             </Link>
           </Button>
-          <Button asChild>
+          <Button className="rounded-xl h-12 px-6" asChild>
             <Link href="/transfers">
               {t("confirmation.bookAnother")}
             </Link>

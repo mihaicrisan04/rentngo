@@ -3,6 +3,9 @@
     "title": "Masini de Inchiriat Cluj-Napoca",
     "subtitle": "Explorează Cluj-Napoca cu gama noastră largă de masini de inchiriat. Rezervare ușoară, prețuri competitive, servicii de încredere.",
     "viewAllCars": "Vezi Toate Mașinile",
+    "features": {
+      "title": "De Ce Să Închiriezi Cu Noi"
+    },
     "faq": {
       "title": "Întrebări Frecvente",
       "description": "Găsește răspunsuri la întrebări comune despre închirierea unei mașini cu noi.",
@@ -10,7 +13,8 @@
         "title": "Gata să Pleci la Drum?",
         "description": "Răsfoiește flota noastră extinsă de vehicule și găsește mașina perfectă pentru următoarea ta aventură în Cluj-Napoca.",
         "buttonText": "Răsfoiește Mașinile Noastre"
-      }
+      },
+      "contact": "Contactează-ne"
     }
   },
   "aboutPage": {
@@ -326,6 +330,11 @@
       "cashOnDelivery": "Plata Cash la Livrare",
       "cardOnDelivery": "Plata cu Cardul la Livrare",
       "cardOnline": "Plata cu Cardul Online"
+    },
+    "status": {
+      "pending": "În așteptare",
+      "confirmed": "Confirmat",
+      "cancelled": "Anulat"
     }
   },
   "transferPage": {
@@ -451,7 +460,20 @@
     "minutesRead": "{minutes} min de citire",
     "publishedOn": "Publicat pe",
     "by": "de",
-    "views": "{count} vizualizări"
+    "views": "{count} vizualizări",
+    "hero": {
+      "badge": "Blogul Rent'n Go",
+      "title": "Sfaturi și Povești pentru Următoarea Ta Călătorie",
+      "subtitle": "Ghiduri practice, informații locale și tot ce ai nevoie pentru a profita la maximum de experiența de închiriere auto în Cluj-Napoca."
+    },
+    "featuredPost": "Articol Recomandat",
+    "latestPosts": "Ultimele Articole",
+    "cta": {
+      "title": "Gata să explorezi Cluj-Napoca?",
+      "description": "Rezervă mașina de închiriat azi și descoperă tot ce are Transilvania de oferit.",
+      "button": "Vezi Mașinile Noastre"
+    },
+    "loadMore": "Încarcă Mai Multe"
   },
   "blogDetail": {
     "loading": "Se încarcă articolul...",
