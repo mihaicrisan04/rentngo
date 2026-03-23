@@ -39,7 +39,7 @@ import { Mail, Send } from "lucide-react";
 
 const emailSchema = z.object({
   emailType: z.enum(["modification", "confirmation", "cancellation", "reminder"], {
-    required_error: "Email type is required",
+    error: "Email type is required",
   }),
   subject: z.string().min(1, "Subject is required"),
   message: z.string().min(1, "Message is required"),

@@ -69,14 +69,14 @@ const createReservationSchema = (t: ReturnType<typeof useTranslations>) =>
 
     // Rental details
     deliveryLocation: z.string().min(1, t("validation.pickupLocationRequired")),
-    pickupDate: z.date({ required_error: t("validation.pickupDateRequired") }),
+    pickupDate: z.date({ error: t("validation.pickupDateRequired") }),
     pickupTime: z.string().refine((val) => val.trim().length > 0, {
       message: t("validation.pickupTimeRequired"),
     }),
     restitutionLocation: z
       .string()
       .min(1, t("validation.returnLocationRequired")),
-    returnDate: z.date({ required_error: t("validation.returnDateRequired") }),
+    returnDate: z.date({ error: t("validation.returnDateRequired") }),
     returnTime: z.string().refine((val) => val.trim().length > 0, {
       message: t("validation.returnTimeRequired"),
     }),
@@ -557,7 +557,7 @@ function ReservationPageContent() {
     const newErrors: FormErrors = {};
 
     if (!result.success) {
-      result.error.errors.forEach((error) => {
+      result.error.issues.forEach((error) => {
         const path = error.path[0] as string;
 
         // Map field names to error structure

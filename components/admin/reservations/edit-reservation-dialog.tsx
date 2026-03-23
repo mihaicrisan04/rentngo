@@ -82,7 +82,7 @@ const reservationSchema = z.object({
   paymentMethod: z.enum(
     ["cash_on_delivery", "card_on_delivery", "card_online"],
     {
-      required_error: "Payment method is required",
+      error: "Payment method is required",
     },
   ),
   totalPrice: z
@@ -97,7 +97,7 @@ const reservationSchema = z.object({
       return price > 0;
     }, "Price must be greater than 0"),
   status: z.enum(["pending", "confirmed", "cancelled", "completed"], {
-    required_error: "Status is required",
+    error: "Status is required",
   }),
   customerName: z.string().min(1, "Customer name is required"),
   customerEmail: z.string().email("Please enter a valid email"),

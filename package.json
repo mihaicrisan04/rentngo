@@ -72,7 +72,7 @@
     "react-phone-number-input": "^3.4.16",
     "react-social-icons": "^6.25.0",
     "reading-time": "^1.5.0",
-    "recharts": "^2.15.4",
+    "recharts": "^3.8.0",
     "rehype-autolink-headings": "^7.1.0",
     "rehype-highlight": "^7.0.2",
     "rehype-slug": "^6.0.0",
@@ -81,7 +81,7 @@
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
     "vaul": "^1.1.2",
-    "zod": "^3.25.76"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
