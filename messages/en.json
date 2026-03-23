@@ -15,6 +15,19 @@
         "buttonText": "Browse Our Cars"
       },
       "contact": "Contact Us"
+    },
+    "featuredCars": "Featured Cars",
+    "ourLatestCars": "Our Latest Cars",
+    "noCarsAvailable": "No Cars Available",
+    "trustBar": {
+      "rating": "4.9 rating",
+      "ratingDesc": "200+ reviews",
+      "airport": "Airport pickup",
+      "airportDesc": "Cluj-Napoca",
+      "support": "24/7",
+      "supportDesc": "Support",
+      "roadside": "Free",
+      "roadsideDesc": "Roadside assist"
     }
   },
   "aboutPage": {

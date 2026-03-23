@@ -15,6 +15,19 @@
         "buttonText": "Răsfoiește Mașinile Noastre"
       },
       "contact": "Contactează-ne"
+    },
+    "featuredCars": "Mașini Recomandate",
+    "ourLatestCars": "Cele Mai Noi Mașini",
+    "noCarsAvailable": "Nicio Mașină Disponibilă",
+    "trustBar": {
+      "rating": "4.9 rating",
+      "ratingDesc": "200+ recenzii",
+      "airport": "Preluare aeroport",
+      "airportDesc": "Cluj-Napoca",
+      "support": "24/7",
+      "supportDesc": "Suport",
+      "roadside": "Gratis",
+      "roadsideDesc": "Asistență rutieră"
     }
   },
   "aboutPage": {

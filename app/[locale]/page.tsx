@@ -3,6 +3,7 @@ import { api } from "@/convex/_generated/api";
 import { HomePageClient } from "./home-page-client";
 import { Metadata } from "next";
 import { buildMetadata, jsonLdScriptContent } from "@/lib/metadata";
+import { getTranslations } from "next-intl/server";
 
 interface HomePageProps {
   params: Promise<{ locale: string }>;
@@ -102,15 +103,16 @@ function CarRentalSchema({ locale }: { locale: string }) {
 
 export default async function HomePage({ params }: HomePageProps) {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "homepage" });
   const featuredVehicles = await fetchQuery(api.featuredCars.getFeaturedVehicles);
 
   let vehicles = featuredVehicles;
-  let title = "Featured Cars";
+  let title = t("featuredCars");
 
   if (!vehicles || vehicles.length === 0) {
     const allVehicles = await fetchQuery(api.vehicles.getAllVehiclesWithClasses, {});
     vehicles = allVehicles.slice(0, 3);
-    title = vehicles.length > 0 ? "Our Latest Cars" : "No Cars Available";
+    title = vehicles.length > 0 ? t("ourLatestCars") : t("noCarsAvailable");
   }
 
   return (

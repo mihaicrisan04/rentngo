@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Shield, Clock, Star, Headphones } from "lucide-react";
+import { ArrowRight, Plane, Clock, Star, Headphones } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { FeaturesSectionWithHoverEffects } from "@/components/features/landing/feature-section-with-hover-effects";
@@ -171,10 +171,10 @@ export function HomePageClient({
           <div className="max-w-5xl mx-auto w-full px-4 mt-4 mb-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { icon: Star, label: "4.9 rating", value: "200+ reviews" },
-                { icon: Shield, label: "Full insurance", value: "Included" },
-                { icon: Clock, label: "24/7", value: "Support" },
-                { icon: Headphones, label: "Free", value: "Roadside assist" },
+                { icon: Star, label: t("trustBar.rating"), value: t("trustBar.ratingDesc") },
+                { icon: Plane, label: t("trustBar.airport"), value: t("trustBar.airportDesc") },
+                { icon: Clock, label: t("trustBar.support"), value: t("trustBar.supportDesc") },
+                { icon: Headphones, label: t("trustBar.roadside"), value: t("trustBar.roadsideDesc") },
               ].map((item, i) => (
                 <div
                   key={i}
