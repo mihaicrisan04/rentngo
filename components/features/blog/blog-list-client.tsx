@@ -15,7 +15,8 @@ export function BlogListClient({ initialBlogs, locale }: BlogListClientProps) {
   const t = useTranslations("blogPage");
 
   // Use initialBlogs for SSR, then subscribe to real-time updates
-  const blogs = useQuery(api.blogs.getAll) ?? initialBlogs;
+  const liveBlogs = useQuery(api.blogs.getAll);
+  const blogs = liveBlogs !== undefined ? liveBlogs : initialBlogs;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">

@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { BlogDetailClient } from "@/components/features/blog/blog-detail-client";
+import { BlogContentServer } from "@/components/features/blog/blog-content-server";
 import {
   BlogStructuredData,
   BreadcrumbStructuredData,
@@ -108,7 +109,9 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
         coverImageUrl={coverImageUrl}
         locale={locale}
         slug={slug}
-      />
+      >
+        <BlogContentServer content={blog.content} />
+      </BlogDetailClient>
     </>
   );
 }

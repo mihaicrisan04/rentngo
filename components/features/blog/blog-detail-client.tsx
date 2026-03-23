@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { BlogContent, BlogHeader } from "@/components/features/blog";
+import { BlogHeader } from "@/components/features/blog";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ interface BlogDetailClientProps {
   coverImageUrl: string | null;
   locale: string;
   slug: string;
+  children: React.ReactNode;
 }
 
 export function BlogDetailClient({
@@ -23,6 +24,7 @@ export function BlogDetailClient({
   coverImageUrl,
   locale,
   slug,
+  children,
 }: BlogDetailClientProps) {
   const t = useTranslations("blogDetail");
   const viewTracked = useRef(false);
@@ -68,7 +70,7 @@ export function BlogDetailClient({
         )}
 
         <div className="mt-12">
-          <BlogContent content={blog.content} />
+          {children}
         </div>
       </div>
   );
