@@ -12,10 +12,6 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react", "date-fns"],
   },
-  eslint: {
-    // Disable ESLint during builds to allow deployment
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     // Optionally ignore TypeScript errors during builds
     ignoreBuildErrors: false,
