@@ -109,7 +109,7 @@ const AboutPage = () => {
 
               <Badge
                 variant="outline"
-                className="mb-4 px-4 py-2 text-lg text-primary"
+                className="mb-4 px-4 py-2 text-lg text-primary whitespace-normal"
               >
                 {t("title")}
               </Badge>
