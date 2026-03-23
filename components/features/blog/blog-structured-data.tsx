@@ -1,4 +1,5 @@
 import { Blog } from "@/types/blog";
+import { jsonLdScriptContent } from "@/lib/metadata";
 
 interface BlogStructuredDataProps {
   blog: Blog;
@@ -49,7 +50,7 @@ export function BlogStructuredData({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      dangerouslySetInnerHTML={{ __html: jsonLdScriptContent(structuredData) }}
     />
   );
 }
@@ -93,7 +94,7 @@ export function BreadcrumbStructuredData({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbData) }}
+      dangerouslySetInnerHTML={{ __html: jsonLdScriptContent(breadcrumbData) }}
     />
   );
 }

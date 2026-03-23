@@ -8,7 +8,7 @@ import {
   BreadcrumbStructuredData,
 } from "@/components/features/blog/blog-structured-data";
 import { notFound } from "next/navigation";
-// import { getTranslations } from "next-intl/server";
+import { buildMetadata } from "@/lib/metadata";
 
 interface BlogDetailPageProps {
   params: Promise<{ locale: string; slug: string }>;
@@ -22,7 +22,7 @@ export async function generateMetadata({
 
   if (!blog) {
     return {
-      title: "Blog Post Not Found | Rent'n Go Cluj",
+      title: "Blog Post Not Found",
     };
   }
 
@@ -30,57 +30,31 @@ export async function generateMetadata({
     ? await fetchQuery(api.blogs.getImageUrl, { imageId: blog.coverImage })
     : null;
 
-  const isRomanian = locale === "ro";
-
-  return {
-    title: `${blog.title} | Rent'n Go Blog`,
-    description: blog.description,
-    authors: [{ name: blog.author }],
-    keywords: blog.tags?.join(", "),
-    alternates: {
-      canonical: `https://rngo.ro/${locale}/blog/${slug}`,
-      languages: {
-        "ro-RO": `https://rngo.ro/ro/blog/${slug}`,
-        "en-US": `https://rngo.ro/en/blog/${slug}`,
-      },
-    },
-    openGraph: {
-      title: blog.title,
-      description: blog.description,
-      type: "article",
-      url: `https://rngo.ro/${locale}/blog/${slug}`,
+  return buildMetadata({
+    locale,
+    path: `/blog/${slug}`,
+    title: { ro: blog.title, en: blog.title },
+    description: { ro: blog.description, en: blog.description },
+    type: "article",
+    ...(blog.tags && {
+      keywords: { ro: blog.tags.join(", "), en: blog.tags.join(", ") },
+    }),
+    ...(coverImageUrl && {
+      image: { url: coverImageUrl, width: 1200, height: 630, alt: blog.title },
+    }),
+    article: {
       publishedTime: blog.publishedAt
         ? new Date(blog.publishedAt).toISOString()
         : undefined,
       authors: [blog.author],
       tags: blog.tags,
-      images: coverImageUrl
-        ? [
-            {
-              url: coverImageUrl,
-              alt: blog.title,
-              width: 1200,
-              height: 630,
-            },
-          ]
-        : [
-            {
-              url: "https://rngo.ro/logo.png",
-              alt: blog.title,
-              width: 1200,
-              height: 630,
-            },
-          ],
-      siteName: "Rent'n Go Cluj-Napoca",
-      locale: isRomanian ? "ro_RO" : "en_US",
     },
-    twitter: {
-      card: "summary_large_image",
-      title: blog.title,
-      description: blog.description,
-      images: coverImageUrl ? [coverImageUrl] : ["https://rngo.ro/logo.png"],
-    },
-  };
+  });
+}
+
+export async function generateStaticParams() {
+  const blogs = await fetchQuery(api.blogs.getAll);
+  return blogs.map((blog) => ({ slug: blog.slug }));
 }
 
 export default async function BlogDetailPage({ params }: BlogDetailPageProps) {

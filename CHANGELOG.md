@@ -5,6 +5,17 @@ All notable changes to RentNGo are documented here.
 ## [Unreleased]
 
 ### Added
+- **SEO overhaul**: comprehensive SEO improvements following Next.js best practices
+  - Created shared `buildMetadata()` helper (`lib/metadata.ts`) eliminating duplicated metadata across all pages
+  - Added `jsonLdScriptContent()` utility with XSS escaping for all JSON-LD structured data
+  - Dynamic `<html lang>` attribute based on locale (was hardcoded to "ro")
+  - Added `x-default` hreflang to all page alternates
+  - Moved JSON-LD structured data from client components to server-rendered layouts (transfers, contact, about)
+  - Added `generateStaticParams` for car detail and blog detail pages
+  - Added breadcrumb JSON-LD schema for car detail pages
+  - Added `noindex` metadata for transactional pages (reservation, profile)
+  - Fixed blog `keywords` type (was string, now string[])
+
 - **Barrel import optimization**: Added `optimizePackageImports` to next.config.ts
   - Configured for `lucide-react` (80 files) and `date-fns` (8 files)
   - Reduces cold start by 200-800ms, speeds up dev server boot

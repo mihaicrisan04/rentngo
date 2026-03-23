@@ -42,49 +42,8 @@ const ContactPage = () => {
     window.location.href = "mailto:office@rngo.ro";
   };
 
-  // Contact page structured data for SEO
-  const contactSchema = {
-    "@context": "https://schema.org",
-    "@type": "ContactPage",
-    mainEntity: {
-      "@type": "Organization",
-      name: "Rent'n Go",
-      telephone: "+40-773-932-961",
-      email: "office@rngo.ro",
-      address: {
-        "@type": "PostalAddress",
-        streetAddress:
-          'Cluj "Avram Iancu" International Airport, Strada Traian Vuia 149-151',
-        addressLocality: "Cluj-Napoca",
-        postalCode: "400397",
-        addressCountry: "RO",
-      },
-      openingHours: ["Mo-Su 00:00-23:59"],
-      contactPoint: [
-        {
-          "@type": "ContactPoint",
-          telephone: "+40-773-932-961",
-          contactType: "customer service",
-          availableLanguage: ["Romanian", "English"],
-          areaServed: "Cluj-Napoca",
-        },
-        {
-          "@type": "ContactPoint",
-          email: "office@rngo.ro",
-          contactType: "customer service",
-          availableLanguage: ["Romanian", "English"],
-        },
-      ],
-    },
-  };
-
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(contactSchema) }}
-      />
-
       <div className="flex-grow bg-gradient-to-br from-background via-background to-muted/30">
         {/* Hero Section */}
         <section className="py-16 px-4">

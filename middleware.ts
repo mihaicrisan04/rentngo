@@ -56,7 +56,9 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   // Apply internationalization to other routes
-  return intlMiddleware(req);
+  const response = intlMiddleware(req);
+  response.headers.set("x-pathname", req.nextUrl.pathname);
+  return response;
 });
 
 export const config = {

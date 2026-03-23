@@ -42,6 +42,7 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | Dynamic Import Admin Dialogs | Jan 22 | 10 admin dialogs now lazy-loaded with next/dynamic |
 | Memoize Expensive Components | Jan 22 | React.memo() for 6 components, useMemo() for 5 calculations |
 | Reduce getImageUrl Calls | Jan 22 | Moved imageUrl into queries (getAllVehiclesWithClasses, getFeaturedVehicles) |
+| SEO Overhaul | Mar 23 | Shared metadata helper, dynamic html lang, x-default hreflang, JSON-LD XSS escaping, server-rendered structured data, generateStaticParams for cars/blog, noindex for transactional pages, breadcrumb schema for car details |
 
 ---
 

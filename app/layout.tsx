@@ -5,7 +5,7 @@ import { Providers } from "./providers";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/react";
-
+import { headers } from "next/headers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -82,17 +82,22 @@ export const metadata: Metadata = {
     languages: {
       "ro-RO": "https://rngo.ro/ro",
       "en-US": "https://rngo.ro/en",
+      "x-default": "https://rngo.ro/ro",
     },
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") ?? "";
+  const lang = pathname.startsWith("/en") ? "en" : "ro";
+
   return (
-    <html lang="ro" suppressHydrationWarning>
+    <html lang={lang} suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

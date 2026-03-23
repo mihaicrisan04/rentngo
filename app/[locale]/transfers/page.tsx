@@ -8,93 +8,6 @@ import { Car, Shield, Clock, MapPin } from "lucide-react";
 export default function TransfersPage() {
   const t = useTranslations("transferPage");
 
-  const generateTransferServiceSchema = () => {
-    return {
-      "@context": "https://schema.org",
-      "@type": "Service",
-      name: "Transfer Services Cluj-Napoca",
-      alternateName: "Servicii Transfer Cluj-Napoca",
-      description:
-        "Servicii profesionale de transfer în Cluj-Napoca și împrejurimi cu Rent'n Go. Transfer aeroport Cluj, transport privat, curse personalizate.",
-      provider: {
-        "@type": "Organization",
-        name: "Rent'n Go",
-        url: "https://rngo.ro",
-        logo: "https://rngo.ro/logo.png",
-        contactPoint: {
-          "@type": "ContactPoint",
-          telephone: "+40-773-932-961",
-          contactType: "customer service",
-          areaServed: "Cluj-Napoca",
-          availableLanguage: ["Romanian", "English"],
-        },
-        address: {
-          "@type": "PostalAddress",
-          streetAddress:
-            'Cluj "Avram Iancu" International Airport, Strada Traian Vuia 149-151',
-          addressLocality: "Cluj-Napoca",
-          postalCode: "400397",
-          addressCountry: "RO",
-        },
-      },
-      areaServed: {
-        "@type": "State",
-        name: "Cluj County",
-        containedInPlace: {
-          "@type": "Country",
-          name: "Romania",
-        },
-      },
-      serviceType: [
-        "Airport Transfer",
-        "Private Transport",
-        "City Transfer",
-        "Business Transport",
-      ],
-      availableChannel: {
-        "@type": "ServiceChannel",
-        serviceUrl: "https://rngo.ro/transfers",
-        serviceSmsNumber: "+40-773-932-961",
-        servicePhone: "+40-773-932-961",
-      },
-      hasOfferCatalog: {
-        "@type": "OfferCatalog",
-        name: "Transfer Services",
-        itemListElement: [
-          {
-            "@type": "Offer",
-            itemOffered: {
-              "@type": "Service",
-              name: "Airport Transfer Cluj-Napoca",
-              description:
-                "Transfer de la și către Aeroportul Internațional Avram Iancu Cluj-Napoca",
-            },
-          },
-          {
-            "@type": "Offer",
-            itemOffered: {
-              "@type": "Service",
-              name: "City Transfer Cluj-Napoca",
-              description: "Transport în oraș și împrejurimile Cluj-Napoca",
-            },
-          },
-          {
-            "@type": "Offer",
-            itemOffered: {
-              "@type": "Service",
-              name: "Business Transfer",
-              description:
-                "Transport corporativ și pentru evenimente de business",
-            },
-          },
-        ],
-      },
-      url: "https://rngo.ro/transfers",
-    };
-  };
-
-  const transferSchema = generateTransferServiceSchema();
-
   const features = [
     {
       id: "premium",
@@ -124,10 +37,6 @@ export default function TransfersPage() {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(transferSchema) }}
-      />
       <div className="grow flex flex-col bg-linear-to-b from-background to-muted/30">
         {/* Hero Section */}
       <section className="relative py-12 lg:py-20">
