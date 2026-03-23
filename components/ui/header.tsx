@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs";
+import { SignInButton, Show } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 import { LanguageSelector } from "@/components/shared/navigation/language-selector";
@@ -102,11 +102,11 @@ export function Header({ logo }: HeaderProps) {
         <div className="hidden items-center gap-2 lg:flex lg:flex-1 lg:justify-end">
           <LanguageSelector />
 
-          <SignedIn>
+          <Show when="signed-in">
             <UserButton />
-          </SignedIn>
+          </Show>
 
-          <SignedOut>
+          <Show when="signed-out">
             <SignInButton mode="modal">
               <Button
                 variant="outline"
@@ -124,7 +124,7 @@ export function Header({ logo }: HeaderProps) {
             <SignInButton mode="modal">
               <Button size="sm">{tNav("signUp")}</Button>
             </SignInButton>
-          </SignedOut>
+          </Show>
         </div>
 
         <Button
@@ -181,11 +181,11 @@ export function Header({ logo }: HeaderProps) {
             </div>
             <LanguageSelector />
 
-            <SignedIn>
+            <Show when="signed-in">
               <UserButton />
-            </SignedIn>
+            </Show>
 
-            <SignedOut>
+            <Show when="signed-out">
               <SignInButton mode="modal">
                 <Button variant="outline" className="w-full" onClick={handleLinkClick}>
                   {tNav("login")}
@@ -196,7 +196,7 @@ export function Header({ logo }: HeaderProps) {
                   {tNav("signUp")}
                 </Button>
               </SignInButton>
-            </SignedOut>
+            </Show>
           </div>
         </div>
       </div>
