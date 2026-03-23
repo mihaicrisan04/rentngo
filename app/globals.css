@@ -209,3 +209,27 @@
     background: transparent;
   }
 }
+
+/* View Transitions — subtle cross-fade between pages */
+@supports (view-transition-name: none) {
+  ::view-transition-old(root) {
+    animation: fade-out 150ms ease-in;
+  }
+  ::view-transition-new(root) {
+    animation: fade-in 150ms ease-out;
+  }
+  @keyframes fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+}
+
+/* Optimize rendering for off-screen grid items */
+.grid > [data-cv-auto] {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 300px;
+}

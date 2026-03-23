@@ -18,7 +18,7 @@ When making changes to the codebase:
 
 ## Project Overview
 
-RentNGo is a car rental platform with VIP transfer services for the Romanian market. Built with Next.js 15, Convex, and Clerk authentication. Supports Romanian (default) and English.
+RentNGo is a car rental platform with VIP transfer services for the Romanian market. Built with Next.js 16, Convex, and Clerk v7 authentication. Supports Romanian (default) and English.
 
 ## Commands
 

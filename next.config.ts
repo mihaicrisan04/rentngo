@@ -9,6 +9,8 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 const withNextIntl = createNextIntlPlugin("./i18n.ts");
 
 const nextConfig: NextConfig = {
+  reactCompiler: true,
+  viewTransition: true,
   experimental: {
     optimizePackageImports: ["lucide-react", "date-fns"],
   },

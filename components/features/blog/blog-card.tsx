@@ -31,7 +31,7 @@ export const BlogCard = React.memo(function BlogCard({ blog, locale }: BlogCardP
   );
 
   return (
-    <Link href={`/${locale}/blog/${blog.slug}`}>
+    <Link href={`/${locale}/blog/${blog.slug}`} data-cv-auto="">
       <Card className="group hover:shadow-lg transition-all duration-300 h-full flex flex-col gap-0 p-3">
         <div className="relative aspect-[16/9] overflow-hidden rounded-lg mb-3">
           {coverImageUrl ? (
