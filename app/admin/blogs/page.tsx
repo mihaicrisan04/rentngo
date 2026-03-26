@@ -7,7 +7,7 @@ import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { BlogTable } from "@/components/admin/blog/blog-table";
-import { BlogListItem } from "@/types/blog";
+import { BlogAdminListItem } from "@/types/blog";
 import {
   Card,
   CardContent,
@@ -29,11 +29,11 @@ const EditBlogDialog = dynamic(
 export default function AdminBlogsPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedBlog, setSelectedBlog] = useState<BlogListItem | null>(null);
+  const [selectedBlog, setSelectedBlog] = useState<BlogAdminListItem | null>(null);
 
   const blogs = useQuery(api.blogs.getAllAdmin);
 
-  const handleEdit = (blog: BlogListItem) => {
+  const handleEdit = (blog: BlogAdminListItem) => {
     setSelectedBlog(blog);
     setEditDialogOpen(true);
   };

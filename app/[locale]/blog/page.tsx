@@ -26,7 +26,9 @@ export async function generateMetadata({
 export default async function BlogPage({ params }: BlogPageProps) {
   const { locale } = await params;
 
-  const preloadedBlogs = await fetchQuery(api.blogs.getAll);
+  const preloadedBlogs = await fetchQuery(api.blogs.getAll, {
+    locale: locale as "ro" | "en",
+  });
 
   return <BlogListClient initialBlogs={preloadedBlogs} locale={locale} />;
 }

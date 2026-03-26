@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { BlogListItem } from "@/types/blog";
+import { BlogAdminListItem } from "@/types/blog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,8 +31,8 @@ import { toast } from "sonner";
 import { Id } from "@/convex/_generated/dataModel";
 
 interface BlogTableProps {
-  blogs: BlogListItem[];
-  onEdit: (blog: BlogListItem) => void;
+  blogs: BlogAdminListItem[];
+  onEdit: (blog: BlogAdminListItem) => void;
   locale: string;
 }
 
@@ -80,7 +80,7 @@ export function BlogTable({ blogs, onEdit, locale }: BlogTableProps) {
             ) : (
               blogs.map((blog) => (
                 <TableRow key={blog._id}>
-                  <TableCell className="font-medium">{blog.title}</TableCell>
+                  <TableCell className="font-medium">{blog.title_ro}</TableCell>
                   <TableCell>{blog.author}</TableCell>
                   <TableCell>
                     <Badge

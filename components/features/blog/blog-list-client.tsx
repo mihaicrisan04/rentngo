@@ -21,7 +21,9 @@ export function BlogListClient({ initialBlogs, locale }: BlogListClientProps) {
   const t = useTranslations("blogPage");
   const [visibleCount, setVisibleCount] = useState(POSTS_PER_PAGE);
 
-  const liveBlogs = useQuery(api.blogs.getAll);
+  const liveBlogs = useQuery(api.blogs.getAll, {
+    locale: locale as "ro" | "en",
+  });
   const blogs = liveBlogs !== undefined ? liveBlogs : initialBlogs;
 
   const featuredBlog = blogs.length > 0 ? blogs[0] : null;

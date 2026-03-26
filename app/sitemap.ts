@@ -46,7 +46,7 @@ function createBilingualEntry(
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Fetch dynamic content
   const [blogs, vehicles] = await Promise.all([
-    fetchQuery(api.blogs.getAll),
+    fetchQuery(api.blogs.getAll, { locale: "ro" }),
     fetchQuery(api.vehicles.getAllVehicles),
   ]);
 

@@ -1,10 +1,11 @@
 import { v } from "convex/values";
 import { query, mutation, action } from "./_generated/server";
-import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 
+const localeValidator = v.union(v.literal("ro"), v.literal("en"));
+
 export const getAll = query({
-  args: {},
+  args: { locale: localeValidator },
   returns: v.array(
     v.object({
       _id: v.id("blogs"),
@@ -21,7 +22,8 @@ export const getAll = query({
       views: v.optional(v.number()),
     }),
   ),
-  handler: async (ctx) => {
+  handler: async (ctx, args) => {
+    const { locale } = args;
     const blogs = await ctx.db
       .query("blogs")
       .filter((q) => q.eq(q.field("status"), "published"))
@@ -31,15 +33,15 @@ export const getAll = query({
     return blogs.map((blog) => ({
       _id: blog._id,
       _creationTime: blog._creationTime,
-      title: blog.title,
+      title: (locale === "ro" ? blog.title_ro : blog.title_en) ?? blog.title ?? "",
       slug: blog.slug,
       author: blog.author,
-      description: blog.description,
+      description: (locale === "ro" ? blog.description_ro : blog.description_en) ?? blog.description ?? "",
       coverImage: blog.coverImage,
       tags: blog.tags,
       publishedAt: blog.publishedAt,
       status: blog.status,
-      readingTime: blog.readingTime,
+      readingTime: (locale === "ro" ? blog.readingTime_ro : blog.readingTime_en) ?? blog.readingTime,
       views: blog.views,
     }));
   },
@@ -51,15 +53,18 @@ export const getAllAdmin = query({
     v.object({
       _id: v.id("blogs"),
       _creationTime: v.number(),
-      title: v.string(),
+      title_ro: v.string(),
+      title_en: v.string(),
       slug: v.string(),
       author: v.string(),
-      description: v.string(),
+      description_ro: v.string(),
+      description_en: v.string(),
       coverImage: v.optional(v.id("_storage")),
       tags: v.optional(v.array(v.string())),
       publishedAt: v.optional(v.number()),
       status: v.union(v.literal("draft"), v.literal("published")),
-      readingTime: v.optional(v.number()),
+      readingTime_ro: v.optional(v.number()),
+      readingTime_en: v.optional(v.number()),
       views: v.optional(v.number()),
     }),
   ),
@@ -69,22 +74,25 @@ export const getAllAdmin = query({
     return blogs.map((blog) => ({
       _id: blog._id,
       _creationTime: blog._creationTime,
-      title: blog.title,
+      title_ro: blog.title_ro ?? blog.title ?? "",
+      title_en: blog.title_en ?? blog.title ?? "",
       slug: blog.slug,
       author: blog.author,
-      description: blog.description,
+      description_ro: blog.description_ro ?? blog.description ?? "",
+      description_en: blog.description_en ?? blog.description ?? "",
       coverImage: blog.coverImage,
       tags: blog.tags,
       publishedAt: blog.publishedAt,
       status: blog.status,
-      readingTime: blog.readingTime,
+      readingTime_ro: blog.readingTime_ro ?? blog.readingTime,
+      readingTime_en: blog.readingTime_en ?? blog.readingTime,
       views: blog.views,
     }));
   },
 });
 
 export const getBySlug = query({
-  args: { slug: v.string() },
+  args: { slug: v.string(), locale: localeValidator },
   returns: v.union(
     v.object({
       _id: v.id("blogs"),
@@ -105,12 +113,30 @@ export const getBySlug = query({
     v.null(),
   ),
   handler: async (ctx, args) => {
+    const { slug, locale } = args;
     const blog = await ctx.db
       .query("blogs")
-      .withIndex("by_slug", (q) => q.eq("slug", args.slug))
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
       .first();
 
-    return blog;
+    if (!blog) return null;
+
+    return {
+      _id: blog._id,
+      _creationTime: blog._creationTime,
+      title: (locale === "ro" ? blog.title_ro : blog.title_en) ?? blog.title ?? "",
+      slug: blog.slug,
+      author: blog.author,
+      description: (locale === "ro" ? blog.description_ro : blog.description_en) ?? blog.description ?? "",
+      content: (locale === "ro" ? blog.content_ro : blog.content_en) ?? blog.content ?? "",
+      coverImage: blog.coverImage,
+      images: blog.images,
+      tags: blog.tags,
+      publishedAt: blog.publishedAt,
+      status: blog.status,
+      readingTime: (locale === "ro" ? blog.readingTime_ro : blog.readingTime_en) ?? blog.readingTime,
+      views: blog.views,
+    };
   },
 });
 
@@ -120,18 +146,27 @@ export const getById = query({
     v.object({
       _id: v.id("blogs"),
       _creationTime: v.number(),
-      title: v.string(),
+      title_ro: v.optional(v.string()),
+      title_en: v.optional(v.string()),
       slug: v.string(),
       author: v.string(),
-      description: v.string(),
-      content: v.string(),
+      description_ro: v.optional(v.string()),
+      description_en: v.optional(v.string()),
+      content_ro: v.optional(v.string()),
+      content_en: v.optional(v.string()),
       coverImage: v.optional(v.id("_storage")),
       images: v.optional(v.array(v.id("_storage"))),
       tags: v.optional(v.array(v.string())),
       publishedAt: v.optional(v.number()),
       status: v.union(v.literal("draft"), v.literal("published")),
-      readingTime: v.optional(v.number()),
+      readingTime_ro: v.optional(v.number()),
+      readingTime_en: v.optional(v.number()),
       views: v.optional(v.number()),
+      // Legacy fields (present before migration)
+      title: v.optional(v.string()),
+      description: v.optional(v.string()),
+      content: v.optional(v.string()),
+      readingTime: v.optional(v.number()),
     }),
     v.null(),
   ),
@@ -142,17 +177,21 @@ export const getById = query({
 
 export const create = mutation({
   args: {
-    title: v.string(),
+    title_ro: v.string(),
+    title_en: v.string(),
     slug: v.string(),
     author: v.string(),
-    description: v.string(),
-    content: v.string(),
+    description_ro: v.string(),
+    description_en: v.string(),
+    content_ro: v.string(),
+    content_en: v.string(),
     coverImage: v.optional(v.id("_storage")),
     images: v.optional(v.array(v.id("_storage"))),
     tags: v.optional(v.array(v.string())),
     publishedAt: v.optional(v.number()),
     status: v.union(v.literal("draft"), v.literal("published")),
-    readingTime: v.optional(v.number()),
+    readingTime_ro: v.optional(v.number()),
+    readingTime_en: v.optional(v.number()),
   },
   returns: v.id("blogs"),
   handler: async (ctx, args) => {
@@ -166,17 +205,21 @@ export const create = mutation({
     }
 
     const blogId = await ctx.db.insert("blogs", {
-      title: args.title,
+      title_ro: args.title_ro,
+      title_en: args.title_en,
       slug: args.slug,
       author: args.author,
-      description: args.description,
-      content: args.content,
+      description_ro: args.description_ro,
+      description_en: args.description_en,
+      content_ro: args.content_ro,
+      content_en: args.content_en,
       coverImage: args.coverImage,
       images: args.images || [],
       tags: args.tags || [],
       publishedAt: args.publishedAt,
       status: args.status,
-      readingTime: args.readingTime,
+      readingTime_ro: args.readingTime_ro,
+      readingTime_en: args.readingTime_en,
       views: 0,
     });
 
@@ -187,22 +230,25 @@ export const create = mutation({
 export const update = mutation({
   args: {
     id: v.id("blogs"),
-    title: v.optional(v.string()),
+    title_ro: v.optional(v.string()),
+    title_en: v.optional(v.string()),
     slug: v.optional(v.string()),
     author: v.optional(v.string()),
-    description: v.optional(v.string()),
-    content: v.optional(v.string()),
+    description_ro: v.optional(v.string()),
+    description_en: v.optional(v.string()),
+    content_ro: v.optional(v.string()),
+    content_en: v.optional(v.string()),
     coverImage: v.optional(v.id("_storage")),
     images: v.optional(v.array(v.id("_storage"))),
     tags: v.optional(v.array(v.string())),
     publishedAt: v.optional(v.number()),
     status: v.optional(v.union(v.literal("draft"), v.literal("published"))),
-    readingTime: v.optional(v.number()),
+    readingTime_ro: v.optional(v.number()),
+    readingTime_en: v.optional(v.number()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
-
 
     if (updates.slug) {
       const existingBlog = await ctx.db
@@ -283,7 +329,7 @@ export const removeImage = mutation({
 
     const updatedImages = currentImages.filter((id) => id !== imageId);
 
-    const updates: any = {
+    const updates: Record<string, unknown> = {
       images: updatedImages,
     };
 

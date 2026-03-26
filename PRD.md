@@ -85,6 +85,14 @@ Tasks from a full audit of Convex functions against official guidelines and best
 
 ---
 
+## In Progress
+
+| Task | Description |
+|------|-------------|
+| Bilingual Blog Content | Blogs have separate RO/EN title, description, content, readingTime. Public queries accept locale, admin UI has RO/EN tabs. Migration: `npx convex run migrations/bilingualBlogs` |
+
+---
+
 ## Planned Tasks — Other
 
 | Priority | Task | Description |

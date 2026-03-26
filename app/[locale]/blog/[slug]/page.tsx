@@ -18,7 +18,10 @@ export async function generateMetadata({
   params,
 }: BlogDetailPageProps): Promise<Metadata> {
   const { locale, slug } = await params;
-  const blog = await fetchQuery(api.blogs.getBySlug, { slug });
+  const blog = await fetchQuery(api.blogs.getBySlug, {
+    slug,
+    locale: locale as "ro" | "en",
+  });
 
   if (!blog) {
     return {
@@ -53,13 +56,16 @@ export async function generateMetadata({
 }
 
 export async function generateStaticParams() {
-  const blogs = await fetchQuery(api.blogs.getAll);
+  const blogs = await fetchQuery(api.blogs.getAll, { locale: "ro" });
   return blogs.map((blog) => ({ slug: blog.slug }));
 }
 
 export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
   const { locale, slug } = await params;
-  const blog = await fetchQuery(api.blogs.getBySlug, { slug });
+  const blog = await fetchQuery(api.blogs.getBySlug, {
+    slug,
+    locale: locale as "ro" | "en",
+  });
 
   if (!blog) {
     notFound();

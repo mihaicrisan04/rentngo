@@ -5,6 +5,16 @@ All notable changes to RentNGo are documented here.
 ## [Unreleased]
 
 ### Added
+- **Bilingual blog support**: blogs now have separate Romanian and English content
+  - Schema: `title_ro/en`, `description_ro/en`, `content_ro/en`, `readingTime_ro/en`
+  - Public queries accept `locale` arg, return locale-resolved fields
+  - Admin queries return both language variants for editing
+  - Admin create/edit dialogs have RO/EN content tabs
+  - Preview tab has locale toggle
+  - Static generation and sitemap work with locale-aware queries
+  - Migration script: `npx convex run migrations/bilingualBlogs`
+
+
 - **SEO overhaul**: comprehensive SEO improvements following Next.js best practices
   - Created shared `buildMetadata()` helper (`lib/metadata.ts`) eliminating duplicated metadata across all pages
   - Added `jsonLdScriptContent()` utility with XSS escaping for all JSON-LD structured data
