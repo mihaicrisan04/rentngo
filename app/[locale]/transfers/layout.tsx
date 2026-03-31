@@ -26,6 +26,7 @@ export async function generateMetadata({
       ro: "transfer aeroport cluj, transport cluj-napoca, transfer vip cluj, servicii transfer cluj, airport transfer cluj-napoca",
       en: "cluj airport transfer, transport cluj-napoca, vip transfer cluj, transfer services cluj, airport pickup cluj",
     },
+    image: { url: "https://rngo.ro/og-transfers.png", width: 1376, height: 768, alt: "Rent'n Go - Transfer Services Cluj-Napoca" },
   });
 }
 
