@@ -27,13 +27,20 @@ export default async function BlogPage({ params }: BlogPageProps) {
   const { locale } = await params;
   const typedLocale = locale as "ro" | "en";
 
-  const featuredBlog = await fetchQuery(api.blogs.getFeatured, {
-    locale: typedLocale,
-  });
+  const [featuredBlog, allBlogs] = await Promise.all([
+    fetchQuery(api.blogs.getFeatured, { locale: typedLocale }),
+    fetchQuery(api.blogs.getAll, { locale: typedLocale }),
+  ]);
+
+  // Filter out the featured blog from the list so it doesn't appear twice
+  const blogs = featuredBlog
+    ? allBlogs.filter((b) => b._id !== featuredBlog._id)
+    : allBlogs;
 
   return (
     <BlogListClient
       featuredBlog={featuredBlog}
+      initialBlogs={blogs}
       locale={locale}
     />
   );
