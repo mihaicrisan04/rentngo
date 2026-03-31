@@ -35,10 +35,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { toast } from "sonner";
-import { Plus, X, Upload, Wand2 } from "lucide-react";
+import { Plus, X, Upload, Wand2, Image as ImageIcon, Eye, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AnimatePresence, motion } from "framer-motion";
 import { generateSlugFromTitle, calculateReadingTime } from "@/lib/blog-utils";
 import { Badge } from "@/components/ui/badge";
 import { BlogPreview } from "@/components/features/blog/blog-preview";
@@ -49,10 +51,7 @@ const TabsTrigger = TabsPrimitive.Trigger;
 const TabsContent = TabsPrimitive.Content;
 
 const tabTriggerClass =
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow";
-
-const langTabClass =
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-5 py-1.5 text-sm font-semibold ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow";
+  "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow";
 
 const blogSchema = z.object({
   title_ro: z
@@ -63,9 +62,16 @@ const blogSchema = z.object({
     .string()
     .min(1, "English title is required")
     .max(200, "Title must be less than 200 characters"),
-  slug: z
+  slug_ro: z
     .string()
-    .min(1, "Slug is required")
+    .min(1, "Romanian slug is required")
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      "Slug must be URL-friendly (lowercase, hyphens only)",
+    ),
+  slug_en: z
+    .string()
+    .min(1, "English slug is required")
     .regex(
       /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
       "Slug must be URL-friendly (lowercase, hyphens only)",
@@ -98,14 +104,148 @@ interface EditBlogDialogProps {
   blog: BlogAdminListItem | null;
 }
 
+function LangToggle({
+  activeLang,
+  onChangeLang,
+  roStatus,
+  enStatus,
+}: {
+  activeLang: "ro" | "en";
+  onChangeLang: (lang: "ro" | "en") => void;
+  roStatus: "empty" | "partial" | "complete";
+  enStatus: "empty" | "partial" | "complete";
+}) {
+  const dotColor = {
+    empty: "bg-muted-foreground/25",
+    partial: "bg-amber-500",
+    complete: "bg-green-500",
+  };
+
+  return (
+    <div className="inline-flex h-8 items-center rounded-lg bg-muted p-0.5 gap-0.5">
+      {(["ro", "en"] as const).map((lang) => {
+        const status = lang === "ro" ? roStatus : enStatus;
+        const isActive = activeLang === lang;
+        return (
+          <button
+            key={lang}
+            type="button"
+            onClick={() => onChangeLang(lang)}
+            className={cn(
+              "relative inline-flex items-center gap-1.5 rounded-md px-4 py-1 text-sm font-semibold transition-all",
+              isActive
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <span
+              className={cn(
+                "h-1.5 w-1.5 rounded-full transition-colors",
+                dotColor[status],
+              )}
+            />
+            {lang.toUpperCase()}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ImageThumbnail({
+  imageId,
+  isCover,
+  onSetCover,
+  onDelete,
+}: {
+  imageId: Id<"_storage">;
+  isCover: boolean;
+  onSetCover: () => void;
+  onDelete: () => void;
+}) {
+  const url = useQuery(api.blogs.getImageUrl, { imageId });
+
+  return (
+    <div
+      className={cn(
+        "group relative rounded-lg border overflow-hidden transition-all",
+        isCover
+          ? "border-primary ring-2 ring-primary/20"
+          : "border-border hover:border-primary/30",
+      )}
+    >
+      <div className="aspect-[4/3] bg-muted">
+        {url ? (
+          <img
+            src={url}
+            alt=""
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <ImageIcon className="h-6 w-6 text-muted-foreground/30" />
+          </div>
+        )}
+      </div>
+
+      {/* Overlay actions */}
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1.5 opacity-0 group-hover:opacity-100">
+        <Button
+          type="button"
+          variant={isCover ? "default" : "secondary"}
+          size="sm"
+          className="h-7 text-xs"
+          onClick={(e) => {
+            e.stopPropagation();
+            onSetCover();
+          }}
+        >
+          <Star className={cn("h-3 w-3 mr-1", isCover && "fill-current")} />
+          {isCover ? "Cover" : "Set Cover"}
+        </Button>
+        <Button
+          type="button"
+          variant="destructive"
+          size="sm"
+          className="h-7 text-xs"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+        >
+          <X className="h-3 w-3" />
+        </Button>
+      </div>
+
+      {/* Cover badge */}
+      {isCover && (
+        <div className="absolute top-1.5 left-1.5 bg-primary text-primary-foreground text-[10px] font-semibold px-1.5 py-0.5 rounded">
+          Cover
+        </div>
+      )}
+
+      {/* Copy ID on click */}
+      <button
+        type="button"
+        className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[10px] font-mono px-2 py-1 truncate opacity-0 group-hover:opacity-100 transition-opacity text-left"
+        onClick={() => {
+          navigator.clipboard.writeText(imageId);
+          toast.success("Storage ID copied");
+        }}
+      >
+        {imageId}
+      </button>
+    </div>
+  );
+}
+
 export function EditBlogDialog({
   open,
   onOpenChange,
   blog,
 }: EditBlogDialogProps) {
   const [currentTab, setCurrentTab] = useState("content");
-  const [contentLang, setContentLang] = useState("ro");
-  const [previewLang, setPreviewLang] = useState("ro");
+  const [activeLang, setActiveLang] = useState<"ro" | "en">("ro");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadedImageIds, setUploadedImageIds] = useState<Id<"_storage">[]>(
     [],
@@ -128,7 +268,8 @@ export function EditBlogDialog({
     defaultValues: {
       title_ro: "",
       title_en: "",
-      slug: "",
+      slug_ro: "",
+      slug_en: "",
       author: "",
       description_ro: "",
       description_en: "",
@@ -148,7 +289,8 @@ export function EditBlogDialog({
       form.reset({
         title_ro: fullBlog.title_ro ?? legacy.title ?? "",
         title_en: fullBlog.title_en ?? legacy.title ?? "",
-        slug: fullBlog.slug,
+        slug_ro: fullBlog.slug_ro ?? legacy.slug ?? "",
+        slug_en: fullBlog.slug_en ?? legacy.slug ?? "",
         author: fullBlog.author,
         description_ro: fullBlog.description_ro ?? legacy.description ?? "",
         description_en: fullBlog.description_en ?? legacy.description ?? "",
@@ -165,11 +307,26 @@ export function EditBlogDialog({
     }
   }, [fullBlog, open, form]);
 
-  const handleGenerateSlug = () => {
-    const title = form.getValues("title_ro");
+  function getLocaleStatus(lang: "ro" | "en"): "empty" | "partial" | "complete" {
+    const title = form.watch(lang === "ro" ? "title_ro" : "title_en");
+    const slug = form.watch(lang === "ro" ? "slug_ro" : "slug_en");
+    const description = form.watch(lang === "ro" ? "description_ro" : "description_en");
+    const content = form.watch(lang === "ro" ? "content_ro" : "content_en");
+    const filled = [title, slug, description, content].filter(
+      (v) => v && v.trim().length > 0,
+    ).length;
+    if (filled === 0) return "empty";
+    if (filled === 4) return "complete";
+    return "partial";
+  }
+
+  const handleGenerateSlug = (lang: "ro" | "en") => {
+    const title = form.getValues(lang === "ro" ? "title_ro" : "title_en");
     if (title) {
       const slug = generateSlugFromTitle(title);
-      form.setValue("slug", slug);
+      form.setValue(lang === "ro" ? "slug_ro" : "slug_en", slug, {
+        shouldValidate: true,
+      });
     }
   };
 
@@ -261,7 +418,8 @@ export function EditBlogDialog({
         id: blog._id,
         title_ro: data.title_ro,
         title_en: data.title_en,
-        slug: data.slug,
+        slug_ro: data.slug_ro,
+        slug_en: data.slug_en,
         author: data.author,
         description_ro: data.description_ro,
         description_en: data.description_en,
@@ -288,19 +446,23 @@ export function EditBlogDialog({
 
   const renderContentFields = (lang: "ro" | "en") => {
     const titleField: "title_ro" | "title_en" = lang === "ro" ? "title_ro" : "title_en";
+    const slugField: "slug_ro" | "slug_en" = lang === "ro" ? "slug_ro" : "slug_en";
     const descField: "description_ro" | "description_en" = lang === "ro" ? "description_ro" : "description_en";
     const contentField: "content_ro" | "content_en" = lang === "ro" ? "content_ro" : "content_en";
     const readingTimeField: "readingTime_ro" | "readingTime_en" = lang === "ro" ? "readingTime_ro" : "readingTime_en";
     const label = lang === "ro" ? "Romanian" : "English";
+    const slugPlaceholder = lang === "ro" ? "slug-in-romana" : "english-slug";
+    const urlPrefix = lang === "ro" ? "/ro/blog/" : "/en/blog/";
 
     return (
       <div className="space-y-4">
+        {/* Title */}
         <FormField
           control={form.control}
           name={titleField}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Title ({label})</FormLabel>
+              <FormLabel>Title</FormLabel>
               <FormControl>
                 <Input
                   placeholder={`Enter ${label.toLowerCase()} title`}
@@ -312,12 +474,48 @@ export function EditBlogDialog({
           )}
         />
 
+        {/* Slug — right after title */}
+        <FormField
+          control={form.control}
+          name={slugField}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>URL Slug</FormLabel>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-mono">
+                    {urlPrefix}
+                  </span>
+                  <FormControl>
+                    <Input
+                      placeholder={slugPlaceholder}
+                      className="pl-[5.5rem] font-mono text-sm"
+                      {...field}
+                    />
+                  </FormControl>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleGenerateSlug(lang)}
+                  title="Generate from title"
+                >
+                  <Wand2 className="h-4 w-4" />
+                </Button>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Description */}
         <FormField
           control={form.control}
           name={descField}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description ({label})</FormLabel>
+              <FormLabel>Description</FormLabel>
               <FormControl>
                 <Textarea
                   placeholder={`Brief ${label.toLowerCase()} description or excerpt`}
@@ -330,12 +528,13 @@ export function EditBlogDialog({
           )}
         />
 
+        {/* Content MDX */}
         <FormField
           control={form.control}
           name={contentField}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Content ({label}) — MDX</FormLabel>
+              <FormLabel>Content — MDX</FormLabel>
               <FormControl>
                 <Textarea
                   placeholder={`Write ${label.toLowerCase()} content in MDX format...`}
@@ -352,16 +551,18 @@ export function EditBlogDialog({
           )}
         />
 
+        {/* Reading Time */}
         <FormField
           control={form.control}
           name={readingTimeField}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Reading Time ({label}, minutes)</FormLabel>
+              <FormLabel>Reading Time (minutes)</FormLabel>
               <div className="flex gap-2">
                 <FormControl>
                   <Input
                     type="number"
+                    className="w-28"
                     {...field}
                     onChange={(e) =>
                       field.onChange(parseInt(e.target.value) || 0)
@@ -371,6 +572,7 @@ export function EditBlogDialog({
                 <Button
                   type="button"
                   variant="outline"
+                  size="sm"
                   onClick={() => handleAutoCalculateReadingTime(lang)}
                 >
                   Auto
@@ -388,292 +590,250 @@ export function EditBlogDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-5xl max-h-[90vh]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-5xl max-h-[95vh]">
+        {/* Header with persistent language toggle */}
+        <DialogHeader className="flex flex-row items-center justify-between gap-4 pr-10 space-y-0">
           <DialogTitle>Edit Blog Post</DialogTitle>
+          <LangToggle
+            activeLang={activeLang}
+            onChangeLang={setActiveLang}
+            roStatus={getLocaleStatus("ro")}
+            enStatus={getLocaleStatus("en")}
+          />
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <Tabs value={currentTab} onValueChange={setCurrentTab}>
-              <TabsList className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full grid grid-cols-4">
+              <TabsList className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full grid grid-cols-3">
                 <TabsTrigger value="content" className={tabTriggerClass}>
                   Content
                 </TabsTrigger>
                 <TabsTrigger value="settings" className={tabTriggerClass}>
-                  Settings
-                </TabsTrigger>
-                <TabsTrigger value="images" className={tabTriggerClass}>
-                  Images
+                  <ImageIcon className="h-3.5 w-3.5" />
+                  Media & Settings
                 </TabsTrigger>
                 <TabsTrigger value="preview" className={tabTriggerClass}>
+                  <Eye className="h-3.5 w-3.5" />
                   Preview
                 </TabsTrigger>
               </TabsList>
 
-              <ScrollArea className="h-[650px] mt-4">
-                {/* Content tab — main RO/EN language tabs */}
-                <TabsContent value="content" className="px-1">
-                  <Tabs value={contentLang} onValueChange={setContentLang}>
-                    <TabsList className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground mb-5">
-                      <TabsTrigger value="ro" className={langTabClass}>
-                        RO
-                      </TabsTrigger>
-                      <TabsTrigger value="en" className={langTabClass}>
-                        EN
-                      </TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="ro">
-                      {renderContentFields("ro")}
-                    </TabsContent>
-                    <TabsContent value="en">
-                      {renderContentFields("en")}
-                    </TabsContent>
-                  </Tabs>
+              <ScrollArea className="h-[680px] mt-4">
+                {/* Content tab — locale-specific fields */}
+                <TabsContent value="content" className="px-1 pr-4">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={activeLang}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      {renderContentFields(activeLang)}
+                    </motion.div>
+                  </AnimatePresence>
                 </TabsContent>
 
-                {/* Settings tab — shared fields */}
-                <TabsContent value="settings" className="space-y-4 px-1">
-                  <FormField
-                    control={form.control}
-                    name="slug"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Slug</FormLabel>
+                {/* Media & Settings tab — shared fields */}
+                <TabsContent value="settings" className="px-1 pr-4">
+                  <div className="space-y-6">
+                    {/* Images section */}
+                    <div>
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                        Images
+                      </h3>
+                      <div className="space-y-4">
                         <div className="flex gap-2">
-                          <FormControl>
-                            <Input placeholder="url-friendly-slug" {...field} />
-                          </FormControl>
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleFileSelect}
+                          />
                           <Button
                             type="button"
                             variant="outline"
-                            onClick={handleGenerateSlug}
+                            onClick={handleUploadImages}
+                            disabled={selectedFiles.length === 0}
                           >
-                            <Wand2 className="h-4 w-4" />
+                            <Upload className="h-4 w-4 mr-2" />
+                            Upload
                           </Button>
                         </div>
-                        <FormDescription>
-                          URL-friendly identifier (generated from Romanian
-                          title)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
 
-                  <FormField
-                    control={form.control}
-                    name="author"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Author</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter author name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select status" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="draft">Draft</SelectItem>
-                            <SelectItem value="published">Published</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div>
-                    <FormLabel>Tags</FormLabel>
-                    <div className="flex gap-2 mt-2">
-                      <Input
-                        placeholder="Add tags (press Enter)"
-                        value={tagInput}
-                        onChange={(e) => setTagInput(e.target.value)}
-                        onKeyDown={handleTagInputKeyDown}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleAddTag}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    {tags.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        {tags.map((tag) => (
-                          <Badge
-                            key={tag}
-                            variant="secondary"
-                            className="gap-1"
-                          >
-                            {tag}
-                            <X
-                              className="h-3 w-3 cursor-pointer"
-                              onClick={() => handleRemoveTag(tag)}
-                            />
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                    <FormDescription className="mt-2">
-                      Add tags (press Enter after each tag)
-                    </FormDescription>
-                  </div>
-                </TabsContent>
-
-                {/* Images tab */}
-                <TabsContent value="images" className="space-y-4 px-1">
-                  <div>
-                    <FormLabel>Upload Images</FormLabel>
-                    <div className="mt-2 space-y-4">
-                      <div className="flex gap-2">
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={handleFileSelect}
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleUploadImages}
-                          disabled={selectedFiles.length === 0}
-                        >
-                          <Upload className="h-4 w-4 mr-2" />
-                          Upload
-                        </Button>
-                      </div>
-
-                      {selectedFiles.length > 0 && (
-                        <div className="space-y-2">
-                          <p className="text-sm text-muted-foreground">
-                            Selected: {selectedFiles.length} file(s)
-                          </p>
-                          {selectedFiles.map((file, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center justify-between p-2 border rounded"
-                            >
-                              <span className="text-sm truncate">
-                                {file.name}
-                              </span>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemoveFile(index)}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      {uploadedImageIds.length > 0 && (
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium">
-                            Uploaded Images (Click to copy storage ID)
-                          </p>
-                          {uploadedImageIds.map((imageId, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center justify-between p-2 border rounded cursor-pointer hover:bg-muted"
-                              onClick={() => {
-                                navigator.clipboard.writeText(imageId);
-                                toast.success("Storage ID copied to clipboard");
-                              }}
-                            >
-                              <code className="text-xs">{imageId}</code>
+                        {selectedFiles.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground">
+                              Selected: {selectedFiles.length} file(s)
+                            </p>
+                            {selectedFiles.map((file, index) => (
                               <div
-                                className="flex gap-2"
-                                onClick={(e) => e.stopPropagation()}
+                                key={index}
+                                className="flex items-center justify-between p-2 border rounded"
                               >
-                                <Button
-                                  type="button"
-                                  variant={
-                                    coverImageId === imageId
-                                      ? "default"
-                                      : "outline"
-                                  }
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setCoverImageId(imageId);
-                                    toast.success("Set as cover image");
-                                  }}
-                                >
-                                  {coverImageId === imageId
-                                    ? "Cover"
-                                    : "Set Cover"}
-                                </Button>
+                                <span className="text-sm truncate">
+                                  {file.name}
+                                </span>
                                 <Button
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteUploadedImage(imageId);
-                                  }}
+                                  onClick={() => handleRemoveFile(index)}
                                 >
-                                  <X className="h-4 w-4 text-destructive" />
+                                  <X className="h-4 w-4" />
                                 </Button>
                               </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {uploadedImageIds.length > 0 && (
+                          <div className="space-y-3">
+                            <p className="text-sm font-medium">
+                              Uploaded Images
+                              <span className="text-muted-foreground font-normal ml-1">
+                                — hover to copy ID, set cover, or remove
+                              </span>
+                            </p>
+                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                              {uploadedImageIds.map((imageId) => (
+                                <ImageThumbnail
+                                  key={imageId}
+                                  imageId={imageId}
+                                  isCover={coverImageId === imageId}
+                                  onSetCover={() => {
+                                    setCoverImageId(imageId);
+                                    toast.success("Set as cover image");
+                                  }}
+                                  onDelete={() =>
+                                    handleDeleteUploadedImage(imageId)
+                                  }
+                                />
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                      )}
+                          </div>
+                        )}
+
+                        <FormDescription>
+                          Upload images and copy their storage IDs to use in
+                          your content
+                        </FormDescription>
+                      </div>
                     </div>
-                    <FormDescription className="mt-2">
-                      Upload images and copy their storage IDs to use in your
-                      content
-                    </FormDescription>
+
+                    <Separator />
+
+                    {/* Post settings section */}
+                    <div className="space-y-4">
+                      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                        Post Settings
+                      </h3>
+
+                      <FormField
+                        control={form.control}
+                        name="author"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Author</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Enter author name"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="status"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Status</FormLabel>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="draft">Draft</SelectItem>
+                                <SelectItem value="published">
+                                  Published
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div>
+                        <FormLabel>Tags</FormLabel>
+                        <div className="flex gap-2 mt-2">
+                          <Input
+                            placeholder="Add tags (press Enter)"
+                            value={tagInput}
+                            onChange={(e) => setTagInput(e.target.value)}
+                            onKeyDown={handleTagInputKeyDown}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleAddTag}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        {tags.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            {tags.map((tag) => (
+                              <Badge
+                                key={tag}
+                                variant="secondary"
+                                className="gap-1"
+                              >
+                                {tag}
+                                <X
+                                  className="h-3 w-3 cursor-pointer"
+                                  onClick={() => handleRemoveTag(tag)}
+                                />
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                        <FormDescription className="mt-2">
+                          Add tags (press Enter after each tag)
+                        </FormDescription>
+                      </div>
+                    </div>
                   </div>
                 </TabsContent>
 
-                {/* Preview tab */}
-                <TabsContent value="preview" className="px-1">
-                  <div className="mb-4">
-                    <Tabs value={previewLang} onValueChange={setPreviewLang}>
-                      <TabsList className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
-                        <TabsTrigger value="ro" className={langTabClass}>
-                          RO
-                        </TabsTrigger>
-                        <TabsTrigger value="en" className={langTabClass}>
-                          EN
-                        </TabsTrigger>
-                      </TabsList>
-                    </Tabs>
+                {/* Preview tab — follows activeLang */}
+                <TabsContent value="preview" className="px-1 pr-4">
+                  <div className="mb-4 text-sm text-muted-foreground">
+                    Previewing:{" "}
+                    <span className="font-medium text-foreground">
+                      {activeLang === "ro" ? "Romana" : "English"}
+                    </span>
                   </div>
                   <BlogPreview
                     title={form.watch(
-                      previewLang === "ro" ? "title_ro" : "title_en",
+                      activeLang === "ro" ? "title_ro" : "title_en",
                     )}
                     author={form.watch("author")}
                     content={form.watch(
-                      previewLang === "ro" ? "content_ro" : "content_en",
+                      activeLang === "ro" ? "content_ro" : "content_en",
                     )}
                     readingTime={form.watch(
-                      previewLang === "ro"
+                      activeLang === "ro"
                         ? "readingTime_ro"
                         : "readingTime_en",
                     )}

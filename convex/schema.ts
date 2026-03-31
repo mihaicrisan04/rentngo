@@ -318,7 +318,9 @@ export default defineSchema({
     // Bilingual content fields
     title_ro: v.optional(v.string()),
     title_en: v.optional(v.string()),
-    slug: v.string(), // URL-safe slug (shared across locales)
+    slug: v.optional(v.string()), // Legacy shared slug (pre-bilingual migration)
+    slug_ro: v.optional(v.string()), // Romanian URL slug
+    slug_en: v.optional(v.string()), // English URL slug
     author: v.string(),
     description_ro: v.optional(v.string()),
     description_en: v.optional(v.string()),
@@ -334,6 +336,8 @@ export default defineSchema({
     views: v.optional(v.number()), // View count
   })
     .index("by_slug", ["slug"])
+    .index("by_slug_ro", ["slug_ro"])
+    .index("by_slug_en", ["slug_en"])
     .index("by_status", ["status"])
     .index("by_published_at", ["publishedAt"]),
 });

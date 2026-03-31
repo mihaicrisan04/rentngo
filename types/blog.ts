@@ -41,7 +41,8 @@ export interface BlogAdmin {
   _creationTime: number;
   title_ro: string;
   title_en: string;
-  slug: string;
+  slug_ro: string;
+  slug_en: string;
   author: string;
   description_ro: string;
   description_en: string;
@@ -62,7 +63,8 @@ export interface BlogAdminListItem {
   _creationTime: number;
   title_ro: string;
   title_en: string;
-  slug: string;
+  slug_ro: string;
+  slug_en: string;
   author: string;
   description_ro: string;
   description_en: string;
@@ -78,7 +80,8 @@ export interface BlogAdminListItem {
 export interface BlogFormData {
   title_ro: string;
   title_en: string;
-  slug: string;
+  slug_ro: string;
+  slug_en: string;
   author: string;
   description_ro: string;
   description_en: string;

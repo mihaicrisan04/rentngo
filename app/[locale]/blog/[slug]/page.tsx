@@ -56,8 +56,14 @@ export async function generateMetadata({
 }
 
 export async function generateStaticParams() {
-  const blogs = await fetchQuery(api.blogs.getAll, { locale: "ro" });
-  return blogs.map((blog) => ({ slug: blog.slug }));
+  const [roBlogs, enBlogs] = await Promise.all([
+    fetchQuery(api.blogs.getAll, { locale: "ro" }),
+    fetchQuery(api.blogs.getAll, { locale: "en" }),
+  ]);
+  return [
+    ...roBlogs.map((blog) => ({ locale: "ro", slug: blog.slug })),
+    ...enBlogs.map((blog) => ({ locale: "en", slug: blog.slug })),
+  ];
 }
 
 export default async function BlogDetailPage({ params }: BlogDetailPageProps) {

@@ -32,10 +32,10 @@ export function BlogDetailClient({
 
   useEffect(() => {
     if (!viewTracked.current) {
-      incrementViews({ slug });
+      incrementViews({ slug, locale: locale as "ro" | "en" });
       viewTracked.current = true;
     }
-  }, [slug, incrementViews]);
+  }, [slug, locale, incrementViews]);
 
   return (
     <div className="container mx-auto px-4 py-10 max-w-4xl">
