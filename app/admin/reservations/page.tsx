@@ -1,16 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Plus, Calendar, Car, DollarSign, Clock, TrendingUp } from "lucide-react";
 import { ReservationsTable } from "@/components/admin/reservations/reservation-table";
-import { CreateReservationDialog } from "@/components/admin/reservations/create-reservation-dialog";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line } from "recharts";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Skeleton } from "@/components/ui/skeleton";
+
+const CreateReservationDialog = dynamic(
+  () => import("@/components/admin/reservations/create-reservation-dialog").then(m => m.CreateReservationDialog),
+  { ssr: false }
+);
 
 const chartConfig = {
   reservations: {

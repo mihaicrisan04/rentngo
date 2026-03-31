@@ -48,7 +48,7 @@ export function CarsPageClient({ initialVehicles }: CarsPageClientProps) {
   }, [initialVehicles]);
 
   return (
-    <div className="p-4 md:p-6 flex flex-col gap-6">
+    <div className="py-8 px-4 md:px-6 flex flex-col gap-6">
       <div className="max-w-6xl mx-auto w-full">
         {isMounted ? (
           <VehicleSearchForm

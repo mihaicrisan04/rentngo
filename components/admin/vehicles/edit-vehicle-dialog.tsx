@@ -82,7 +82,7 @@ const vehicleSchema = z.object({
       return year >= 1900 && year <= new Date().getFullYear() + 1;
     }, "Year must be between 1900 and next year"),
   type: z.enum(["sedan", "suv", "hatchback", "sports", "truck", "van"], {
-    required_error: "Vehicle type is required",
+    error: "Vehicle type is required",
   }),
   classId: z.string().min(1, "Vehicle class is required"),
   seats: z
@@ -94,10 +94,10 @@ const vehicleSchema = z.object({
       return seats >= 1 && seats <= 15;
     }, "Seats must be between 1 and 15"),
   transmission: z.enum(["automatic", "manual"], {
-    required_error: "Transmission type is required",
+    error: "Transmission type is required",
   }),
   fuelType: z.enum(["petrol", "diesel", "electric", "hybrid", "benzina"], {
-    required_error: "Fuel type is required",
+    error: "Fuel type is required",
   }),
   engineCapacity: z
     .string()

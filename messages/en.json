@@ -3,6 +3,9 @@
     "title": "Car Rentals Cluj-Napoca",
     "subtitle": "Explore Cluj-Napoca with our wide range of rental cars. Easy booking, competitive prices, reliable service.",
     "viewAllCars": "View All Cars",
+    "features": {
+      "title": "Why Rent With Us"
+    },
     "faq": {
       "title": "Frequently Asked Questions",
       "description": "Find answers to common questions about renting a car with us.",
@@ -10,7 +13,21 @@
         "title": "Ready to Hit the Road?",
         "description": "Browse our extensive fleet of vehicles and find the perfect car for your next adventure in Cluj-Napoca.",
         "buttonText": "Browse Our Cars"
-      }
+      },
+      "contact": "Contact Us"
+    },
+    "featuredCars": "Featured Cars",
+    "ourLatestCars": "Our Latest Cars",
+    "noCarsAvailable": "No Cars Available",
+    "trustBar": {
+      "rating": "4.9 rating",
+      "ratingDesc": "200+ reviews",
+      "airport": "Airport pickup",
+      "airportDesc": "Cluj-Napoca",
+      "support": "24/7",
+      "supportDesc": "Support",
+      "roadside": "Free",
+      "roadsideDesc": "Roadside assist"
     }
   },
   "aboutPage": {
@@ -326,6 +343,11 @@
       "cashOnDelivery": "Cash on Delivery",
       "cardOnDelivery": "Card Payment on Delivery",
       "cardOnline": "Card Payment Online"
+    },
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled"
     }
   },
   "transferPage": {
@@ -451,7 +473,20 @@
     "minutesRead": "{minutes} min read",
     "publishedOn": "Published on",
     "by": "by",
-    "views": "{count} views"
+    "views": "{count} views",
+    "hero": {
+      "badge": "Rent'n Go Blog",
+      "title": "Tips & Stories for Your Next Road Trip",
+      "subtitle": "Practical guides, local insights, and everything you need to make the most of your car rental experience in Cluj-Napoca."
+    },
+    "featuredPost": "Featured Post",
+    "latestPosts": "Latest Posts",
+    "cta": {
+      "title": "Ready to explore Cluj-Napoca?",
+      "description": "Book your rental car today and discover everything Transylvania has to offer.",
+      "button": "Browse Our Cars"
+    },
+    "loadMore": "Load More"
   },
   "blogDetail": {
     "loading": "Loading blog post...",

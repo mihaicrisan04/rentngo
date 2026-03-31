@@ -305,22 +305,40 @@ export default defineSchema({
     isActive: v.boolean(), // Whether this tier is active
   }).index("by_sort_index", ["sortIndex"]),
 
-  // Blogs table - stores blog posts
+  // Blogs table - stores blog posts (bilingual: RO + EN)
+  // Note: _ro/_en fields are optional during migration. After running
+  // `npx convex run migrations/bilingualBlogs`, old fields are removed
+  // and bilingual fields are populated on all docs.
   blogs: defineTable({
-    title: v.string(),
-    slug: v.string(), // URL-safe slug
+    // Legacy fields (removed after migration)
+    title: v.optional(v.string()),
+    description: v.optional(v.string()),
+    content: v.optional(v.string()),
+    readingTime: v.optional(v.number()),
+    // Bilingual content fields
+    title_ro: v.optional(v.string()),
+    title_en: v.optional(v.string()),
+    slug: v.optional(v.string()), // Legacy shared slug (pre-bilingual migration)
+    slug_ro: v.optional(v.string()), // Romanian URL slug
+    slug_en: v.optional(v.string()), // English URL slug
     author: v.string(),
-    description: v.string(), // Short excerpt/description
-    content: v.string(), // MDX content as string
+    description_ro: v.optional(v.string()),
+    description_en: v.optional(v.string()),
+    content_ro: v.optional(v.string()),
+    content_en: v.optional(v.string()),
     coverImage: v.optional(v.id("_storage")), // Main cover image
     images: v.optional(v.array(v.id("_storage"))), // Additional blog images
     tags: v.optional(v.array(v.string())), // Blog categories/tags
     publishedAt: v.optional(v.number()), // Publish timestamp
     status: v.union(v.literal("draft"), v.literal("published")),
-    readingTime: v.optional(v.number()), // Estimated reading time in minutes
+    readingTime_ro: v.optional(v.number()), // Estimated reading time (Romanian)
+    readingTime_en: v.optional(v.number()), // Estimated reading time (English)
     views: v.optional(v.number()), // View count
+    isFeatured: v.optional(v.boolean()), // Featured post (only one at a time)
   })
     .index("by_slug", ["slug"])
+    .index("by_slug_ro", ["slug_ro"])
+    .index("by_slug_en", ["slug_en"])
     .index("by_status", ["status"])
     .index("by_published_at", ["publishedAt"]),
 });

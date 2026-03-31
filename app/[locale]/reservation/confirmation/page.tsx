@@ -188,10 +188,12 @@ function ReservationConfirmationContent() {
   };
 
   const getStatusLabel = (status: string) => {
-    return (
-      t(`status.${status}` as any) ||
-      status.charAt(0).toUpperCase() + status.slice(1)
-    );
+    const key = `status.${status}` as "status.pending" | "status.confirmed" | "status.cancelled";
+    try {
+      return t(key);
+    } catch {
+      return status.charAt(0).toUpperCase() + status.slice(1);
+    }
   };
 
   const getPaymentMethodLabel = (method: string) => {
@@ -208,14 +210,14 @@ function ReservationConfirmationContent() {
   };
 
   return (
-    <div className="flex-grow p-4 md:p-8">
+    <div className="flex-grow py-10 px-4 md:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Success Header */}
-        <div className="text-center mb-8">
-          <div className="mx-auto mb-4 w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
-            <CheckCircle className="h-12 w-12 text-green-600" />
+        <div className="text-center mb-10">
+          <div className="mx-auto mb-5 w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center">
+            <CheckCircle className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2">
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3 tracking-tight">
             {t("title")}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -224,7 +226,7 @@ function ReservationConfirmationContent() {
         </div>
 
         {/* Reservation ID & Status */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
@@ -507,9 +509,9 @@ function ReservationConfirmationContent() {
         </Card>
 
         {/* Action Buttons */}
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-10">
           <Link href="/cars">
-            <Button className="px-8">
+            <Button className="px-8 rounded-xl h-12">
               <Car className="mr-2 h-4 w-4" />
               {t("bookAnotherCar")}
             </Button>
@@ -529,7 +531,7 @@ function ReservationConfirmationContent() {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
+                  <div className="w-7 h-7 bg-primary text-primary-foreground rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0">
                     1
                   </div>
                   <div>
@@ -540,7 +542,7 @@ function ReservationConfirmationContent() {
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
+                  <div className="w-7 h-7 bg-primary text-primary-foreground rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0">
                     2
                   </div>
                   <div>
@@ -551,7 +553,7 @@ function ReservationConfirmationContent() {
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">
+                  <div className="w-7 h-7 bg-primary text-primary-foreground rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0">
                     3
                   </div>
                   <div>

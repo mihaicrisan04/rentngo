@@ -266,7 +266,7 @@ interface FilterCheckboxItemProps {
   capitalize?: boolean;
 }
 
-function FilterCheckboxItem({
+const FilterCheckboxItem = React.memo(function FilterCheckboxItem({
   option,
   checked,
   onCheckedChange,
@@ -293,4 +293,4 @@ function FilterCheckboxItem({
       </label>
     </div>
   );
-}
+});

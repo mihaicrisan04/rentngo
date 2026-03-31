@@ -33,7 +33,7 @@ function buildCarDetailsUrl(vehicleSlug: string | undefined, vehicleId: string):
   return `/cars/${vehicleSlug || vehicleId}`;
 }
 
-export function VehicleCard({
+export const VehicleCard = React.memo(function VehicleCard({
   vehicle,
   pickupDate,
   returnDate,
@@ -57,16 +57,9 @@ export function VehicleCard({
     returnDate,
   );
 
-  if (!vehicle || typeof vehicle._id !== "string") {
-    return (
-      <div className="p-4 border rounded-lg shadow-md bg-card text-card-foreground">
-        {tCommon("invalidData")}
-      </div>
-    );
-  }
-
-  // Memoize price details to prevent recalculation with stale multiplier values
+  // Memoize price details (must be before early returns to respect Rules of Hooks)
   const priceDetails = React.useMemo(() => {
+    if (!vehicle) return { days: 0, basePrice: null, totalPrice: null, pricePerDay: 0 };
     return calculateVehiclePricingWithSeason(
       vehicle,
       currentMultiplier,
@@ -88,16 +81,22 @@ export function VehicleCard({
     returnTime,
   ]);
 
-  // Calculate the current price per day - extract from priceDetails instead of recalculating
   const currentPricePerDay = React.useMemo(() => {
+    if (!vehicle) return 0;
     if (priceDetails.days && priceDetails.basePrice !== null) {
-      // Use the already-calculated seasonal price from priceDetails
       return Math.round(priceDetails.basePrice / priceDetails.days);
     }
-    // Fallback: Use the base price tier with seasonal adjustment
     const basePrice = getBasePricePerDay(vehicle);
     return Math.round(basePrice * currentMultiplier);
   }, [priceDetails.days, priceDetails.basePrice, vehicle, currentMultiplier]);
+
+  if (!vehicle || typeof vehicle._id !== "string") {
+    return (
+      <div className="p-4 border rounded-lg shadow-md bg-card text-card-foreground">
+        {tCommon("invalidData")}
+      </div>
+    );
+  }
 
   const currency = "EUR";
 
@@ -111,7 +110,7 @@ export function VehicleCard({
   };
 
   return (
-    <div className="relative flex flex-col bg-accent text-card-foreground overflow-hidden rounded-lg shadow-lg w-full transition-all duration-300 hover:shadow-xl hover:scale-105 group before:absolute before:inset-0 before:rounded-lg before:border-2 before:border-primary/20 before:scale-110 before:opacity-0 before:transition-all before:duration-300 group-hover:before:opacity-100 before:pointer-events-none">
+    <div data-cv-auto="" className="relative flex flex-col bg-accent text-card-foreground overflow-hidden rounded-lg shadow-lg w-full transition-all duration-300 hover:shadow-xl hover:scale-105 group before:absolute before:inset-0 before:rounded-lg before:border-2 before:border-primary/20 before:scale-110 before:opacity-0 before:transition-all before:duration-300 group-hover:before:opacity-100 before:pointer-events-none">
       <div
         className="aspect-[16/10] relative w-full bg-muted overflow-hidden cursor-pointer"
         onClick={handleImageClick}
@@ -225,6 +224,6 @@ export function VehicleCard({
       </div>
     </div>
   );
-}
+});
 
 export default VehicleCard;

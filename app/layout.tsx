@@ -1,15 +1,22 @@
 import "./globals.css";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Outfit, Geist_Mono } from "next/font/google";
 import type { Metadata } from "next";
 import { Providers } from "./providers";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { headers } from "next/headers";
 
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const plusJakarta = Plus_Jakarta_Sans({
+  variable: "--font-sans",
   subsets: ["latin"],
+  display: "swap",
+});
+
+const outfit = Outfit({
+  variable: "--font-heading",
+  subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -82,19 +89,24 @@ export const metadata: Metadata = {
     languages: {
       "ro-RO": "https://rngo.ro/ro",
       "en-US": "https://rngo.ro/en",
+      "x-default": "https://rngo.ro/ro",
     },
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") ?? "";
+  const lang = pathname.startsWith("/en") ? "en" : "ro";
+
   return (
-    <html lang="ro" suppressHydrationWarning>
+    <html lang={lang} suppressHydrationWarning data-scroll-behavior="smooth">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${plusJakarta.variable} ${outfit.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>{children}</Providers>
       </body>

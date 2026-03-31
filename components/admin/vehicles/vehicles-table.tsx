@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -24,8 +25,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { EditVehicleDialog } from "@/components/admin/vehicles/edit-vehicle-dialog";
 import { toast } from "sonner";
+
+const EditVehicleDialog = dynamic(
+  () => import("@/components/admin/vehicles/edit-vehicle-dialog").then(m => m.EditVehicleDialog),
+  { ssr: false }
+);
 
 const ITEMS_PER_PAGE = 10;
 

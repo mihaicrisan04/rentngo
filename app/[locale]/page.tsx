@@ -2,6 +2,8 @@ import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { HomePageClient } from "./home-page-client";
 import { Metadata } from "next";
+import { buildMetadata, jsonLdScriptContent } from "@/lib/metadata";
+import { getTranslations } from "next-intl/server";
 
 interface HomePageProps {
   params: Promise<{ locale: string }>;
@@ -11,59 +13,25 @@ export async function generateMetadata({
   params,
 }: HomePageProps): Promise<Metadata> {
   const { locale } = await params;
-  const isRomanian = locale === "ro";
 
-  return {
-    title: isRomanian
-      ? "Rent'n Go Cluj-Napoca | Masini de Inchiriat Cluj"
-      : "Rent'n Go Cluj-Napoca | Car Rentals Cluj",
-    description: isRomanian
-      ? "Masini de inchiriat Cluj-Napoca cu Rent'n Go. Închiriere auto la prețuri competitive, flotă modernă, rezervare online rapidă. Cel mai bun serviciu de car rentals Cluj-Napoca."
-      : "Car rentals Cluj-Napoca with Rent'n Go. Competitive prices, modern fleet, quick online booking. Best car rental service in Cluj-Napoca.",
-    keywords: isRomanian
-      ? "masini de inchiriat cluj-napoca, car rentals cluj, închiriere auto cluj, rent car cluj-napoca, rental cars cluj"
-      : "car rentals cluj-napoca, rent car cluj, car hire cluj, vehicle rental cluj-napoca",
-    alternates: {
-      canonical: `https://rngo.ro/${locale}`,
-      languages: {
-        "ro-RO": "https://rngo.ro/ro",
-        "en-US": "https://rngo.ro/en",
-      },
+  return buildMetadata({
+    locale,
+    path: "",
+    title: {
+      ro: "Rent'n Go Cluj-Napoca | Masini de Inchiriat Cluj",
+      en: "Rent'n Go Cluj-Napoca | Car Rentals Cluj",
     },
-    openGraph: {
-      title: isRomanian
-        ? "Rent'n Go Cluj-Napoca | Masini de Inchiriat"
-        : "Rent'n Go Cluj-Napoca | Car Rentals",
-      description: isRomanian
-        ? "Masini de inchiriat Cluj-Napoca cu Rent'n Go. Prețuri competitive și flotă modernă."
-        : "Car rentals Cluj-Napoca with Rent'n Go. Competitive prices and modern fleet.",
-      type: "website",
-      url: `https://rngo.ro/${locale}`,
-      siteName: "Rent'n Go Cluj-Napoca",
-      locale: isRomanian ? "ro_RO" : "en_US",
-      images: [
-        {
-          url: "https://rngo.ro/logo.png",
-          width: 1200,
-          height: 630,
-          alt: "Rent'n Go Cluj-Napoca - Închiriere Mașini",
-        },
-      ],
+    description: {
+      ro: "Masini de inchiriat Cluj-Napoca cu Rent'n Go. Închiriere auto la prețuri competitive, flotă modernă, rezervare online rapidă. Cel mai bun serviciu de car rentals Cluj-Napoca.",
+      en: "Car rentals Cluj-Napoca with Rent'n Go. Competitive prices, modern fleet, quick online booking. Best car rental service in Cluj-Napoca.",
     },
-    twitter: {
-      card: "summary_large_image",
-      title: isRomanian
-        ? "Rent'n Go Cluj-Napoca | Masini de Inchiriat"
-        : "Rent'n Go Cluj-Napoca | Car Rentals",
-      description: isRomanian
-        ? "Masini de inchiriat Cluj-Napoca cu Rent'n Go."
-        : "Car rentals Cluj-Napoca with Rent'n Go.",
-      images: ["https://rngo.ro/logo.png"],
+    keywords: {
+      ro: "masini de inchiriat cluj-napoca, car rentals cluj, închiriere auto cluj, rent car cluj-napoca, rental cars cluj",
+      en: "car rentals cluj-napoca, rent car cluj, car hire cluj, vehicle rental cluj-napoca",
     },
-  };
+  });
 }
 
-// Car rental business structured data
 function CarRentalSchema({ locale }: { locale: string }) {
   const isRomanian = locale === "ro";
   const schema = {
@@ -128,46 +96,30 @@ function CarRentalSchema({ locale }: { locale: string }) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: jsonLdScriptContent(schema) }}
     />
   );
 }
 
 export default async function HomePage({ params }: HomePageProps) {
   const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "homepage" });
   const featuredVehicles = await fetchQuery(api.featuredCars.getFeaturedVehicles);
 
   let vehicles = featuredVehicles;
-  let title = "Featured Cars";
+  let title = t("featuredCars");
 
   if (!vehicles || vehicles.length === 0) {
-    const fallback = await fetchQuery(api.vehicles.getAll, {
-      paginationOpts: { numItems: 3, cursor: null },
-    });
-    vehicles = fallback?.page || [];
-    title = vehicles.length > 0 ? "Our Latest Cars" : "No Cars Available";
+    const allVehicles = await fetchQuery(api.vehicles.getAllVehiclesWithClasses, {});
+    vehicles = allVehicles.slice(0, 3);
+    title = vehicles.length > 0 ? t("ourLatestCars") : t("noCarsAvailable");
   }
-
-  const vehiclesWithImageUrls = await Promise.all(
-    vehicles.map(async (vehicle) => {
-      let imageUrl: string | null = null;
-      if (vehicle.mainImageId) {
-        imageUrl = await fetchQuery(api.vehicles.getImageUrl, {
-          imageId: vehicle.mainImageId,
-        });
-      }
-      return {
-        ...vehicle,
-        imageUrl,
-      };
-    })
-  );
 
   return (
     <>
       <CarRentalSchema locale={locale} />
       <HomePageClient
-        initialVehicles={vehiclesWithImageUrls}
+        initialVehicles={vehicles}
         initialTitle={title}
       />
     </>

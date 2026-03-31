@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { CreateBlogDialog } from "@/components/admin/blog/create-blog-dialog";
-import { EditBlogDialog } from "@/components/admin/blog/edit-blog-dialog";
 import { BlogTable } from "@/components/admin/blog/blog-table";
-import { BlogListItem } from "@/types/blog";
+import { BlogAdminListItem } from "@/types/blog";
 import {
   Card,
   CardContent,
@@ -17,14 +16,24 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+const CreateBlogDialog = dynamic(
+  () => import("@/components/admin/blog/create-blog-dialog").then(m => m.CreateBlogDialog),
+  { ssr: false }
+);
+
+const EditBlogDialog = dynamic(
+  () => import("@/components/admin/blog/edit-blog-dialog").then(m => m.EditBlogDialog),
+  { ssr: false }
+);
+
 export default function AdminBlogsPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedBlog, setSelectedBlog] = useState<BlogListItem | null>(null);
+  const [selectedBlog, setSelectedBlog] = useState<BlogAdminListItem | null>(null);
 
   const blogs = useQuery(api.blogs.getAllAdmin);
 
-  const handleEdit = (blog: BlogListItem) => {
+  const handleEdit = (blog: BlogAdminListItem) => {
     setSelectedBlog(blog);
     setEditDialogOpen(true);
   };

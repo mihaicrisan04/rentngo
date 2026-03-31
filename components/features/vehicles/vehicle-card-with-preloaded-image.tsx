@@ -105,7 +105,7 @@ export function VehicleCardWithPreloadedImage({
   }
 
   return (
-    <div className="relative flex flex-col bg-accent text-card-foreground overflow-hidden rounded-lg shadow-lg w-full transition-all duration-300 hover:shadow-xl hover:scale-105 group before:absolute before:inset-0 before:rounded-lg before:border-2 before:border-primary/20 before:scale-110 before:opacity-0 before:transition-all before:duration-300 group-hover:before:opacity-100 before:pointer-events-none">
+    <div className="relative flex flex-col bg-card text-card-foreground overflow-hidden rounded-2xl border border-border/50 shadow-md w-full transition-all duration-300 hover:shadow-xl hover:scale-[1.03] hover:border-primary/25 group">
       <Link
         href={carDetailsUrl}
         className="aspect-[16/10] relative w-full bg-muted overflow-hidden cursor-pointer block"
@@ -182,14 +182,14 @@ export function VehicleCardWithPreloadedImage({
         )}
 
         <Button
-          className="w-full bg-[#055E3B] hover:bg-[#055E3B]/80 text-white font-bold py-2 rounded-md text-xs"
+          className="w-full bg-[#055E3B] hover:bg-[#055E3B]/80 text-white font-bold py-2 rounded-xl text-xs"
           asChild
         >
           <Link href={reservationUrl}>{t("bookNow")}</Link>
         </Button>
       </div>
 
-      <div className="p-2 border-t border-border">
+      <div className="px-3 py-2.5 border-t border-border/50 bg-muted/30">
         <div className="flex justify-around items-center w-full text-[10px] text-muted-foreground">
           <div className="flex items-center space-x-0.5">
             <CarFront className="h-3 w-3" />

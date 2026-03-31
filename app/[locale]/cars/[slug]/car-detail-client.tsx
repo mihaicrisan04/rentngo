@@ -132,9 +132,10 @@ export function CarDetailClient({
   }
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="py-6 px-4 md:py-10 md:px-8">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-6">
+        {/* Breadcrumb */}
+        <div className="mb-8">
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
@@ -156,23 +157,29 @@ export function CarDetailClient({
           </Breadcrumb>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-4">
-            <VehicleImageCarouselWithPreloadedImages
-              images={vehicle.images}
-              mainImageId={vehicle.mainImageId}
-              vehicleName={vehicleName}
-              mainImageUrl={mainImageUrl}
-              imageUrls={imageUrls}
-            />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12">
+          {/* Left column — images + specs */}
+          <div className="space-y-6">
+            <div className="rounded-2xl overflow-hidden">
+              <VehicleImageCarouselWithPreloadedImages
+                images={vehicle.images}
+                mainImageId={vehicle.mainImageId}
+                vehicleName={vehicleName}
+                mainImageUrl={mainImageUrl}
+                imageUrls={imageUrls}
+              />
+            </div>
             <VehicleSpecifications vehicle={vehicle} />
           </div>
 
+          {/* Right column — details + pricing + CTA */}
           <div className="space-y-6">
             <div>
-              <h1 className="text-3xl font-bold">{vehicleName}</h1>
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+                {vehicleName}
+              </h1>
               {vehicle.type && (
-                <Badge variant="outline" className="mt-2">
+                <Badge variant="outline" className="mt-3 rounded-lg px-3 py-1">
                   {getVehicleTypeLabel(vehicle.type)}
                 </Badge>
               )}
@@ -201,7 +208,7 @@ export function CarDetailClient({
             <div className="space-y-4">
               <Button
                 size="lg"
-                className="w-full bg-[#055E3B] hover:bg-[#055E3B]/80 text-white font-bold py-4 text-lg"
+                className="w-full bg-[#055E3B] hover:bg-[#055E3B]/80 text-white font-bold py-4 text-lg rounded-xl h-14"
                 asChild
               >
                 <Link href={reservationUrl}>{t("reserveThisCar")}</Link>
@@ -214,7 +221,7 @@ export function CarDetailClient({
         </div>
 
         {vehicle.pricingTiers && vehicle.pricingTiers.length > 0 && (
-          <div className="mt-12">
+          <div className="mt-14">
             <PricingTiersTable
               pricingTiers={vehicle.pricingTiers}
               currency={currency}

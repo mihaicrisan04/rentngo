@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { Metadata } from "next";
+import { buildMetadata } from "@/lib/metadata";
 
 interface TermsPageProps {
   params: Promise<{ locale: string }>;
@@ -11,43 +11,38 @@ export async function generateMetadata({
   params,
 }: TermsPageProps): Promise<Metadata> {
   const { locale } = await params;
-  const isRomanian = locale === "ro";
 
-  return {
-    title: isRomanian
-      ? "Termeni și Condiții | Rent'n Go Cluj-Napoca"
-      : "Terms and Conditions | Rent'n Go Cluj-Napoca",
-    description: isRomanian
-      ? "Termeni și condiții pentru închirierea de mașini cu Rent'n Go Cluj-Napoca. Citiți condițiile generale de închiriere auto."
-      : "Terms and conditions for car rental with Rent'n Go Cluj-Napoca. Read the general car rental conditions.",
-    alternates: {
-      canonical: `https://rngo.ro/${locale}/terms`,
-      languages: {
-        "ro-RO": "https://rngo.ro/ro/terms",
-        "en-US": "https://rngo.ro/en/terms",
-      },
+  return buildMetadata({
+    locale,
+    path: "/terms",
+    title: {
+      ro: "Termeni și Condiții",
+      en: "Terms and Conditions",
     },
-    robots: {
-      index: true,
-      follow: true,
+    description: {
+      ro: "Termeni și condiții pentru închirierea de mașini cu Rent'n Go Cluj-Napoca. Citiți condițiile generale de închiriere auto.",
+      en: "Terms and conditions for car rental with Rent'n Go Cluj-Napoca. Read the general car rental conditions.",
     },
-  };
+  });
 }
 
 export default function TermsAndConditionsPage() {
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto px-4 py-12 max-w-4xl">
         {/* Header Section */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-center mb-4">
+        <div className="mb-10">
+          <div className="flex justify-center mb-5">
+            <div className="accent-line"></div>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-center tracking-tight">
             TERMENI SI CONDITII
           </h1>
         </div>
 
-        <Separator className="mb-8" />
+        <div className="section-divider mb-10"></div>
 
         {/* I. DISPOZIŢII GENERALE */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">I. DISPOZIŢII GENERALE</CardTitle>
           </CardHeader>
@@ -77,7 +72,7 @@ export default function TermsAndConditionsPage() {
         </Card>
 
         {/* II. DESCRIEREA SERVICIILOR */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">II. DESCRIEREA SERVICIILOR</CardTitle>
           </CardHeader>
@@ -102,7 +97,7 @@ export default function TermsAndConditionsPage() {
         </Card>
 
         {/* III. CONDIȚII GENERALE DE ÎNCHIRIERE */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">III. CONDIȚII GENERALE DE ÎNCHIRIERE</CardTitle>
           </CardHeader>
@@ -180,7 +175,7 @@ export default function TermsAndConditionsPage() {
         </Card>
 
         {/* IV. GARANTIA ȘI ASIGURAREA SCDW */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">IV. GARANTIA ȘI ASIGURAREA SCDW</CardTitle>
           </CardHeader>
@@ -219,7 +214,7 @@ export default function TermsAndConditionsPage() {
         </Card>
 
         {/* V. OBLIGATIILE CLIENTULUI */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">V. OBLIGATIILE CLIENTULUI</CardTitle>
           </CardHeader>
@@ -260,7 +255,7 @@ export default function TermsAndConditionsPage() {
         </Card>
 
         {/* VI. OBLIGATIILE SOCIETĂȚII */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">VI. OBLIGATIILE SOCIETĂȚII</CardTitle>
           </CardHeader>
@@ -289,7 +284,7 @@ export default function TermsAndConditionsPage() {
         </Card>
 
         {/* VII. OBLIGAȚIILE CLIENTULUI ÎN CAZ DE AVARII ȘI ACCIDENTE */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">VII. OBLIGAȚIILE CLIENTULUI ÎN CAZ DE AVARII ȘI ACCIDENTE</CardTitle>
           </CardHeader>
@@ -333,7 +328,7 @@ export default function TermsAndConditionsPage() {
         </Card>
 
         {/* VIII. FORȚA MAJORĂ */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">VIII. FORȚA MAJORĂ</CardTitle>
           </CardHeader>
@@ -353,7 +348,7 @@ export default function TermsAndConditionsPage() {
         </Card>
 
         {/* IX. DREPTURI DE PROPRIETATE INTELECTUALĂ */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">IX. DREPTURI DE PROPRIETATE INTELECTUALĂ</CardTitle>
           </CardHeader>
@@ -372,7 +367,7 @@ export default function TermsAndConditionsPage() {
         </Card>
 
         {/* X. FURNIZAREA DE INFORMAȚII/ TENTATIVE DE FRAUDĂ */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">X. FURNIZAREA DE INFORMAȚII/ TENTATIVE DE FRAUDĂ</CardTitle>
           </CardHeader>
@@ -406,7 +401,7 @@ export default function TermsAndConditionsPage() {
         </Card>
 
         {/* XI. CONFLICTE */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">XI. CONFLICTE</CardTitle>
           </CardHeader>
@@ -426,7 +421,7 @@ export default function TermsAndConditionsPage() {
         </Card>
 
         {/* XII. PREVEDERI FINALE */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">XII. PREVEDERI FINALE</CardTitle>
           </CardHeader>
@@ -447,10 +442,10 @@ export default function TermsAndConditionsPage() {
           </CardContent>
         </Card>
 
-        <Separator className="my-8" />
+        <div className="section-divider my-10"></div>
 
         {/* Contact Information */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">Informații de Contact</CardTitle>
           </CardHeader>
@@ -462,10 +457,10 @@ export default function TermsAndConditionsPage() {
           </CardContent>
         </Card>
 
-        <Separator className="my-8" />
+        <div className="section-divider my-10"></div>
 
         {/* Footer Note */}
-        <div className="text-center">
+        <div className="text-center pb-4">
           <p className="text-sm text-muted-foreground">
             Termeni și condiții actualizați ultima dată: Ianuarie 2024
           </p>
