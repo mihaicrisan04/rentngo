@@ -66,12 +66,16 @@ export function Footer({ logo, brandName }: FooterProps) {
   ];
 
   return (
-    <footer className="pb-6 pt-16 lg:pb-8 lg:pt-24 bg-muted border-t">
-      <div className="mx-auto max-w-6xl px-4 lg:px-0">
+    <footer className="relative bg-muted">
+      {/* Decorative top accent */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent"></div>
+
+      <div className="mx-auto max-w-6xl px-4 lg:px-0 pt-16 pb-8 lg:pt-20 lg:pb-10">
+        {/* Top row — logo, socials, theme */}
         <div className="md:flex md:items-end md:justify-between">
           <Link
             href={`/${locale}`}
-            className="flex items-center gap-x-2"
+            className="flex items-center gap-x-2 group"
             aria-label={brandName || "Go to homepage"}
           >
             {logo}
@@ -79,25 +83,32 @@ export function Footer({ logo, brandName }: FooterProps) {
               <span className="font-bold text-xl">{brandName}</span>
             )}
           </Link>
-          <div className="flex items-center gap-3 mt-6 md:mt-0">
-            <ul className="flex list-none space-x-3">
+          <div className="flex items-center gap-4 mt-6 md:mt-0">
+            <ul className="flex list-none gap-3">
               {socialLinks.map((link, i) => (
-                <li key={i} className="h-9 w-9 rounded-full">
+                <li key={i} className="hover:scale-110 transition-transform duration-200">
                   {link.icon}
                 </li>
               ))}
             </ul>
+            <div className="w-px h-6 bg-border/50"></div>
             <ThemeToggle />
           </div>
         </div>
-        <div className="border-t mt-6 pt-6 md:mt-8 md:pt-8 lg:grid lg:grid-cols-10 lg:gap-8">
-          <nav className="lg:col-start-5 lg:col-span-6 xl:col-start-6 xl:col-span-5 mb-6 lg:mb-0">
-            <ul className="list-none flex flex-wrap -my-1 -mx-2 lg:justify-end">
+
+        {/* Divider */}
+        <div className="section-divider my-8 md:my-10"></div>
+
+        {/* Bottom grid — links + copyright */}
+        <div className="lg:grid lg:grid-cols-10 lg:gap-8">
+          {/* Nav links */}
+          <nav className="lg:col-start-5 lg:col-span-6 xl:col-start-6 xl:col-span-5 mb-5 lg:mb-0">
+            <ul className="list-none flex flex-wrap gap-x-5 gap-y-2 lg:justify-end">
               {mainLinks.map((link, i) => (
-                <li key={i} className="my-1 mx-2 shrink-0">
+                <li key={i} className="shrink-0">
                   <Link
                     href={link.href}
-                    className="text-sm text-foreground/80 hover:text-primary hover:underline underline-offset-4 transition-colors"
+                    className="text-sm font-medium text-foreground/65 hover:text-primary transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -105,13 +116,15 @@ export function Footer({ logo, brandName }: FooterProps) {
               ))}
             </ul>
           </nav>
-          <div className="lg:col-start-5 lg:col-span-6 xl:col-start-6 xl:col-span-5 mb-6 lg:mb-0">
-            <ul className="list-none flex flex-wrap -my-1 -mx-3 lg:justify-end">
+
+          {/* Legal links */}
+          <div className="lg:col-start-5 lg:col-span-6 xl:col-start-6 xl:col-span-5 mb-5 lg:mb-0">
+            <ul className="list-none flex flex-wrap gap-x-5 gap-y-2 lg:justify-end">
               {legalLinks.map((link, i) => (
-                <li key={i} className="my-1 mx-3 shrink-0">
+                <li key={i} className="shrink-0">
                   <Link
                     href={link.href}
-                    className="text-sm text-muted-foreground hover:text-primary hover:underline underline-offset-4 transition-colors"
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -119,16 +132,18 @@ export function Footer({ logo, brandName }: FooterProps) {
               ))}
             </ul>
           </div>
-          <div className="mt-6 text-sm leading-6 text-muted-foreground whitespace-nowrap lg:mt-0 lg:row-start-1 lg:col-span-4 xl:col-span-5">
+
+          {/* Copyright */}
+          <div className="text-sm leading-6 text-muted-foreground whitespace-nowrap lg:row-start-1 lg:col-span-4 xl:col-span-5">
             <div>{tFooter("copyright")}</div>
-            <div>{tFooter("allRightsReserved")}</div>
+            <div className="text-muted-foreground/70">{tFooter("allRightsReserved")}</div>
             <div className="flex items-center gap-1 mt-2">
               <span>{tFooter("builtBy")}</span>
               <Link
                 href="https://mihaicrisan.com/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:underline underline-offset-4 transition-colors"
+                className="text-primary hover:underline underline-offset-4 transition-colors font-medium"
               >
                 Mihai Crisan
               </Link>

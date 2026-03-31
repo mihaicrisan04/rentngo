@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { differenceInDays } from "date-fns";
 import { getLocationPrice } from "@/components/shared/search-filters/location-picker";
 import { AdditionalFeatures } from "./use-reservation-form";
@@ -44,54 +45,66 @@ export function useReservationPricing({
   additionalFeatures,
   vehicle
 }: UseReservationPricingParams): PricingDetails {
-  
-  if (!pickupDate || !returnDate || !vehicle) {
+
+  return useMemo(() => {
+    if (!pickupDate || !returnDate || !vehicle) {
+      return {
+        basePrice: null,
+        totalPrice: null,
+        days: null,
+        deliveryFee: 0,
+        returnFee: 0,
+        totalLocationFees: 0,
+        scdwPrice: 0,
+        snowChainsPrice: 0,
+        childSeat1to4Price: 0,
+        childSeat5to12Price: 0,
+        totalAdditionalFeatures: 0
+      };
+    }
+
+    const days = Math.max(1, differenceInDays(returnDate, pickupDate));
+    const pricePerDay = getBasePricePerDay(vehicle);
+    const basePrice = days * pricePerDay;
+
+    // Add location fees
+    const deliveryFee = getLocationPrice(deliveryLocation);
+    const returnFee = getLocationPrice(restitutionLocation);
+    const totalLocationFees = deliveryFee + returnFee;
+
+    // Add SCDW if selected
+    const scdwPrice = additionalFeatures.scdwSelected ? calculateSCDW(days, pricePerDay) : 0;
+
+    // Add additional features
+    const snowChainsPrice = additionalFeatures.snowChainsSelected ? days * 3 : 0;
+    const childSeat1to4Price = additionalFeatures.childSeat1to4Count * days * 3;
+    const childSeat5to12Price = additionalFeatures.childSeat5to12Count * days * 3;
+    const totalAdditionalFeatures = snowChainsPrice + childSeat1to4Price + childSeat5to12Price;
+
+    const totalPrice = basePrice + totalLocationFees + scdwPrice + totalAdditionalFeatures;
+
     return {
-      basePrice: null,
-      totalPrice: null,
-      days: null,
-      deliveryFee: 0,
-      returnFee: 0,
-      totalLocationFees: 0,
-      scdwPrice: 0,
-      snowChainsPrice: 0,
-      childSeat1to4Price: 0,
-      childSeat5to12Price: 0,
-      totalAdditionalFeatures: 0
+      basePrice,
+      totalPrice,
+      days,
+      deliveryFee,
+      returnFee,
+      totalLocationFees,
+      scdwPrice,
+      snowChainsPrice,
+      childSeat1to4Price,
+      childSeat5to12Price,
+      totalAdditionalFeatures
     };
-  }
-
-  const days = Math.max(1, differenceInDays(returnDate, pickupDate));
-  const pricePerDay = getBasePricePerDay(vehicle);
-  const basePrice = days * pricePerDay;
-  
-  // Add location fees
-  const deliveryFee = getLocationPrice(deliveryLocation);
-  const returnFee = getLocationPrice(restitutionLocation);
-  const totalLocationFees = deliveryFee + returnFee;
-  
-  // Add SCDW if selected
-  const scdwPrice = additionalFeatures.scdwSelected ? calculateSCDW(days, pricePerDay) : 0;
-  
-  // Add additional features
-  const snowChainsPrice = additionalFeatures.snowChainsSelected ? days * 3 : 0;
-  const childSeat1to4Price = additionalFeatures.childSeat1to4Count * days * 3;
-  const childSeat5to12Price = additionalFeatures.childSeat5to12Count * days * 3;
-  const totalAdditionalFeatures = snowChainsPrice + childSeat1to4Price + childSeat5to12Price;
-  
-  const totalPrice = basePrice + totalLocationFees + scdwPrice + totalAdditionalFeatures;
-
-  return {
-    basePrice,
-    totalPrice,
-    days,
-    deliveryFee,
-    returnFee,
-    totalLocationFees,
-    scdwPrice,
-    snowChainsPrice,
-    childSeat1to4Price,
-    childSeat5to12Price,
-    totalAdditionalFeatures
-  };
+  }, [
+    pickupDate,
+    returnDate,
+    deliveryLocation,
+    restitutionLocation,
+    additionalFeatures.scdwSelected,
+    additionalFeatures.snowChainsSelected,
+    additionalFeatures.childSeat1to4Count,
+    additionalFeatures.childSeat5to12Count,
+    vehicle
+  ]);
 } 

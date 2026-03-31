@@ -69,14 +69,14 @@ const createReservationSchema = (t: ReturnType<typeof useTranslations>) =>
 
     // Rental details
     deliveryLocation: z.string().min(1, t("validation.pickupLocationRequired")),
-    pickupDate: z.date({ required_error: t("validation.pickupDateRequired") }),
+    pickupDate: z.date({ error: t("validation.pickupDateRequired") }),
     pickupTime: z.string().refine((val) => val.trim().length > 0, {
       message: t("validation.pickupTimeRequired"),
     }),
     restitutionLocation: z
       .string()
       .min(1, t("validation.returnLocationRequired")),
-    returnDate: z.date({ required_error: t("validation.returnDateRequired") }),
+    returnDate: z.date({ error: t("validation.returnDateRequired") }),
     returnTime: z.string().refine((val) => val.trim().length > 0, {
       message: t("validation.returnTimeRequired"),
     }),
@@ -557,7 +557,7 @@ function ReservationPageContent() {
     const newErrors: FormErrors = {};
 
     if (!result.success) {
-      result.error.errors.forEach((error) => {
+      result.error.issues.forEach((error) => {
         const path = error.path[0] as string;
 
         // Map field names to error structure
@@ -849,11 +849,11 @@ function ReservationPageContent() {
   }
 
   return (
-    <div className="grow p-4 md:p-8">
+    <div className="grow py-8 px-4 md:px-8">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <Link href={`/cars/${vehicle?.slug || vehicleId}`}>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="rounded-xl">
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t("backToVehicleDetails")}
             </Button>
@@ -1863,7 +1863,7 @@ function ReservationPageContent() {
               <Button
                 onClick={handleSendReservation}
                 size="lg"
-                className="w-full bg-[#055E3B] hover:bg-[#055E3B]/80 text-white font-bold py-4 text-lg"
+                className="w-full bg-[#055E3B] hover:bg-[#055E3B]/80 text-white font-bold py-4 text-lg rounded-xl h-14"
                 disabled={isSubmitting}
               >
                 <Send className="mr-2 h-4 w-4" />

@@ -72,7 +72,8 @@ export function CreateClassDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<ClassFormData>({
-    resolver: zodResolver(classSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(classSchema) as any,
     defaultValues: {
       name: "",
       displayName: "",

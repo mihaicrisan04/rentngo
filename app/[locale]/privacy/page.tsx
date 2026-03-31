@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { Metadata } from "next";
+import { buildMetadata } from "@/lib/metadata";
 
 interface PrivacyPageProps {
   params: Promise<{ locale: string }>;
@@ -11,43 +11,38 @@ export async function generateMetadata({
   params,
 }: PrivacyPageProps): Promise<Metadata> {
   const { locale } = await params;
-  const isRomanian = locale === "ro";
 
-  return {
-    title: isRomanian
-      ? "Politica de Confidențialitate | Rent'n Go Cluj-Napoca"
-      : "Privacy Policy | Rent'n Go Cluj-Napoca",
-    description: isRomanian
-      ? "Politica de confidențialitate Rent'n Go. Informații despre colectarea și prelucrarea datelor cu caracter personal conform GDPR."
-      : "Rent'n Go Privacy Policy. Information about personal data collection and processing in accordance with GDPR.",
-    alternates: {
-      canonical: `https://rngo.ro/${locale}/privacy`,
-      languages: {
-        "ro-RO": "https://rngo.ro/ro/privacy",
-        "en-US": "https://rngo.ro/en/privacy",
-      },
+  return buildMetadata({
+    locale,
+    path: "/privacy",
+    title: {
+      ro: "Politica de Confidențialitate",
+      en: "Privacy Policy",
     },
-    robots: {
-      index: true,
-      follow: true,
+    description: {
+      ro: "Politica de confidențialitate Rent'n Go. Informații despre colectarea și prelucrarea datelor cu caracter personal conform GDPR.",
+      en: "Rent'n Go Privacy Policy. Information about personal data collection and processing in accordance with GDPR.",
     },
-  };
+  });
 }
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto px-4 py-12 max-w-4xl">
         {/* Header Section */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-center mb-4">
+        <div className="mb-10">
+          <div className="flex justify-center mb-5">
+            <div className="accent-line"></div>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-center mb-5 tracking-tight">
             Politică de confidențialitate
           </h1>
-          <h2 className="text-xl text-muted-foreground text-center leading-relaxed">
+          <h2 className="text-lg text-muted-foreground text-center leading-relaxed max-w-3xl mx-auto">
             INFORMARE PRIVIND COLECTAREA DATELOR CU CARACTER PERSONAL PENTRU PERSOANE FIZICE ȘI REPREZENTANȚI LEGALI/PERSOANA DE CONTACT A PERSOANELOR JURIDICE
           </h2>
         </div>
 
-        <Separator className="mb-8" />
+        <div className="section-divider mb-10"></div>
 
         {/* Introduction */}
         <div className="mb-8">
@@ -56,10 +51,10 @@ export default function PrivacyPolicyPage() {
           </p>
         </div>
 
-        <Separator className="mb-8" />
+        <div className="section-divider mb-10"></div>
 
         {/* Section 1 */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">1. Informații generale</CardTitle>
           </CardHeader>
@@ -83,7 +78,7 @@ export default function PrivacyPolicyPage() {
         </Card>
 
         {/* Section 2 */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">2. Când colectăm date despre dvs.?</CardTitle>
           </CardHeader>
@@ -100,7 +95,7 @@ export default function PrivacyPolicyPage() {
         </Card>
 
         {/* Section 3 */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">3. Scopurile prelucrării</CardTitle>
           </CardHeader>
@@ -117,7 +112,7 @@ export default function PrivacyPolicyPage() {
         </Card>
 
         {/* Section 4 */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">4. Categoriile de date cu caracter personal prelucrate</CardTitle>
           </CardHeader>
@@ -135,7 +130,7 @@ export default function PrivacyPolicyPage() {
         </Card>
 
         {/* Section 5 */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">5. Temeiul juridic al prelucrării</CardTitle>
           </CardHeader>
@@ -169,7 +164,7 @@ export default function PrivacyPolicyPage() {
         </Card>
 
         {/* Section 6 */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">6. Categorii de destinatari către care se pot divulga datele dvs. cu caracter personal colectate</CardTitle>
           </CardHeader>
@@ -187,7 +182,7 @@ export default function PrivacyPolicyPage() {
         </Card>
 
         {/* Section 7 */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">7. Datele colectate în mod automat</CardTitle>
           </CardHeader>
@@ -199,7 +194,7 @@ export default function PrivacyPolicyPage() {
         </Card>
 
         {/* Section 9 */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">9. Perioada de păstrare</CardTitle>
           </CardHeader>
@@ -223,7 +218,7 @@ export default function PrivacyPolicyPage() {
         </Card>
 
         {/* Section 10 */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">10. Transferul către terțe țări și măsuri de siguranță</CardTitle>
           </CardHeader>
@@ -239,7 +234,7 @@ export default function PrivacyPolicyPage() {
         </Card>
 
         {/* Section 11 */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">11. Modificări aduse Notei de informare</CardTitle>
           </CardHeader>
@@ -251,7 +246,7 @@ export default function PrivacyPolicyPage() {
         </Card>
 
         {/* Section 12 */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">12. Securitatea datelor cu caracter personal</CardTitle>
           </CardHeader>
@@ -266,7 +261,7 @@ export default function PrivacyPolicyPage() {
         </Card>
 
         {/* Section 13 */}
-        <Card className="mb-6">
+        <Card className="mb-6 rounded-2xl border-border/50">
           <CardHeader>
             <CardTitle className="text-2xl">13. Drepturile dumneavoastră</CardTitle>
           </CardHeader>
@@ -290,10 +285,10 @@ export default function PrivacyPolicyPage() {
           </CardContent>
         </Card>
 
-        <Separator className="my-8" />
+        <div className="section-divider my-10"></div>
 
         {/* Footer Note */}
-        <div className="text-center">
+        <div className="text-center pb-4">
           <p className="text-sm text-muted-foreground">
             Notă de informare actualizată la data de: 20.04.2025
           </p>

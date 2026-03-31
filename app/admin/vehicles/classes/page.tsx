@@ -1,15 +1,20 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { ClassOrderingCard } from "@/components/admin/vehicle-classes/class-ordering-card";
-import { CreateClassDialog } from "@/components/admin/vehicle-classes/create-class-dialog";
 import { Plus, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+
+const CreateClassDialog = dynamic(
+  () => import("@/components/admin/vehicle-classes/create-class-dialog").then(m => m.CreateClassDialog),
+  { ssr: false }
+);
 import {
   DndContext,
   closestCenter,

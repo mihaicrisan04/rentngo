@@ -45,7 +45,7 @@ const tierSchema = z.object({
   pricePerKm: z.coerce.number().min(0.01, "Price must be greater than 0"),
 });
 
-type TierFormData = z.infer<typeof tierSchema>;
+type TierFormData = z.output<typeof tierSchema>;
 
 interface TransferPricingDialogProps {
   open: boolean;
@@ -67,7 +67,8 @@ export function TransferPricingDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<TierFormData>({
-    resolver: zodResolver(tierSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(tierSchema) as any,
     defaultValues: {
       minExtraKm: 0,
       maxExtraKm: undefined,
@@ -76,7 +77,8 @@ export function TransferPricingDialog({
   });
 
   const editForm = useForm<TierFormData>({
-    resolver: zodResolver(tierSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(tierSchema) as any,
   });
 
   const handleAdd = async (values: TierFormData) => {

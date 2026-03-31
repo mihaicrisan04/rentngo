@@ -3,12 +3,12 @@ import { api } from "@/convex/_generated/api";
 import { CarDetailClient } from "./car-detail-client";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { buildMetadata, jsonLdScriptContent } from "@/lib/metadata";
 
 interface PageProps {
   params: Promise<{ slug: string; locale: string }>;
 }
 
-// Vehicle structured data component for SEO
 function VehicleStructuredData({
   vehicle,
   imageUrl,
@@ -35,10 +35,8 @@ function VehicleStructuredData({
   const vehicleName = `${vehicle.make} ${vehicle.model}${vehicle.year ? ` ${vehicle.year}` : ""}`;
   const urlSlug = vehicle.slug || vehicle._id;
 
-  // Calculate base price from pricing tiers
   let pricePerDay = 0;
   if (vehicle.pricingTiers && vehicle.pricingTiers.length > 0) {
-    // Get the tier with lowest minDays (base price tier)
     const sortedTiers = [...vehicle.pricingTiers].sort((a, b) => a.minDays - b.minDays);
     pricePerDay = sortedTiers[0].pricePerDay;
   }
@@ -105,7 +103,50 @@ function VehicleStructuredData({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: jsonLdScriptContent(schema) }}
+    />
+  );
+}
+
+function BreadcrumbStructuredData({
+  vehicleName,
+  slug,
+  locale,
+}: {
+  vehicleName: string;
+  slug: string;
+  locale: string;
+}) {
+  const isRomanian = locale === "ro";
+  const breadcrumbData = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: isRomanian ? "Acasă" : "Home",
+        item: `https://rngo.ro/${locale}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: isRomanian ? "Mașini" : "Cars",
+        item: `https://rngo.ro/${locale}/cars`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: vehicleName,
+        item: `https://rngo.ro/${locale}/cars/${slug}`,
+      },
+    ],
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: jsonLdScriptContent(breadcrumbData) }}
     />
   );
 }
@@ -114,19 +155,13 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { slug, locale } = await params;
-  const isRomanian = locale === "ro";
 
   try {
     const vehicle = await fetchQuery(api.vehicles.getBySlug, { slug });
 
     if (!vehicle) {
       return {
-        title: isRomanian
-          ? "Vehicul Negăsit | Rent'n Go"
-          : "Vehicle Not Found | Rent'n Go",
-        description: isRomanian
-          ? "Vehiculul solicitat nu a fost găsit."
-          : "The requested vehicle could not be found.",
+        title: locale === "ro" ? "Vehicul Negăsit" : "Vehicle Not Found",
       };
     }
 
@@ -135,7 +170,6 @@ export async function generateMetadata({
     const fuelType = vehicle.fuelType || "Petrol";
     const transmission = vehicle.transmission || "Manual";
 
-    // Get image URL for OG tags
     let imageUrl = "https://rngo.ro/logo.png";
     if (vehicle.mainImageId) {
       const fetchedImageUrl = await fetchQuery(api.vehicles.getImageUrl, {
@@ -146,64 +180,35 @@ export async function generateMetadata({
       }
     }
 
-    const title = isRomanian
-      ? `${vehicleName} - Masini de Inchiriat Cluj-Napoca | Rent'n Go`
-      : `${vehicleName} - Car Rentals Cluj-Napoca | Rent'n Go`;
-
-    const description = isRomanian
-      ? `Închiriază ${vehicleName} în Cluj-Napoca cu Rent'n Go. ${seats} locuri, ${fuelType}, ${transmission}. Rezervare online rapidă pentru masini de inchiriat Cluj.`
-      : `Rent ${vehicleName} in Cluj-Napoca with Rent'n Go. ${seats} seats, ${fuelType}, ${transmission}. Quick online booking for car rentals Cluj.`;
-
-    const keywords = isRomanian
-      ? `${vehicleName}, masini de inchiriat cluj-napoca, ${vehicle.make} închiriere, car rental ${vehicle.model}, rent ${vehicle.make} cluj`
-      : `${vehicleName}, car rentals cluj-napoca, rent ${vehicle.make}, ${vehicle.model} rental, hire ${vehicle.make} cluj`;
-
-    return {
-      title,
-      description,
-      keywords,
-      alternates: {
-        canonical: `https://rngo.ro/${locale}/cars/${slug}`,
-        languages: {
-          "ro-RO": `https://rngo.ro/ro/cars/${slug}`,
-          "en-US": `https://rngo.ro/en/cars/${slug}`,
-        },
+    return buildMetadata({
+      locale,
+      path: `/cars/${slug}`,
+      title: {
+        ro: `${vehicleName} - Masini de Inchiriat Cluj-Napoca`,
+        en: `${vehicleName} - Car Rentals Cluj-Napoca`,
       },
-      openGraph: {
-        title,
-        description,
-        type: "website",
-        url: `https://rngo.ro/${locale}/cars/${slug}`,
-        siteName: "Rent'n Go Cluj-Napoca",
-        locale: isRomanian ? "ro_RO" : "en_US",
-        images: [
-          {
-            url: imageUrl,
-            width: 1200,
-            height: 630,
-            alt: vehicleName,
-          },
-        ],
+      description: {
+        ro: `Închiriază ${vehicleName} în Cluj-Napoca cu Rent'n Go. ${seats} locuri, ${fuelType}, ${transmission}. Rezervare online rapidă pentru masini de inchiriat Cluj.`,
+        en: `Rent ${vehicleName} in Cluj-Napoca with Rent'n Go. ${seats} seats, ${fuelType}, ${transmission}. Quick online booking for car rentals Cluj.`,
       },
-      twitter: {
-        card: "summary_large_image",
-        title,
-        description,
-        images: [imageUrl],
+      keywords: {
+        ro: `${vehicleName}, masini de inchiriat cluj-napoca, ${vehicle.make} închiriere, car rental ${vehicle.model}, rent ${vehicle.make} cluj`,
+        en: `${vehicleName}, car rentals cluj-napoca, rent ${vehicle.make}, ${vehicle.model} rental, hire ${vehicle.make} cluj`,
       },
-      robots: {
-        index: true,
-        follow: true,
-      },
-    };
+      image: { url: imageUrl, width: 1200, height: 630, alt: vehicleName },
+    });
   } catch {
     return {
-      title: isRomanian ? "Vehicul | Rent'n Go" : "Vehicle | Rent'n Go",
-      description: isRomanian
-        ? "Închiriere auto în Cluj-Napoca"
-        : "Car rental in Cluj-Napoca",
+      title: locale === "ro" ? "Vehicul" : "Vehicle",
     };
   }
+}
+
+export async function generateStaticParams() {
+  const vehicles = await fetchQuery(api.vehicles.getAllVehicles);
+  return vehicles
+    .filter((v) => v.slug)
+    .map((v) => ({ slug: v.slug! }));
 }
 
 export default async function CarDetailPage({ params }: PageProps) {
@@ -239,6 +244,8 @@ export default async function CarDetailPage({ params }: PageProps) {
     });
   }
 
+  const vehicleName = `${vehicle.make} ${vehicle.model}${vehicle.year ? ` ${vehicle.year}` : ""}`;
+
   return (
     <>
       <VehicleStructuredData
@@ -256,6 +263,11 @@ export default async function CarDetailPage({ params }: PageProps) {
           pricingTiers: vehicle.pricingTiers,
         }}
         imageUrl={mainImageUrl || "https://rngo.ro/logo.png"}
+        locale={locale}
+      />
+      <BreadcrumbStructuredData
+        vehicleName={vehicleName}
+        slug={slug}
         locale={locale}
       />
       <CarDetailClient

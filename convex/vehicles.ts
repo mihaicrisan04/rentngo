@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query, mutation, action } from "./_generated/server";
+import { query, mutation, action, internalMutation } from "./_generated/server";
 import { api } from "./_generated/api";
 import { paginationOptsValidator } from "convex/server";
 
@@ -690,6 +690,8 @@ export const getAllVehiclesWithClasses = query({
       className: v.optional(v.string()),
       classDisplayName: v.optional(v.string()),
       classSortIndexFromClass: v.optional(v.number()),
+      // Image URL (fetched directly to avoid N+1 queries)
+      imageUrl: v.union(v.string(), v.null()),
     }),
   ),
   handler: async (ctx) => {
@@ -700,19 +702,29 @@ export const getAllVehiclesWithClasses = query({
     const vehicleClasses = await ctx.db.query("vehicleClasses").collect();
     const classMap = new Map(vehicleClasses.map((c) => [c._id, c]));
 
-    // Combine vehicle data with class information
-    const vehiclesWithClasses = vehicles.map((vehicle) => {
-      const vehicleClass = vehicle.classId
-        ? classMap.get(vehicle.classId)
-        : undefined;
+    // Combine vehicle data with class information and fetch image URLs in parallel
+    const vehiclesWithClasses = await Promise.all(
+      vehicles.map(async (vehicle) => {
+        const vehicleClass = vehicle.classId
+          ? classMap.get(vehicle.classId)
+          : undefined;
 
-      return {
-        ...vehicle,
-        className: vehicleClass?.name,
-        classDisplayName: vehicleClass?.displayName,
-        classSortIndexFromClass: vehicleClass?.sortIndex,
-      };
-    });
+        // Fetch image URL directly using ctx.storage.getUrl()
+        let imageUrl: string | null = null;
+        const imageId = vehicle.mainImageId || vehicle.images?.[0];
+        if (imageId) {
+          imageUrl = await ctx.storage.getUrl(imageId);
+        }
+
+        return {
+          ...vehicle,
+          imageUrl,
+          className: vehicleClass?.name,
+          classDisplayName: vehicleClass?.displayName,
+          classSortIndexFromClass: vehicleClass?.sortIndex,
+        };
+      })
+    );
 
     // Sort vehicles by class sortIndex (ascending), then by vehicle classSortIndex (ascending)
     return vehiclesWithClasses.sort((a, b) => {
@@ -730,5 +742,83 @@ export const getAllVehiclesWithClasses = query({
 
       return aVehicleSort - bVehicleSort;
     });
+  },
+});
+
+// Helper function to generate a URL-friendly slug from vehicle make, model, and year
+function generateVehicleSlug(make: string, model: string, year?: number): string {
+  const parts = [make, model];
+  if (year) {
+    parts.push(year.toString());
+  }
+
+  return parts
+    .join("-")
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "") // Remove special characters except hyphens
+    .replace(/[\s_]+/g, "-")  // Replace spaces and underscores with hyphens
+    .replace(/-+/g, "-")      // Collapse multiple hyphens
+    .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
+}
+
+// Helper function to generate a random suffix for duplicate slugs
+function generateRandomSuffix(): string {
+  return Math.random().toString(36).substring(2, 6);
+}
+
+// Internal mutation to generate slugs for all vehicles that don't have one
+export const generateSlugsForAllVehicles = internalMutation({
+  args: {},
+  returns: v.object({
+    updated: v.number(),
+    skipped: v.number(),
+    errors: v.array(v.string()),
+  }),
+  handler: async (ctx) => {
+    const vehicles = await ctx.db.query("vehicles").collect();
+
+    let updated = 0;
+    let skipped = 0;
+    const errors: string[] = [];
+
+    for (const vehicle of vehicles) {
+      // Skip vehicles that already have a slug
+      if (vehicle.slug) {
+        skipped++;
+        continue;
+      }
+
+      // Generate base slug
+      let slug = generateVehicleSlug(vehicle.make, vehicle.model, vehicle.year);
+
+      // Check if slug already exists
+      let existingVehicle = await ctx.db
+        .query("vehicles")
+        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .first();
+
+      // If slug exists, add random suffix until unique
+      let attempts = 0;
+      while (existingVehicle && attempts < 10) {
+        slug = `${generateVehicleSlug(vehicle.make, vehicle.model, vehicle.year)}-${generateRandomSuffix()}`;
+        existingVehicle = await ctx.db
+          .query("vehicles")
+          .withIndex("by_slug", (q) => q.eq("slug", slug))
+          .first();
+        attempts++;
+      }
+
+      if (existingVehicle) {
+        errors.push(`Failed to generate unique slug for ${vehicle.make} ${vehicle.model} (${vehicle._id})`);
+        continue;
+      }
+
+      // Update the vehicle with the new slug
+      await ctx.db.patch(vehicle._id, { slug });
+      updated++;
+    }
+
+    return { updated, skipped, errors };
   },
 });

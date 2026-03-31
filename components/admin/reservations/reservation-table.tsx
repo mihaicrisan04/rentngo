@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -22,9 +23,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ReservationEmailDialog } from "@/components/admin/reservations/reservation-email-dialog";
 import { toast } from "sonner";
-import { EditReservationDialog } from "./edit-reservation-dialog";
+
+const EditReservationDialog = dynamic(
+  () => import("./edit-reservation-dialog").then(m => m.EditReservationDialog),
+  { ssr: false }
+);
+
+const ReservationEmailDialog = dynamic(
+  () => import("@/components/admin/reservations/reservation-email-dialog").then(m => m.ReservationEmailDialog),
+  { ssr: false }
+);
 
 const ITEMS_PER_PAGE = 10;
 
@@ -130,7 +139,7 @@ export function ReservationsTable() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>

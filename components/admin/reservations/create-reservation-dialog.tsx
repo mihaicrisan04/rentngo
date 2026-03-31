@@ -55,7 +55,7 @@ const reservationSchema = z.object({
   pickupLocation: z.string().min(1, "Pickup location is required"),
   restitutionLocation: z.string().min(1, "Return location is required"),
   paymentMethod: z.enum(["cash_on_delivery", "card_on_delivery", "card_online"], {
-    required_error: "Payment method is required",
+    error: "Payment method is required",
   }),
   totalPrice: z.string()
     .min(1, "Total price is required")

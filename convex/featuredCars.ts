@@ -32,6 +32,7 @@ export const getFeaturedCars = query({
 });
 
 // Get featured cars as vehicle objects only (for homepage use)
+// Includes imageUrl to avoid N+1 queries
 export const getFeaturedVehicles = query({
   args: {},
   handler: async (ctx) => {
@@ -41,15 +42,23 @@ export const getFeaturedVehicles = query({
       .order("asc")
       .collect();
 
-    const vehicles = [];
-    for (const featured of featuredCars) {
-      const vehicle = await ctx.db.get(featured.vehicleId);
-      if (vehicle) {
-        vehicles.push(vehicle);
-      }
-    }
+    const vehicles = await Promise.all(
+      featuredCars.map(async (featured) => {
+        const vehicle = await ctx.db.get(featured.vehicleId);
+        if (!vehicle) return null;
 
-    return vehicles;
+        // Fetch image URL directly using ctx.storage.getUrl()
+        let imageUrl: string | null = null;
+        const imageId = vehicle.mainImageId || vehicle.images?.[0];
+        if (imageId) {
+          imageUrl = await ctx.storage.getUrl(imageId);
+        }
+
+        return { ...vehicle, imageUrl };
+      })
+    );
+
+    return vehicles.filter((v): v is NonNullable<typeof v> => v !== null);
   },
 });
 

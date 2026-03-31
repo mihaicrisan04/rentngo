@@ -4,9 +4,49 @@ All notable changes to RentNGo are documented here.
 
 ## [Unreleased]
 
+### Added
+- **Bilingual blog support**: blogs now have separate Romanian and English content
+  - Schema: `title_ro/en`, `description_ro/en`, `content_ro/en`, `readingTime_ro/en`
+  - Public queries accept `locale` arg, return locale-resolved fields
+  - Admin queries return both language variants for editing
+  - Admin create/edit dialogs have RO/EN content tabs
+  - Preview tab has locale toggle
+  - Static generation and sitemap work with locale-aware queries
+  - Migration script: `npx convex run migrations/bilingualBlogs`
+
+
+- **SEO overhaul**: comprehensive SEO improvements following Next.js best practices
+  - Created shared `buildMetadata()` helper (`lib/metadata.ts`) eliminating duplicated metadata across all pages
+  - Added `jsonLdScriptContent()` utility with XSS escaping for all JSON-LD structured data
+  - Dynamic `<html lang>` attribute based on locale (was hardcoded to "ro")
+  - Added `x-default` hreflang to all page alternates
+  - Moved JSON-LD structured data from client components to server-rendered layouts (transfers, contact, about)
+  - Added `generateStaticParams` for car detail and blog detail pages
+  - Added breadcrumb JSON-LD schema for car detail pages
+  - Added `noindex` metadata for transactional pages (reservation, profile)
+  - Fixed blog `keywords` type (was string, now string[])
+
+- **Barrel import optimization**: Added `optimizePackageImports` to next.config.ts
+  - Configured for `lucide-react` (80 files) and `date-fns` (8 files)
+  - Reduces cold start by 200-800ms, speeds up dev server boot
+  - Automatically transforms barrel imports to direct imports at build time
+
+- **Dynamic import admin dialogs**: Converted 10 admin dialogs to lazy-load with `next/dynamic`
+  - CreateVehicleDialog, EditVehicleDialog
+  - CreateBlogDialog, EditBlogDialog
+  - CreateReservationDialog, EditReservationDialog, ReservationEmailDialog
+  - CreateSeasonDialog, EditSeasonDialog
+  - TransferPricingDialog, CreateClassDialog
+  - Dialogs now load on-demand when opened, reducing initial page bundle
+
+- **Memoize expensive components**: Applied React.memo() and useMemo() optimizations
+  - Components wrapped with React.memo(): VehicleCard, TransferVehicleCard, BlogCard, FilterCheckboxItem, VehiclePricingCard, TransferBookingFloatingCard
+  - Calculations memoized with useMemo(): pricing tip in VehiclePricingCard, vehicle grouping in VehicleListDisplay, reservation pricing hook, pagination in UserReservationsTable, featured vehicles hook
+  - Prevents unnecessary re-renders in list-rendered components and expensive calculations
+
 ### Planned
 - Copy & content review across all translations
-- React performance optimization (Vercel best practices)
+- React performance optimization (dynamic imports, memoization, lazy state init)
 
 ## [2.3.0] - 2026-01-20
 
