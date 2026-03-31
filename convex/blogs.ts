@@ -307,6 +307,7 @@ export const getById = query({
       readingTime_ro: v.optional(v.number()),
       readingTime_en: v.optional(v.number()),
       views: v.optional(v.number()),
+      isFeatured: v.optional(v.boolean()),
       // Legacy fields (present before migration)
       title: v.optional(v.string()),
       slug: v.optional(v.string()),
