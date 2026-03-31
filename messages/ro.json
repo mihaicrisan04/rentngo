@@ -1,7 +1,7 @@
 {
   "homepage": {
-    "title": "Masini de Inchiriat Cluj-Napoca",
-    "subtitle": "Explorează Cluj-Napoca cu gama noastră largă de masini de inchiriat. Rezervare ușoară, prețuri competitive, servicii de încredere.",
+    "title": "Mașini de Închiriat Cluj-Napoca",
+    "subtitle": "Explorează Cluj-Napoca cu gama noastră largă de mașini de închiriat. Rezervare ușoară, prețuri competitive, servicii de încredere.",
     "viewAllCars": "Vezi Toate Mașinile",
     "features": {
       "title": "De Ce Să Închiriezi Cu Noi"
@@ -31,9 +31,9 @@
     }
   },
   "aboutPage": {
-    "title": "Despre Rent'n Go - Masini de Inchiriat Cluj-Napoca",
+    "title": "Despre Rent'n Go - Mașini de Închiriat Cluj-Napoca",
     "heroTitle": "Călătoria Ta, Pasiunea Noastră",
-    "heroDescription": "Din 2020, ne-am dedicat furnizării de experiențe excepționale cu masini de inchiriat în Cluj-Napoca. Combinând vehicule de calitate cu servicii pentru clienți de excepție.",
+    "heroDescription": "Din 2020, ne-am dedicat furnizării de experiențe excepționale cu mașini de închiriat în Cluj-Napoca. Combinând vehicule de calitate cu servicii pentru clienți de excepție.",
     "stats": {
       "vehicles": "Vehicule",
       "customers": "Clienți Mulțumiți",
@@ -90,7 +90,7 @@
     }
   },
   "contactPage": {
-    "title": "Contact - Masini de Inchiriat Cluj-Napoca",
+    "title": "Contact - Mașini de Închiriat Cluj-Napoca",
     "subtitle": "Gata să închiriezi o mașină în Cluj-Napoca? Suntem aici să-ți facem experiența lină și memorabilă.",
     "meetTheMan": "Cunoaște Omul",
     "visionaryTitle": "Vizionarul din Spatele Volanului",
@@ -547,8 +547,8 @@
     "selectDate": "Selectează data",
     "selectTime": "Selectează ora",
     "at": "la",
-    "searchCars": "Caută Masini de Inchiriat",
-    "searchingCars": "Se caută masini de inchiriat...",
+    "searchCars": "Caută Mașini de Închiriat",
+    "searchingCars": "Se caută mașini de închiriat...",
     "returnDateAfterPickup": "Data de returnare trebuie să fie după sau aceeași cu data de ridicare.",
     "selectDateFirst": "Selectează mai întâi o dată"
   },
@@ -727,8 +727,8 @@
     "selectReturnLocation": "Selectează locația de returnare"
   },
   "vehicleSearchForm": {
-    "title": "Masini de Inchiriat Cluj-Napoca - Găsește-ți Vehiculul Perfect",
-    "subtitle": "Explorează Cluj-Napoca cu gama noastră largă de masini de inchiriat. Rezervare ușoară, prețuri competitive, servicii de încredere.",
+    "title": "Mașini de Închiriat Cluj-Napoca - Găsește-ți Vehiculul Perfect",
+    "subtitle": "Explorează Cluj-Napoca cu gama noastră largă de mașini de închiriat. Rezervare ușoară, prețuri competitive, servicii de încredere.",
     "pickupLocation": "Locația de Ridicare",
     "pickupDateTime": "Data și Ora de Ridicare",
     "returnLocation": "Locația de Returnare",
