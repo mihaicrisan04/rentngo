@@ -17,17 +17,18 @@ export async function generateMetadata({
     locale,
     path: "/cars",
     title: {
-      ro: "Masini de Inchiriat Cluj-Napoca",
+      ro: "Mașini de Închiriat Cluj-Napoca",
       en: "Car Rentals Cluj-Napoca",
     },
     description: {
-      ro: "Găsește masini de inchiriat Cluj-Napoca cu Rent'n Go. Flotă largă de vehicule moderne, prețuri competitive, rezervare online rapidă. Car rentals Cluj-Napoca disponibile 24/7.",
+      ro: "Găsește mașini de închiriat Cluj-Napoca cu Rent'n Go. Flotă largă de vehicule moderne, prețuri competitive, rezervare online rapidă. Car rentals Cluj-Napoca disponibile 24/7.",
       en: "Find car rentals in Cluj-Napoca with Rent'n Go. Wide fleet of modern vehicles, competitive prices, quick online booking. Car rentals Cluj-Napoca available 24/7.",
     },
     keywords: {
-      ro: "masini de inchiriat cluj-napoca, car rentals cluj, închiriere auto cluj, rent car cluj-napoca, vehicule închiriere cluj",
+      ro: "mașini de închiriat cluj-napoca, car rentals cluj, închiriere auto cluj, rent car cluj-napoca, vehicule închiriere cluj",
       en: "car rentals cluj-napoca, rent car cluj, car hire cluj, vehicle rental cluj-napoca, cars for rent cluj",
     },
+    image: { url: "https://rngo.ro/og-cars.png", width: 1376, height: 768, alt: "Rent'n Go - Mașini de Închiriat Cluj-Napoca" },
   });
 }
 
