@@ -1,35 +1,45 @@
 "use client";
 
-import { useState } from "react";
 import { useQuery } from "convex/react";
+import { usePaginatedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { BlogCard } from "@/components/features/blog";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ChevronDown } from "lucide-react";
+import { ArrowRight, ChevronDown, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { BlogListItem } from "@/types/blog";
 import Link from "next/link";
 
-const POSTS_PER_PAGE = 9;
+const POSTS_PER_PAGE = 30;
 
 interface BlogListClientProps {
-  initialBlogs: BlogListItem[];
+  featuredBlog: BlogListItem | null;
   locale: string;
 }
 
-export function BlogListClient({ initialBlogs, locale }: BlogListClientProps) {
+export function BlogListClient({ featuredBlog: initialFeatured, locale }: BlogListClientProps) {
   const t = useTranslations("blogPage");
-  const [visibleCount, setVisibleCount] = useState(POSTS_PER_PAGE);
 
-  const liveBlogs = useQuery(api.blogs.getAll, {
+  // Live query for featured blog (SSR data as initial, then live)
+  const liveFeatured = useQuery(api.blogs.getFeatured, {
     locale: locale as "ro" | "en",
   });
-  const blogs = liveBlogs !== undefined ? liveBlogs : initialBlogs;
+  const featuredBlog = liveFeatured !== undefined ? liveFeatured : initialFeatured;
 
-  const featuredBlog = blogs.length > 0 ? blogs[0] : null;
-  const restBlogs = blogs.length > 1 ? blogs.slice(1) : [];
-  const visibleBlogs = restBlogs.slice(0, visibleCount);
-  const hasMore = visibleCount < restBlogs.length;
+  // Paginated query for the rest of the blogs
+  const {
+    results: blogs,
+    status,
+    loadMore,
+  } = usePaginatedQuery(
+    api.blogs.getPublished,
+    { locale: locale as "ro" | "en" },
+    { initialNumItems: POSTS_PER_PAGE },
+  );
+
+  const isLoading = status === "LoadingFirstPage";
+  const hasMore = status === "CanLoadMore";
+  const isLoadingMore = status === "LoadingMore";
 
   return (
     <div className="flex-1">
@@ -52,7 +62,7 @@ export function BlogListClient({ initialBlogs, locale }: BlogListClientProps) {
       </section>
 
       <div className="container mx-auto px-4 max-w-6xl">
-        {blogs.length === 0 ? (
+        {!featuredBlog && blogs.length === 0 && !isLoading ? (
           <div className="text-center py-20">
             <div className="text-6xl mb-4">📝</div>
             <h2 className="text-2xl font-bold mb-2">{t("noBlogsFound")}</h2>
@@ -74,7 +84,7 @@ export function BlogListClient({ initialBlogs, locale }: BlogListClientProps) {
             )}
 
             {/* Rest of Posts — paginated */}
-            {restBlogs.length > 0 && (
+            {(blogs.length > 0 || isLoading) && (
               <section>
                 <div className="section-divider mb-10"></div>
                 <div className="flex items-center justify-between mb-8">
@@ -84,28 +94,44 @@ export function BlogListClient({ initialBlogs, locale }: BlogListClientProps) {
                       {t("latestPosts")}
                     </h2>
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    {restBlogs.length} {restBlogs.length === 1 ? "post" : "posts"}
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {visibleBlogs.map((blog) => (
-                    <BlogCard key={blog._id} blog={blog} locale={locale} />
-                  ))}
                 </div>
 
-                {hasMore && (
-                  <div className="flex justify-center mt-10">
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="rounded-xl px-8"
-                      onClick={() => setVisibleCount((prev) => prev + POSTS_PER_PAGE)}
-                    >
-                      {t("loadMore")}
-                      <ChevronDown className="ml-2 h-4 w-4" />
-                    </Button>
+                {isLoading ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {blogs.map((blog) => (
+                        <BlogCard key={blog._id} blog={blog} locale={locale} />
+                      ))}
+                    </div>
+
+                    {(hasMore || isLoadingMore) && (
+                      <div className="flex justify-center mt-10">
+                        <Button
+                          variant="outline"
+                          size="lg"
+                          className="rounded-xl px-8"
+                          onClick={() => loadMore(POSTS_PER_PAGE)}
+                          disabled={isLoadingMore}
+                        >
+                          {isLoadingMore ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              {t("loadMore")}
+                            </>
+                          ) : (
+                            <>
+                              {t("loadMore")}
+                              <ChevronDown className="ml-2 h-4 w-4" />
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 )}
               </section>
             )}

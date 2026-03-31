@@ -75,6 +75,7 @@ export interface BlogAdminListItem {
   readingTime_ro?: number;
   readingTime_en?: number;
   views?: number;
+  isFeatured?: boolean;
 }
 
 export interface BlogFormData {

@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import { paginationOptsValidator } from "convex/server";
 import { query, mutation, action } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
 
@@ -56,6 +57,124 @@ export const getAll = query({
   },
 });
 
+// Get the featured blog post (manually selected by admin)
+export const getFeatured = query({
+  args: { locale: localeValidator },
+  returns: v.union(
+    v.object({
+      _id: v.id("blogs"),
+      _creationTime: v.number(),
+      title: v.string(),
+      slug: v.string(),
+      author: v.string(),
+      description: v.string(),
+      coverImage: v.optional(v.id("_storage")),
+      tags: v.optional(v.array(v.string())),
+      publishedAt: v.optional(v.number()),
+      status: v.union(v.literal("draft"), v.literal("published")),
+      readingTime: v.optional(v.number()),
+      views: v.optional(v.number()),
+    }),
+    v.null(),
+  ),
+  handler: async (ctx, args) => {
+    const { locale } = args;
+    const blog = await ctx.db
+      .query("blogs")
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("status"), "published"),
+          q.eq(q.field("isFeatured"), true),
+        ),
+      )
+      .first();
+
+    if (!blog) return null;
+
+    return {
+      _id: blog._id,
+      _creationTime: blog._creationTime,
+      title: (locale === "ro" ? blog.title_ro : blog.title_en) ?? blog.title ?? "",
+      slug: resolveSlug(blog, locale),
+      author: blog.author,
+      description: (locale === "ro" ? blog.description_ro : blog.description_en) ?? blog.description ?? "",
+      coverImage: blog.coverImage,
+      tags: blog.tags,
+      publishedAt: blog.publishedAt,
+      status: blog.status,
+      readingTime: (locale === "ro" ? blog.readingTime_ro : blog.readingTime_en) ?? blog.readingTime,
+      views: blog.views,
+    };
+  },
+});
+
+// Get published blogs with server-side pagination (excludes featured)
+export const getPublished = query({
+  args: { locale: localeValidator, paginationOpts: paginationOptsValidator },
+  handler: async (ctx, args) => {
+    const { locale } = args;
+    const result = await ctx.db
+      .query("blogs")
+      .filter((q) =>
+        q.and(
+          q.eq(q.field("status"), "published"),
+          q.neq(q.field("isFeatured"), true),
+        ),
+      )
+      .order("desc")
+      .paginate(args.paginationOpts);
+
+    return {
+      ...result,
+      page: result.page.map((blog) => ({
+        _id: blog._id,
+        _creationTime: blog._creationTime,
+        title: (locale === "ro" ? blog.title_ro : blog.title_en) ?? blog.title ?? "",
+        slug: resolveSlug(blog, locale),
+        author: blog.author,
+        description: (locale === "ro" ? blog.description_ro : blog.description_en) ?? blog.description ?? "",
+        coverImage: blog.coverImage,
+        tags: blog.tags,
+        publishedAt: blog.publishedAt,
+        status: blog.status as "draft" | "published",
+        readingTime: (locale === "ro" ? blog.readingTime_ro : blog.readingTime_en) ?? blog.readingTime,
+        views: blog.views,
+      })),
+    };
+  },
+});
+
+// Set a blog as featured (unsets any previous featured blog)
+export const setFeatured = mutation({
+  args: { id: v.id("blogs") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // Unset any currently featured blog
+    const currentFeatured = await ctx.db
+      .query("blogs")
+      .filter((q) => q.eq(q.field("isFeatured"), true))
+      .collect();
+
+    for (const blog of currentFeatured) {
+      if (blog._id !== args.id) {
+        await ctx.db.patch(blog._id, { isFeatured: false });
+      }
+    }
+
+    // Set the new featured blog
+    await ctx.db.patch(args.id, { isFeatured: true });
+  },
+});
+
+// Unset featured status
+export const unsetFeatured = mutation({
+  args: { id: v.id("blogs") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, { isFeatured: false });
+  },
+});
+
 export const getAllAdmin = query({
   args: {},
   returns: v.array(
@@ -76,6 +195,7 @@ export const getAllAdmin = query({
       readingTime_ro: v.optional(v.number()),
       readingTime_en: v.optional(v.number()),
       views: v.optional(v.number()),
+      isFeatured: v.optional(v.boolean()),
     }),
   ),
   handler: async (ctx) => {
@@ -98,6 +218,7 @@ export const getAllAdmin = query({
       readingTime_ro: blog.readingTime_ro ?? blog.readingTime,
       readingTime_en: blog.readingTime_en ?? blog.readingTime,
       views: blog.views,
+      isFeatured: blog.isFeatured,
     }));
   },
 });

@@ -334,6 +334,7 @@ export default defineSchema({
     readingTime_ro: v.optional(v.number()), // Estimated reading time (Romanian)
     readingTime_en: v.optional(v.number()), // Estimated reading time (English)
     views: v.optional(v.number()), // View count
+    isFeatured: v.optional(v.boolean()), // Featured post (only one at a time)
   })
     .index("by_slug", ["slug"])
     .index("by_slug_ro", ["slug_ro"])

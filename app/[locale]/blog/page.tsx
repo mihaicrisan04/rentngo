@@ -25,10 +25,16 @@ export async function generateMetadata({
 
 export default async function BlogPage({ params }: BlogPageProps) {
   const { locale } = await params;
+  const typedLocale = locale as "ro" | "en";
 
-  const preloadedBlogs = await fetchQuery(api.blogs.getAll, {
-    locale: locale as "ro" | "en",
+  const featuredBlog = await fetchQuery(api.blogs.getFeatured, {
+    locale: typedLocale,
   });
 
-  return <BlogListClient initialBlogs={preloadedBlogs} locale={locale} />;
+  return (
+    <BlogListClient
+      featuredBlog={featuredBlog}
+      locale={locale}
+    />
+  );
 }
