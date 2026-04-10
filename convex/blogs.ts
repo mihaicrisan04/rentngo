@@ -231,6 +231,7 @@ export const getBySlug = query({
       _creationTime: v.number(),
       title: v.string(),
       slug: v.string(),
+      alternateSlug: v.string(),
       author: v.string(),
       description: v.string(),
       content: v.string(),
@@ -265,11 +266,14 @@ export const getBySlug = query({
 
     if (!blog) return null;
 
+    const otherLocale = locale === "ro" ? "en" : "ro";
+
     return {
       _id: blog._id,
       _creationTime: blog._creationTime,
       title: (locale === "ro" ? blog.title_ro : blog.title_en) ?? blog.title ?? "",
       slug: resolveSlug(blog, locale),
+      alternateSlug: resolveSlug(blog, otherLocale),
       author: blog.author,
       description: (locale === "ro" ? blog.description_ro : blog.description_en) ?? blog.description ?? "",
       content: (locale === "ro" ? blog.content_ro : blog.content_en) ?? blog.content ?? "",
@@ -515,6 +519,60 @@ export const getImageUrl = query({
   returns: v.union(v.string(), v.null()),
   handler: async (ctx, args) => {
     return await ctx.storage.getUrl(args.imageId);
+  },
+});
+
+// Get the alternate locale slug for a blog (used by language switcher)
+export const getAlternateSlug = query({
+  args: { slug: v.string(), locale: localeValidator },
+  returns: v.union(v.string(), v.null()),
+  handler: async (ctx, args) => {
+    const { slug, locale } = args;
+
+    const indexName = locale === "ro" ? "by_slug_ro" : "by_slug_en";
+    const slugField = locale === "ro" ? "slug_ro" : "slug_en";
+    let blog = await ctx.db
+      .query("blogs")
+      .withIndex(indexName as any, (q: any) => q.eq(slugField, slug))
+      .first();
+
+    if (!blog) {
+      blog = await ctx.db
+        .query("blogs")
+        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .first();
+    }
+
+    if (!blog) return null;
+
+    const otherLocale = locale === "ro" ? "en" : "ro";
+    return resolveSlug(blog, otherLocale);
+  },
+});
+
+// Get paired slugs for all published blogs (used by sitemap)
+export const getAlternateSlugs = query({
+  args: {},
+  returns: v.array(
+    v.object({
+      slugRo: v.string(),
+      slugEn: v.string(),
+      publishedAt: v.optional(v.number()),
+      _creationTime: v.number(),
+    }),
+  ),
+  handler: async (ctx) => {
+    const blogs = await ctx.db
+      .query("blogs")
+      .filter((q) => q.eq(q.field("status"), "published"))
+      .collect();
+
+    return blogs.map((blog) => ({
+      slugRo: resolveSlug(blog, "ro"),
+      slugEn: resolveSlug(blog, "en"),
+      publishedAt: blog.publishedAt,
+      _creationTime: blog._creationTime,
+    }));
   },
 });
 

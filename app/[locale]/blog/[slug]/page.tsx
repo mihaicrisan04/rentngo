@@ -33,9 +33,12 @@ export async function generateMetadata({
     ? await fetchQuery(api.blogs.getImageUrl, { imageId: blog.coverImage })
     : null;
 
+  const roSlug = locale === "ro" ? blog.slug : blog.alternateSlug;
+  const enSlug = locale === "en" ? blog.slug : blog.alternateSlug;
+
   return buildMetadata({
     locale,
-    path: `/blog/${slug}`,
+    path: { ro: `/blog/${roSlug}`, en: `/blog/${enSlug}` },
     title: { ro: blog.title, en: blog.title },
     description: { ro: blog.description, en: blog.description },
     type: "article",
