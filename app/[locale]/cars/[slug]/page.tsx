@@ -206,9 +206,11 @@ export async function generateMetadata({
 
 export async function generateStaticParams() {
   const vehicles = await fetchQuery(api.vehicles.getAllVehicles);
-  return vehicles
-    .filter((v) => v.slug)
-    .map((v) => ({ slug: v.slug! }));
+  const slugs = vehicles.filter((v) => v.slug).map((v) => v.slug!);
+  return slugs.flatMap((slug) => [
+    { locale: "ro", slug },
+    { locale: "en", slug },
+  ]);
 }
 
 export default async function CarDetailPage({ params }: PageProps) {
