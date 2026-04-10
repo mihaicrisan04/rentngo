@@ -3,22 +3,42 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useLocale } from 'next-intl'
+import { useQuery } from 'convex/react'
+import { api } from '@/convex/_generated/api'
 
 const languages = {
   ro: { name: 'Română', flag: '🇷🇴' },
   en: { name: 'English', flag: '🇺🇸' }
 }
 
+// Extract blog slug from pathname like /ro/blog/my-slug → my-slug
+function extractBlogSlug(pathname: string): string | null {
+  const match = pathname.match(/^\/[a-z]{2}\/blog\/([^/]+)$/)
+  return match ? match[1] : null
+}
+
 export function LanguageSelector() {
   const router = useRouter()
   const pathname = usePathname()
-  const locale = useLocale()
+  const locale = useLocale() as 'ro' | 'en'
+
+  const blogSlug = extractBlogSlug(pathname)
+  const alternateSlug = useQuery(
+    api.blogs.getAlternateSlug,
+    blogSlug ? { slug: blogSlug, locale } : 'skip',
+  )
 
   const handleLanguageChange = (newLocale: string) => {
     // Remove current locale from pathname if it exists
     const pathnameWithoutLocale = pathname.replace(/^\/[a-z]{2}/, '') || '/'
 
-    // Both Romanian and English will have explicit prefixes
+    // For blog detail pages, swap to the alternate locale slug
+    if (blogSlug && alternateSlug) {
+      router.push(`/${newLocale}/blog/${alternateSlug}`)
+      return
+    }
+
+    // All other pages: same path, different locale prefix
     const newPath = `/${newLocale}${pathnameWithoutLocale}`
 
     router.push(newPath)

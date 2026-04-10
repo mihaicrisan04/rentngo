@@ -16,7 +16,7 @@ interface LocalizedText {
 
 interface MetadataInput {
   locale: string;
-  path: string;
+  path: string | LocalizedText;
   title: LocalizedText;
   description: LocalizedText;
   keywords?: LocalizedText;
@@ -47,7 +47,10 @@ export function buildMetadata({
 }: MetadataInput): Metadata {
   const t = localized(title, locale);
   const d = localized(description, locale);
-  const url = `${BASE_URL}/${locale}${path}`;
+  const currentPath = typeof path === "string" ? path : localized(path, locale);
+  const roPath = typeof path === "string" ? path : path.ro;
+  const enPath = typeof path === "string" ? path : path.en;
+  const url = `${BASE_URL}/${locale}${currentPath}`;
   const ogImage = image ?? DEFAULT_OG_IMAGE;
 
   return {
@@ -62,9 +65,9 @@ export function buildMetadata({
     alternates: {
       canonical: url,
       languages: {
-        "ro-RO": `${BASE_URL}/ro${path}`,
-        "en-US": `${BASE_URL}/en${path}`,
-        "x-default": `${BASE_URL}/ro${path}`,
+        "ro-RO": `${BASE_URL}/ro${roPath}`,
+        "en-US": `${BASE_URL}/en${enPath}`,
+        "x-default": `${BASE_URL}/ro${roPath}`,
       },
     },
     openGraph: {

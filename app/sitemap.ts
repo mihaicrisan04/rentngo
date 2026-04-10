@@ -45,21 +45,44 @@ function createBilingualEntry(
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Fetch dynamic content
-  const [blogs, vehicles] = await Promise.all([
-    fetchQuery(api.blogs.getAll, { locale: "ro" }),
+  const [blogSlugs, vehicles] = await Promise.all([
+    fetchQuery(api.blogs.getAlternateSlugs),
     fetchQuery(api.vehicles.getAllVehicles),
   ]);
 
-  // Generate blog URLs
-  const blogUrls = blogs.flatMap((blog) =>
-    createBilingualEntry(`/blog/${blog.slug}`, {
-      lastModified: blog.publishedAt
-        ? new Date(blog.publishedAt)
-        : new Date(blog._creationTime),
-      changeFrequency: "monthly",
-      priority: 0.8,
-    })
-  );
+  // Generate blog URLs with correct locale-specific slugs
+  const blogUrls = blogSlugs.flatMap((blog) => {
+    const lastModified = blog.publishedAt
+      ? new Date(blog.publishedAt)
+      : new Date(blog._creationTime);
+
+    return [
+      {
+        url: `${BASE_URL}/ro/blog/${blog.slugRo}`,
+        lastModified,
+        changeFrequency: "monthly" as const,
+        priority: 0.8,
+        alternates: {
+          languages: {
+            en: `${BASE_URL}/en/blog/${blog.slugEn}`,
+            ro: `${BASE_URL}/ro/blog/${blog.slugRo}`,
+          },
+        },
+      },
+      {
+        url: `${BASE_URL}/en/blog/${blog.slugEn}`,
+        lastModified,
+        changeFrequency: "monthly" as const,
+        priority: 0.8,
+        alternates: {
+          languages: {
+            en: `${BASE_URL}/en/blog/${blog.slugEn}`,
+            ro: `${BASE_URL}/ro/blog/${blog.slugRo}`,
+          },
+        },
+      },
+    ];
+  });
 
   // Generate vehicle/car detail URLs using slug (falls back to _id for backwards compatibility)
   const vehicleUrls = vehicles.flatMap((vehicle) =>
