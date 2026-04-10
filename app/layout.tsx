@@ -85,7 +85,7 @@ export const metadata: Metadata = {
     apple: "/rentngo-icon.ico",
   },
   alternates: {
-    canonical: "https://rngo.ro",
+    canonical: "https://rngo.ro/ro",
     languages: {
       "ro-RO": "https://rngo.ro/ro",
       "en-US": "https://rngo.ro/en",
