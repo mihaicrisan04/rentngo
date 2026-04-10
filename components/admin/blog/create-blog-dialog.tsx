@@ -585,7 +585,7 @@ export function CreateBlogDialog({
                 </TabsTrigger>
               </TabsList>
 
-              <ScrollArea className="h-[680px] mt-4">
+              <ScrollArea className="h-[680px] max-h-[calc(95vh-14rem)] mt-4">
                 {/* Content tab — locale-specific fields */}
                 <TabsContent value="content" className="px-1 pr-4">
                   <AnimatePresence mode="wait">
@@ -763,13 +763,17 @@ export function CreateBlogDialog({
                               <Badge
                                 key={tag}
                                 variant="secondary"
-                                className="gap-1"
+                                className="gap-1 pr-1"
                               >
                                 {tag}
-                                <X
-                                  className="h-3 w-3 cursor-pointer"
+                                <button
+                                  type="button"
                                   onClick={() => handleRemoveTag(tag)}
-                                />
+                                  className="ml-0.5 rounded-sm hover:bg-muted-foreground/20 p-0.5"
+                                >
+                                  <X className="h-3 w-3" />
+                                  <span className="sr-only">Remove {tag}</span>
+                                </button>
                               </Badge>
                             ))}
                           </div>
