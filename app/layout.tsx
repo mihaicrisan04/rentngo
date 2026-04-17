@@ -80,9 +80,9 @@ export const metadata: Metadata = {
     images: ["/logo.png"],
   },
   icons: {
-    icon: "/rentngo-icon.ico",
-    shortcut: "/rentngo-icon.ico",
-    apple: "/rentngo-icon.ico",
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
   },
   alternates: {
     canonical: "https://rngo.ro/ro",
