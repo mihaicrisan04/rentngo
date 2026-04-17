@@ -1,0 +1,77 @@
+[tools]
+node = "22"
+
+[env]
+_.file = ".env.local"
+_.path = ["node_modules/.bin"]
+
+[tasks.dev]
+alias = "d"
+description = "Start frontend + backend dev servers"
+depends = ["dev:setup"]
+run = "npm-run-all --parallel dev:frontend dev:backend"
+
+[tasks."dev:setup"]
+description = "Push Convex schema once before starting dev servers"
+hide = true
+run = "convex dev --until-success"
+
+[tasks."dev:frontend"]
+description = "Start Next.js dev server"
+hide = true
+run = "next dev --webpack"
+
+[tasks."dev:backend"]
+description = "Start Convex dev server"
+hide = true
+run = "convex dev"
+
+[tasks.build]
+alias = "b"
+description = "Build for production"
+sources = ["app/**/*", "components/**/*", "lib/**/*", "hooks/**/*", "messages/**/*", "public/**/*", "package.json", "tsconfig.json", "next.config.ts", "tailwind.config.ts"]
+outputs = [".next/**/*"]
+run = "next build --webpack"
+
+[tasks.lint]
+alias = "l"
+description = "Run ESLint"
+sources = ["app/**/*", "components/**/*", "lib/**/*", "hooks/**/*", "convex/**/*"]
+run = "eslint ."
+
+[tasks."lint:fix"]
+description = "Run ESLint with auto-fix"
+run = "eslint . --fix"
+
+[tasks.format]
+alias = "f"
+description = "Format code with Prettier"
+run = "prettier --write ."
+
+[tasks."format:check"]
+description = "Check formatting without writing"
+run = "prettier --check ."
+
+[tasks.check]
+alias = "c"
+description = "Run lint + format check + typecheck"
+depends = ["lint", "format:check", "typecheck"]
+
+[tasks.typecheck]
+alias = "tc"
+description = "Run TypeScript type checking"
+sources = ["app/**/*", "components/**/*", "lib/**/*", "hooks/**/*", "convex/**/*", "tsconfig.json"]
+run = "tsc --noEmit"
+
+[tasks."convex:deploy"]
+description = "Deploy Convex backend"
+run = "convex deploy"
+
+[tasks."convex:dashboard"]
+description = "Open Convex dashboard"
+run = "convex dashboard"
+
+[tasks.start]
+alias = "s"
+description = "Start production server"
+run = "next start"
