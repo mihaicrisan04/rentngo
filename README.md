@@ -1,35 +1,33 @@
 # rentngo
 
-![rentngo](rngo-wallpaper.jpeg)
+<!-- screenshot: drag/drop a new image here via the GitHub UI -->
 
-car rental platform for romania. book cars, airport transfers, done.
+car rental + airport transfers, romanian market.
 
-## run it
+## run
 
 ```bash
 npm i
 npm run dev
 ```
 
-that's it. frontend + backend both start.
+frontend + convex backend both start.
 
 ## stack
 
-- next.js 15 (app router)
-- convex (backend, db, realtime)
-- clerk (auth)
-- tailwind + shadcn
-- mapbox (transfers routing)
+- next.js 16 (app router, react 19, react compiler)
+- convex (db, queries, realtime)
+- clerk v7 (auth)
+- tailwind v4 + shadcn
+- next-intl (ro/en)
+- mapbox (transfer routing)
+- resend (emails)
 
 ## features
 
-- vehicle browsing w/ filters
-- tiered pricing (longer rental = cheaper)
+- vehicle browsing with filters and tiered pricing
 - seasonal price multipliers
-- airport transfers
-- admin dashboard
-- i18n (ro/en)
-
----
-
-built in cluj. works on my machine.
+- airport / city transfers, distance-based pricing
+- admin dashboard for vehicles, classes, seasons, blogs, bookings
+- blog with bilingual content
+- email confirmations
