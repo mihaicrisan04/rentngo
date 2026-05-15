@@ -1,6 +1,6 @@
 # rentngo
 
-<!-- screenshot: drag/drop a new image here via the GitHub UI -->
+<img width="1906" height="1303" alt="image" src="https://github.com/user-attachments/assets/eb21ba0f-50e7-4fdf-a63f-87da431cd356" />
 
 car rental + airport transfers, romanian market.
 
