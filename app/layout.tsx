@@ -2,9 +2,9 @@ import "./globals.css";
 import { Plus_Jakarta_Sans, Outfit, Geist_Mono } from "next/font/google";
 import type { Metadata } from "next";
 import { Providers } from "./providers";
-import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import { GoogleTagManager } from "@next/third-parties/google";
 import { headers } from "next/headers";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -103,8 +103,11 @@ export default async function RootLayout({
   const pathname = headersList.get("x-pathname") ?? "";
   const lang = pathname.startsWith("/en") ? "en" : "ro";
 
+  const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
+
   return (
     <html lang={lang} suppressHydrationWarning data-scroll-behavior="smooth">
+      {gtmId && <GoogleTagManager gtmId={gtmId} />}
       <body
         className={`${plusJakarta.variable} ${outfit.variable} ${geistMono.variable} antialiased`}
       >
@@ -113,21 +116,6 @@ export default async function RootLayout({
 
       <Analytics />
       <SpeedInsights />
-
-
-      <Script
-        async
-        src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GOOGLE_ADS_ID}`}
-        strategy="afterInteractive"
-      />
-      <Script id="google-ads-init" strategy="afterInteractive">
-        {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${process.env.NEXT_PUBLIC_GOOGLE_ADS_ID}');
-          `}
-      </Script>
     </html>
   );
 }
