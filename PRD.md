@@ -50,6 +50,7 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | Migrate to proxy.ts | Mar 23 | Renamed middleware.ts → proxy.ts per Next.js 16 convention |
 | View Transitions | Mar 23 | Enabled cross-fade page transitions via React 19.2 View Transitions API |
 | Replace next lint | Mar 23 | Lint script now uses ESLint CLI directly (next lint removed in Next.js 16) |
+| Google Tag Manager | May 19 | GTM via `@next/third-parties` in root layout (`NEXT_PUBLIC_GTM_ID`); direct Google Ads gtag removed — now managed inside GTM |
 
 ---
 

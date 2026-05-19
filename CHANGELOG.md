@@ -5,6 +5,10 @@ All notable changes to RentNGo are documented here.
 ## [Unreleased]
 
 ### Added
+- **Google Tag Manager**: wired in root layout via `@next/third-parties/google` `GoogleTagManager`, configured by `NEXT_PUBLIC_GTM_ID`
+  - Only renders when env var is set
+  - Direct Google Ads gtag removed from `app/layout.tsx` — Ads conversions are now configured as a tag inside the GTM container (`NEXT_PUBLIC_GOOGLE_ADS_ID` no longer used by app code)
+
 - **Bilingual blog support**: blogs now have separate Romanian and English content
   - Schema: `title_ro/en`, `description_ro/en`, `content_ro/en`, `readingTime_ro/en`
   - Public queries accept `locale` arg, return locale-resolved fields
