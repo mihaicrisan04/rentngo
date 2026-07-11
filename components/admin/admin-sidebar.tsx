@@ -57,11 +57,6 @@ const navItems = [
     url: "/admin/blogs",
     icon: NotepadText,
   }
-  // {
-  //   title: "Settings",
-  //   url: "/admin/settings",
-  //   icon: Settings2,
-  // },
 ]
 
 export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
