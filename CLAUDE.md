@@ -16,6 +16,39 @@ When making changes to the codebase:
 - No detailed implementation specs - those belong in code comments or separate docs
 - Focus on: what was done, what's planned, current status
 
+## Git & Release Conventions
+
+Releases are automated with **release-please** (config in `release-please-config.json`,
+version tracked in `.release-please-manifest.json`). The version history on GitHub
+(tags + Releases) is generated from commit messages, so commit/PR hygiene is what makes
+it work — treat the rules below as required, not optional.
+
+**Conventional Commits — always.** Every commit and PR title MUST follow
+[Conventional Commits](https://www.conventionalcommits.org/), because release-please
+derives the version bump and CHANGELOG from them:
+- `feat: ...` → minor bump (lands under **Added**)
+- `fix: ...` → patch bump (lands under **Fixed**)
+- `perf:` → Performance · `refactor:` → Changed
+- `feat!: ...` or a `BREAKING CHANGE:` footer → major bump
+- `chore:` / `ci:` / `build:` / `docs:` / `test:` / `style:` → no release (hidden from CHANGELOG)
+- A commit with none of these prefixes is invisible to release-please and silently
+  dropped from the changelog — never use freeform commit subjects.
+
+**Branch & merge flow:**
+- Feature branches → `develop` → `main`. Releases are cut from `main` only.
+- PRs are **squash-merged**, and the **PR title is the Conventional Commit** that ends up
+  in history. Write the PR title accordingly (e.g. `feat: bilingual blog support`).
+- Never commit or push directly to `main` or `develop` — always via PR.
+
+**Do NOT edit by hand** (release-please owns them): version in `package.json`,
+`.release-please-manifest.json`, and the auto-generated version sections of
+`CHANGELOG.md`. To ship a release, merge the `chore(release): x.y.z` PR that
+release-please opens on `main`. Manual changelog notes (if any) go under `[Unreleased]`.
+
+**Before opening a PR**, make sure the CI gate passes — `npx tsc --noEmit` must be clean
+(the `.github/workflows/ci.yml` typecheck job blocks merge). `npm run lint` is not yet a
+gate (pre-existing errors tracked in `prd.md`), but don't add new lint errors.
+
 ## Project Overview
 
 RentNGo is a car rental platform with VIP transfer services for the Romanian market. Built with Next.js 16, Convex, and Clerk v7 authentication. Supports Romanian (default) and English.
