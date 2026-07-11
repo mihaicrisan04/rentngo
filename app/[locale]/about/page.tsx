@@ -18,7 +18,7 @@ import {
   Star,
   ArrowRight,
 } from "lucide-react";
-import { Variants } from "framer-motion";
+import { Variants } from "motion/react";
 import { useLocale, useTranslations } from "next-intl";
 
 const sectionAnimationVariants: {
