@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { getCurrentUser, getCurrentUserOrThrow, requireAdmin } from "./users";
 
 const transferStatusValidator = v.union(
   v.literal("pending"),
@@ -162,6 +163,23 @@ export const getTransferById = query({
   },
   handler: async (ctx, args) => {
     const transfer = await ctx.db.get(args.transferId);
+    if (!transfer) return null;
+
+    // Guest bookings (no userId) stay readable so the public confirmation
+    // page keeps working right after booking. Transfers linked to a user
+    // are only visible to that user or an admin.
+    if (!transfer.userId) {
+      return transfer;
+    }
+
+    const user = await getCurrentUser(ctx);
+    if (!user) {
+      throw new Error("Authentication required to view this transfer.");
+    }
+    if (user.role !== "admin" && transfer.userId !== user._id) {
+      throw new Error("User not authorized to view this transfer.");
+    }
+
     return transfer;
   },
 });
@@ -197,6 +215,8 @@ export const getTransfersByVehicle = query({
     vehicleId: v.id("vehicles"),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const transfers = await ctx.db
       .query("transfers")
       .withIndex("by_vehicle", (q) => q.eq("vehicleId", args.vehicleId))
@@ -208,19 +228,7 @@ export const getTransfersByVehicle = query({
 export const getAllTransfers = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      return [];
-    }
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-
-    if (!user || user.role !== "admin") {
-      return [];
-    }
+    await requireAdmin(ctx);
 
     const transfers = await ctx.db.query("transfers").collect();
     return transfers.sort((a, b) => b.pickupDate - a.pickupDate);
@@ -233,19 +241,7 @@ export const updateTransferStatus = mutation({
     newStatus: transferStatusValidator,
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-
-    if (!user || user.role !== "admin") {
-      throw new Error("Not authorized");
-    }
+    await requireAdmin(ctx);
 
     const transfer = await ctx.db.get(args.transferId);
     if (!transfer) {
@@ -285,19 +281,7 @@ export const updateTransferDetails = mutation({
     status: v.optional(transferStatusValidator),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-
-    if (!user || user.role !== "admin") {
-      throw new Error("Not authorized");
-    }
+    await requireAdmin(ctx);
 
     const { transferId, ...updates } = args;
 
@@ -326,14 +310,16 @@ export const cancelTransfer = mutation({
     transferId: v.id("transfers"),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+    const user = await getCurrentUserOrThrow(ctx);
 
     const transfer = await ctx.db.get(args.transferId);
     if (!transfer) {
       throw new Error("Transfer not found");
+    }
+
+    // Only the owner of the transfer or an admin may cancel it
+    if (user.role !== "admin" && transfer.userId !== user._id) {
+      throw new Error("User not authorized to cancel this transfer.");
     }
 
     if (transfer.status === "completed") {
@@ -355,19 +341,7 @@ export const deleteTransferPermanently = mutation({
     transferId: v.id("transfers"),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-
-    if (!user || user.role !== "admin") {
-      throw new Error("Not authorized");
-    }
+    await requireAdmin(ctx);
 
     const transfer = await ctx.db.get(args.transferId);
     if (!transfer) {
@@ -391,33 +365,7 @@ export const getTransferStats = query({
     revenueGrowth: v.number(),
   }),
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      return {
-        totalTransfers: 0,
-        activeTransfers: 0,
-        pendingConfirmations: 0,
-        currentMonthRevenue: 0,
-        transferGrowth: 0,
-        revenueGrowth: 0,
-      };
-    }
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-
-    if (!user || user.role !== "admin") {
-      return {
-        totalTransfers: 0,
-        activeTransfers: 0,
-        pendingConfirmations: 0,
-        currentMonthRevenue: 0,
-        transferGrowth: 0,
-        revenueGrowth: 0,
-      };
-    }
+    await requireAdmin(ctx);
 
     const allTransfers = await ctx.db.query("transfers").collect();
 
@@ -494,19 +442,7 @@ export const getMonthlyTransferChartData = query({
     }),
   ),
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      return [];
-    }
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-
-    if (!user || user.role !== "admin") {
-      return [];
-    }
+    await requireAdmin(ctx);
 
     const allTransfers = await ctx.db.query("transfers").collect();
 

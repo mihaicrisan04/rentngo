@@ -1,10 +1,21 @@
 import { Resend } from 'resend';
 import { NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
     try {
+        // Only authenticated admins may send emails (role from Clerk publicMetadata,
+        // same source of truth as proxy.ts)
+        const { userId, sessionClaims } = await auth();
+        if (!userId) {
+            return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+        }
+        if (sessionClaims?.metadata?.role !== 'admin') {
+            return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
+        }
+
         const { to, subject, message, emailType, reservationData } = await request.json();
 
         // Validate required fields

@@ -1,7 +1,8 @@
 import { v } from "convex/values";
 import { query, mutation, action, internalMutation } from "./_generated/server";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { paginationOptsValidator } from "convex/server";
+import { requireAdmin } from "./users";
 
 // Pricing tier validator
 const pricingTierValidator = v.object({
@@ -184,6 +185,8 @@ export const create = mutation({
     slug: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     // Validate slug uniqueness if provided
     if (args.slug) {
       const existing = await ctx.db
@@ -260,6 +263,8 @@ export const update = mutation({
     slug: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { id, ...updates } = args;
 
     // Validate slug uniqueness if provided and changed
@@ -281,6 +286,8 @@ export const update = mutation({
 export const remove = mutation({
   args: { id: v.id("vehicles") },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     // First, get the vehicle to check for images
     const vehicle = await ctx.db.get(args.id);
     if (!vehicle) {
@@ -308,6 +315,8 @@ export const uploadImages = action({
     insertAtIndex: v.optional(v.number()), // Optional: where to insert the images in the order
   },
   handler: async (ctx, args) => {
+    await ctx.runQuery(internal.users.assertAdmin, {});
+
     const { vehicleId, images, insertAtIndex } = args;
 
     // Get the current vehicle
@@ -360,6 +369,8 @@ export const reorderImages = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { vehicleId, imageIds } = args;
 
     // Get the current vehicle
@@ -397,6 +408,8 @@ export const removeImage = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { vehicleId, imageId } = args;
 
     // Get the current vehicle
@@ -439,6 +452,8 @@ export const setMainImage = mutation({
     imageId: v.id("_storage"),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { vehicleId, imageId } = args;
 
     // Verify the image exists in the vehicle's images array
@@ -586,6 +601,8 @@ export const reorder = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { updates } = args;
 
     // Update each vehicle with its new classSortIndex

@@ -1,7 +1,9 @@
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
 import { query, mutation, action } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
+import { requireAdmin } from "./users";
 
 const localeValidator = v.union(v.literal("ro"), v.literal("en"));
 
@@ -149,6 +151,8 @@ export const setFeatured = mutation({
   args: { id: v.id("blogs") },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     // Unset any currently featured blog
     const currentFeatured = await ctx.db
       .query("blogs")
@@ -171,6 +175,8 @@ export const unsetFeatured = mutation({
   args: { id: v.id("blogs") },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     await ctx.db.patch(args.id, { isFeatured: false });
   },
 });
@@ -347,6 +353,8 @@ export const create = mutation({
   },
   returns: v.id("blogs"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     // Check both slugs for uniqueness
     const existingRo = await ctx.db
       .query("blogs")
@@ -410,6 +418,8 @@ export const update = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { id, ...updates } = args;
 
     if (updates.slug_ro) {
@@ -440,6 +450,8 @@ export const remove = mutation({
   args: { id: v.id("blogs") },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const blog = await ctx.db.get(args.id);
 
     if (!blog) {
@@ -467,6 +479,8 @@ export const uploadImages = action({
   },
   returns: v.array(v.id("_storage")),
   handler: async (ctx, args) => {
+    await ctx.runQuery(internal.users.assertAdmin, {});
+
     const { images } = args;
 
     const uploadedImageIds: Id<"_storage">[] = [];
@@ -488,6 +502,8 @@ export const removeImage = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { blogId, imageId } = args;
 
     const blog = await ctx.db.get(blogId);

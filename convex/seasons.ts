@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation, internalQuery } from "./_generated/server";
 import { Id } from "./_generated/dataModel";
+import { requireAdmin } from "./users";
 
 // Get all seasons
 export const getAll = query({
@@ -312,6 +313,8 @@ export const create = mutation({
   },
   returns: v.id("seasons"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     return await ctx.db.insert("seasons", {
       name: args.name,
       description: args.description,
@@ -342,6 +345,8 @@ export const update = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { id, ...updates } = args;
 
     // Filter out undefined values
@@ -362,6 +367,8 @@ export const setCurrent = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     // Verify the season exists and is active
     const season = await ctx.db.get(args.seasonId);
     if (!season) {
@@ -393,6 +400,8 @@ export const clearCurrent = mutation({
   args: {},
   returns: v.null(),
   handler: async (ctx) => {
+    await requireAdmin(ctx);
+
     const currentSeason = await ctx.db.query("currentSeason").first();
     if (currentSeason) {
       await ctx.db.delete(currentSeason._id);
@@ -408,6 +417,8 @@ export const deleteSeason = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     // Check if this season is currently active
     const currentSeason = await ctx.db.query("currentSeason").first();
     if (currentSeason && currentSeason.seasonId === args.id) {
