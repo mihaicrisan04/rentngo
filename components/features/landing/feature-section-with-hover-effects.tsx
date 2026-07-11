@@ -12,7 +12,7 @@ import {
   IconAward,
 } from "@tabler/icons-react";
 import { useTranslations } from "next-intl";
-import { motion, useInView } from "framer-motion";
+import { motion, useInView } from "motion/react";
 import { useRef } from "react";
 
 export function FeaturesSectionWithHoverEffects() {
