@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useUser } from "@clerk/nextjs";
+import { SignInButton, useUser } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
 import {
   Card,
@@ -38,12 +38,11 @@ export default function ProfilePage() {
             <div className="text-center space-y-5">
               <p className="text-lg font-medium">{t("pleaseSignIn")}</p>
               <div className="flex justify-center">
-                <Button
-                  className="rounded-xl px-6"
-                  onClick={() => (window.location.href = "/login")}
-                >
-                  {t("signInButton")}
-                </Button>
+                <SignInButton mode="modal">
+                  <Button className="rounded-xl px-6">
+                    {t("signInButton")}
+                  </Button>
+                </SignInButton>
               </div>
             </div>
           </CardContent>

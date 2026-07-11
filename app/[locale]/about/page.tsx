@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AnimatedGroup } from "@/components/ui/animated-group";
@@ -18,7 +19,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Variants } from "framer-motion";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 const sectionAnimationVariants: {
   container: Variants;
@@ -58,6 +59,7 @@ const sectionAnimationVariants: {
 
 const AboutPage = () => {
   const t = useTranslations("aboutPage");
+  const locale = useLocale();
 
   const stats = [
     { icon: Car, label: t("stats.vehicles"), value: "20+" },
@@ -271,10 +273,12 @@ const AboutPage = () => {
                   <Button
                     size="lg"
                     className="bg-primary hover:bg-primary/90 text-primary-foreground group"
-                    onClick={() => (window.location.href = "/contact")}
+                    asChild
                   >
-                    {t("mission.buttonText")}
-                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    <Link href={`/${locale}/contact`}>
+                      {t("mission.buttonText")}
+                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </Link>
                   </Button>
                 </div>
               </AnimatedGroup>
