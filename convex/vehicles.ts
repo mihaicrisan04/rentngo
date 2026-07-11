@@ -1,6 +1,5 @@
 import { v } from "convex/values";
-import { query, mutation, action, internalMutation } from "./_generated/server";
-import { api, internal } from "./_generated/api";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import { requireAdmin } from "./users";
 
@@ -307,29 +306,23 @@ export const remove = mutation({
   },
 });
 
-// Upload vehicle images
-export const uploadImages = action({
+// Attach already-uploaded storage IDs to a vehicle (files are uploaded
+// directly to storage via files.generateUploadUrl)
+export const addImages = mutation({
   args: {
     vehicleId: v.id("vehicles"),
-    images: v.array(v.bytes()),
+    imageIds: v.array(v.id("_storage")),
     insertAtIndex: v.optional(v.number()), // Optional: where to insert the images in the order
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
-    await ctx.runQuery(internal.users.assertAdmin, {});
+    await requireAdmin(ctx);
 
-    const { vehicleId, images, insertAtIndex } = args;
+    const { vehicleId, imageIds, insertAtIndex } = args;
 
-    // Get the current vehicle
-    const vehicle = await ctx.runQuery(api.vehicles.getById, { id: vehicleId });
+    const vehicle = await ctx.db.get(vehicleId);
     if (!vehicle) {
       throw new Error("Vehicle not found");
-    }
-
-    // Upload each image to storage
-    const imageIds = [];
-    for (const imageBytes of images) {
-      const imageId = await ctx.storage.store(new Blob([imageBytes]));
-      imageIds.push(imageId);
     }
 
     // Update the vehicle with new image IDs in the specified order
@@ -352,12 +345,9 @@ export const uploadImages = action({
       newImages = [...currentImages, ...imageIds];
     }
 
-    await ctx.runMutation(api.vehicles.update, {
-      id: vehicleId,
-      images: newImages,
-    });
+    await ctx.db.patch(vehicleId, { images: newImages });
 
-    return imageIds;
+    return null;
   },
 });
 

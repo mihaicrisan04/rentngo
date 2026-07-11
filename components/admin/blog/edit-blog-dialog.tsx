@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useMutation, useAction, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { BlogAdminListItem } from "@/types/blog";
@@ -44,6 +44,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { generateSlugFromTitle, calculateReadingTime } from "@/lib/blog-utils";
 import { Badge } from "@/components/ui/badge";
 import { BlogPreview } from "@/components/features/blog/blog-preview";
+import { useImageUpload } from "@/hooks/use-image-upload";
 
 const Tabs = TabsPrimitive.Root;
 const TabsList = TabsPrimitive.List;
@@ -261,7 +262,7 @@ export function EditBlogDialog({
     blog ? { id: blog._id } : "skip",
   );
   const updateBlog = useMutation(api.blogs.update);
-  const uploadImages = useAction(api.blogs.uploadImages);
+  const { uploadFiles } = useImageUpload();
 
   const form = useForm<BlogFormData>({
     resolver: zodResolver(blogSchema),
@@ -357,14 +358,7 @@ export function EditBlogDialog({
     }
 
     try {
-      const imageBuffers = await Promise.all(
-        selectedFiles.map(async (file) => {
-          const arrayBuffer = await file.arrayBuffer();
-          return arrayBuffer;
-        }),
-      );
-
-      const imageIds = await uploadImages({ images: imageBuffers });
+      const imageIds = await uploadFiles(selectedFiles);
       setUploadedImageIds((prev) => [...prev, ...imageIds]);
       setSelectedFiles([]);
       toast.success(`Uploaded ${imageIds.length} image(s)`);
