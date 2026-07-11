@@ -4,8 +4,11 @@ import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { getCurrentUser, getCurrentUserOrThrow, requireAdmin } from "./users";
 import {
+  assertValidReservationExtras,
   calculateMultiplierForDateRange,
   computeReservationPricing,
+  extractLegacyExtras,
+  isKnownLocation,
   msToDateString,
   DEFAULT_ADDITIONAL_50KM_PRICE,
 } from "../lib/pricing";
@@ -88,6 +91,10 @@ export const createReservation = mutation({
     reservationNumber: v.number(),
   }),
   handler: async (ctx, args) => {
+    // Reject malformed extras (negative/fractional counts) before any money
+    // math — v.number() alone puts no lower bound on them
+    assertValidReservationExtras(args.extras);
+
     // Get the current authenticated user (if any) — never trust a
     // client-supplied userId
     const currentUser = await getCurrentUser(ctx);
@@ -95,6 +102,19 @@ export const createReservation = mutation({
     const vehicle = await ctx.db.get(args.vehicleId);
     if (!vehicle) {
       throw new Error("Vehicle not found.");
+    }
+
+    // The picker offers a fixed location list, so an unknown name never
+    // comes from an honest client. It prices as fee 0 rather than failing
+    // the booking (the list may drift between deploys / stored searches);
+    // log it so tampering or drift is visible
+    for (const location of [args.pickupLocation, args.restitutionLocation]) {
+      if (location && !isKnownLocation(location)) {
+        console.warn("[pricing] createReservation unknown location (fee 0)", {
+          location,
+          vehicleId: args.vehicleId,
+        });
+      }
     }
 
     // Resolve the seasonal multiplier from server data (same algorithm the
@@ -147,29 +167,35 @@ export const createReservation = mutation({
           ? pricing.additionalCharges
           : undefined;
     } else {
-      // Legacy client (pre-structured-extras): dates, locations and
-      // protection are fully recomputed above, but physical extras only
-      // arrive as localized prose line items. Recognize the location-fee
-      // entries by amount and treat the remaining line items as extras, so
+      // TRANSITIONAL legacy path — goes away when RNGO-17 ships the
+      // structured `extras` arg. Dates, locations and protection are fully
+      // recomputed above, but pre-RNGO-17 clients send physical extras only
+      // as localized prose line items mixed with the location-fee entries.
+      // extractLegacyExtras strips the fee entries (head-first, matching the
+      // known client's push order) and sums the rest as the extras total, so
       // the stored total still reconciles with its line items. The prose
       // array is persisted as-is so the confirmation page and email keep
       // rendering labels until RNGO-17/19 switch to coded charges.
-      const remainingCharges = [...(args.additionalCharges ?? [])];
-      for (const fee of [pricing.deliveryFee, pricing.returnFee]) {
-        if (fee > 0) {
-          const index = remainingCharges.findIndex((c) => c.amount === fee);
-          if (index !== -1) remainingCharges.splice(index, 1);
-        }
-      }
-      const legacyExtrasTotal = remainingCharges.reduce(
-        (sum, c) => sum + c.amount,
-        0,
+      const legacy = extractLegacyExtras(
+        args.additionalCharges ?? [],
+        pricing.deliveryFee,
+        pricing.returnFee,
       );
+      if (legacy.ambiguousFeeMatch || legacy.droppedInvalidAmounts) {
+        console.warn("[pricing] createReservation ambiguous legacy charges", {
+          ambiguousFeeMatch: legacy.ambiguousFeeMatch,
+          droppedInvalidAmounts: legacy.droppedInvalidAmounts,
+          clientCharges: args.additionalCharges,
+          deliveryFee: pricing.deliveryFee,
+          returnFee: pricing.returnFee,
+          vehicleId: args.vehicleId,
+        });
+      }
       totalPrice =
         pricing.basePrice +
         pricing.protectionCost +
         pricing.totalLocationFees +
-        legacyExtrasTotal;
+        legacy.extrasTotal;
       persistedCharges = args.additionalCharges;
     }
 

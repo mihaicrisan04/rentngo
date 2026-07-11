@@ -121,6 +121,53 @@ describe("computeReservationPricing — full booking scenarios", () => {
     expect(breakdown.totalPrice).toBe(440);
   });
 
+  it("rejects negative or fractional extras (public-mutation input)", () => {
+    // extras arrive through a public Convex mutation as unbounded numbers;
+    // a negative count or km value must never reach the money math
+    const base = {
+      vehicle,
+      startDate: new Date(2026, 6, 10),
+      endDate: new Date(2026, 6, 12),
+      pickupTime: "10:00",
+      restitutionTime: "10:00",
+      pickupLocation: "Aeroport Cluj-Napoca",
+      restitutionLocation: "Aeroport Cluj-Napoca",
+      seasonalMultiplier: 1.0,
+      isSCDWSelected: false,
+    };
+    const extras = {
+      snowChains: false,
+      childSeat1to4: 0,
+      childSeat5to12: 0,
+      extraKilometers: 0,
+    };
+
+    expect(() =>
+      computeReservationPricing({
+        ...base,
+        extras: { ...extras, childSeat1to4: -10 },
+      }),
+    ).toThrow(/childSeat1to4/);
+    expect(() =>
+      computeReservationPricing({
+        ...base,
+        extras: { ...extras, childSeat5to12: 1.5 },
+      }),
+    ).toThrow(/childSeat5to12/);
+    expect(() =>
+      computeReservationPricing({
+        ...base,
+        extras: { ...extras, extraKilometers: -50 },
+      }),
+    ).toThrow(/extraKilometers/);
+    expect(() =>
+      computeReservationPricing({
+        ...base,
+        extras: { ...extras, extraKilometers: NaN },
+      }),
+    ).toThrow(/extraKilometers/);
+  });
+
   it("omits zero-amount extras from the line items", () => {
     // Extras object present but everything zero/false → no extra charges,
     // and 40 extra km don't reach a full 50km package

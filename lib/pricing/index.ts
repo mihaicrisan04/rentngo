@@ -14,3 +14,4 @@ export * from "./scdw";
 export * from "./extras";
 export * from "./transfer";
 export * from "./reservation";
+export * from "./legacy";

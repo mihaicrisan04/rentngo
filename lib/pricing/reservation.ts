@@ -20,6 +20,32 @@ import type {
 } from "./types";
 
 /**
+ * Reject malformed extras before they reach any money math. Counts and
+ * kilometers arrive as unbounded numbers from a public mutation, so a
+ * negative or fractional value must fail loudly instead of producing a
+ * charge nobody intended.
+ */
+export function assertValidReservationExtras(
+  extras: ReservationPricingInput["extras"],
+): void {
+  if (!extras) return;
+  const counts: Array<[string, number]> = [
+    ["childSeat1to4", extras.childSeat1to4],
+    ["childSeat5to12", extras.childSeat5to12],
+  ];
+  for (const [name, value] of counts) {
+    if (!Number.isInteger(value) || value < 0) {
+      throw new Error(`Invalid extras: ${name} must be a non-negative integer (got ${value}).`);
+    }
+  }
+  if (!Number.isFinite(extras.extraKilometers) || extras.extraKilometers < 0) {
+    throw new Error(
+      `Invalid extras: extraKilometers must be a non-negative number (got ${extras.extraKilometers}).`,
+    );
+  }
+}
+
+/**
  * Compute the complete, itemized price of a reservation. This is the
  * canonical money-path calculation: the client uses it for display and the
  * Convex `createReservation` mutation recomputes it with server-fetched data
@@ -38,6 +64,8 @@ import type {
 export function computeReservationPricing(
   input: ReservationPricingInput,
 ): ReservationPricingBreakdown {
+  assertValidReservationExtras(input.extras);
+
   const rentalDays = calculateRentalDays(
     input.startDate,
     input.endDate,

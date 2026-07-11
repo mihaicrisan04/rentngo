@@ -5,7 +5,7 @@ import {
   calculateIncludedKilometers,
   calculateSnowChainsPrice,
 } from "./extras";
-import { getLocationPrice, LOCATION_DATA } from "./locations";
+import { getLocationPrice, isKnownLocation, LOCATION_DATA } from "./locations";
 import { DEFAULT_LOCATION } from "./constants";
 
 describe("location fees", () => {
@@ -21,10 +21,20 @@ describe("location fees", () => {
     expect(LOCATION_DATA.some((l) => l.name === DEFAULT_LOCATION)).toBe(true);
   });
 
-  it("unknown locations cost 0 (exact-name match only)", () => {
+  it("matches names case-insensitively and ignores surrounding whitespace", () => {
+    // A client can't dodge the delivery fee on the authoritative recompute
+    // by re-casing or padding the location name
+    expect(getLocationPrice("cluj-napoca")).toBe(10);
+    expect(getLocationPrice("CLUJ-NAPOCA")).toBe(10);
+    expect(getLocationPrice("  Cluj-Napoca  ")).toBe(10);
+    expect(getLocationPrice("BUCURESTI")).toBe(220);
+    expect(isKnownLocation("cluj-napoca")).toBe(true);
+  });
+
+  it("unknown locations cost 0", () => {
     expect(getLocationPrice("Vienna")).toBe(0);
-    // matching is exact and case-sensitive — documents current behavior
-    expect(getLocationPrice("cluj-napoca")).toBe(0);
+    expect(getLocationPrice("")).toBe(0);
+    expect(isKnownLocation("Vienna")).toBe(false);
   });
 });
 

@@ -25,8 +25,27 @@ export const LOCATION_DATA: LocationWithPrice[] = [
   { name: "Timisoara", price: 200 },
 ];
 
-/** Delivery fee for a location by exact name; unknown locations cost 0. */
+const normalizeLocationName = (name: string): string => name.trim().toLowerCase();
+
+const findLocation = (locationName: string): LocationWithPrice | undefined => {
+  const normalized = normalizeLocationName(locationName);
+  return LOCATION_DATA.find(
+    (loc) => normalizeLocationName(loc.name) === normalized,
+  );
+};
+
+/**
+ * Delivery fee for a location by name (trimmed, case-insensitive so a
+ * client can't dodge the fee on the authoritative recompute by changing
+ * casing); unknown locations cost 0 — the picker offers a fixed list, so an
+ * unknown name never comes from an honest client, and the server logs it
+ * rather than hard-failing the booking (see createReservation).
+ */
 export const getLocationPrice = (locationName: string): number => {
-  const location = LOCATION_DATA.find((loc) => loc.name === locationName);
-  return location ? location.price : 0;
+  return findLocation(locationName)?.price ?? 0;
+};
+
+/** Whether a name matches a known location (trimmed, case-insensitive). */
+export const isKnownLocation = (locationName: string): boolean => {
+  return findLocation(locationName) !== undefined;
 };
