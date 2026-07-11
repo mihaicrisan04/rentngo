@@ -33,3 +33,10 @@ export const TRANSFER_BASE_KM_INCLUDED = 15; // First 15km included in base fare
 export const TRANSFER_DEFAULT_BASE_FARE = 25;
 export const TRANSFER_DEFAULT_MULTIPLIER = 1.0;
 export const TRANSFER_DEFAULT_PRICE_PER_KM = 1.0; // Fallback when no tier matches
+
+/**
+ * Sanity ceiling for a booked transfer distance. Cluj to anywhere in Europe
+ * the service would plausibly drive is well under this; anything above is
+ * garbage or tampered input, not a real trip.
+ */
+export const MAX_TRANSFER_DISTANCE_KM = 3000;

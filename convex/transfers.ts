@@ -2,7 +2,10 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getCurrentUser, getCurrentUserOrThrow, requireAdmin } from "./users";
-import { computeTransferPricing } from "../lib/pricing";
+import {
+  assertValidTransferDistance,
+  computeTransferPricing,
+} from "../lib/pricing";
 
 const transferStatusValidator = v.union(
   v.literal("pending"),
@@ -66,9 +69,15 @@ export const createTransfer = mutation({
     // Derive the user from auth — never trust a client-supplied userId
     const currentUser = await getCurrentUser(ctx);
 
+    // Sanity-check the distance before any fare math. The fare FORMULA is
+    // server-authoritative, but distanceKm itself still comes from the
+    // client's Mapbox route — re-deriving it server-side from the stored
+    // coordinates is tracked as RNGO-30. This clamp only blocks the worst
+    // abuse (negative/non-finite/absurd values setting a bogus fare).
+    assertValidTransferDistance(args.distanceKm);
+
     // Authoritative fare recompute from server data; client-submitted money
-    // fields are never persisted (distanceKm still comes from the client's
-    // Mapbox route — see the transfer-flow geocode bug, tracked separately)
+    // fields are never persisted
     const vehicle = await ctx.db.get(args.vehicleId);
     if (!vehicle) {
       throw new Error("Vehicle not found.");

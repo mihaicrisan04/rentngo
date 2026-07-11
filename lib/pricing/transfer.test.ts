@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { computeTransferPricing } from "./transfer";
+import {
+  assertValidTransferDistance,
+  computeTransferPricing,
+} from "./transfer";
 import type { TransferTierData } from "./types";
 
 // The production default tiers (see transferPricing.seedDefaultTiers):
@@ -10,6 +13,31 @@ const tiers: TransferTierData[] = [
   { minExtraKm: 65, maxExtraKm: 185, pricePerKm: 1.0, isActive: true },
   { minExtraKm: 385, maxExtraKm: undefined, pricePerKm: 0.9, isActive: true },
 ];
+
+/**
+ * Distance sanity clamp for the money path (createTransfer): the fare
+ * FORMULA is server-authoritative, but distanceKm still comes from the
+ * client's Mapbox route (server-side re-derivation tracked as RNGO-30), so
+ * garbage values must be rejected before any fare math.
+ */
+describe("assertValidTransferDistance", () => {
+  it("accepts realistic distances including 0 and the maximum", () => {
+    expect(() => assertValidTransferDistance(0)).not.toThrow();
+    expect(() => assertValidTransferDistance(42.7)).not.toThrow();
+    expect(() => assertValidTransferDistance(3000)).not.toThrow();
+  });
+
+  it("rejects negative and non-finite distances", () => {
+    expect(() => assertValidTransferDistance(-5)).toThrow(/non-negative/);
+    expect(() => assertValidTransferDistance(NaN)).toThrow(/non-negative/);
+    expect(() => assertValidTransferDistance(Infinity)).toThrow(/non-negative/);
+  });
+
+  it("rejects absurdly large distances (over 3000 km)", () => {
+    expect(() => assertValidTransferDistance(3001)).toThrow(/maximum/);
+    expect(() => assertValidTransferDistance(1e9)).toThrow(/maximum/);
+  });
+});
 
 describe("computeTransferPricing", () => {
   it("trips within 15km cost only the base fare", () => {

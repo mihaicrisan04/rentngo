@@ -3,6 +3,7 @@
 // convex/transfers.getTransferVehiclesWithImages.
 
 import {
+  MAX_TRANSFER_DISTANCE_KM,
   TRANSFER_BASE_KM_INCLUDED,
   TRANSFER_DEFAULT_BASE_FARE,
   TRANSFER_DEFAULT_MULTIPLIER,
@@ -11,6 +12,24 @@ import {
 import type { TransferPricingBreakdown, TransferPricingInput } from "./types";
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * Sanity check for a booked transfer distance: reject negative, non-finite
+ * and absurdly large values before they reach the fare math. Used on the
+ * money path (createTransfer); the display queries stay lenient.
+ */
+export function assertValidTransferDistance(distanceKm: number): void {
+  if (!Number.isFinite(distanceKm) || distanceKm < 0) {
+    throw new Error(
+      `Invalid transfer distance: distanceKm must be a non-negative number (got ${distanceKm}).`,
+    );
+  }
+  if (distanceKm > MAX_TRANSFER_DISTANCE_KM) {
+    throw new Error(
+      `Invalid transfer distance: ${distanceKm} km exceeds the ${MAX_TRANSFER_DISTANCE_KM} km maximum.`,
+    );
+  }
+}
 
 /**
  * Compute a transfer fare: the base fare covers the first 15km; extra km are
