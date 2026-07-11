@@ -14,3 +14,23 @@ export const generateUploadUrl = mutation({
     return await ctx.storage.generateUploadUrl();
   },
 });
+
+// Best-effort cleanup for uploads that were never attached to a document
+// (abandoned dialogs, failed sibling uploads, failed entity creation).
+// Callers must not pass IDs that are referenced by a vehicle or blog —
+// use vehicles.removeImage / blogs.removeImage for those.
+export const deleteFiles = mutation({
+  args: { storageIds: v.array(v.id("_storage")) },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    for (const storageId of args.storageIds) {
+      try {
+        await ctx.storage.delete(storageId);
+      } catch {
+        // Already deleted or never finished uploading — nothing to clean up
+      }
+    }
+    return null;
+  },
+});

@@ -45,12 +45,30 @@ export function useImageFiles() {
 // POST per file, so uploads are not subject to function argument size
 // limits. Returns the storage IDs; persisting them (vehicles.addImages,
 // blogs.create/update) is the caller's responsibility.
+//
+// If any file fails, sibling uploads that succeeded are deleted again before
+// throwing, so a retry never leaves orphaned storage objects. `deleteFiles`
+// is the same best-effort cleanup for IDs the caller ends up never attaching
+// to a document (abandoned dialog, failed create).
 export function useImageUpload() {
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
+  const deleteFilesMutation = useMutation(api.files.deleteFiles);
+
+  const deleteFiles = useCallback(
+    async (storageIds: Id<"_storage">[]): Promise<void> => {
+      if (storageIds.length === 0) return;
+      try {
+        await deleteFilesMutation({ storageIds });
+      } catch (error) {
+        console.error("Error cleaning up uploaded files:", error);
+      }
+    },
+    [deleteFilesMutation],
+  );
 
   const uploadFiles = useCallback(
     async (files: File[]): Promise<Id<"_storage">[]> => {
-      return await Promise.all(
+      const results = await Promise.allSettled(
         files.map(async (file) => {
           const uploadUrl = await generateUploadUrl();
           const response = await fetch(uploadUrl, {
@@ -69,9 +87,30 @@ export function useImageUpload() {
           return storageId;
         }),
       );
+
+      const uploadedIds = results
+        .filter(
+          (r): r is PromiseFulfilledResult<Id<"_storage">> =>
+            r.status === "fulfilled",
+        )
+        .map((r) => r.value);
+      const failures = results.filter((r) => r.status === "rejected");
+
+      if (failures.length > 0) {
+        await deleteFiles(uploadedIds);
+        throw new Error(
+          failures
+            .map((f) =>
+              f.reason instanceof Error ? f.reason.message : String(f.reason),
+            )
+            .join("\n"),
+        );
+      }
+
+      return uploadedIds;
     },
-    [generateUploadUrl],
+    [generateUploadUrl, deleteFiles],
   );
 
-  return { uploadFiles };
+  return { uploadFiles, deleteFiles };
 }

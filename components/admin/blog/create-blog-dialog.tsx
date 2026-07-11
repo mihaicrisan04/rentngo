@@ -256,7 +256,7 @@ export function CreateBlogDialog({
   const [tags, setTags] = useState<string[]>([]);
 
   const createBlog = useMutation(api.blogs.create);
-  const { uploadFiles } = useImageUpload();
+  const { uploadFiles, deleteFiles } = useImageUpload();
 
   const form = useForm<BlogFormData>({
     resolver: zodResolver(blogSchema),
@@ -365,7 +365,21 @@ export function CreateBlogDialog({
     if (coverImageId === imageId) {
       setCoverImageId(undefined);
     }
-    toast.success("Image removed from list");
+    // The blog doesn't exist yet, so nothing references this file
+    void deleteFiles([imageId]);
+    toast.success("Image removed");
+  };
+
+  // Closing without creating the blog abandons the uploads — no document
+  // references them, so remove them from storage again
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      void deleteFiles(uploadedImageIds);
+      setUploadedImageIds([]);
+      setCoverImageId(undefined);
+      setSelectedFiles([]);
+    }
+    onOpenChange(nextOpen);
   };
 
   const onSubmit = async (data: BlogFormData) => {
@@ -549,7 +563,7 @@ export function CreateBlogDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-5xl max-h-[95vh]">
         {/* Header with persistent language toggle */}
         <DialogHeader className="flex flex-row items-center justify-between gap-4 pr-10 space-y-0">
@@ -811,7 +825,7 @@ export function CreateBlogDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => handleOpenChange(false)}
               >
                 Cancel
               </Button>

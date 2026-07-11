@@ -184,7 +184,7 @@ export function EditVehicleDialog({
   const setMainImage = useMutation(api.vehicles.setMainImage);
   const reorderImages = useMutation(api.vehicles.reorderImages);
   const removeImage = useMutation(api.vehicles.removeImage);
-  const { uploadFiles } = useImageUpload();
+  const { uploadFiles, deleteFiles } = useImageUpload();
   const vehicleClasses = useQuery(api.vehicleClasses.list, {
     activeOnly: true,
   });
@@ -1105,7 +1105,14 @@ export function EditVehicleDialog({
                     onFilesChange={setNewImageFiles}
                     onUpload={async (files) => {
                       const imageIds = await uploadFiles(files);
-                      await addImages({ vehicleId, imageIds });
+                      try {
+                        await addImages({ vehicleId, imageIds });
+                      } catch (error) {
+                        // Never attached — remove the uploads again so a
+                        // retry doesn't leave orphaned storage objects
+                        void deleteFiles(imageIds);
+                        throw error;
+                      }
                       toast.success(
                         `${imageIds.length} new images uploaded successfully`,
                       );

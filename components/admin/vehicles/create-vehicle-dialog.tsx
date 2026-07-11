@@ -175,7 +175,7 @@ export function CreateVehicleDialog({
   const createVehicle = useMutation(api.vehicles.create);
   const addImages = useMutation(api.vehicles.addImages);
   const setMainImage = useMutation(api.vehicles.setMainImage);
-  const { uploadFiles } = useImageUpload();
+  const { uploadFiles, deleteFiles } = useImageUpload();
   const vehicleClasses = useQuery(api.vehicleClasses.list, {
     activeOnly: true,
   });
@@ -313,26 +313,51 @@ export function CreateVehicleDialog({
         pricingTiers: pricingTiers,
       };
 
-      const vehicleId = await createVehicle(vehicleDataToSubmit);
-
-      // Upload images if any are selected
+      // Upload images before creating the vehicle so a failed upload can't
+      // leave a half-created vehicle behind (uploadFiles cleans up its own
+      // partial results, so retrying the form starts from a clean slate)
       const validFiles = selectedImageFiles.filter((f) => !f.error);
-      if (validFiles.length > 0) {
-        const uploadedImageIds = await uploadFiles(
-          validFiles.map((f) => f.file),
-        );
+      const uploadedImageIds =
+        validFiles.length > 0
+          ? await uploadFiles(validFiles.map((f) => f.file))
+          : [];
 
-        await addImages({
-          vehicleId: vehicleId as Id<"vehicles">,
-          imageIds: uploadedImageIds,
-        });
+      let vehicleId: Id<"vehicles">;
+      try {
+        vehicleId = (await createVehicle(
+          vehicleDataToSubmit,
+        )) as Id<"vehicles">;
+      } catch (error) {
+        // No vehicle to attach them to — remove the uploads again
+        void deleteFiles(uploadedImageIds);
+        throw error;
+      }
 
-        // Set main image (first image)
-        if (uploadedImageIds.length > 0) {
-          await setMainImage({
-            vehicleId: vehicleId as Id<"vehicles">,
-            imageId: uploadedImageIds[0],
-          });
+      if (uploadedImageIds.length > 0) {
+        try {
+          await addImages({ vehicleId, imageIds: uploadedImageIds });
+        } catch (error) {
+          console.error("Error attaching images:", error);
+          void deleteFiles(uploadedImageIds);
+          // The vehicle exists, so resubmitting the form would duplicate it
+          toast.warning(
+            "Vehicle created, but adding its images failed. Add them again via Edit Vehicle.",
+          );
+          onSuccess?.();
+          onOpenChange(false);
+          return;
+        }
+
+        try {
+          await setMainImage({ vehicleId, imageId: uploadedImageIds[0] });
+        } catch (error) {
+          console.error("Error setting main image:", error);
+          toast.warning(
+            "Vehicle created, but setting the main image failed. Set it via Edit Vehicle.",
+          );
+          onSuccess?.();
+          onOpenChange(false);
+          return;
         }
       }
 

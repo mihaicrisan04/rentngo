@@ -262,7 +262,12 @@ export function EditBlogDialog({
     blog ? { id: blog._id } : "skip",
   );
   const updateBlog = useMutation(api.blogs.update);
-  const { uploadFiles } = useImageUpload();
+  const { uploadFiles, deleteFiles } = useImageUpload();
+
+  // Storage IDs uploaded in this dialog session that are not yet persisted
+  // on the blog (uploadedImageIds also holds the blog's existing images, so
+  // only these may be cleaned up when the dialog is abandoned)
+  const [pendingImageIds, setPendingImageIds] = useState<Id<"_storage">[]>([]);
 
   const form = useForm<BlogFormData>({
     resolver: zodResolver(blogSchema),
@@ -360,6 +365,7 @@ export function EditBlogDialog({
     try {
       const imageIds = await uploadFiles(selectedFiles);
       setUploadedImageIds((prev) => [...prev, ...imageIds]);
+      setPendingImageIds((prev) => [...prev, ...imageIds]);
       setSelectedFiles([]);
       toast.success(`Uploaded ${imageIds.length} image(s)`);
     } catch (error) {
@@ -396,7 +402,22 @@ export function EditBlogDialog({
     if (coverImageId === imageId) {
       setCoverImageId(undefined);
     }
+    if (pendingImageIds.includes(imageId)) {
+      // Uploaded this session and never saved — nothing references it
+      void deleteFiles([imageId]);
+      setPendingImageIds((prev) => prev.filter((id) => id !== imageId));
+    }
     toast.success("Image removed from list");
+  };
+
+  // Closing without saving abandons this session's uploads — the blog never
+  // referenced them, so remove them from storage again
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      void deleteFiles(pendingImageIds);
+      setPendingImageIds([]);
+    }
+    onOpenChange(nextOpen);
   };
 
   const onSubmit = async (data: BlogFormData) => {
@@ -429,6 +450,8 @@ export function EditBlogDialog({
       });
 
       toast.success("Blog post updated successfully");
+      // The uploads are now referenced by the blog — nothing left to clean up
+      setPendingImageIds([]);
       onOpenChange(false);
     } catch (error) {
       console.error("Error updating blog:", error);
@@ -583,7 +606,7 @@ export function EditBlogDialog({
   if (!blog) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-5xl max-h-[95vh]">
         {/* Header with persistent language toggle */}
         <DialogHeader className="flex flex-row items-center justify-between gap-4 pr-10 space-y-0">
@@ -845,7 +868,7 @@ export function EditBlogDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => handleOpenChange(false)}
               >
                 Cancel
               </Button>
