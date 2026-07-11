@@ -117,11 +117,26 @@ export default defineSchema({
       flightNumber: v.optional(v.string()), // Format: "XX 1234" (airline code + space + number)
     }),
     promoCode: v.optional(v.string()),
-    // Store any additional charges or fees (delivery fees, extras, etc.)
+    // Store any additional charges or fees (delivery fees, extras, etc.).
+    // New docs carry locale-free `code` + `params` (translated at render
+    // time); legacy docs carry only the localized `description` prose.
     additionalCharges: v.optional(
       v.array(
         v.object({
-          description: v.string(),
+          description: v.optional(v.string()),
+          code: v.optional(
+            v.union(
+              v.literal("pickupLocationFee"),
+              v.literal("returnLocationFee"),
+              v.literal("snowChains"),
+              v.literal("childSeat1to4"),
+              v.literal("childSeat5to12"),
+              v.literal("extraKm"),
+            ),
+          ),
+          params: v.optional(
+            v.record(v.string(), v.union(v.string(), v.number())),
+          ),
           amount: v.number(),
         }),
       ),
@@ -139,13 +154,20 @@ export default defineSchema({
     seasonId: v.optional(v.id("seasons")),
     // Store the multiplier that was applied (for historical accuracy even if season changes)
     seasonalMultiplier: v.optional(v.number()),
+    // Server-computed price breakdown (persisted so confirmation pages and
+    // emails render the values actually charged, not a recompute against
+    // whatever tiers/season are current at read time)
+    pricePerDay: v.optional(v.number()),
+    rentalDays: v.optional(v.number()),
+    basePrice: v.optional(v.number()),
   })
     .index("by_user", ["userId"])
     .index("by_vehicle", ["vehicleId"])
     .index("by_dates", ["startDate", "endDate"])
     .index("by_pickup_location", ["pickupLocation"])
     .index("by_restitution_location", ["restitutionLocation"])
-    .index("by_payment_method", ["paymentMethod"]),
+    .index("by_payment_method", ["paymentMethod"])
+    .index("by_number", ["reservationNumber"]),
 
   // Transfers table - stores VIP transfer bookings
   transfers: defineTable({
@@ -219,7 +241,8 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_vehicle", ["vehicleId"])
     .index("by_pickup_date", ["pickupDate"])
-    .index("by_status", ["status"]),
+    .index("by_status", ["status"])
+    .index("by_number", ["transferNumber"]),
 
   // Promotions table - stores discount codes
   promotions: defineTable({
