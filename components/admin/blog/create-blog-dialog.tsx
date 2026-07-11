@@ -371,8 +371,13 @@ export function CreateBlogDialog({
   };
 
   // Closing without creating the blog abandons the uploads — no document
-  // references them, so remove them from storage again
+  // references them, so remove them from storage again. Every close path
+  // (Cancel, Escape, overlay, X) routes through Radix's onOpenChange, so a
+  // single guard here blocks closing while createBlog is in flight — it may
+  // still persist these IDs, and deleting them would leave the new blog
+  // referencing dead files.
   const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen && form.formState.isSubmitting) return;
     if (!nextOpen) {
       void deleteFiles(uploadedImageIds);
       setUploadedImageIds([]);
@@ -826,6 +831,7 @@ export function CreateBlogDialog({
                 type="button"
                 variant="outline"
                 onClick={() => handleOpenChange(false)}
+                disabled={form.formState.isSubmitting}
               >
                 Cancel
               </Button>

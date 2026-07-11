@@ -420,8 +420,13 @@ export function EditBlogDialog({
 
   // Closing without saving abandons this session's uploads — the blog never
   // referenced them, so remove them from storage again. Removed persisted
-  // images stay: without a save the blog still references them.
+  // images stay: without a save the blog still references them. Every close
+  // path (Cancel, Escape, overlay, X) routes through Radix's onOpenChange,
+  // so a single guard here blocks closing while updateBlog is in flight — it
+  // may still persist the pending IDs, and deleting them would leave the
+  // saved blog referencing dead files.
   const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen && form.formState.isSubmitting) return;
     if (!nextOpen) {
       void deleteFiles(pendingImageIds);
       setPendingImageIds([]);
@@ -892,6 +897,7 @@ export function EditBlogDialog({
                 type="button"
                 variant="outline"
                 onClick={() => handleOpenChange(false)}
+                disabled={form.formState.isSubmitting}
               >
                 Cancel
               </Button>
