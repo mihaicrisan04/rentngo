@@ -60,7 +60,14 @@ export function useImageUpload() {
       try {
         await deleteFilesMutation({ storageIds });
       } catch (error) {
-        console.error("Error cleaning up uploaded files:", error);
+        // Deliberately best-effort: when even this small mutation fails
+        // (network down, expired session) no client-side recovery is more
+        // likely to succeed. Log the IDs so they stay recoverable; lingering
+        // blobs are otherwise a server-side GC concern.
+        console.error(
+          `Error cleaning up uploaded files (storage IDs: ${storageIds.join(", ")}):`,
+          error,
+        );
       }
     },
     [deleteFilesMutation],

@@ -269,6 +269,10 @@ export function EditBlogDialog({
   // only these may be cleaned up when the dialog is abandoned)
   const [pendingImageIds, setPendingImageIds] = useState<Id<"_storage">[]>([]);
 
+  // Persisted images the admin removed from the list this session; their
+  // storage is deleted only after updateBlog drops the references
+  const [removedImageIds, setRemovedImageIds] = useState<Id<"_storage">[]>([]);
+
   const form = useForm<BlogFormData>({
     resolver: zodResolver(blogSchema),
     defaultValues: {
@@ -406,16 +410,22 @@ export function EditBlogDialog({
       // Uploaded this session and never saved — nothing references it
       void deleteFiles([imageId]);
       setPendingImageIds((prev) => prev.filter((id) => id !== imageId));
+    } else {
+      // Persisted on the blog — the reference is only dropped when the admin
+      // saves, so defer the storage deletion until updateBlog succeeds
+      setRemovedImageIds((prev) => [...prev, imageId]);
     }
     toast.success("Image removed from list");
   };
 
   // Closing without saving abandons this session's uploads — the blog never
-  // referenced them, so remove them from storage again
+  // referenced them, so remove them from storage again. Removed persisted
+  // images stay: without a save the blog still references them.
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
       void deleteFiles(pendingImageIds);
       setPendingImageIds([]);
+      setRemovedImageIds([]);
     }
     onOpenChange(nextOpen);
   };
@@ -452,6 +462,19 @@ export function EditBlogDialog({
       toast.success("Blog post updated successfully");
       // The uploads are now referenced by the blog — nothing left to clean up
       setPendingImageIds([]);
+      // The save dropped the removed images from the blog's `images`, so
+      // their storage can go too — except IDs still used inside the markdown
+      // content (admins paste storage IDs there) or still set as the server's
+      // cover (clearing the cover doesn't persist an unset, see coverImage
+      // above), where deleting would break the rendered blog.
+      const deletableIds = removedImageIds.filter(
+        (id) =>
+          id !== fullBlog?.coverImage &&
+          !data.content_ro.includes(id) &&
+          !data.content_en.includes(id),
+      );
+      void deleteFiles(deletableIds);
+      setRemovedImageIds([]);
       onOpenChange(false);
     } catch (error) {
       console.error("Error updating blog:", error);
