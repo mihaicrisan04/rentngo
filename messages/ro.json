@@ -550,7 +550,8 @@
     "searchCars": "Caută Mașini de Închiriat",
     "searchingCars": "Se caută mașini de închiriat...",
     "returnDateAfterPickup": "Data de returnare trebuie să fie după sau aceeași cu data de ridicare.",
-    "selectDateFirst": "Selectează mai întâi o dată"
+    "selectDateFirst": "Selectează mai întâi o dată",
+    "locationRetrieveError": "Nu am putut prelua detaliile locației. Te rugăm să încerci din nou."
   },
   "vehicleCard": {
     "or": "sau",
