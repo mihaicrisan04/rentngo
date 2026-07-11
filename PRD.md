@@ -55,6 +55,7 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | CI Quality Gate | Jun 2 | GitHub Actions runs `tsc --noEmit` on PRs to main/develop. Build verified via Vercel preview |
 | Fix ESLint Config | Jun 2 | `npm run lint` was crashing (FlatCompat + ESLint 9.39); switched to Next 16 native flat-config exports — lint runs again |
 | Fix Broken Image Uploads | Jul 11 | Direct-to-storage uploads via `files.generateUploadUrl` + per-file POST; narrow `vehicles.addImages` persist; deleted bytes-through-args actions; blob-URL leak fix (RNGO-11) |
+| Dead Code Cleanup | Jul 11 | 16 files (~1,290 lines) deleted: vehicle-card fork orphans, lib email stack, dead hooks/libs, admin settings page; dead `searchAvailableVehicles` query, VehicleSearchFilterForm uncontrolled fallback; deps removed: `@clerk/react`, `@googlemaps/google-maps-services-js`, `framer-motion` (consolidated on `motion`) (RNGO-15) |
 
 ---
 
@@ -108,7 +109,7 @@ Full plans in `.claude/plans/` (one file per workstream); tackle order + client 
 | P1 | Server-side pricing engine (`lib/pricing`) + persisted breakdown | `audit-pricing-security.md` |
 | P1 | Email fixes: SCDW, day count, included/extra km | `feature-email-fixes.md` |
 | P1 | Convex perf: counter doc, indexes, pagination, stats | `audit-convex-performance.md` (absorbs "Convex Hardening" section above) |
-| P2 | Reservation page decomposition; admin dialog dedup; dead code; frontend perf; i18n extraction; misc bug batches | `audit-*.md` |
+| P2 | Reservation page decomposition; admin dialog dedup; frontend perf; i18n extraction; misc bug batches | `audit-*.md` |
 | P3 | AI-SEO pages (robots/llms.txt/FAQ/local business) | `feature-ai-seo.md` |
 | P3 | Coupon codes (blocked by pricing engine) | `feature-coupons.md` |
 | P3 | Affiliate program (blocked by coupons engine) | `feature-affiliate-program.md` |
