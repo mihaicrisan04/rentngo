@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { differenceInDays } from "date-fns";
-import { getLocationPrice } from "@/components/shared/search-filters/location-picker";
+import { getLocationPrice } from "@/lib/pricing";
 import { AdditionalFeatures } from "./use-reservation-form";
 import { getBasePricePerDay } from "@/types/vehicle";
 

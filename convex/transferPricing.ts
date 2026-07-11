@@ -1,11 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireAdmin } from "./users";
-
-const BASE_KM_INCLUDED = 15; // First 15km included in base fare
-const DEFAULT_BASE_FARE = 25;
-const DEFAULT_MULTIPLIER = 1.0;
-const DEFAULT_PRICE_PER_KM = 1.0; // Fallback when no tier matches
+import { computeTransferPricing } from "../lib/pricing";
 
 // Query: List all active pricing tiers (sorted by minExtraKm)
 export const listTiers = query({
@@ -222,58 +218,15 @@ export const calculateTransferPrice = query({
     tierPricePerKm: v.number(),
   }),
   handler: async (ctx, args) => {
-    // 1. Get vehicle class for base_fare and multiplier
     const vehicleClass = await ctx.db.get(args.classId);
-    const baseFare = vehicleClass?.transferBaseFare ?? DEFAULT_BASE_FARE;
-    const classMultiplier = vehicleClass?.transferMultiplier ?? DEFAULT_MULTIPLIER;
+    const tiers = await ctx.db.query("transferPricingTiers").collect();
 
-    // 2. Calculate extra km (after first 15km)
-    const extraKm = Math.max(args.distanceKm - BASE_KM_INCLUDED, 0);
-
-    // 3. If no extra km, return base fare only
-    if (extraKm === 0) {
-      const total = args.transferType === "round_trip" ? baseFare * 2 : baseFare;
-      return {
-        baseFare,
-        extraKm: 0,
-        distanceCharge: 0,
-        totalPrice: Math.round(total * 100) / 100,
-        tierPricePerKm: 0,
-      };
-    }
-
-    // 4. Get applicable tier based on extra km
-    const tiers = await ctx.db
-      .query("transferPricingTiers")
-      .collect();
-
-    const activeTiers = tiers.filter((t) => t.isActive);
-
-    // Find the tier that matches the extra km range
-    const tier = activeTiers.find(
-      (t) =>
-        extraKm >= t.minExtraKm &&
-        (t.maxExtraKm === undefined || extraKm < t.maxExtraKm),
-    );
-
-    const tierPricePerKm = tier?.pricePerKm ?? DEFAULT_PRICE_PER_KM;
-
-    // 5. Calculate distance charge: extraKm * tierPrice * classMultiplier
-    const distanceCharge = extraKm * tierPricePerKm * classMultiplier;
-
-    // 6. Calculate total
-    let totalPrice = baseFare + distanceCharge;
-    if (args.transferType === "round_trip") {
-      totalPrice *= 2;
-    }
-
-    return {
-      baseFare,
-      extraKm,
-      distanceCharge: Math.round(distanceCharge * 100) / 100,
-      totalPrice: Math.round(totalPrice * 100) / 100,
-      tierPricePerKm,
-    };
+    return computeTransferPricing({
+      distanceKm: args.distanceKm,
+      transferType: args.transferType,
+      vehicleClass,
+      tiers,
+    });
   },
 });
 
@@ -292,66 +245,18 @@ export const calculateTransferPriceByVehicle = query({
     tierPricePerKm: v.number(),
   }),
   handler: async (ctx, args) => {
-    // 1. Get vehicle and its class
     const vehicle = await ctx.db.get(args.vehicleId);
-    const classId = vehicle?.classId;
+    const vehicleClass = vehicle?.classId
+      ? await ctx.db.get(vehicle.classId)
+      : null;
+    const tiers = await ctx.db.query("transferPricingTiers").collect();
 
-    let baseFare = DEFAULT_BASE_FARE;
-    let classMultiplier = DEFAULT_MULTIPLIER;
-
-    if (classId) {
-      const vehicleClass = await ctx.db.get(classId);
-      baseFare = vehicleClass?.transferBaseFare ?? DEFAULT_BASE_FARE;
-      classMultiplier = vehicleClass?.transferMultiplier ?? DEFAULT_MULTIPLIER;
-    }
-
-    // 2. Calculate extra km (after first 15km)
-    const extraKm = Math.max(args.distanceKm - BASE_KM_INCLUDED, 0);
-
-    // 3. If no extra km, return base fare only
-    if (extraKm === 0) {
-      const total = args.transferType === "round_trip" ? baseFare * 2 : baseFare;
-      return {
-        baseFare,
-        extraKm: 0,
-        distanceCharge: 0,
-        totalPrice: Math.round(total * 100) / 100,
-        tierPricePerKm: 0,
-      };
-    }
-
-    // 4. Get applicable tier based on extra km
-    const tiers = await ctx.db
-      .query("transferPricingTiers")
-      .collect();
-
-    const activeTiers = tiers.filter((t) => t.isActive);
-
-    // Find the tier that matches the extra km range
-    const tier = activeTiers.find(
-      (t) =>
-        extraKm >= t.minExtraKm &&
-        (t.maxExtraKm === undefined || extraKm < t.maxExtraKm),
-    );
-
-    const tierPricePerKm = tier?.pricePerKm ?? DEFAULT_PRICE_PER_KM;
-
-    // 5. Calculate distance charge: extraKm * tierPrice * classMultiplier
-    const distanceCharge = extraKm * tierPricePerKm * classMultiplier;
-
-    // 6. Calculate total
-    let totalPrice = baseFare + distanceCharge;
-    if (args.transferType === "round_trip") {
-      totalPrice *= 2;
-    }
-
-    return {
-      baseFare,
-      extraKm,
-      distanceCharge: Math.round(distanceCharge * 100) / 100,
-      totalPrice: Math.round(totalPrice * 100) / 100,
-      tierPricePerKm,
-    };
+    return computeTransferPricing({
+      distanceKm: args.distanceKm,
+      transferType: args.transferType,
+      vehicleClass,
+      tiers,
+    });
   },
 });
 

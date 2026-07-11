@@ -1,32 +1,9 @@
-/**
- * Client-side season calculation utilities
- * This mirrors the logic from convex/seasons.ts but runs on the client
- * for instant, zero-latency multiplier calculations
- */
+// Season multiplier calculation (moved from lib/season-utils.ts, which
+// mirrored a dead Convex query — this is now the single implementation,
+// used client-side for instant display and server-side for the
+// authoritative recompute).
 
-export interface Season {
-  _id: string;
-  name: string;
-  description?: string;
-  multiplier: number;
-  periods: Array<{
-    startDate: string;
-    endDate: string;
-    description?: string;
-  }>;
-  isActive: boolean;
-}
-
-export interface CurrentSeason {
-  seasonId: string;
-  season: Season;
-}
-
-export interface MultiplierResult {
-  multiplier: number;
-  seasonId?: string;
-  seasonName?: string;
-}
+import type { CurrentSeason, MultiplierResult, Season } from "./types";
 
 // Helper to parse date string "YYYY-MM-DD" to comparable number YYYYMMDD
 function dateToNumber(dateStr: string): number {
@@ -88,8 +65,9 @@ function isDateInPeriod(
 }
 
 /**
- * Calculate the multiplier for a specific date range
- * This is the client-side version of convex/seasons.ts getMultiplierForDateRange
+ * Calculate the seasonal multiplier for a date range: the active season with
+ * the most overlapping rental days wins; otherwise fall back to the current
+ * season, then to 1.0.
  */
 export function calculateMultiplierForDateRange(
   startDateStr: string,
@@ -168,11 +146,28 @@ export function calculateMultiplierForDateRange(
 }
 
 /**
- * Convert Date object to YYYY-MM-DD string
+ * Convert Date object to YYYY-MM-DD string (local timezone — client-side use)
  */
 export function toDateString(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Convert a booking timestamp to its intended YYYY-MM-DD calendar date,
+ * independent of the runtime's timezone (the Convex server runs in UTC).
+ *
+ * Booking timestamps are local midnights from the customer's date picker, so
+ * in UTC they sit within ±12h of a UTC midnight; rounding to the nearest UTC
+ * day recovers the calendar date the customer picked (for any timezone
+ * offset within ±12h — beyond that, e.g. UTC+13, the date can shift by one
+ * day, which only moves season-boundary edge cases).
+ */
+export function msToDateString(ms: number): string {
+  const roundedToUtcMidnight = Math.round(ms / DAY_MS) * DAY_MS;
+  return new Date(roundedToUtcMidnight).toISOString().slice(0, 10);
 }

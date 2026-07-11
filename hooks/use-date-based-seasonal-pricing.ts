@@ -6,7 +6,7 @@ import {
   toDateString,
   type Season,
   type CurrentSeason,
-} from "@/lib/season-utils";
+} from "@/lib/pricing";
 
 export function useDateBasedSeasonalPricing(
   startDate?: Date | null,
