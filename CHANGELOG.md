@@ -2,7 +2,15 @@
 
 All notable changes to RentNGo are documented here.
 
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+From v2.4.0 onward, version sections below the `[Unreleased]` heading are generated
+automatically by [release-please](https://github.com/googleapis/release-please) from
+[Conventional Commits](https://www.conventionalcommits.org/).
+
 ## [Unreleased]
+
+## [2.4.0] - 2026-06-02
 
 ### Added
 - **Google Tag Manager**: wired in root layout via `@next/third-parties/google` `GoogleTagManager`, configured by `NEXT_PUBLIC_GTM_ID`
@@ -47,10 +55,6 @@ All notable changes to RentNGo are documented here.
   - Components wrapped with React.memo(): VehicleCard, TransferVehicleCard, BlogCard, FilterCheckboxItem, VehiclePricingCard, TransferBookingFloatingCard
   - Calculations memoized with useMemo(): pricing tip in VehiclePricingCard, vehicle grouping in VehicleListDisplay, reservation pricing hook, pagination in UserReservationsTable, featured vehicles hook
   - Prevents unnecessary re-renders in list-rendered components and expensive calculations
-
-### Planned
-- Copy & content review across all translations
-- React performance optimization (dynamic imports, memoization, lazy state init)
 
 ## [2.3.0] - 2026-01-20
 

@@ -1,6 +1,6 @@
 # RentNGo - Product Requirements Document
 
-**Last Updated:** March 23, 2026
+**Last Updated:** June 2, 2026
 
 ---
 
@@ -51,6 +51,9 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | View Transitions | Mar 23 | Enabled cross-fade page transitions via React 19.2 View Transitions API |
 | Replace next lint | Mar 23 | Lint script now uses ESLint CLI directly (next lint removed in Next.js 16) |
 | Google Tag Manager | May 19 | GTM via `@next/third-parties` in root layout (`NEXT_PUBLIC_GTM_ID`); direct Google Ads gtag removed — now managed inside GTM |
+| Release Automation | Jun 2 | release-please (Conventional Commits → release PR, tag, GitHub Release). Reconciled `package.json` to 2.4.0 to match CHANGELOG |
+| CI Quality Gate | Jun 2 | GitHub Actions runs `tsc --noEmit` on PRs to main/develop. Build verified via Vercel preview |
+| Fix ESLint Config | Jun 2 | `npm run lint` was crashing (FlatCompat + ESLint 9.39); switched to Next 16 native flat-config exports — lint runs again |
 
 ---
 
@@ -83,6 +86,7 @@ Tasks from a full audit of Convex functions against official guidelines and best
 | Fix `seasons.ts` broken filter | `Object.entries(updates).filter(([value]) => ...)` — destructuring bug, checks key instead of value. Should be `([_, value])` |
 | Replace `v.any()` in blog uploads | `blogs.uploadImages` uses `v.array(v.any())` — should be `v.array(v.bytes())` |
 | Remove `as any` casts | `reservations.ts:83` uses `(r as any).reservationNumber`, `blogs.ts:286` uses `any` for updates object. Use proper types |
+| Add lint to CI gate | Resolve the ~75 pre-existing `npm run lint` errors (mostly `no-explicit-any`, overlaps the `as any` / `v.any()` tasks above), then add a blocking `npm run lint` step to `.github/workflows/ci.yml` |
 
 ---
 
@@ -93,6 +97,23 @@ Tasks from a full audit of Convex functions against official guidelines and best
 | Bilingual Blog Content | Blogs have separate RO/EN title, description, content, readingTime. Public queries accept locale, admin UI has RO/EN tabs. Migration: `npx convex run migrations/bilingualBlogs` |
 
 ---
+
+## Planned Tasks — July 2026 Roadmap
+
+Full plans in `.claude/plans/` (one file per workstream); tackle order + client decisions needed in `.claude/plans/00-priorities.md`. Based on the 103-finding audit in `AUDIT.md` + client feature requests.
+
+| Priority | Task | Plan |
+|----------|------|------|
+| P0 | Security: auth on 28 admin Convex writes, ownership checks, PII queries, email route | `audit-pricing-security.md` |
+| P0 | Fix broken image uploads (Convex upload URLs) | `audit-convex-performance.md` + `audit-admin-dialogs.md` |
+| P1 | Server-side pricing engine (`lib/pricing`) + persisted breakdown | `audit-pricing-security.md` |
+| P1 | Email fixes: SCDW, day count, included/extra km | `feature-email-fixes.md` |
+| P1 | Convex perf: counter doc, indexes, pagination, stats | `audit-convex-performance.md` (absorbs "Convex Hardening" section above) |
+| P2 | Reservation page decomposition; admin dialog dedup; dead code; frontend perf; i18n extraction; misc bug batches | `audit-*.md` |
+| P3 | AI-SEO pages (robots/llms.txt/FAQ/local business) | `feature-ai-seo.md` |
+| P3 | Coupon codes (blocked by pricing engine) | `feature-coupons.md` |
+| P3 | Affiliate program (blocked by coupons engine) | `feature-affiliate-program.md` |
+| P4 | Copy update (waiting on client copy) · Calendar changes (waiting on clarification) | `feature-copy-update.md`, `feature-calendar.md` |
 
 ## Planned Tasks — Other
 
@@ -139,3 +160,4 @@ Tasks from a full audit of Convex functions against official guidelines and best
 | 3.6 | Jan 22 | Reduced getImageUrl calls - imageUrl now included in queries |
 | 4.0 | Mar 23 | Major dependency upgrades + post-upgrade improvements |
 | 4.1 | Mar 23 | Added Convex Hardening phase from full guidelines audit |
+| 4.2 | Jun 2 | Release automation (release-please) + CI typecheck gate + ESLint config fix |
