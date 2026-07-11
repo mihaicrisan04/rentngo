@@ -44,6 +44,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DraggableImageList } from "@/components/ui/draggable-image-list";
 import { ModernImageUpload } from "@/components/ui/modern-image-upload";
+import { useImageFiles, useImageUpload } from "@/hooks/use-image-upload";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { toast } from "sonner";
@@ -179,9 +180,11 @@ export function EditVehicleDialog({
     vehicleId ? { id: vehicleId } : "skip",
   );
   const updateVehicle = useMutation(api.vehicles.update);
+  const addImages = useMutation(api.vehicles.addImages);
   const setMainImage = useMutation(api.vehicles.setMainImage);
   const reorderImages = useMutation(api.vehicles.reorderImages);
   const removeImage = useMutation(api.vehicles.removeImage);
+  const { uploadFiles, deleteFiles } = useImageUpload();
   const vehicleClasses = useQuery(api.vehicleClasses.list, {
     activeOnly: true,
   });
@@ -192,6 +195,11 @@ export function EditVehicleDialog({
   const [mainImageId, setMainImageIdState] = useState<
     Id<"_storage"> | undefined
   >();
+  const {
+    files: newImageFiles,
+    setFiles: setNewImageFiles,
+    clearFiles: clearNewImageFiles,
+  } = useImageFiles();
 
   // Slug validation state
   const [slugToCheck, setSlugToCheck] = useState<string>("");
@@ -299,8 +307,9 @@ export function EditVehicleDialog({
       form.reset();
       setPricingTiers([]);
       setMainImageIdState(undefined);
+      clearNewImageFiles();
     }
-  }, [open, vehicle]);
+  }, [open, vehicle, clearNewImageFiles]);
 
   const handleSetMainImage = async (imageId: Id<"_storage">) => {
     try {
@@ -1092,12 +1101,21 @@ export function EditVehicleDialog({
                   )}
 
                   <ModernImageUpload
-                    vehicleId={vehicleId}
-                    onUpload={(imageIds) => {
+                    files={newImageFiles}
+                    onFilesChange={setNewImageFiles}
+                    onUpload={async (files) => {
+                      const imageIds = await uploadFiles(files);
+                      try {
+                        await addImages({ vehicleId, imageIds });
+                      } catch (error) {
+                        // Never attached — remove the uploads again so a
+                        // retry doesn't leave orphaned storage objects
+                        void deleteFiles(imageIds);
+                        throw error;
+                      }
                       toast.success(
                         `${imageIds.length} new images uploaded successfully`,
                       );
-                      // The images are automatically added to the vehicle via the backend
                     }}
                     onError={(error) => {
                       toast.error(error);

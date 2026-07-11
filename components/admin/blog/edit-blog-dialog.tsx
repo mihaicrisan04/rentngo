@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useMutation, useAction, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { BlogAdminListItem } from "@/types/blog";
@@ -44,6 +44,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { generateSlugFromTitle, calculateReadingTime } from "@/lib/blog-utils";
 import { Badge } from "@/components/ui/badge";
 import { BlogPreview } from "@/components/features/blog/blog-preview";
+import { useImageUpload } from "@/hooks/use-image-upload";
 
 const Tabs = TabsPrimitive.Root;
 const TabsList = TabsPrimitive.List;
@@ -261,7 +262,16 @@ export function EditBlogDialog({
     blog ? { id: blog._id } : "skip",
   );
   const updateBlog = useMutation(api.blogs.update);
-  const uploadImages = useAction(api.blogs.uploadImages);
+  const { uploadFiles, deleteFiles } = useImageUpload();
+
+  // Storage IDs uploaded in this dialog session that are not yet persisted
+  // on the blog (uploadedImageIds also holds the blog's existing images, so
+  // only these may be cleaned up when the dialog is abandoned)
+  const [pendingImageIds, setPendingImageIds] = useState<Id<"_storage">[]>([]);
+
+  // Persisted images the admin removed from the list this session; their
+  // storage is deleted only after updateBlog drops the references
+  const [removedImageIds, setRemovedImageIds] = useState<Id<"_storage">[]>([]);
 
   const form = useForm<BlogFormData>({
     resolver: zodResolver(blogSchema),
@@ -357,15 +367,9 @@ export function EditBlogDialog({
     }
 
     try {
-      const imageBuffers = await Promise.all(
-        selectedFiles.map(async (file) => {
-          const arrayBuffer = await file.arrayBuffer();
-          return arrayBuffer;
-        }),
-      );
-
-      const imageIds = await uploadImages({ images: imageBuffers });
+      const imageIds = await uploadFiles(selectedFiles);
       setUploadedImageIds((prev) => [...prev, ...imageIds]);
+      setPendingImageIds((prev) => [...prev, ...imageIds]);
       setSelectedFiles([]);
       toast.success(`Uploaded ${imageIds.length} image(s)`);
     } catch (error) {
@@ -402,7 +406,33 @@ export function EditBlogDialog({
     if (coverImageId === imageId) {
       setCoverImageId(undefined);
     }
+    if (pendingImageIds.includes(imageId)) {
+      // Uploaded this session and never saved — nothing references it
+      void deleteFiles([imageId]);
+      setPendingImageIds((prev) => prev.filter((id) => id !== imageId));
+    } else {
+      // Persisted on the blog — the reference is only dropped when the admin
+      // saves, so defer the storage deletion until updateBlog succeeds
+      setRemovedImageIds((prev) => [...prev, imageId]);
+    }
     toast.success("Image removed from list");
+  };
+
+  // Closing without saving abandons this session's uploads — the blog never
+  // referenced them, so remove them from storage again. Removed persisted
+  // images stay: without a save the blog still references them. Every close
+  // path (Cancel, Escape, overlay, X) routes through Radix's onOpenChange,
+  // so a single guard here blocks closing while updateBlog is in flight — it
+  // may still persist the pending IDs, and deleting them would leave the
+  // saved blog referencing dead files.
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen && form.formState.isSubmitting) return;
+    if (!nextOpen) {
+      void deleteFiles(pendingImageIds);
+      setPendingImageIds([]);
+      setRemovedImageIds([]);
+    }
+    onOpenChange(nextOpen);
   };
 
   const onSubmit = async (data: BlogFormData) => {
@@ -435,6 +465,21 @@ export function EditBlogDialog({
       });
 
       toast.success("Blog post updated successfully");
+      // The uploads are now referenced by the blog — nothing left to clean up
+      setPendingImageIds([]);
+      // The save dropped the removed images from the blog's `images`, so
+      // their storage can go too — except IDs still used inside the markdown
+      // content (admins paste storage IDs there) or still set as the server's
+      // cover (clearing the cover doesn't persist an unset, see coverImage
+      // above), where deleting would break the rendered blog.
+      const deletableIds = removedImageIds.filter(
+        (id) =>
+          id !== fullBlog?.coverImage &&
+          !data.content_ro.includes(id) &&
+          !data.content_en.includes(id),
+      );
+      void deleteFiles(deletableIds);
+      setRemovedImageIds([]);
       onOpenChange(false);
     } catch (error) {
       console.error("Error updating blog:", error);
@@ -589,7 +634,7 @@ export function EditBlogDialog({
   if (!blog) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-5xl max-h-[95vh]">
         {/* Header with persistent language toggle */}
         <DialogHeader className="flex flex-row items-center justify-between gap-4 pr-10 space-y-0">
@@ -851,7 +896,8 @@ export function EditBlogDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => handleOpenChange(false)}
+                disabled={form.formState.isSubmitting}
               >
                 Cancel
               </Button>

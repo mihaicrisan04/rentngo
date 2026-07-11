@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useMutation, useAction, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { CreateClassDialog } from "@/components/admin/vehicle-classes/create-class-dialog";
@@ -43,7 +43,8 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-import { ModernImageUploadPreview } from "@/components/ui/modern-image-upload-preview";
+import { ModernImageUpload } from "@/components/ui/modern-image-upload";
+import { useImageFiles, useImageUpload } from "@/hooks/use-image-upload";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { toast } from "sonner";
@@ -172,8 +173,9 @@ export function CreateVehicleDialog({
   onSuccess,
 }: CreateVehicleDialogProps) {
   const createVehicle = useMutation(api.vehicles.create);
-  const uploadImages = useAction(api.vehicles.uploadImages);
+  const addImages = useMutation(api.vehicles.addImages);
   const setMainImage = useMutation(api.vehicles.setMainImage);
+  const { uploadFiles, deleteFiles } = useImageUpload();
   const vehicleClasses = useQuery(api.vehicleClasses.list, {
     activeOnly: true,
   });
@@ -183,9 +185,11 @@ export function CreateVehicleDialog({
   const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([
     { minDays: 1, maxDays: 999, pricePerDay: 50 },
   ]);
-  const [selectedImageFiles, setSelectedImageFiles] = useState<
-    Array<{ file: File; previewUrl: string; error?: string }>
-  >([]);
+  const {
+    files: selectedImageFiles,
+    setFiles: setSelectedImageFiles,
+    clearFiles: clearSelectedImageFiles,
+  } = useImageFiles();
 
   // Slug validation state
   const [slugToCheck, setSlugToCheck] = useState<string>("");
@@ -277,11 +281,11 @@ export function CreateVehicleDialog({
         pricingTiers: [{ minDays: 1, maxDays: 999, pricePerDay: 50 }], // Default tier
       });
       setPricingTiers([{ minDays: 1, maxDays: 999, pricePerDay: 50 }]); // Default tier
-      setSelectedImageFiles([]);
+      clearSelectedImageFiles();
       setSlugToCheck("");
       setIsCheckingSlug(false);
     }
-  }, [open, form]);
+  }, [open, form, clearSelectedImageFiles]);
 
   const onSubmit = async (values: VehicleFormData) => {
     setIsSubmitting(true);
@@ -309,29 +313,51 @@ export function CreateVehicleDialog({
         pricingTiers: pricingTiers,
       };
 
-      const vehicleId = await createVehicle(vehicleDataToSubmit);
+      // Upload images before creating the vehicle so a failed upload can't
+      // leave a half-created vehicle behind (uploadFiles cleans up its own
+      // partial results, so retrying the form starts from a clean slate)
+      const validFiles = selectedImageFiles.filter((f) => !f.error);
+      const uploadedImageIds =
+        validFiles.length > 0
+          ? await uploadFiles(validFiles.map((f) => f.file))
+          : [];
 
-      // Upload images if any are selected
-      if (selectedImageFiles.length > 0) {
-        const validFiles = selectedImageFiles.filter((f) => !f.error);
-        const imageBuffers = await Promise.all(
-          validFiles.map(async (fileData) => {
-            const arrayBuffer = await fileData.file.arrayBuffer();
-            return arrayBuffer;
-          }),
-        );
+      let vehicleId: Id<"vehicles">;
+      try {
+        vehicleId = (await createVehicle(
+          vehicleDataToSubmit,
+        )) as Id<"vehicles">;
+      } catch (error) {
+        // No vehicle to attach them to — remove the uploads again
+        void deleteFiles(uploadedImageIds);
+        throw error;
+      }
 
-        const uploadedImageIds = await uploadImages({
-          vehicleId: vehicleId as Id<"vehicles">,
-          images: imageBuffers,
-        });
+      if (uploadedImageIds.length > 0) {
+        try {
+          await addImages({ vehicleId, imageIds: uploadedImageIds });
+        } catch (error) {
+          console.error("Error attaching images:", error);
+          void deleteFiles(uploadedImageIds);
+          // The vehicle exists, so resubmitting the form would duplicate it
+          toast.warning(
+            "Vehicle created, but adding its images failed. Add them again via Edit Vehicle.",
+          );
+          onSuccess?.();
+          onOpenChange(false);
+          return;
+        }
 
-        // Set main image (first image)
-        if (uploadedImageIds && uploadedImageIds.length > 0) {
-          await setMainImage({
-            vehicleId: vehicleId as Id<"vehicles">,
-            imageId: uploadedImageIds[0],
-          });
+        try {
+          await setMainImage({ vehicleId, imageId: uploadedImageIds[0] });
+        } catch (error) {
+          console.error("Error setting main image:", error);
+          toast.warning(
+            "Vehicle created, but setting the main image failed. Set it via Edit Vehicle.",
+          );
+          onSuccess?.();
+          onOpenChange(false);
+          return;
         }
       }
 
@@ -1039,7 +1065,7 @@ export function CreateVehicleDialog({
                     "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4",
                   )}
                 >
-                  <ModernImageUploadPreview
+                  <ModernImageUpload
                     files={selectedImageFiles}
                     onFilesChange={setSelectedImageFiles}
                     onError={(error) => {

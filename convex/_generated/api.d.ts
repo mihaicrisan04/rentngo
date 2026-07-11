@@ -26,6 +26,7 @@ import type * as emails_templates_UserTransferEmail from "../emails/templates/Us
 import type * as emails_types from "../emails/types.js";
 import type * as emails_utils from "../emails/utils.js";
 import type * as featuredCars from "../featuredCars.js";
+import type * as files from "../files.js";
 import type * as migrations_addAdditional50kmPrice from "../migrations/addAdditional50kmPrice.js";
 import type * as migrations_bilingualBlogs from "../migrations/bilingualBlogs.js";
 import type * as migrations_clearDeprecatedClassField from "../migrations/clearDeprecatedClassField.js";
@@ -65,6 +66,7 @@ declare const fullApi: ApiFromModules<{
   "emails/types": typeof emails_types;
   "emails/utils": typeof emails_utils;
   featuredCars: typeof featuredCars;
+  files: typeof files;
   "migrations/addAdditional50kmPrice": typeof migrations_addAdditional50kmPrice;
   "migrations/bilingualBlogs": typeof migrations_bilingualBlogs;
   "migrations/clearDeprecatedClassField": typeof migrations_clearDeprecatedClassField;

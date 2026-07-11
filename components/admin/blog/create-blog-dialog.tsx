@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useAction, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,6 +43,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { generateSlugFromTitle, calculateReadingTime } from "@/lib/blog-utils";
 import { Badge } from "@/components/ui/badge";
 import { BlogPreview } from "@/components/features/blog/blog-preview";
+import { useImageUpload } from "@/hooks/use-image-upload";
 
 const Tabs = TabsPrimitive.Root;
 const TabsList = TabsPrimitive.List;
@@ -255,7 +256,7 @@ export function CreateBlogDialog({
   const [tags, setTags] = useState<string[]>([]);
 
   const createBlog = useMutation(api.blogs.create);
-  const uploadImages = useAction(api.blogs.uploadImages);
+  const { uploadFiles, deleteFiles } = useImageUpload();
 
   const form = useForm<BlogFormData>({
     resolver: zodResolver(blogSchema),
@@ -326,14 +327,7 @@ export function CreateBlogDialog({
     }
 
     try {
-      const imageBuffers = await Promise.all(
-        selectedFiles.map(async (file) => {
-          const arrayBuffer = await file.arrayBuffer();
-          return arrayBuffer;
-        }),
-      );
-
-      const imageIds = await uploadImages({ images: imageBuffers });
+      const imageIds = await uploadFiles(selectedFiles);
       setUploadedImageIds((prev) => [...prev, ...imageIds]);
       setSelectedFiles([]);
       toast.success(`Uploaded ${imageIds.length} image(s)`);
@@ -371,7 +365,26 @@ export function CreateBlogDialog({
     if (coverImageId === imageId) {
       setCoverImageId(undefined);
     }
-    toast.success("Image removed from list");
+    // The blog doesn't exist yet, so nothing references this file
+    void deleteFiles([imageId]);
+    toast.success("Image removed");
+  };
+
+  // Closing without creating the blog abandons the uploads — no document
+  // references them, so remove them from storage again. Every close path
+  // (Cancel, Escape, overlay, X) routes through Radix's onOpenChange, so a
+  // single guard here blocks closing while createBlog is in flight — it may
+  // still persist these IDs, and deleting them would leave the new blog
+  // referencing dead files.
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen && form.formState.isSubmitting) return;
+    if (!nextOpen) {
+      void deleteFiles(uploadedImageIds);
+      setUploadedImageIds([]);
+      setCoverImageId(undefined);
+      setSelectedFiles([]);
+    }
+    onOpenChange(nextOpen);
   };
 
   const onSubmit = async (data: BlogFormData) => {
@@ -555,7 +568,7 @@ export function CreateBlogDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-5xl max-h-[95vh]">
         {/* Header with persistent language toggle */}
         <DialogHeader className="flex flex-row items-center justify-between gap-4 pr-10 space-y-0">
@@ -817,7 +830,8 @@ export function CreateBlogDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => handleOpenChange(false)}
+                disabled={form.formState.isSubmitting}
               >
                 Cancel
               </Button>

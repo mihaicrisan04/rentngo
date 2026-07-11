@@ -54,6 +54,7 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | Release Automation | Jun 2 | release-please (Conventional Commits → release PR, tag, GitHub Release). Reconciled `package.json` to 2.4.0 to match CHANGELOG |
 | CI Quality Gate | Jun 2 | GitHub Actions runs `tsc --noEmit` on PRs to main/develop. Build verified via Vercel preview |
 | Fix ESLint Config | Jun 2 | `npm run lint` was crashing (FlatCompat + ESLint 9.39); switched to Next 16 native flat-config exports — lint runs again |
+| Fix Broken Image Uploads | Jul 11 | Direct-to-storage uploads via `files.generateUploadUrl` + per-file POST; narrow `vehicles.addImages` persist; deleted bytes-through-args actions; blob-URL leak fix (RNGO-11) |
 
 ---
 
@@ -84,7 +85,6 @@ Tasks from a full audit of Convex functions against official guidelines and best
 |------|-------------|
 | Add `returns` validators | Many functions missing `returns` — inconsistent with others that have them. Add across `vehicles.ts`, `reservations.ts`, `transfers.ts`, `featuredCars.ts` |
 | Fix `seasons.ts` broken filter | `Object.entries(updates).filter(([value]) => ...)` — destructuring bug, checks key instead of value. Should be `([_, value])` |
-| Replace `v.any()` in blog uploads | `blogs.uploadImages` uses `v.array(v.any())` — should be `v.array(v.bytes())` |
 | Remove `as any` casts | `reservations.ts:83` uses `(r as any).reservationNumber`, `blogs.ts:286` uses `any` for updates object. Use proper types |
 | Add lint to CI gate | Resolve the ~75 pre-existing `npm run lint` errors (mostly `no-explicit-any`, overlaps the `as any` / `v.any()` tasks above), then add a blocking `npm run lint` step to `.github/workflows/ci.yml` |
 
@@ -105,7 +105,6 @@ Full plans in `.claude/plans/` (one file per workstream); tackle order + client 
 | Priority | Task | Plan |
 |----------|------|------|
 | P0 | Security: auth on 28 admin Convex writes, ownership checks, PII queries, email route | `audit-pricing-security.md` |
-| P0 | Fix broken image uploads (Convex upload URLs) | `audit-convex-performance.md` + `audit-admin-dialogs.md` |
 | P1 | Server-side pricing engine (`lib/pricing`) + persisted breakdown | `audit-pricing-security.md` |
 | P1 | Email fixes: SCDW, day count, included/extra km | `feature-email-fixes.md` |
 | P1 | Convex perf: counter doc, indexes, pagination, stats | `audit-convex-performance.md` (absorbs "Convex Hardening" section above) |

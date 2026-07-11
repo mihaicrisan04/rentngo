@@ -1,8 +1,6 @@
 import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
-import { query, mutation, action } from "./_generated/server";
-import { internal } from "./_generated/api";
-import { Id } from "./_generated/dataModel";
+import { query, mutation } from "./_generated/server";
 import { requireAdmin } from "./users";
 
 const localeValidator = v.union(v.literal("ro"), v.literal("en"));
@@ -469,29 +467,6 @@ export const remove = mutation({
     }
 
     await ctx.db.delete(args.id);
-  },
-});
-
-export const uploadImages = action({
-  args: {
-    blogId: v.optional(v.id("blogs")),
-    images: v.array(v.any()),
-  },
-  returns: v.array(v.id("_storage")),
-  handler: async (ctx, args) => {
-    await ctx.runQuery(internal.users.assertAdmin, {});
-
-    const { images } = args;
-
-    const uploadedImageIds: Id<"_storage">[] = [];
-
-    for (const imageBuffer of images) {
-      const blob = new Blob([imageBuffer]);
-      const storageId = await ctx.storage.store(blob);
-      uploadedImageIds.push(storageId);
-    }
-
-    return uploadedImageIds;
   },
 });
 
