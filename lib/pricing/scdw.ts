@@ -24,13 +24,16 @@ export function calculateSCDW(days: number, dailyRate: number): number {
 }
 
 /**
- * Warranty (deductible) amount - use vehicle warranty or fallback based on type
+ * Warranty (deductible) amount - use vehicle warranty or fallback based on type.
+ * An explicit warranty of 0 means a zero deductible (owner decision,
+ * 2026-07-11, PR #45 review); only a genuinely unset warranty falls back to
+ * the type table.
  */
 export function calculateWarranty(
   vehicle: Pick<VehiclePricingData, "warranty" | "type"> | null | undefined,
 ): number {
-  // If vehicle has warranty field, use it
-  if (vehicle?.warranty) {
+  // If vehicle has warranty field, use it (0 is a valid, deliberate value)
+  if (vehicle?.warranty !== undefined) {
     return vehicle.warranty;
   }
 

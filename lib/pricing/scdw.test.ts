@@ -101,9 +101,18 @@ describe("calculateWarranty", () => {
     expect(calculateWarranty({ warranty: 750, type: "suv" })).toBe(750);
   });
 
-  it("falls back to the type table when no warranty is set", () => {
+  it("honors an explicit warranty of 0 as a zero deductible", () => {
+    // Owner decision (2026-07-11, PR #45 review): warranty: 0 is a
+    // deliberate zero-deductible configuration, NOT "unset" — it must not
+    // fall through to the type table. (Changed from the previous truthy
+    // check, which sent warranty:0 vehicles to the 800 suv fallback.)
+    expect(calculateWarranty({ warranty: 0, type: "suv" })).toBe(0);
+  });
+
+  it("falls back to the type table only when warranty is genuinely unset", () => {
     expect(calculateWarranty({ type: "suv" })).toBe(800);
     expect(calculateWarranty({ type: "luxury" })).toBe(1000);
+    expect(calculateWarranty({ warranty: undefined, type: "suv" })).toBe(800);
   });
 
   it("treats a missing type as 'standard' (600) and unknown types as 500", () => {
