@@ -11,7 +11,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { ArrowLeft } from "lucide-react";
 import { VehicleImageCarouselWithPreloadedImages } from "@/components/features/vehicles/vehicle-image-carousel-with-preloaded-images";
 import { VehicleSpecifications } from "@/components/features/vehicles/vehicle-specifications";
 import { VehiclePricingCard } from "@/components/features/vehicles/vehicle-pricing-card";
@@ -95,41 +94,14 @@ export function CarDetailClient({
     });
   }, []);
 
-  const buildReservationUrl = useCallback(() => {
-    const params = new URLSearchParams();
-    params.append("vehicleId", vehicle._id);
-    return `/reservation?${params.toString()}`;
-  }, [vehicle._id]);
-
   const currency = "EUR";
-  const reservationUrl = buildReservationUrl();
+  const reservationUrl = `/reservation?vehicleId=${vehicle._id}`;
 
   const vehicleName = formatVehicleName(
     vehicle.make,
     vehicle.model,
     vehicle.year
   );
-
-  if (!vehicle) {
-    return (
-      <div className="flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">
-            {t("vehicleNotFound.title")}
-          </h1>
-          <p className="text-muted-foreground mb-6">
-            {t("vehicleNotFound.description")}
-          </p>
-          <Link href="/cars">
-            <Button>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              {t("vehicleNotFound.backToCars")}
-            </Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="py-6 px-4 md:py-10 md:px-8">
