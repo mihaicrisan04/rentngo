@@ -2,7 +2,7 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
-import { getCurrentUser, getCurrentUserOrThrow } from "./users";
+import { getCurrentUser, getCurrentUserOrThrow, requireAdmin } from "./users";
 
 // Validator for reservation status, strictly aligned with schema.ts
 const reservationStatusValidator = v.union(
@@ -201,8 +201,9 @@ export const getCurrentUserReservations = query({
 export const getReservationsByVehicle = query({
   args: { vehicleId: v.id("vehicles") },
   handler: async (ctx, args) => {
-    // This query can be public for availability, or admin-only.
-    // Add auth checks if needed.
+    // Admin-only: reservations include customer PII (name/email/phone)
+    await requireAdmin(ctx);
+
     return await ctx.db
       .query("reservations")
       .withIndex("by_vehicle", (q) => q.eq("vehicleId", args.vehicleId)) // Correct index name
@@ -371,6 +372,11 @@ export const cancelReservation = mutation({
     const reservation = await ctx.db.get(args.reservationId);
     if (!reservation) {
       throw new Error("Reservation not found.");
+    }
+
+    // Only the owner of the reservation or an admin may cancel it
+    if (user.role !== "admin" && reservation.userId !== user._id) {
+      throw new Error("User not authorized to cancel this reservation.");
     }
 
     if (user.role !== 'admin' && (reservation.status === "completed" || reservation.status === "cancelled")) {

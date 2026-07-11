@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { Doc } from "./_generated/dataModel";
+import { requireAdmin } from "./users";
 
 // Query: Get all vehicle classes
 export const list = query({
@@ -111,6 +112,8 @@ export const create = mutation({
   },
   returns: v.id("vehicleClasses"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { name, displayName, description, isActive = true, additional50kmPrice = 5, transferBaseFare = 25, transferMultiplier = 1.0 } = args;
 
     // Check if a class with this name already exists
@@ -177,6 +180,8 @@ export const update = mutation({
     v.null(),
   ),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { id, name, displayName, description, sortIndex, isActive, additional50kmPrice, transferBaseFare, transferMultiplier } = args;
 
     // Check if the class exists
@@ -225,6 +230,8 @@ export const remove = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { id } = args;
 
     // Check if the class exists
@@ -264,6 +271,8 @@ export const reorder = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { updates } = args;
 
     // Update each class with its new sortIndex

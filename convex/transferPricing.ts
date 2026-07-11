@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { requireAdmin } from "./users";
 
 const BASE_KM_INCLUDED = 15; // First 15km included in base fare
 const DEFAULT_BASE_FARE = 25;
@@ -70,6 +71,8 @@ export const createTier = mutation({
   },
   returns: v.id("transferPricingTiers"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { minExtraKm, maxExtraKm, pricePerKm, isActive = true } = args;
 
     // Validate range
@@ -129,6 +132,8 @@ export const updateTier = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { id, minExtraKm, maxExtraKm, pricePerKm, isActive } = args;
 
     const existingTier = await ctx.db.get(id);
@@ -190,6 +195,8 @@ export const deleteTier = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const tier = await ctx.db.get(args.id);
     if (!tier) {
       throw new Error("Tier not found");
@@ -353,6 +360,8 @@ export const seedDefaultTiers = mutation({
   args: {},
   returns: v.null(),
   handler: async (ctx) => {
+    await requireAdmin(ctx);
+
     // Check if tiers already exist
     const existingTiers = await ctx.db.query("transferPricingTiers").collect();
     if (existingTiers.length > 0) {

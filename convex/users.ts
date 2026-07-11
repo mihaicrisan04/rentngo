@@ -1,4 +1,4 @@
-import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
+import { mutation, query, internalQuery, QueryCtx, MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import { Doc } from "./_generated/dataModel";
 
@@ -236,3 +236,28 @@ export const getCurrentUserOrThrow = async (ctx: QueryCtx | MutationCtx): Promis
   }
   return user;
 };
+
+/**
+ * Helper function to require that the current authenticated user is an admin.
+ * Throws an error if not authenticated, user not found, or not an admin.
+ */
+export const requireAdmin = async (ctx: QueryCtx | MutationCtx): Promise<Doc<"users">> => {
+  const user = await getCurrentUserOrThrow(ctx);
+  if (user.role !== "admin") {
+    throw new Error("User not authorized (admin only).");
+  }
+  return user;
+};
+
+/**
+ * Internal query so actions (which have no ctx.db) can enforce the admin check
+ * via ctx.runQuery(internal.users.assertAdmin, {}).
+ */
+export const assertAdmin = internalQuery({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx) => {
+    await requireAdmin(ctx);
+    return null;
+  },
+});
