@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -95,6 +95,7 @@ export default function VehicleOrderingPage() {
       mainImageId?: Id<"_storage">;
     }>
   >([]);
+  const isDraggingRef = useRef(false);
 
   // Pricing state - separate state for each field
   const [additional50kmPrice, setAdditional50kmPrice] = useState<string>("");
@@ -193,10 +194,12 @@ export default function VehicleOrderingPage() {
     }
   };
 
-  // Sync items when vehicles data changes
-  if (vehicles && items.length === 0) {
-    setItems([...vehicles]);
-  }
+  // Sync items when vehicles data changes, unless a drag is in progress
+  useEffect(() => {
+    if (vehicles && !isDraggingRef.current) {
+      setItems([...vehicles]);
+    }
+  }, [vehicles]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -209,7 +212,19 @@ export default function VehicleOrderingPage() {
     }),
   );
 
+  const handleDragStart = () => {
+    isDraggingRef.current = true;
+  };
+
+  const handleDragCancel = () => {
+    isDraggingRef.current = false;
+    if (vehicles) {
+      setItems([...vehicles]);
+    }
+  };
+
   const handleDragEnd = async (event: DragEndEvent) => {
+    isDraggingRef.current = false;
     const { active, over } = event;
 
     if (!over || active.id === over.id) {
@@ -426,6 +441,8 @@ export default function VehicleOrderingPage() {
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragCancel={handleDragCancel}
           onDragEnd={handleDragEnd}
         >
           <SortableContext
