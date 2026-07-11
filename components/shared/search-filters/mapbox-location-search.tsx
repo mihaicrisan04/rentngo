@@ -103,6 +103,7 @@ export function MapboxLocationSearch({
           location.placeFormatted ||
           location.name ||
           suggestion.full_address ||
+          suggestion.place_formatted ||
           suggestion.name;
 
         onSelect({
