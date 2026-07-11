@@ -550,7 +550,8 @@
     "searchCars": "Search Car Rentals",
     "searchingCars": "Searching Car Rentals...",
     "returnDateAfterPickup": "Return date must be after or the same as pick-up date.",
-    "selectDateFirst": "Select a date first"
+    "selectDateFirst": "Select a date first",
+    "locationRetrieveError": "Couldn't get details for that location. Please try again."
   },
   "vehicleCard": {
     "or": "or",

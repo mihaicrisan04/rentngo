@@ -86,6 +86,98 @@ export async function getRouteWithGeometry(
   };
 }
 
+export interface LocationSuggestion {
+  mapbox_id: string;
+  name: string;
+  full_address?: string;
+  place_formatted?: string;
+  address?: string;
+}
+
+export interface RetrievedLocation {
+  coordinates: Coordinates;
+  fullAddress?: string;
+  placeFormatted?: string;
+  name?: string;
+}
+
+interface SuggestResponse {
+  suggestions?: LocationSuggestion[];
+}
+
+interface RetrieveResponse {
+  features?: Array<{
+    geometry: { coordinates: [number, number] };
+    properties?: {
+      full_address?: string;
+      place_formatted?: string;
+      name?: string;
+    };
+  }>;
+}
+
+export async function suggestLocations(
+  query: string,
+  sessionToken: string,
+): Promise<LocationSuggestion[]> {
+  const params = new URLSearchParams({
+    q: query,
+    access_token: getMapboxToken(),
+    session_token: sessionToken,
+    language: "en",
+    country: "RO",
+    types: "address,poi,place",
+    proximity: "23.5912,46.7712",
+    limit: "5",
+  });
+
+  const response = await fetch(
+    `https://api.mapbox.com/search/searchbox/v1/suggest?${params}`,
+  );
+
+  if (!response.ok) {
+    throw new Error(`Mapbox API error: ${response.statusText}`);
+  }
+
+  const data: SuggestResponse = await response.json();
+  return data.suggestions || [];
+}
+
+export async function retrieveLocation(
+  mapboxId: string,
+  sessionToken: string,
+): Promise<RetrievedLocation> {
+  const params = new URLSearchParams({
+    access_token: getMapboxToken(),
+    session_token: sessionToken,
+  });
+
+  const response = await fetch(
+    `https://api.mapbox.com/search/searchbox/v1/retrieve/${mapboxId}?${params}`,
+  );
+
+  if (!response.ok) {
+    throw new Error(`Mapbox API error: ${response.statusText}`);
+  }
+
+  const data: RetrieveResponse = await response.json();
+  const feature = data.features?.[0];
+
+  if (!feature) {
+    throw new Error("No location details returned for the selected suggestion");
+  }
+
+  return {
+    coordinates: {
+      lng: feature.geometry.coordinates[0],
+      lat: feature.geometry.coordinates[1],
+    },
+    fullAddress: feature.properties?.full_address,
+    placeFormatted: feature.properties?.place_formatted,
+    name: feature.properties?.name,
+  };
+}
+
 export function formatDuration(minutes: number): string {
   if (minutes < 60) {
     return `${minutes} min`;

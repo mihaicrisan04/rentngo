@@ -18,6 +18,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { useTranslations } from "next-intl";
+import {
+  suggestLocations,
+  retrieveLocation,
+  LocationSuggestion,
+} from "@/lib/mapbox";
 
 export interface LocationData {
   address: string;
@@ -25,14 +32,6 @@ export interface LocationData {
     lng: number;
     lat: number;
   };
-}
-
-interface MapboxSuggestion {
-  mapbox_id: string;
-  name: string;
-  full_address?: string;
-  place_formatted?: string;
-  address?: string;
 }
 
 interface MapboxLocationSearchProps {
@@ -56,9 +55,10 @@ export function MapboxLocationSearch({
   className,
   contentAlign = "start",
 }: MapboxLocationSearchProps) {
+  const t = useTranslations("search");
   const [open, setOpen] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState("");
-  const [suggestions, setSuggestions] = React.useState<MapboxSuggestion[]>([]);
+  const [suggestions, setSuggestions] = React.useState<LocationSuggestion[]>([]);
   const [loading, setLoading] = React.useState(false);
   const sessionTokenRef = React.useRef<string>(crypto.randomUUID());
 
@@ -75,27 +75,11 @@ export function MapboxLocationSearch({
 
     const timer = setTimeout(async () => {
       try {
-        const params = new URLSearchParams({
-          q: searchValue,
-          access_token: accessToken,
-          session_token: sessionTokenRef.current,
-          language: "en",
-          country: "RO",
-          types: "address,poi,place",
-          proximity: "23.5912,46.7712",
-          limit: "5",
-        });
-
-        const response = await fetch(
-          `https://api.mapbox.com/search/searchbox/v1/suggest?${params}`
+        const results = await suggestLocations(
+          searchValue,
+          sessionTokenRef.current
         );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch suggestions");
-        }
-
-        const data = await response.json();
-        setSuggestions(data.suggestions || []);
+        setSuggestions(results);
       } catch (error) {
         console.error("Error fetching suggestions:", error);
         setSuggestions([]);
@@ -105,63 +89,39 @@ export function MapboxLocationSearch({
     }, 200);
 
     return () => clearTimeout(timer);
-  }, [searchValue, accessToken]);
+  }, [searchValue]);
 
   const handleSelect = React.useCallback(
-    async (suggestion: MapboxSuggestion) => {
+    async (suggestion: LocationSuggestion) => {
       try {
-        const params = new URLSearchParams({
-          access_token: accessToken,
-          session_token: sessionTokenRef.current,
-        });
-
-        const response = await fetch(
-          `https://api.mapbox.com/search/searchbox/v1/retrieve/${suggestion.mapbox_id}?${params}`
+        const location = await retrieveLocation(
+          suggestion.mapbox_id,
+          sessionTokenRef.current
         );
-
-        if (!response.ok) {
-          throw new Error("Failed to retrieve location details");
-        }
-
-        const data = await response.json();
-
-        if (data.features && data.features.length > 0) {
-          const feature = data.features[0];
-          const coords = feature.geometry.coordinates;
-          const address =
-            feature.properties.full_address ||
-            feature.properties.place_formatted ||
-            feature.properties.name ||
-            suggestion.full_address ||
-            suggestion.name;
-
-          onSelect({
-            address,
-            coordinates: {
-              lng: coords[0],
-              lat: coords[1],
-            },
-          });
-
-          sessionTokenRef.current = crypto.randomUUID();
-        }
-      } catch (error) {
-        console.error("Error retrieving location:", error);
         const address =
+          location.fullAddress ||
+          location.placeFormatted ||
+          location.name ||
           suggestion.full_address ||
           suggestion.place_formatted ||
           suggestion.name;
+
         onSelect({
           address,
-          coordinates: { lng: 0, lat: 0 },
+          coordinates: location.coordinates,
         });
+
+        sessionTokenRef.current = crypto.randomUUID();
+      } catch (error) {
+        console.error("Error retrieving location:", error);
+        toast.error(t("locationRetrieveError"));
       }
 
       setOpen(false);
       setSearchValue("");
       setSuggestions([]);
     },
-    [accessToken, onSelect]
+    [onSelect, t]
   );
 
   const handleClear = React.useCallback(() => {

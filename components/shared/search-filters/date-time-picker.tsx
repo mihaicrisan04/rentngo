@@ -119,23 +119,11 @@ export function DateTimePicker({
       const validatedDate = searchStorage.validateDate(newDate) || newDate;
       setDateState(validatedDate);
 
-      if (id.includes("pickup")) {
-        searchStorage.updateField("pickupDate", validatedDate);
-      } else if (id.includes("return")) {
-        searchStorage.updateField("returnDate", validatedDate);
-      }
-
       if (onDateChange) {
         onDateChange(validatedDate);
       }
     } else {
       setDateState(newDate);
-
-      if (id.includes("pickup")) {
-        searchStorage.updateField("pickupDate", undefined);
-      } else if (id.includes("return")) {
-        searchStorage.updateField("returnDate", undefined);
-      }
     }
     setCalendarOpen(false);
 
@@ -147,12 +135,6 @@ export function DateTimePicker({
 
   const handleTimeChange = (time: string) => {
     setTimeState(time);
-
-    if (id.includes("pickup")) {
-      searchStorage.updateField("pickupTime", time);
-    } else if (id.includes("return")) {
-      searchStorage.updateField("returnTime", time);
-    }
   };
 
   React.useEffect(() => {
@@ -160,9 +142,6 @@ export function DateTimePicker({
       const isSameDate = dateState.toDateString() === pickupDate.toDateString();
       if (isSameDate && isTimeSlotDisabled(timeState)) {
         setTimeState("");
-        if (id.includes("return")) {
-          searchStorage.updateField("returnTime", "");
-        }
       }
     }
   }, [
@@ -170,7 +149,6 @@ export function DateTimePicker({
     pickupTime,
     dateState,
     timeState,
-    id,
     setTimeState,
     isTimeSlotDisabled,
   ]);
@@ -180,14 +158,9 @@ export function DateTimePicker({
       const validatedDate = searchStorage.validateDate(dateState);
       if (validatedDate && validatedDate.getTime() !== dateState.getTime()) {
         setDateState(validatedDate);
-        if (id.includes("pickup")) {
-          searchStorage.updateField("pickupDate", validatedDate);
-        } else if (id.includes("return")) {
-          searchStorage.updateField("returnDate", validatedDate);
-        }
       }
     }
-  }, [dateState, id, setDateState]);
+  }, [dateState, setDateState]);
 
   return (
     <div
