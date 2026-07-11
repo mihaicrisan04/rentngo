@@ -76,9 +76,10 @@ The four daily-rate inputs actually in use:
 
 So within a single booking the SCDW **displayed** (base×season) differs from the SCDW
 **persisted** (duration×season); the persisted `totalPrice` and `protectionCost` are already
-internally inconsistent. Picking one canonical daily rate is a product decision (see Open
-Questions) — recommendation: **duration-tier × season**, matching what the rental subtotal
-itself uses.
+internally inconsistent. **DECIDED (owner, 2026-07-11, see RNGO-13 comment): the canonical
+daily rate is base-tier × season** — the rate the on-screen total already uses — overriding
+this plan's earlier duration-tier recommendation. `lib/pricing`'s `computeReservationPricing`
+implements this and the server recompute overwrites `protectionCost` accordingly.
 
 **The warranty/deductible table exists in exactly one place** — `calculateWarranty(vehicle)`
 in `reservation/page.tsx` (~L327-354): uses `vehicle.warranty` if set, else falls back by
@@ -442,9 +443,10 @@ to team lead if they'd rather keep it in the perf cluster.
 
 ## Open questions
 
-1. **Canonical SCDW daily rate** (blocks Step 2): duration-tier × season (recommended, matches
-   the rental subtotal) vs base-tier × season (what today's *display* shows) vs raw base (what
-   the admin dialog *persists*). This changes real prices — needs product sign-off.
+1. ~~**Canonical SCDW daily rate**~~ **RESOLVED (owner decision, 2026-07-11, RNGO-13):
+   base-tier × season — the rate shown in the on-screen total. Implemented in `lib/pricing`
+   (`calculateSCDW` fed `round(getBasePricePerDay × multiplier)`); the server recompute
+   overwrites the persisted `protectionCost` so total, line item and email reconcile.
 2. **Hard-reject threshold**: at what point do we flip `card_online` from soft-log to
    hard-reject on price mismatch, and what epsilon (proposed €0.5)? Cash/card-on-delivery can
    stay overwrite-only indefinitely.

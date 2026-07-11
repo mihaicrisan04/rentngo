@@ -56,6 +56,7 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | Fix ESLint Config | Jun 2 | `npm run lint` was crashing (FlatCompat + ESLint 9.39); switched to Next 16 native flat-config exports — lint runs again |
 | Fix Broken Image Uploads | Jul 11 | Direct-to-storage uploads via `files.generateUploadUrl` + per-file POST; narrow `vehicles.addImages` persist; deleted bytes-through-args actions; blob-URL leak fix (RNGO-11) |
 | Dead Code Cleanup | Jul 11 | 16 files (~1,290 lines) deleted: vehicle-card fork orphans, lib email stack, dead hooks/libs, admin settings page; dead `searchAvailableVehicles` query, VehicleSearchFilterForm uncontrolled fallback; deps removed: `@clerk/react`, `@googlemaps/google-maps-services-js`, `framer-motion` (consolidated on `motion`) (RNGO-15) |
+| Server-side Pricing Engine | Jul 11 | Pure `lib/pricing` module (SCDW base-tier×season per owner decision, tiers, seasons, location fees, extras, transfer formula); `createReservation`/`createTransfer` recompute+overwrite money fields; persisted `pricePerDay`/`rentalDays`/`basePrice` + coded `additionalCharges`; Vitest suite (51 tests) + CI test job (RNGO-13) |
 
 ---
 
@@ -68,7 +69,7 @@ Tasks from a full audit of Convex functions against official guidelines and best
 | Task | Description |
 |------|-------------|
 | Auth guards on admin mutations | `vehicles`, `seasons`, `blogs`, `vehicleClasses`, `transferPricing` mutations are all public with zero auth — anyone can create/delete data. Add auth checks or convert to `internalMutation` |
-| Stop accepting `userId` as argument | `createReservation` and `createTransfer` accept `userId` in args — must derive from `ctx.auth.getUserIdentity()` server-side per Convex guidelines |
+| Stop accepting `userId` as argument | ~~Done (RNGO-13)~~ — both create mutations now derive the user from ctx auth; the arg is still accepted-and-ignored for client compatibility, drop it when the client stops sending it |
 | Replace `.filter()` with `.withIndex()` | `.filter()` causes full table scans. Violations in `vehicles.getAll`, `searchAvailableVehicles`, `getByClass`, `blogs.getAll`, `featuredCars.setFeaturedCar`, `vehicleClasses.remove`. Add missing indexes (`classId`, `transmission`, `fuelType`, `vehicleId` on featuredCars) |
 | Switch `identity.subject` → `tokenIdentifier` | All user lookups use `identity.subject` — guidelines say to prefer `tokenIdentifier` as the canonical stable identifier |
 
@@ -76,7 +77,7 @@ Tasks from a full audit of Convex functions against official guidelines and best
 
 | Task | Description |
 |------|-------------|
-| Reservation/transfer number via counter doc | `createReservation` and `createTransfer` `.collect()` the entire table to compute `max + 1`. Use a dedicated counter document instead |
+| Reservation/transfer number via counter doc | ~~Done (RNGO-13)~~ — full-table `.collect()` replaced with a `by_number` index read (`.order("desc").first()`) in both create mutations |
 | Bound unbounded `.collect()` calls | Multiple queries collect full tables with no limits — `getAllVehicles`, `searchAvailableVehicles`, `getAllVehiclesWithClasses`, `getAllReservations`, `getAllTransfers`, stats/chart queries. Add `.take(n)` or pagination |
 | Standardize auth pattern | `transfers.ts` does raw `ctx.auth` + manual user lookup everywhere. `reservations.ts` uses `getCurrentUser` helpers. Standardize on the helper pattern across all files |
 
@@ -106,7 +107,6 @@ Full plans in `.claude/plans/` (one file per workstream); tackle order + client 
 | Priority | Task | Plan |
 |----------|------|------|
 | P0 | Security: auth on 28 admin Convex writes, ownership checks, PII queries, email route | `audit-pricing-security.md` |
-| P1 | Server-side pricing engine (`lib/pricing`) + persisted breakdown | `audit-pricing-security.md` |
 | P1 | Email fixes: SCDW, day count, included/extra km | `feature-email-fixes.md` |
 | P1 | Convex perf: counter doc, indexes, pagination, stats | `audit-convex-performance.md` (absorbs "Convex Hardening" section above) |
 | P2 | Reservation page decomposition; admin dialog dedup; frontend perf; i18n extraction; misc bug batches | `audit-*.md` |
