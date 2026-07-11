@@ -473,67 +473,6 @@ export const getImageUrl = query({
   },
 });
 
-// Query to search for available vehicles based on date range and location
-export const searchAvailableVehicles = query({
-  args: {
-    startDate: v.number(), // Unix timestamp
-    endDate: v.number(), // Unix timestamp
-    deliveryLocation: v.optional(v.string()),
-
-    // Optional filters
-    type: v.optional(
-      v.union(
-        v.literal("sedan"),
-        v.literal("suv"),
-        v.literal("hatchback"),
-        v.literal("sports"),
-        v.literal("truck"),
-        v.literal("van"),
-      ),
-    ),
-    transmission: v.optional(
-      v.union(v.literal("automatic"), v.literal("manual")),
-    ),
-    fuelType: v.optional(
-      v.union(
-        v.literal("petrol"),
-        v.literal("diesel"),
-        v.literal("electric"),
-        v.literal("hybrid"),
-        v.literal("benzina"),
-      ),
-    ),
-  },
-  handler: async (ctx, args) => {
-    const {
-      type,
-      transmission,
-      fuelType,
-    } = args;
-
-    let vehicleQuery = ctx.db
-      .query("vehicles")
-      .filter((q) => q.eq(q.field("status"), "available"));
-
-    // Apply optional filters
-    if (type) {
-      vehicleQuery = vehicleQuery.filter((q) => q.eq(q.field("type"), type));
-    }
-    if (transmission) {
-      vehicleQuery = vehicleQuery.filter((q) =>
-        q.eq(q.field("transmission"), transmission),
-      );
-    }
-    if (fuelType) {
-      vehicleQuery = vehicleQuery.filter((q) =>
-        q.eq(q.field("fuelType"), fuelType),
-      );
-    }
-
-    return await vehicleQuery.collect();
-  },
-});
-
 // --- End of Migration ---
 
 // Get vehicles by class ID (for ordering page)
