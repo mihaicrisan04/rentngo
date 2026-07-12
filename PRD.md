@@ -60,6 +60,7 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | Frontend Performance | Jul 12 | Split root layouts ([locale] + admin) to drop `headers()` — all public routes now static/ISR (1h) with per-locale `<html lang>`; static-safe Convex fetch helper; mapbox-gl (~1.6MB) code-split out of transfer routes; hero via next/image fill+priority; card image priority for first 4 only; MDX toolchain out of public blog bundles; lazy testimonial avatars; mapbox suggest stale-guard; skip redundant Directions call on restore (RNGO-16) |
 | Reservation Email Fixes | Jul 12 | Included-km row (days×200) + extra-km-opted row in confirmation emails; RO SCDW/warranty labels now passed to pricing section (were falling back to EN); SCDW amount + day count come from the persisted server pricing breakdown (RNGO-24; explicit extra-km row activates when RNGO-17 sends structured extras) |
 | AI-SEO Surfaces | Jul 12 | robots.ts explicit AI-crawler allows (retrieval + training), `/llms.txt` route from slim Convex fleet query, bilingual `/faq` page with FAQPage JSON-LD + sitemap/footer links, canonical `lib/company.ts` + shared AutoRental schema builder (FAQ copy is a draft pending client approval; identity-data migration is RNGO-20) (RNGO-21) |
+| Reservation Page Decomposition | Jul 12 | 1888-line page → ~400-line composition of 6 memoized cards + `useReservationForm` + memoized `useReservationPricing` over `lib/pricing` (display/submit/persisted totals now one breakdown); structured `extras` sent to `createReservation` (activates coded charges + email extra-km row); shared checkout components reused by transfer booking (payment list now translated there); confirmation renders persisted breakdown w/ `reservationCharges` i18n catalog + legacy fallback; dead decomposition cluster deleted (RNGO-17) |
 
 ---
 
@@ -111,7 +112,7 @@ Full plans in `.claude/plans/` (one file per workstream); tackle order + client 
 |----------|------|------|
 | P0 | Security: auth on 28 admin Convex writes, ownership checks, PII queries, email route | `audit-pricing-security.md` |
 | P1 | Convex perf: counter doc, indexes, pagination, stats | `audit-convex-performance.md` (absorbs "Convex Hardening" section above) |
-| P2 | Reservation page decomposition; admin dialog dedup; frontend perf; i18n extraction; misc bug batches | `audit-*.md` |
+| P2 | Admin dialog dedup; frontend perf; i18n extraction; misc bug batches | `audit-*.md` |
 | P3 | AI-SEO pages (robots/llms.txt/FAQ/local business) | `feature-ai-seo.md` |
 | P3 | Coupon codes (blocked by pricing engine) | `feature-coupons.md` |
 | P3 | Affiliate program (blocked by coupons engine) | `feature-affiliate-program.md` |
