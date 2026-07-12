@@ -24,13 +24,19 @@ import {
   PaymentMethodCard,
   ReservationSummaryCard,
 } from "@/components/features/reservations";
+import {
+  CouponCodeInput,
+  type AppliedCoupon,
+} from "@/components/features/checkout/coupon-code-input";
 import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
+import { ConvexError } from "convex/values";
 
 function ReservationPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const t = useTranslations("reservationPage");
+  const tCoupon = useTranslations("common.coupon");
   const locale = useLocale();
 
   // Only get vehicleId from URL - all form data comes from localStorage
@@ -79,6 +85,8 @@ function ReservationPageContent() {
   } = useReservationForm();
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [appliedCoupon, setAppliedCoupon] =
+    React.useState<AppliedCoupon | null>(null);
 
   // Add date-based seasonal pricing
   const { multiplier: seasonalMultiplier, seasonId } =
@@ -189,7 +197,9 @@ function ReservationPageContent() {
               ? personalInfo.flightNumber.trim()
               : undefined,
         },
-        promoCode: undefined, // TODO: Add promo code functionality
+        // The server re-validates and redeems the coupon atomically; the
+        // client-shown discount is advisory only
+        promoCode: appliedCoupon?.code,
         additionalCharges:
           additionalCharges.length > 0 ? additionalCharges : undefined,
         isSCDWSelected: isSCDWSelected,
@@ -231,7 +241,14 @@ function ReservationPageContent() {
       router.push(`/reservation/confirmation?reservationId=${reservationId}`);
     } catch (error) {
       console.error("Error creating reservation:", error);
-      toast.error(t("reservation.error"));
+      if (
+        error instanceof ConvexError &&
+        (error.data as { code?: string })?.code === "COUPON_INVALID"
+      ) {
+        toast.error(tCoupon("errors.submitFailed"));
+      } else {
+        toast.error(t("reservation.error"));
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -371,6 +388,14 @@ function ReservationPageContent() {
           </div>
         </div>
 
+        <CouponCodeInput
+          className="mt-8"
+          bookingType="rentals"
+          subtotal={breakdown?.totalPrice ?? null}
+          email={personalInfo.email}
+          onAppliedChange={setAppliedCoupon}
+        />
+
         <ReservationSummaryCard
           vehicle={vehicle}
           deliveryLocation={deliveryLocation}
@@ -387,6 +412,7 @@ function ReservationPageContent() {
           isSCDWSelected={isSCDWSelected}
           onSCDWChange={setIsSCDWSelected}
           pricing={pricing}
+          appliedCoupon={appliedCoupon}
           isSubmitting={isSubmitting}
           onSubmit={handleSendReservation}
         />

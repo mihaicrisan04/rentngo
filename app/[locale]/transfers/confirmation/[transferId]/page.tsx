@@ -371,6 +371,14 @@ export default function TransferConfirmationPage() {
               <span className="text-muted-foreground">{tConfirmation("paymentMethod")}</span>
               <span>{getPaymentMethodLabel(transfer.paymentMethod)}</span>
             </div>
+            {transfer.promoCode && (transfer.discountAmount ?? 0) > 0 && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span>
+                  {tConfirmation("discountLine", { code: transfer.promoCode })}
+                </span>
+                <span>−€{(transfer.discountAmount ?? 0).toFixed(2)}</span>
+              </div>
+            )}
             <Separator />
             <div className="flex justify-between items-baseline">
               <span className="font-semibold">{tConfirmation("totalAmount")}</span>

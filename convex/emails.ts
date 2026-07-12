@@ -58,6 +58,7 @@ const pricingDetailsValidator = v.object({
   totalPrice: v.number(),
   paymentMethod: v.string(),
   promoCode: v.optional(v.string()),
+  discountAmount: v.optional(v.number()),
   additionalCharges: v.optional(
     v.array(
       v.object({
@@ -146,6 +147,8 @@ const transferPricingDetailsValidator = v.object({
   distancePrice: v.number(),
   totalPrice: v.number(),
   pricePerKm: v.number(),
+  promoCode: v.optional(v.string()),
+  discountAmount: v.optional(v.number()),
 });
 
 // Send transfer confirmation emails (customer + admin)

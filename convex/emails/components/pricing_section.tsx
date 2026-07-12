@@ -68,12 +68,15 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
         <Row className="mb-[8px]">
           <Column className="w-2/3">
             <Text className="text-[16px] text-green-600 m-0">
-              {labels?.promoCode ?? "Promo Code Applied:"}
+              {labels?.promoCode ?? "Promo Code Applied:"}{" "}
+              {pricingDetails.promoCode}
             </Text>
           </Column>
           <Column className="w-1/3 text-right">
             <Text className="text-[16px] text-green-600 m-0">
-              {pricingDetails.promoCode}
+              {pricingDetails.discountAmount !== undefined
+                ? `−${formatCurrency(pricingDetails.discountAmount)}`
+                : pricingDetails.promoCode}
             </Text>
           </Column>
         </Row>

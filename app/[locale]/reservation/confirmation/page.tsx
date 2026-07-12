@@ -469,6 +469,16 @@ function ReservationConfirmationContent() {
                     </div>
                   </div>
                 )}
+              {/* Applied coupon — render the persisted discount, no recompute */}
+              {reservation.promoCode &&
+                (reservation.discountAmount ?? 0) > 0 && (
+                  <div className="flex justify-between items-center text-sm text-green-600">
+                    <span>
+                      {t("discountLine", { code: reservation.promoCode })}
+                    </span>
+                    <span>−{reservation.discountAmount} EUR</span>
+                  </div>
+                )}
               {/* SCDW line above total */}
               {reservation.isSCDWSelected &&
                 (reservation.protectionCost ?? 0) > 0 && (

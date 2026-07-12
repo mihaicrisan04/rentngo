@@ -40,6 +40,7 @@ export interface PricingDetails {
   totalPrice: number;
   paymentMethod: "cash_on_delivery" | "card_on_delivery" | "card_online";
   promoCode?: string;
+  discountAmount?: number;
   additionalCharges?: Array<{
     description: string;
     amount: number;
@@ -79,6 +80,8 @@ export interface TransferPricingDetails {
   distancePrice: number;
   totalPrice: number;
   pricePerKm: number;
+  promoCode?: string;
+  discountAmount?: number;
 }
 
 export interface TransferEmailData {

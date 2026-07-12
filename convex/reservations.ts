@@ -1,9 +1,11 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { api, internal } from "./_generated/api";
+import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { getCurrentUser, getCurrentUserOrThrow, requireAdmin } from "./users";
+import { applyAndRedeemCoupon } from "./coupons";
 import {
+  applyDiscountToTotal,
   assertValidReservationExtras,
   calculateIncludedKilometers,
   calculateMultiplierForDateRange,
@@ -57,6 +59,8 @@ export const createReservation = mutation({
       message: v.optional(v.string()),
       flightNumber: v.optional(v.string()),
     }),
+    // Coupon code to redeem — validated server-side; an invalid code fails
+    // the booking (no longer a free-text pass-through)
     promoCode: v.optional(v.string()),
     additionalCharges: v.optional(v.array(additionalChargeValidator)),
     isSCDWSelected: v.boolean(),
@@ -215,6 +219,26 @@ export const createReservation = mutation({
       });
     }
 
+    // Apply the coupon (if any) to the server-recomputed total. Validation,
+    // the redemption-count increment and the audit row all happen inside this
+    // mutation's transaction, so a capped code cannot over-redeem under
+    // concurrency and an invalid code rolls the whole booking back.
+    const redeemedCoupon = args.promoCode?.trim()
+      ? await applyAndRedeemCoupon(ctx, {
+          code: args.promoCode,
+          bookingType: "rentals",
+          subtotal: totalPrice,
+          userId: currentUser?._id,
+          customerEmail: args.customerInfo.email,
+        })
+      : null;
+    if (redeemedCoupon) {
+      totalPrice = applyDiscountToTotal(
+        totalPrice,
+        redeemedCoupon.discountAmount,
+      );
+    }
+
     // Compute next reservation number (highest existing via index)
     const latestNumbered = await ctx.db
       .query("reservations")
@@ -239,7 +263,9 @@ export const createReservation = mutation({
       status: "pending" as ReservationStatusType, // Initial status
       totalPrice,
       customerInfo: args.customerInfo,
-      promoCode: args.promoCode,
+      promoCode: redeemedCoupon?.code,
+      couponId: redeemedCoupon?.couponId,
+      discountAmount: redeemedCoupon?.discountAmount,
       additionalCharges: persistedCharges,
       isSCDWSelected: args.isSCDWSelected,
       deductibleAmount: pricing.deductibleAmount,
@@ -253,6 +279,11 @@ export const createReservation = mutation({
     };
 
     const reservationId = await ctx.db.insert("reservations", newReservationData);
+
+    // Link the redemption audit row to the booking it paid for
+    if (redeemedCoupon) {
+      await ctx.db.patch(redeemedCoupon.redemptionId, { reservationId });
+    }
 
     // Schedule email sending if vehicle info is provided
     if (args.vehicleInfo) {
@@ -289,7 +320,8 @@ export const createReservation = mutation({
           pricePerDay: pricing.pricePerDay,
           totalPrice,
           paymentMethod: args.paymentMethod,
-          promoCode: args.promoCode,
+          promoCode: redeemedCoupon?.code,
+          discountAmount: redeemedCoupon?.discountAmount,
           additionalCharges: args.additionalCharges,
           isSCDWSelected: args.isSCDWSelected,
           deductibleAmount: pricing.deductibleAmount,
@@ -461,7 +493,6 @@ export const updateReservationDetails = mutation({
       flightNumber: v.optional(v.string()),
     })),
     status: v.optional(reservationStatusValidator),
-    promoCode: v.optional(v.string()),
     additionalCharges: v.optional(v.array(additionalChargeValidator)),
     isSCDWSelected: v.optional(v.boolean()),
     deductibleAmount: v.optional(v.number()),
@@ -495,7 +526,6 @@ export const updateReservationDetails = mutation({
     if (updatesIn.totalPrice !== undefined) updatesToApply.totalPrice = updatesIn.totalPrice;
     if (updatesIn.customerInfo !== undefined) updatesToApply.customerInfo = updatesIn.customerInfo;
     if (updatesIn.status !== undefined) updatesToApply.status = updatesIn.status; // status is already validated by args
-    if (updatesIn.promoCode !== undefined) updatesToApply.promoCode = updatesIn.promoCode;
     if (updatesIn.additionalCharges !== undefined) updatesToApply.additionalCharges = updatesIn.additionalCharges;
     if (updatesIn.isSCDWSelected !== undefined) updatesToApply.isSCDWSelected = updatesIn.isSCDWSelected;
     if (updatesIn.deductibleAmount !== undefined) updatesToApply.deductibleAmount = updatesIn.deductibleAmount;

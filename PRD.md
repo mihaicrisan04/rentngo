@@ -61,6 +61,7 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | Reservation Email Fixes | Jul 12 | Included-km row (days×200) + extra-km-opted row in confirmation emails; RO SCDW/warranty labels now passed to pricing section (were falling back to EN); SCDW amount + day count come from the persisted server pricing breakdown (RNGO-24; explicit extra-km row activates when RNGO-17 sends structured extras) |
 | AI-SEO Surfaces | Jul 12 | robots.ts explicit AI-crawler allows (retrieval + training), `/llms.txt` route from slim Convex fleet query, bilingual `/faq` page with FAQPage JSON-LD + sitemap/footer links, canonical `lib/company.ts` + shared AutoRental schema builder (FAQ copy is a draft pending client approval; identity-data migration is RNGO-20) (RNGO-21) |
 | Reservation Page Decomposition | Jul 12 | 1888-line page → ~400-line composition of 6 memoized cards + `useReservationForm` + memoized `useReservationPricing` over `lib/pricing` (display/submit/persisted totals now one breakdown); structured `extras` sent to `createReservation` (activates coded charges + email extra-km row); shared checkout components reused by transfer booking (payment list now translated there); confirmation renders persisted breakdown w/ `reservationCharges` i18n catalog + legacy fallback; dead decomposition cluster deleted (RNGO-17) |
+| Coupon Codes | Jul 12 | `coupons` + `couponRedemptions` tables (replaces dead `promotions` table + free-text promo plumbing); pure discount math in `lib/pricing/discount.ts` (24 tests); advisory `validateCoupon` query + atomic `applyAndRedeemCoupon` inside `createReservation`/`createTransfer` (OCC-safe max-redemptions, once-per-user by account/email); admin CRUD at `/admin/coupons`; coupon input on both checkouts; discount persisted + shown on confirmations and emails; single-discount seam ready for affiliate (RNGO-25) |
 
 ---
 
@@ -114,8 +115,7 @@ Full plans in `.claude/plans/` (one file per workstream); tackle order + client 
 | P1 | Convex perf: counter doc, indexes, pagination, stats | `audit-convex-performance.md` (absorbs "Convex Hardening" section above) |
 | P2 | Admin dialog dedup; frontend perf; i18n extraction; misc bug batches | `audit-*.md` |
 | P3 | AI-SEO pages (robots/llms.txt/FAQ/local business) | `feature-ai-seo.md` |
-| P3 | Coupon codes (blocked by pricing engine) | `feature-coupons.md` |
-| P3 | Affiliate program (blocked by coupons engine) | `feature-affiliate-program.md` |
+| P3 | Affiliate program (coupons engine landed — plug into the `lib/pricing/discount.ts` single-discount seam) | `feature-affiliate-program.md` |
 | P4 | Copy update (waiting on client copy) · Calendar changes (waiting on clarification) | `feature-copy-update.md`, `feature-calendar.md` |
 
 ## Planned Tasks — Other

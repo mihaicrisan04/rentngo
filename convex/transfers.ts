@@ -2,7 +2,9 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getCurrentUser, getCurrentUserOrThrow, requireAdmin } from "./users";
+import { applyAndRedeemCoupon } from "./coupons";
 import {
+  applyDiscountToTotal,
   assertValidTransferDistance,
   computeTransferPricing,
 } from "../lib/pricing";
@@ -59,6 +61,9 @@ export const createTransfer = mutation({
     customerInfo: customerInfoValidator,
     paymentMethod: paymentMethodValidator,
     luggageCount: v.optional(v.number()),
+    // Coupon code to redeem — validated server-side; an invalid code fails
+    // the booking
+    promoCode: v.optional(v.string()),
     locale: v.optional(v.string()),
   },
   returns: v.object({
@@ -105,6 +110,23 @@ export const createTransfer = mutation({
       });
     }
 
+    // Apply the coupon (if any) to the server-recomputed fare. Validation,
+    // the redemption-count increment and the audit row all happen inside this
+    // mutation's transaction — see applyAndRedeemCoupon for the concurrency
+    // argument.
+    const redeemedCoupon = args.promoCode?.trim()
+      ? await applyAndRedeemCoupon(ctx, {
+          code: args.promoCode,
+          bookingType: "transfers",
+          subtotal: fare.totalPrice,
+          userId: currentUser?._id,
+          customerEmail: args.customerInfo.email,
+        })
+      : null;
+    const totalPrice = redeemedCoupon
+      ? applyDiscountToTotal(fare.totalPrice, redeemedCoupon.discountAmount)
+      : fare.totalPrice;
+
     // Compute next transfer number (highest existing via index)
     const latestNumbered = await ctx.db
       .query("transfers")
@@ -129,8 +151,11 @@ export const createTransfer = mutation({
       estimatedDurationMinutes: args.estimatedDurationMinutes,
       baseFare: fare.baseFare,
       distancePrice: fare.distanceCharge,
-      totalPrice: fare.totalPrice,
+      totalPrice,
       pricePerKm: fare.tierPricePerKm,
+      promoCode: redeemedCoupon?.code,
+      couponId: redeemedCoupon?.couponId,
+      discountAmount: redeemedCoupon?.discountAmount,
       customerInfo: args.customerInfo,
       paymentMethod: args.paymentMethod,
       luggageCount: args.luggageCount,
@@ -138,6 +163,11 @@ export const createTransfer = mutation({
     };
 
     const transferId = await ctx.db.insert("transfers", newTransferData);
+
+    // Link the redemption audit row to the booking it paid for
+    if (redeemedCoupon) {
+      await ctx.db.patch(redeemedCoupon.redemptionId, { transferId });
+    }
 
     // Format pickup date for email
     const pickupDateObj = new Date(args.pickupDate);
@@ -181,8 +211,10 @@ export const createTransfer = mutation({
       pricingDetails: {
         baseFare: fare.baseFare,
         distancePrice: fare.distanceCharge,
-        totalPrice: fare.totalPrice,
+        totalPrice,
         pricePerKm: fare.tierPricePerKm,
+        promoCode: redeemedCoupon?.code,
+        discountAmount: redeemedCoupon?.discountAmount,
       },
       paymentMethod: args.paymentMethod,
       locale: args.locale,

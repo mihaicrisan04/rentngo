@@ -116,7 +116,13 @@ export default defineSchema({
       message: v.optional(v.string()),
       flightNumber: v.optional(v.string()), // Format: "XX 1234" (airline code + space + number)
     }),
+    // Applied coupon (validated + redeemed server-side in createReservation).
+    // promoCode keeps the human-readable code; discountAmount is the EUR
+    // discount actually granted, persisted so confirmation/emails render the
+    // charged values without recomputing.
     promoCode: v.optional(v.string()),
+    couponId: v.optional(v.id("coupons")),
+    discountAmount: v.optional(v.number()),
     // Store any additional charges or fees (delivery fees, extras, etc.).
     // New docs carry locale-free `code` + `params` (translated at render
     // time); legacy docs carry only the localized `description` prose.
@@ -213,6 +219,10 @@ export default defineSchema({
     distancePrice: v.number(), // Price calculated from distance
     totalPrice: v.number(),
     pricePerKm: v.number(), // Rate used for this booking
+    // Applied coupon (validated + redeemed server-side in createTransfer)
+    promoCode: v.optional(v.string()),
+    couponId: v.optional(v.id("coupons")),
+    discountAmount: v.optional(v.number()),
 
     // Customer information
     customerInfo: v.object({
@@ -244,18 +254,44 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_number", ["transferNumber"]),
 
-  // Promotions table - stores discount codes
-  promotions: defineTable({
-    code: v.string(),
-    type: v.union(v.literal("percentage"), v.literal("fixed")),
-    value: v.number(), // percentage or fixed amount
-    expiryDate: v.number(), // Unix timestamp
-    usageCount: v.number(),
-    maxUsage: v.optional(v.number()),
-    active: v.boolean(),
+  // Coupons table - admin-generated discount codes redeemed at checkout
+  coupons: defineTable({
+    code: v.string(), // stored normalized (uppercase, trimmed) — lookups are case-insensitive
+    label: v.optional(v.string()), // admin-only note ("summer 2026 promo")
+    discountType: v.union(v.literal("percentage"), v.literal("fixed")),
+    discountValue: v.number(), // percentage (0-100] or fixed amount in EUR
+    expiresAt: v.optional(v.number()), // UTC ms; set to end-of-day Europe/Bucharest
+    maxRedemptions: v.optional(v.number()), // "first N" cap; undefined = unlimited
+    // Maintained counter, incremented inside the booking mutation. The
+    // read-check-increment lives in one transaction, so Convex OCC keeps a
+    // capped code from ever over-redeeming under concurrency.
+    redemptionCount: v.number(),
+    minOrderValue: v.optional(v.number()), // EUR floor on the pre-discount total
+    appliesTo: v.union(
+      v.literal("rentals"),
+      v.literal("transfers"),
+      v.literal("both"),
+    ),
+    isActive: v.boolean(), // admin kill-switch, checked at validation and redemption
+  }).index("by_code", ["code"]),
+
+  // Coupon redemptions - audit trail, one row per redeemed booking. Also
+  // enforces the once-per-user rule (by userId when authenticated, by
+  // normalized email for guest bookings).
+  couponRedemptions: defineTable({
+    couponId: v.id("coupons"),
+    code: v.string(), // denormalized so reporting survives coupon deletion
+    bookingType: v.union(v.literal("reservation"), v.literal("transfer")),
+    reservationId: v.optional(v.id("reservations")),
+    transferId: v.optional(v.id("transfers")),
+    userId: v.optional(v.id("users")),
+    customerEmail: v.string(), // normalized (lowercase, trimmed)
+    amountDiscounted: v.number(), // actual EUR discount granted
+    redeemedAt: v.number(),
   })
-    .index("by_code", ["code"])
-    .index("by_active", ["active"]),
+    .index("by_coupon", ["couponId"])
+    .index("by_coupon_email", ["couponId", "customerEmail"])
+    .index("by_coupon_user", ["couponId", "userId"]),
 
   // Email logs table - tracks sent emails
   emailLogs: defineTable({

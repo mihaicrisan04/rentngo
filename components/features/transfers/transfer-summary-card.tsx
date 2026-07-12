@@ -24,6 +24,8 @@ import {
 import { LocationData } from "@/lib/transfer-storage";
 import { cn } from "@/lib/utils";
 import { TransferRouteMap } from "@/components/features/transfers/transfer-route-map";
+import { applyDiscountToTotal } from "@/lib/pricing";
+import type { AppliedCoupon } from "@/components/features/checkout/coupon-code-input";
 
 interface Coordinates {
   lng: number;
@@ -49,6 +51,8 @@ interface TransferSummaryCardProps {
     year?: number;
   } | null;
   totalPrice: number;
+  /** Advisory coupon preview; the server recomputes at booking time. */
+  appliedCoupon?: AppliedCoupon | null;
   className?: string;
 }
 
@@ -67,9 +71,17 @@ export function TransferSummaryCard({
   estimatedDurationMinutes,
   vehicle,
   totalPrice,
+  appliedCoupon,
   className,
 }: TransferSummaryCardProps) {
   const t = useTranslations("transferPage");
+  const tCoupon = useTranslations("common.coupon");
+
+  const discountAmount = appliedCoupon?.discountAmount ?? 0;
+  const displayedTotal =
+    discountAmount > 0
+      ? applyDiscountToTotal(totalPrice, discountAmount)
+      : totalPrice;
 
   const formatDuration = (minutes: number): string => {
     if (minutes < 60) {
@@ -228,11 +240,21 @@ export function TransferSummaryCard({
           )}
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between items-baseline border-t pt-4">
-        <span className="font-semibold">{t("pricing.totalPrice")}</span>
-        <span className="text-2xl font-bold text-primary">
-          €{totalPrice.toFixed(2)}
-        </span>
+      <CardFooter className="flex-col items-stretch gap-2 border-t pt-4">
+        {appliedCoupon && discountAmount > 0 && (
+          <div className="flex justify-between items-baseline text-sm text-green-600">
+            <span>
+              {tCoupon("discount")} ({appliedCoupon.code})
+            </span>
+            <span>−€{discountAmount.toFixed(2)}</span>
+          </div>
+        )}
+        <div className="flex justify-between items-baseline">
+          <span className="font-semibold">{t("pricing.totalPrice")}</span>
+          <span className="text-2xl font-bold text-primary">
+            €{displayedTotal.toFixed(2)}
+          </span>
+        </div>
       </CardFooter>
     </Card>
   );
