@@ -691,6 +691,62 @@ export const getAllVehiclesWithClasses = query({
   },
 });
 
+// Slim public fleet summary for SEO surfaces (llms.txt). Returns only the
+// fields needed to describe the fleet — no images, no storage lookups.
+export const getFleetSummary = query({
+  args: {},
+  returns: v.array(
+    v.object({
+      make: v.string(),
+      model: v.string(),
+      year: v.optional(v.number()),
+      slug: v.optional(v.string()),
+      seats: v.optional(v.number()),
+      transmission: v.optional(
+        v.union(v.literal("automatic"), v.literal("manual")),
+      ),
+      fuelType: v.optional(
+        v.union(
+          v.literal("diesel"),
+          v.literal("electric"),
+          v.literal("hybrid"),
+          v.literal("benzina"),
+        ),
+      ),
+      pricePerDayFrom: v.union(v.number(), v.null()),
+      className: v.optional(v.string()),
+    }),
+  ),
+  handler: async (ctx) => {
+    const [vehicles, vehicleClasses] = await Promise.all([
+      ctx.db.query("vehicles").take(500),
+      ctx.db.query("vehicleClasses").take(100),
+    ]);
+    const classMap = new Map(vehicleClasses.map((c) => [c._id, c]));
+
+    return vehicles.map((vehicle) => {
+      const vehicleClass = vehicle.classId
+        ? classMap.get(vehicle.classId)
+        : undefined;
+      const pricePerDayFrom = vehicle.pricingTiers?.length
+        ? Math.min(...vehicle.pricingTiers.map((tier) => tier.pricePerDay))
+        : null;
+
+      return {
+        make: vehicle.make,
+        model: vehicle.model,
+        year: vehicle.year,
+        slug: vehicle.slug,
+        seats: vehicle.seats,
+        transmission: vehicle.transmission,
+        fuelType: vehicle.fuelType,
+        pricePerDayFrom,
+        className: vehicleClass?.displayName ?? vehicleClass?.name,
+      };
+    });
+  },
+});
+
 // Helper function to generate a URL-friendly slug from vehicle make, model, and year
 function generateVehicleSlug(make: string, model: string, year?: number): string {
   const parts = [make, model];

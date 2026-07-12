@@ -530,6 +530,7 @@
     }
   },
   "footer": {
+    "faq": "Întrebări frecvente",
     "privacy": "Confidențialitate",
     "terms": "Termeni",
     "copyright": "© 2026 Rent'n Go Cluj",
@@ -624,6 +625,65 @@
   "testimonials": {
     "title": "Ce Spun Clienții Noștri",
     "description": "Citește ce au de spus clienții noștri despre noi."
+  },
+  "faqPage": {
+    "title": "Întrebări frecvente",
+    "description": "Răspunsuri la cele mai frecvente întrebări despre închirierea auto și transferurile VIP cu Rent'n Go Cluj-Napoca.",
+    "questions": {
+      "0": {
+        "question": "Ce documente am nevoie pentru a închiria o mașină?",
+        "answer": "Un permis de conducere valabil, deținut de cel puțin 2 ani, plus o carte de identitate sau un pașaport valabil. Un card bancar este necesar dacă alegeți plata sau blocarea garanției prin card."
+      },
+      "1": {
+        "question": "Care este vârsta minimă pentru închiriere?",
+        "answer": "Vârsta minimă este de 23 de ani, iar permisul de conducere trebuie deținut de cel puțin 2 ani."
+      },
+      "2": {
+        "question": "De unde pot prelua și unde pot returna mașina?",
+        "answer": "Locația noastră principală este Aeroportul Internațional „Avram Iancu” Cluj, Strada Traian Vuia 149-151, Cluj-Napoca. Livrarea și preluarea în alte locații sunt posibile contra unei taxe suplimentare."
+      },
+      "3": {
+        "question": "Există o garanție (depozit)?",
+        "answer": "Da. O garanție între 200 și 1.800 EUR (în funcție de valoarea mașinii) se blochează pe card sau se achită în numerar la preluare și se restituie integral la returnarea mașinii nevătămate, curate și cu toate accesoriile. Alternativ, puteți achita asigurarea SCDW în locul garanției."
+      },
+      "4": {
+        "question": "Ce acoperă asigurarea SCDW?",
+        "answer": "SCDW (Super Collision Damage Waiver) reduce garanția la zero și vă exonerează de răspunderea financiară în caz de daune. În cazul daunelor totale se aplică totuși o răspundere între 1.000 și 8.000 EUR, în funcție de model. SCDW nu acoperă combustibilul, daunele la anvelope sau la partea inferioară a mașinii produse din neglijență și nici pierderea accesoriilor."
+      },
+      "5": {
+        "question": "Care este politica de kilometri?",
+        "answer": "Tariful de închiriere acoperă o medie de 200 km/zi. Kilometrii suplimentari se taxează cu 5 EUR/50 km pentru clasele standard și business și cu 8 EUR/50 km pentru clasa premium."
+      },
+      "6": {
+        "question": "Care este politica de combustibil?",
+        "answer": "Plin-la-plin: primiți mașina cu rezervorul plin și o returnați cu rezervorul plin. Combustibilul lipsă se taxează cu 2,5 EUR/litru."
+      },
+      "7": {
+        "question": "Pot conduce mașina în afara României?",
+        "answer": "Da, doar în statele membre UE. Acest lucru trebuie anunțat la confirmarea rezervării și implică o taxă de 50 EUR/ieșire pentru extinderea teritorială a asigurării și emiterea împuternicirilor de conducere."
+      },
+      "8": {
+        "question": "Cum plătesc și în ce monedă?",
+        "answer": "Prețurile sunt exprimate în EUR și se facturează în RON la cursul de vânzare BNR +1% din ziua semnării contractului. Puteți plăti cu cardul sau numerar; garanția poate fi blocată pe card sau achitată în numerar."
+      },
+      "9": {
+        "question": "Care este perioada minimă de închiriere?",
+        "answer": "O zi. În perioadele de sărbători (Paște, Crăciun, Revelion) și în sezonul de vară (iunie–septembrie), perioada minimă de închiriere este de 10 zile."
+      },
+      "10": {
+        "question": "Cum funcționează transferurile VIP și de aeroport?",
+        "answer": "Oferim transferuri private de aeroport, oraș și business în Cluj și împrejurimi, cu șoferi profesioniști. Prețurile se calculează în funcție de distanță — rezervați online pe pagina de transferuri sau telefonic/WhatsApp la +40 773 932 961."
+      },
+      "11": {
+        "question": "Ce se întâmplă dacă returnez mașina cu întârziere?",
+        "answer": "Depășirea orei de returnare din contract se taxează cu o zi întreagă de închiriere (pentru primele 2 ore). Întârzierile de peste 2 ore se taxează cu 100–300 EUR, în funcție de mașină, și pot fi raportate autorităților, cu excepția situațiilor agreate explicit în contract. Contactați-ne cât mai devreme dacă doriți să prelungiți închirierea."
+      }
+    },
+    "cta": {
+      "title": "Gata de drum?",
+      "description": "Descoperă flota noastră și găsește mașina potrivită pentru călătoria ta la Cluj-Napoca.",
+      "buttonText": "Vezi mașinile"
+    }
   },
   "faq": {
     "questions": {
