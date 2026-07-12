@@ -26,13 +26,17 @@ import { Check, Copy, Link2 } from "lucide-react";
 export function AffiliateDashboard() {
   const t = useTranslations("profile.affiliate");
   const locale = useLocale();
+  const currentUser = useQuery(api.users.get);
   const affiliate = useQuery(api.affiliates.getMyAffiliate);
   const [copied, setCopied] = React.useState(false);
 
-  // `undefined` while the query loads; `null` once we know the signed-in user
-  // isn't an affiliate. Show nothing on the first, an invite blurb on the
-  // second so the profile always surfaces the program's status.
-  if (affiliate === undefined) return null;
+  // Both queries resolve to `null` for "no Convex user record yet" (provisioning
+  // lag, or a Clerk↔Convex id mismatch) as well as their real empty states, so
+  // gate on the user record first: while it's loading (undefined) or unresolved
+  // (null) render nothing, rather than mislabelling an actual affiliate as "not
+  // enrolled". Only once the user exists do we trust affiliate === null.
+  if (currentUser === undefined || affiliate === undefined) return null;
+  if (currentUser === null) return null;
 
   if (affiliate === null) {
     return (
