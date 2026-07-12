@@ -530,6 +530,7 @@
     }
   },
   "footer": {
+    "faq": "FAQ",
     "privacy": "Privacy",
     "terms": "Terms",
     "copyright": "© 2026 Rent'n Go Cluj",
@@ -624,6 +625,65 @@
   "testimonials": {
     "title": "What Our Customers Say",
     "description": "Read what our customers have to say about us."
+  },
+  "faqPage": {
+    "title": "Frequently Asked Questions",
+    "description": "Answers to the most common questions about car rental and VIP transfers with Rent'n Go Cluj-Napoca.",
+    "questions": {
+      "0": {
+        "question": "What documents do I need to rent a car?",
+        "answer": "A valid driving licence held for at least 2 years, plus a valid ID card or passport. A bank card is needed if you choose to pay or block the security deposit by card."
+      },
+      "1": {
+        "question": "What is the minimum age to rent a car?",
+        "answer": "The minimum driver age is 23 and the driving licence must have been held for at least 2 years."
+      },
+      "2": {
+        "question": "Where can I pick up and return the car?",
+        "answer": "Our main location is Cluj \"Avram Iancu\" International Airport, Strada Traian Vuia 149-151, Cluj-Napoca. Delivery and collection at other locations is possible for an additional fee."
+      },
+      "3": {
+        "question": "Is there a security deposit?",
+        "answer": "Yes. A deposit between €200 and €1,800 (depending on the vehicle's value) is blocked on your card or paid in cash at pickup, and refunded in full when the car is returned undamaged, clean and with all accessories. Alternatively, you can purchase SCDW insurance instead of the deposit."
+      },
+      "4": {
+        "question": "What does the SCDW insurance cover?",
+        "answer": "SCDW (Super Collision Damage Waiver) reduces the security deposit to zero and covers your financial liability for damage. In case of total damage a liability of €1,000–€8,000 still applies, depending on the model. SCDW does not cover fuel, damage to tyres or the underside of the car caused by negligence, or lost accessories."
+      },
+      "5": {
+        "question": "What is the mileage policy?",
+        "answer": "The rental rate covers an average of 200 km per day. Extra distance is charged at €5 per 50 km for standard and business classes and €8 per 50 km for premium."
+      },
+      "6": {
+        "question": "What is the fuel policy?",
+        "answer": "Full-to-full: you receive the car with a full tank and return it full. Missing fuel is charged at €2.5 per litre."
+      },
+      "7": {
+        "question": "Can I drive the car outside Romania?",
+        "answer": "Yes, in EU member states only. You must announce this when confirming the reservation and pay a €50 fee per exit for the territorial extension of the insurance and the driver authorization documents."
+      },
+      "8": {
+        "question": "How do I pay and in what currency?",
+        "answer": "Prices are quoted in EUR and invoiced in RON at the National Bank of Romania sell rate +1% on the contract date. You can pay by card or cash; the security deposit can be blocked on a card or paid in cash."
+      },
+      "9": {
+        "question": "What is the minimum rental period?",
+        "answer": "One day. During holiday periods (Easter, Christmas, New Year) and the summer season (June–September) the minimum rental period is 10 days."
+      },
+      "10": {
+        "question": "How do the VIP and airport transfers work?",
+        "answer": "We provide private airport, city and business transfers in and around Cluj with professional drivers. Prices are calculated by distance — book online on the transfers page or by phone/WhatsApp at +40 773 932 961."
+      },
+      "11": {
+        "question": "What happens if I return the car late?",
+        "answer": "A delay past the return time in the contract is charged as a full extra rental day (for up to 2 hours). Delays of more than 2 hours are charged €100–€300 depending on the vehicle and may be reported to the authorities, unless an exception was explicitly agreed in the contract. Contact us as early as possible if you need to extend your rental."
+      }
+    },
+    "cta": {
+      "title": "Ready to hit the road?",
+      "description": "Browse our fleet and find the right car for your trip to Cluj-Napoca.",
+      "buttonText": "Browse our cars"
+    }
   },
   "faq": {
     "questions": {

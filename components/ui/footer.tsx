@@ -58,6 +58,7 @@ export function Footer({ logo, brandName }: FooterProps) {
     { href: `/${locale}/transfers`, label: t("transfers") },
     { href: `/${locale}/about`, label: t("about") },
     { href: `/${locale}/contact`, label: t("contact") },
+    { href: `/${locale}/faq`, label: tFooter("faq") },
   ];
 
   const legalLinks = [

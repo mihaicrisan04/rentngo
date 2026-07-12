@@ -144,6 +144,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }),
 
+    // FAQ page
+    ...createBilingualEntry("/faq", {
+      changeFrequency: "monthly",
+      priority: 0.7,
+    }),
+
     // Terms and Conditions
     ...createBilingualEntry("/terms", {
       changeFrequency: "yearly",
