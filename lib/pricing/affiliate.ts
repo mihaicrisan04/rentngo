@@ -37,10 +37,12 @@ export interface AffiliateSettingsData {
  * Seed defaults, used until an admin saves the settings doc. The numbers are
  * PLACEHOLDERS from the client's example (6 conversions -> 5% referrer
  * reward; referred customer gets a fixed 10 EUR off) — real values are set in
- * the admin UI, never in code.
+ * the admin UI, never in code. Deliberately DISABLED by default: the program
+ * must not grant real discounts on deploy until an admin has reviewed the
+ * values and flipped the kill-switch on.
  */
 export const DEFAULT_AFFILIATE_SETTINGS: AffiliateSettingsData = {
-  enabled: true,
+  enabled: false,
   attributionWindowDays: 30,
   referredDiscountType: "fixed",
   referredDiscountValue: 10,

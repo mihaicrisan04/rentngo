@@ -34,7 +34,7 @@ export function AffiliateSettingsCard() {
   const settings = useQuery(api.affiliates.getSettings);
   const updateSettings = useMutation(api.affiliates.updateSettings);
 
-  const [enabled, setEnabled] = React.useState(true);
+  const [enabled, setEnabled] = React.useState(false);
   const [windowDays, setWindowDays] = React.useState("30");
   const [discountType, setDiscountType] = React.useState<
     "percentage" | "fixed"

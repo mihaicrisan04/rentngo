@@ -6,6 +6,7 @@ import {
   computeReferredDiscount,
   computeReferrerReward,
   conversionTransition,
+  hasCouponIdentity,
   isValidAffiliateSlug,
   nextTier,
   normalizeAffiliateSlug,
@@ -468,7 +469,16 @@ export async function resolveAffiliateCandidates(
   const email = normalizeCustomerEmail(args.customerEmail);
   let referred: ReferredDiscountCandidate | null = null;
 
-  if (args.referral) {
+  // Same identity rule as coupon redemption (hasCouponIdentity): without a
+  // user account or a non-blank email there is nothing to key the
+  // per-customer dedupe or the self-referral email check on, so no referred
+  // discount and no conversion.
+  const hasIdentity = hasCouponIdentity({
+    userId: args.currentUser?._id,
+    email: args.customerEmail,
+  });
+
+  if (args.referral && hasIdentity) {
     const attribution = await ctx.db
       .query("referralAttributions")
       .withIndex("by_visitor_key", (q) =>
