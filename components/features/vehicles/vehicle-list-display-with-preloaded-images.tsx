@@ -83,14 +83,20 @@ function getOrderedClasses(vehicles: VehicleWithImageUrl[]): Array<{
   return classArray.sort((a, b) => a.sortIndex - b.sortIndex);
 }
 
+// Number of cards (across all class sections) whose image is eagerly
+// preloaded; the rest lazy-load as the user scrolls.
+const PRIORITY_IMAGE_COUNT = 4;
+
 function VehicleClassSection({
   displayName,
   vehicles,
   searchState,
+  indexOffset,
 }: {
   displayName: string;
   vehicles: VehicleWithImageUrl[];
   searchState: SearchData;
+  indexOffset: number;
 }) {
   const sortedVehicles = sortVehiclesInClass(vehicles);
 
@@ -110,7 +116,7 @@ function VehicleClassSection({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {sortedVehicles.map((vehicle) => (
+        {sortedVehicles.map((vehicle, index) => (
           <VehicleCardWithPreloadedImage
             key={vehicle._id}
             vehicle={vehicle}
@@ -121,6 +127,7 @@ function VehicleClassSection({
             restitutionLocation={searchState.restitutionLocation || null}
             pickupTime={searchState.pickupTime}
             returnTime={searchState.returnTime}
+            imagePriority={indexOffset + index < PRIORITY_IMAGE_COUNT}
           />
         ))}
       </div>
@@ -143,19 +150,35 @@ function VehiclesByClass({
     return vehiclesInClass && vehiclesInClass.length > 0;
   });
 
+  // Precompute each section's global start index so the first
+  // PRIORITY_IMAGE_COUNT cards across all sections preload their image.
+  const sections = availableClasses.reduce<
+    {
+      classInfo: (typeof availableClasses)[number];
+      vehiclesInClass: VehicleWithImageUrl[];
+      indexOffset: number;
+    }[]
+  >((acc, classInfo) => {
+    const vehiclesInClass = groupedVehicles[classInfo.key] || [];
+    const prev = acc[acc.length - 1];
+    const indexOffset = prev
+      ? prev.indexOffset + prev.vehiclesInClass.length
+      : 0;
+    acc.push({ classInfo, vehiclesInClass, indexOffset });
+    return acc;
+  }, []);
+
   return (
     <div>
-      {availableClasses.map((classInfo) => {
-        const vehiclesInClass = groupedVehicles[classInfo.key];
-        return (
-          <VehicleClassSection
-            key={classInfo.key}
-            displayName={classInfo.displayName}
-            vehicles={vehiclesInClass || []}
-            searchState={searchState}
-          />
-        );
-      })}
+      {sections.map(({ classInfo, vehiclesInClass, indexOffset }) => (
+        <VehicleClassSection
+          key={classInfo.key}
+          displayName={classInfo.displayName}
+          vehicles={vehiclesInClass}
+          searchState={searchState}
+          indexOffset={indexOffset}
+        />
+      ))}
     </div>
   );
 }

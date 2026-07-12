@@ -1,9 +1,13 @@
-import { fetchQuery } from "convex/nextjs";
+import { fetchStaticQuery } from "@/lib/convex-static";
 import { api } from "@/convex/_generated/api";
 import { CarDetailClient } from "./car-detail-client";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { buildMetadata, jsonLdScriptContent } from "@/lib/metadata";
+
+// Statically prerendered via generateStaticParams; re-generated in the
+// background so vehicle changes show up without a redeploy.
+export const revalidate = 3600;
 
 interface PageProps {
   params: Promise<{ slug: string; locale: string }>;
@@ -157,7 +161,7 @@ export async function generateMetadata({
   const { slug, locale } = await params;
 
   try {
-    const vehicle = await fetchQuery(api.vehicles.getBySlug, { slug });
+    const vehicle = await fetchStaticQuery(api.vehicles.getBySlug, { slug });
 
     if (!vehicle) {
       return {
@@ -172,7 +176,7 @@ export async function generateMetadata({
 
     let imageUrl = "https://rngo.ro/logo.png";
     if (vehicle.mainImageId) {
-      const fetchedImageUrl = await fetchQuery(api.vehicles.getImageUrl, {
+      const fetchedImageUrl = await fetchStaticQuery(api.vehicles.getImageUrl, {
         imageId: vehicle.mainImageId,
       });
       if (fetchedImageUrl) {
@@ -205,7 +209,7 @@ export async function generateMetadata({
 }
 
 export async function generateStaticParams() {
-  const vehicles = await fetchQuery(api.vehicles.getAllVehicles);
+  const vehicles = await fetchStaticQuery(api.vehicles.getAllVehicles);
   const slugs = vehicles.filter((v) => v.slug).map((v) => v.slug!);
   return slugs.flatMap((slug) => [
     { locale: "ro", slug },
@@ -216,7 +220,7 @@ export async function generateStaticParams() {
 export default async function CarDetailPage({ params }: PageProps) {
   const { slug, locale } = await params;
 
-  const vehicle = await fetchQuery(api.vehicles.getBySlug, { slug });
+  const vehicle = await fetchStaticQuery(api.vehicles.getBySlug, { slug });
 
   if (!vehicle) {
     notFound();
@@ -224,7 +228,7 @@ export default async function CarDetailPage({ params }: PageProps) {
 
   let mainImageUrl: string | null = null;
   if (vehicle.mainImageId) {
-    mainImageUrl = await fetchQuery(api.vehicles.getImageUrl, {
+    mainImageUrl = await fetchStaticQuery(api.vehicles.getImageUrl, {
       imageId: vehicle.mainImageId,
     });
   }
@@ -233,7 +237,7 @@ export default async function CarDetailPage({ params }: PageProps) {
   if (vehicle.images && vehicle.images.length > 0) {
     const urls = await Promise.all(
       vehicle.images.map(async (imageId) => {
-        const url = await fetchQuery(api.vehicles.getImageUrl, {
+        const url = await fetchStaticQuery(api.vehicles.getImageUrl, {
           imageId,
         });
         return { imageId: imageId.toString(), url };

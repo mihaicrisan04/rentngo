@@ -3,7 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { BlogHeader } from "@/components/features/blog";
+import { BlogHeader } from "@/components/features/blog/blog-header";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";

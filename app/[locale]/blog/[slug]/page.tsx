@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { fetchQuery } from "convex/nextjs";
+import { fetchStaticQuery } from "@/lib/convex-static";
 import { api } from "@/convex/_generated/api";
 import { BlogDetailClient } from "@/components/features/blog/blog-detail-client";
 import { BlogContentServer } from "@/components/features/blog/blog-content-server";
@@ -10,6 +10,10 @@ import {
 import { notFound } from "next/navigation";
 import { buildMetadata } from "@/lib/metadata";
 
+// Statically prerendered via generateStaticParams; re-generated in the
+// background so post edits show up without a redeploy.
+export const revalidate = 3600;
+
 interface BlogDetailPageProps {
   params: Promise<{ locale: string; slug: string }>;
 }
@@ -18,7 +22,7 @@ export async function generateMetadata({
   params,
 }: BlogDetailPageProps): Promise<Metadata> {
   const { locale, slug } = await params;
-  const blog = await fetchQuery(api.blogs.getBySlug, {
+  const blog = await fetchStaticQuery(api.blogs.getBySlug, {
     slug,
     locale: locale as "ro" | "en",
   });
@@ -30,7 +34,7 @@ export async function generateMetadata({
   }
 
   const coverImageUrl = blog.coverImage
-    ? await fetchQuery(api.blogs.getImageUrl, { imageId: blog.coverImage })
+    ? await fetchStaticQuery(api.blogs.getImageUrl, { imageId: blog.coverImage })
     : null;
 
   const roSlug = locale === "ro" ? blog.slug : blog.alternateSlug;
@@ -60,8 +64,8 @@ export async function generateMetadata({
 
 export async function generateStaticParams() {
   const [roBlogs, enBlogs] = await Promise.all([
-    fetchQuery(api.blogs.getAll, { locale: "ro" }),
-    fetchQuery(api.blogs.getAll, { locale: "en" }),
+    fetchStaticQuery(api.blogs.getAll, { locale: "ro" }),
+    fetchStaticQuery(api.blogs.getAll, { locale: "en" }),
   ]);
   return [
     ...roBlogs.map((blog) => ({ locale: "ro", slug: blog.slug })),
@@ -71,7 +75,7 @@ export async function generateStaticParams() {
 
 export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
   const { locale, slug } = await params;
-  const blog = await fetchQuery(api.blogs.getBySlug, {
+  const blog = await fetchStaticQuery(api.blogs.getBySlug, {
     slug,
     locale: locale as "ro" | "en",
   });
@@ -81,7 +85,7 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
   }
 
   const coverImageUrl = blog.coverImage
-    ? await fetchQuery(api.blogs.getImageUrl, { imageId: blog.coverImage })
+    ? await fetchStaticQuery(api.blogs.getImageUrl, { imageId: blog.coverImage })
     : null;
 
   return (

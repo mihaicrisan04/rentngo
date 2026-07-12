@@ -1,8 +1,12 @@
-import { fetchQuery } from "convex/nextjs";
+import { fetchStaticQuery } from "@/lib/convex-static";
 import { api } from "@/convex/_generated/api";
 import { CarsPageClient } from "./cars-page-client";
 import { Metadata } from "next";
 import { buildMetadata } from "@/lib/metadata";
+
+// Statically prerendered per locale; re-generated in the background so
+// fleet changes show up without a redeploy.
+export const revalidate = 3600;
 
 interface CarsPageProps {
   params: Promise<{ locale: string }>;
@@ -33,7 +37,7 @@ export async function generateMetadata({
 }
 
 export default async function CarsPage() {
-  const vehicles = await fetchQuery(api.vehicles.getAllVehiclesWithClasses, {});
+  const vehicles = await fetchStaticQuery(api.vehicles.getAllVehiclesWithClasses, {});
 
   return <CarsPageClient initialVehicles={vehicles} />;
 }

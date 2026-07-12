@@ -25,6 +25,12 @@ interface TransferSearchFormProps {
   onRouteCalculated?: (routeInfo: RouteInfo | null) => void;
 }
 
+function routeKey(pickup: LocationData, dropoff: LocationData): string {
+  const { lng: plng, lat: plat } = pickup.coordinates;
+  const { lng: dlng, lat: dlat } = dropoff.coordinates;
+  return `${plng},${plat}|${dlng},${dlat}`;
+}
+
 export function TransferSearchForm({
   initialData,
   onRouteCalculated,
@@ -62,6 +68,11 @@ export function TransferSearchForm({
   const [routeInfo, setRouteInfo] = React.useState<RouteInfo | null>(null);
   const [isHydrated, setIsHydrated] = React.useState(false);
 
+  // Location pair the current routeInfo was calculated (or restored) for.
+  // Lets the route-calculation effect skip the paid Mapbox Directions call
+  // when route info was just restored from storage for the same pair.
+  const routeInfoKeyRef = React.useRef<string | null>(null);
+
   React.useEffect(() => {
     const stored = transferStorage.load();
     if (stored.pickupLocation) setPickupLocation(stored.pickupLocation);
@@ -72,17 +83,45 @@ export function TransferSearchForm({
     if (stored.returnTime) setReturnTime(stored.returnTime);
     if (stored.passengers) setPassengers(stored.passengers);
     if (stored.transferType) setTransferType(stored.transferType);
-    if (stored.distanceKm && stored.estimatedDurationMinutes) {
-      setRouteInfo({
+    // Only trust restored route metrics when their stored key provably matches
+    // the restored location pair. Otherwise the calc effect below recalculates
+    // (correct-but-costs one Directions call), guarding against stale distance.
+    if (
+      stored.distanceKm &&
+      stored.estimatedDurationMinutes &&
+      stored.routeInfoKey &&
+      stored.pickupLocation &&
+      stored.dropoffLocation &&
+      stored.routeInfoKey ===
+        routeKey(stored.pickupLocation, stored.dropoffLocation)
+    ) {
+      const restoredInfo = {
         distanceKm: stored.distanceKm,
         durationMinutes: stored.estimatedDurationMinutes,
-      });
+      };
+      setRouteInfo(restoredInfo);
+      routeInfoKeyRef.current = stored.routeInfoKey;
+      onRouteCalculated?.(restoredInfo);
     }
     setIsHydrated(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   React.useEffect(() => {
     if (!isHydrated) return;
+
+    // Persist route metrics only when they provably belong to the CURRENT
+    // pair (the ref is updated together with routeInfo). While a location
+    // change has a pending Directions request, routeInfo still holds the
+    // previous pair's distance — writing it here against the new pair would
+    // let a remount restore a wrong distance. In that window we write
+    // `undefined`, which clears any stale metrics from storage.
+    const currentKey =
+      pickupLocation && dropoffLocation
+        ? routeKey(pickupLocation, dropoffLocation)
+        : null;
+    const metricsMatchPair =
+      currentKey !== null && routeInfoKeyRef.current === currentKey && !!routeInfo;
 
     transferStorage.save({
       pickupLocation: pickupLocation || undefined,
@@ -93,8 +132,11 @@ export function TransferSearchForm({
       returnTime,
       passengers,
       transferType,
-      distanceKm: routeInfo?.distanceKm,
-      estimatedDurationMinutes: routeInfo?.durationMinutes,
+      distanceKm: metricsMatchPair ? routeInfo.distanceKm : undefined,
+      estimatedDurationMinutes: metricsMatchPair
+        ? routeInfo.durationMinutes
+        : undefined,
+      routeInfoKey: metricsMatchPair ? currentKey : undefined,
     });
   }, [
     pickupLocation,
@@ -110,10 +152,22 @@ export function TransferSearchForm({
   ]);
 
   React.useEffect(() => {
+    // Wait for the storage restore to run first, so a restored route isn't
+    // clobbered (and then re-fetched) by this effect's initial null pass.
+    if (!isHydrated) return;
+
     const calculateRoute = async () => {
       if (!pickupLocation || !dropoffLocation) {
+        routeInfoKeyRef.current = null;
         setRouteInfo(null);
         onRouteCalculated?.(null);
+        return;
+      }
+
+      // Route info for this exact pair was already calculated or restored
+      // from storage — skip the redundant (paid) Directions API round-trip.
+      const key = routeKey(pickupLocation, dropoffLocation);
+      if (routeInfoKeyRef.current === key) {
         return;
       }
 
@@ -123,10 +177,12 @@ export function TransferSearchForm({
           pickupLocation.coordinates,
           dropoffLocation.coordinates,
         );
+        routeInfoKeyRef.current = key;
         setRouteInfo(info);
         onRouteCalculated?.(info);
       } catch (error) {
         console.error("Failed to calculate route:", error);
+        routeInfoKeyRef.current = null;
         setRouteInfo(null);
         onRouteCalculated?.(null);
       } finally {
@@ -135,7 +191,7 @@ export function TransferSearchForm({
     };
 
     calculateRoute();
-  }, [pickupLocation, dropoffLocation, onRouteCalculated]);
+  }, [isHydrated, pickupLocation, dropoffLocation, onRouteCalculated]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -158,6 +214,12 @@ export function TransferSearchForm({
       }
     }
 
+    // Same guard as the save effect: only persist metrics that provably match
+    // this pair, so the vehicles page never prices against a stale distance.
+    const submitKey = routeKey(pickupLocation, dropoffLocation);
+    const metricsMatchPair =
+      routeInfoKeyRef.current === submitKey && !!routeInfo;
+
     transferStorage.save({
       pickupLocation,
       dropoffLocation,
@@ -167,8 +229,11 @@ export function TransferSearchForm({
       returnTime: transferType === "round_trip" ? returnTime : undefined,
       passengers,
       transferType,
-      distanceKm: routeInfo?.distanceKm,
-      estimatedDurationMinutes: routeInfo?.durationMinutes,
+      distanceKm: metricsMatchPair ? routeInfo.distanceKm : undefined,
+      estimatedDurationMinutes: metricsMatchPair
+        ? routeInfo.durationMinutes
+        : undefined,
+      routeInfoKey: metricsMatchPair ? submitKey : undefined,
       selectedVehicleId: undefined,
     });
 

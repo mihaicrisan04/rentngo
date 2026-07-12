@@ -26,6 +26,11 @@ interface VehicleCardWithPreloadedImageProps {
   restitutionLocation?: string | null;
   pickupTime?: string | null;
   returnTime?: string | null;
+  /**
+   * Only the first few above-the-fold cards should preload their image;
+   * the rest lazy-load so they don't compete with LCP content.
+   */
+  imagePriority?: boolean;
 }
 
 function buildCarDetailsUrl(vehicleSlug: string | undefined, vehicleId: string): string {
@@ -41,6 +46,7 @@ export function VehicleCardWithPreloadedImage({
   restitutionLocation,
   pickupTime,
   returnTime,
+  imagePriority = false,
 }: VehicleCardWithPreloadedImageProps) {
   const t = useTranslations("vehicleCard");
   const tCommon = useTranslations("common");
@@ -117,7 +123,7 @@ export function VehicleCardWithPreloadedImage({
             fill
             style={{ objectFit: "cover" }}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            priority
+            priority={imagePriority}
           />
         ) : (
           <div className="flex items-center justify-center h-full text-muted-foreground">

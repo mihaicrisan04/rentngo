@@ -53,7 +53,7 @@ function VehicleList({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {vehicles.map((vehicle) => {
+      {vehicles.map((vehicle, index) => {
         if (!vehicle || typeof vehicle._id !== "string") {
           return null;
         }
@@ -68,6 +68,7 @@ function VehicleList({
             restitutionLocation={searchState.restitutionLocation}
             pickupTime={searchState.pickupTime}
             returnTime={searchState.returnTime}
+            imagePriority={index < 4}
           />
         );
       })}
