@@ -59,6 +59,9 @@ const pricingDetailsValidator = v.object({
   paymentMethod: v.string(),
   promoCode: v.optional(v.string()),
   discountAmount: v.optional(v.number()),
+  // True when the discount came from the affiliate program (referral link or
+  // referrer tier reward) rather than a typed coupon code — changes the label
+  isReferralDiscount: v.optional(v.boolean()),
   additionalCharges: v.optional(
     v.array(
       v.object({
@@ -149,6 +152,7 @@ const transferPricingDetailsValidator = v.object({
   pricePerKm: v.number(),
   promoCode: v.optional(v.string()),
   discountAmount: v.optional(v.number()),
+  isReferralDiscount: v.optional(v.boolean()),
 });
 
 // Send transfer confirmation emails (customer + admin)

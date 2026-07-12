@@ -41,6 +41,7 @@ export interface PricingDetails {
   paymentMethod: "cash_on_delivery" | "card_on_delivery" | "card_online";
   promoCode?: string;
   discountAmount?: number;
+  isReferralDiscount?: boolean;
   additionalCharges?: Array<{
     description: string;
     amount: number;
@@ -82,6 +83,7 @@ export interface TransferPricingDetails {
   pricePerKm: number;
   promoCode?: string;
   discountAmount?: number;
+  isReferralDiscount?: boolean;
 }
 
 export interface TransferEmailData {
