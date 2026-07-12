@@ -475,6 +475,16 @@
         "emailRequired": "Introdu adresa de email înainte de a aplica un cupon.",
         "submitFailed": "Cuponul nu a putut fi aplicat. Verifică din nou codul și reîncearcă."
       }
+    },
+    "referral": {
+      "discount": "Reducere recomandare",
+      "reward": "Recompensă afiliat"
+    },
+    "consent": {
+      "title": "Cookie-uri",
+      "description": "Folosim un cookie pentru a reține cine te-a recomandat, ca reducerea ta de recomandare să poată fi aplicată. Acceptă pentru a-l activa — dacă refuzi, nu te urmărim și reducerea nu se aplică.",
+      "accept": "Accept",
+      "decline": "Refuz"
     }
   },
   "navigation": {
@@ -548,6 +558,25 @@
       "locations": "Ridicare și Returnare",
       "totalPrice": "Preț Total",
       "status": "Status"
+    },
+    "affiliate": {
+      "title": "Program de Recomandare",
+      "description": "Distribuie linkul tău și primești recompense când recomandările tale rezervă",
+      "inactive": "Contul tău de afiliat este momentan inactiv.",
+      "yourLink": "Linkul tău de recomandare",
+      "copyLink": "Copiază linkul de recomandare",
+      "referredDiscountInfo": "Cei care rezervă prin linkul tău primesc o reducere de {discount}.",
+      "conversions": "Rezervări confirmate",
+      "currentReward": "Recompensa ta actuală",
+      "nextTier": "Următorul nivel: {count} rezervări deblochează o recompensă de {percent}%",
+      "history": "Istoric recomandări",
+      "bookingRental": "Închiriere auto",
+      "bookingTransfer": "Transfer",
+      "status": {
+        "pending": "În așteptare",
+        "confirmed": "Confirmată",
+        "voided": "Anulată"
+      }
     }
   },
   "footer": {

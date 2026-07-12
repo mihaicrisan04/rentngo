@@ -26,6 +26,7 @@ import {
   CouponCodeInput,
   type AppliedCoupon,
 } from "@/components/features/checkout/coupon-code-input";
+import { useAffiliateDiscount } from "@/hooks/use-affiliate-discount";
 import type { PaymentMethod } from "@/lib/checkout-payment-methods";
 import { ConvexError } from "convex/values";
 
@@ -96,6 +97,13 @@ export default function TransferBookingPage() {
         }
       : "skip"
   );
+
+  // Automatic affiliate discount (referral cookie or own tier reward) —
+  // advisory; the server re-resolves it and an explicit coupon wins
+  const { referral, affiliateDiscount } = useAffiliateDiscount({
+    subtotal: pricing?.totalPrice ?? null,
+    email: personalInfo.email,
+  });
 
   React.useEffect(() => {
     const stored = transferStorage.load();
@@ -207,6 +215,8 @@ export default function TransferBookingPage() {
         luggageCount: luggageCount > 0 ? luggageCount : undefined,
         // Re-validated and redeemed server-side; the shown discount is advisory
         promoCode: appliedCoupon?.code,
+        // Referral attribution from the consented cookie — server-validated
+        referral: referral ?? undefined,
         locale,
       });
 
@@ -428,6 +438,7 @@ export default function TransferBookingPage() {
               }
               totalPrice={totalPrice}
               appliedCoupon={appliedCoupon}
+              appliedAffiliateDiscount={affiliateDiscount}
             />
           </div>
         </div>

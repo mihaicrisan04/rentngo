@@ -18,6 +18,7 @@ import {
 } from "@/lib/pricing";
 import type { UseReservationPricingResult } from "@/hooks/use-reservation-pricing";
 import type { AppliedCoupon } from "@/components/features/checkout/coupon-code-input";
+import type { AffiliateDiscountPreview } from "@/hooks/use-affiliate-discount";
 import type { Vehicle } from "@/types/vehicle";
 
 interface ReservationSummaryCardProps {
@@ -37,6 +38,8 @@ interface ReservationSummaryCardProps {
   onSCDWChange: (selected: boolean) => void;
   pricing: UseReservationPricingResult;
   appliedCoupon: AppliedCoupon | null;
+  /** Automatic affiliate discount; an explicit coupon always beats it. */
+  appliedAffiliateDiscount?: AffiliateDiscountPreview | null;
   isSubmitting: boolean;
   onSubmit: () => void;
 }
@@ -59,11 +62,13 @@ export const ReservationSummaryCard = React.memo(
     onSCDWChange,
     pricing,
     appliedCoupon,
+    appliedAffiliateDiscount,
     isSubmitting,
     onSubmit,
   }: ReservationSummaryCardProps) {
     const t = useTranslations("reservationPage");
     const tCoupon = useTranslations("common.coupon");
+    const tReferral = useTranslations("common.referral");
     const locale = useLocale();
 
     const {
@@ -77,8 +82,11 @@ export const ReservationSummaryCard = React.memo(
     const days = breakdown?.rentalDays ?? null;
     const basePrice = breakdown?.basePrice ?? null;
     // Advisory discount preview — the server recomputes the authoritative
-    // amount inside createReservation
-    const discountAmount = appliedCoupon?.discountAmount ?? 0;
+    // amount inside createReservation. One discount per booking: an explicit
+    // coupon beats the automatic affiliate discount (mirrors pickDiscount)
+    const affiliateDiscount = appliedCoupon ? null : appliedAffiliateDiscount;
+    const discountAmount =
+      appliedCoupon?.discountAmount ?? affiliateDiscount?.discountAmount ?? 0;
     const totalPrice =
       breakdown !== null
         ? applyDiscountToTotal(breakdown.totalPrice, discountAmount)
@@ -373,6 +381,18 @@ export const ReservationSummaryCard = React.memo(
                 <div className="flex justify-between text-sm text-green-600">
                   <span>
                     {tCoupon("discount")} ({appliedCoupon.code}):
+                  </span>
+                  <span>−{discountAmount} EUR</span>
+                </div>
+              )}
+
+              {affiliateDiscount && discountAmount > 0 && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>
+                    {affiliateDiscount.kind === "referred"
+                      ? tReferral("discount")
+                      : tReferral("reward")}
+                    :
                   </span>
                   <span>−{discountAmount} EUR</span>
                 </div>

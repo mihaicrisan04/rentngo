@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { TransferRouteMap } from "@/components/features/transfers/transfer-route-map";
 import { applyDiscountToTotal } from "@/lib/pricing";
 import type { AppliedCoupon } from "@/components/features/checkout/coupon-code-input";
+import type { AffiliateDiscountPreview } from "@/hooks/use-affiliate-discount";
 
 interface Coordinates {
   lng: number;
@@ -53,6 +54,8 @@ interface TransferSummaryCardProps {
   totalPrice: number;
   /** Advisory coupon preview; the server recomputes at booking time. */
   appliedCoupon?: AppliedCoupon | null;
+  /** Automatic affiliate discount; an explicit coupon always beats it. */
+  appliedAffiliateDiscount?: AffiliateDiscountPreview | null;
   className?: string;
 }
 
@@ -72,12 +75,18 @@ export function TransferSummaryCard({
   vehicle,
   totalPrice,
   appliedCoupon,
+  appliedAffiliateDiscount,
   className,
 }: TransferSummaryCardProps) {
   const t = useTranslations("transferPage");
   const tCoupon = useTranslations("common.coupon");
+  const tReferral = useTranslations("common.referral");
 
-  const discountAmount = appliedCoupon?.discountAmount ?? 0;
+  // One discount per booking: an explicit coupon beats the automatic
+  // affiliate discount (mirrors the server's pickDiscount)
+  const affiliateDiscount = appliedCoupon ? null : appliedAffiliateDiscount;
+  const discountAmount =
+    appliedCoupon?.discountAmount ?? affiliateDiscount?.discountAmount ?? 0;
   const displayedTotal =
     discountAmount > 0
       ? applyDiscountToTotal(totalPrice, discountAmount)
@@ -245,6 +254,16 @@ export function TransferSummaryCard({
           <div className="flex justify-between items-baseline text-sm text-green-600">
             <span>
               {tCoupon("discount")} ({appliedCoupon.code})
+            </span>
+            <span>−€{discountAmount.toFixed(2)}</span>
+          </div>
+        )}
+        {affiliateDiscount && discountAmount > 0 && (
+          <div className="flex justify-between items-baseline text-sm text-green-600">
+            <span>
+              {affiliateDiscount.kind === "referred"
+                ? tReferral("discount")
+                : tReferral("reward")}
             </span>
             <span>−€{discountAmount.toFixed(2)}</span>
           </div>

@@ -10,7 +10,8 @@ import {
   LayoutDashboard,
   Building2,
   NotepadText,
-  TicketPercent
+  TicketPercent,
+  Share2
 
 } from "lucide-react"
 
@@ -57,6 +58,11 @@ const navItems = [
     title: "Coupons",
     url: "/admin/coupons",
     icon: TicketPercent,
+  },
+  {
+    title: "Affiliates",
+    url: "/admin/affiliates",
+    icon: Share2,
   },
   {
     title: "Blogs",

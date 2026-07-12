@@ -475,6 +475,16 @@
         "emailRequired": "Enter your email address before applying a coupon.",
         "submitFailed": "The coupon could not be applied. Please re-check the code and try again."
       }
+    },
+    "referral": {
+      "discount": "Referral discount",
+      "reward": "Affiliate reward"
+    },
+    "consent": {
+      "title": "Cookies",
+      "description": "We use a cookie to remember who referred you, so your referral discount can be applied. Accept to enable it — declining means no tracking and no referral discount.",
+      "accept": "Accept",
+      "decline": "Decline"
     }
   },
   "navigation": {
@@ -548,6 +558,25 @@
       "locations": "Pickup & Return",
       "totalPrice": "Total Price",
       "status": "Status"
+    },
+    "affiliate": {
+      "title": "Referral Program",
+      "description": "Share your link and earn rewards when your referrals book",
+      "inactive": "Your affiliate account is currently inactive.",
+      "yourLink": "Your referral link",
+      "copyLink": "Copy referral link",
+      "referredDiscountInfo": "People who book through your link get {discount} off.",
+      "conversions": "Confirmed bookings",
+      "currentReward": "Your current reward",
+      "nextTier": "Next tier: {count} bookings unlock a {percent}% reward",
+      "history": "Referral history",
+      "bookingRental": "Car rental",
+      "bookingTransfer": "Transfer",
+      "status": {
+        "pending": "Pending",
+        "confirmed": "Confirmed",
+        "voided": "Voided"
+      }
     }
   },
   "footer": {
