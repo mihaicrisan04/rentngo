@@ -2,6 +2,10 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { getCurrentUser, getCurrentUserOrThrow, requireAdmin } from "./users";
+import {
+  assertValidTransferDistance,
+  computeTransferPricing,
+} from "../lib/pricing";
 
 const transferStatusValidator = v.union(
   v.literal("pending"),
@@ -62,16 +66,56 @@ export const createTransfer = mutation({
     transferNumber: v.number(),
   }),
   handler: async (ctx, args) => {
-    const allTransfers = await ctx.db.query("transfers").collect();
-    const hasAny = allTransfers.length > 0;
-    const maxNumber = hasAny
-      ? Math.max(...allTransfers.map((t) => t.transferNumber ?? 0))
-      : 0;
-    const nextTransferNumber = maxNumber + 1;
+    // Derive the user from auth — never trust a client-supplied userId
+    const currentUser = await getCurrentUser(ctx);
+
+    // Sanity-check the distance before any fare math. The fare FORMULA is
+    // server-authoritative, but distanceKm itself still comes from the
+    // client's Mapbox route — re-deriving it server-side from the stored
+    // coordinates is tracked as RNGO-30. This clamp only blocks the worst
+    // abuse (negative/non-finite/absurd values setting a bogus fare).
+    assertValidTransferDistance(args.distanceKm);
+
+    // Authoritative fare recompute from server data; client-submitted money
+    // fields are never persisted
+    const vehicle = await ctx.db.get(args.vehicleId);
+    if (!vehicle) {
+      throw new Error("Vehicle not found.");
+    }
+    const vehicleClass = vehicle.classId
+      ? await ctx.db.get(vehicle.classId)
+      : null;
+    const tiers = await ctx.db.query("transferPricingTiers").collect();
+
+    const fare = computeTransferPricing({
+      distanceKm: args.distanceKm,
+      transferType: args.transferType,
+      vehicleClass,
+      tiers,
+    });
+
+    // Soft drift telemetry during rollout: the server value always wins
+    if (Math.abs(args.totalPrice - fare.totalPrice) > 0.5) {
+      console.warn("[pricing] createTransfer client/server total mismatch", {
+        clientTotal: args.totalPrice,
+        serverTotal: fare.totalPrice,
+        vehicleId: args.vehicleId,
+        distanceKm: args.distanceKm,
+        transferType: args.transferType,
+      });
+    }
+
+    // Compute next transfer number (highest existing via index)
+    const latestNumbered = await ctx.db
+      .query("transfers")
+      .withIndex("by_number")
+      .order("desc")
+      .first();
+    const nextTransferNumber = (latestNumbered?.transferNumber ?? 0) + 1;
 
     const newTransferData = {
       transferNumber: nextTransferNumber,
-      userId: args.userId,
+      userId: currentUser?._id ?? undefined,
       vehicleId: args.vehicleId,
       transferType: args.transferType,
       pickupLocation: args.pickupLocation,
@@ -83,10 +127,10 @@ export const createTransfer = mutation({
       passengers: args.passengers,
       distanceKm: args.distanceKm,
       estimatedDurationMinutes: args.estimatedDurationMinutes,
-      baseFare: args.baseFare,
-      distancePrice: args.distancePrice,
-      totalPrice: args.totalPrice,
-      pricePerKm: args.pricePerKm,
+      baseFare: fare.baseFare,
+      distancePrice: fare.distanceCharge,
+      totalPrice: fare.totalPrice,
+      pricePerKm: fare.tierPricePerKm,
       customerInfo: args.customerInfo,
       paymentMethod: args.paymentMethod,
       luggageCount: args.luggageCount,
@@ -106,14 +150,11 @@ export const createTransfer = mutation({
       returnDateString = returnDateObj.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone });
     }
 
-    // Fetch vehicle info for email
-    const vehicle = await ctx.db.get(args.vehicleId);
-
     // Schedule email sending
     await ctx.scheduler.runAfter(0, internal.emails.sendTransferConfirmationEmail, {
       transferNumber: nextTransferNumber,
       customerInfo: args.customerInfo,
-      vehicleInfo: vehicle ? {
+      vehicleInfo: {
         make: vehicle.make,
         model: vehicle.model,
         year: vehicle.year,
@@ -121,9 +162,6 @@ export const createTransfer = mutation({
         seats: vehicle.transferSeats ?? vehicle.seats,
         transmission: vehicle.transmission,
         fuelType: vehicle.fuelType,
-      } : {
-        make: "Vehicle",
-        model: "Info",
       },
       pickupLocation: {
         address: args.pickupLocation.address,
@@ -141,10 +179,10 @@ export const createTransfer = mutation({
       distanceKm: args.distanceKm,
       estimatedDurationMinutes: args.estimatedDurationMinutes,
       pricingDetails: {
-        baseFare: args.baseFare,
-        distancePrice: args.distancePrice,
-        totalPrice: args.totalPrice,
-        pricePerKm: args.pricePerKm,
+        baseFare: fare.baseFare,
+        distancePrice: fare.distanceCharge,
+        totalPrice: fare.totalPrice,
+        pricePerKm: fare.tierPricePerKm,
       },
       paymentMethod: args.paymentMethod,
       locale: args.locale,
@@ -529,14 +567,8 @@ export const getTransferVehiclesWithImages = query({
     const vehicleClasses = await ctx.db.query("vehicleClasses").collect();
     const classMap = new Map(vehicleClasses.map((c) => [c._id, c]));
 
-    // Fetch all active pricing tiers
+    // Fetch all pricing tiers (computeTransferPricing filters to active ones)
     const pricingTiers = await ctx.db.query("transferPricingTiers").collect();
-    const activeTiers = pricingTiers.filter((t) => t.isActive);
-
-    const BASE_KM_INCLUDED = 15;
-    const DEFAULT_BASE_FARE = 25;
-    const DEFAULT_MULTIPLIER = 1.0;
-    const DEFAULT_PRICE_PER_KM = 1.0;
 
     const vehiclesWithImages = await Promise.all(
       filteredVehicles.map(async (vehicle) => {
@@ -546,48 +578,22 @@ export const getTransferVehiclesWithImages = query({
           imageUrl = await ctx.storage.getUrl(imageId);
         }
 
-        // Get base fare and multiplier from vehicle class
         const vehicleClass = vehicle.classId ? classMap.get(vehicle.classId) : null;
-        const transferBaseFare = vehicleClass?.transferBaseFare ?? DEFAULT_BASE_FARE;
-        const classMultiplier = vehicleClass?.transferMultiplier ?? DEFAULT_MULTIPLIER;
 
-        // Calculate price using new tiered formula
-        const distanceKm = args.distanceKm ?? 0;
-        const extraKm = Math.max(distanceKm - BASE_KM_INCLUDED, 0);
-
-        let calculatedPrice: number;
-        let distanceCharge = 0;
-
-        if (extraKm === 0) {
-          // Trip within base fare (≤ 15km)
-          calculatedPrice = transferBaseFare;
-        } else {
-          // Find applicable tier based on extra km
-          const tier = activeTiers.find(
-            (t) =>
-              extraKm >= t.minExtraKm &&
-              (t.maxExtraKm === undefined || extraKm < t.maxExtraKm),
-          );
-
-          const tierPricePerKm = tier?.pricePerKm ?? DEFAULT_PRICE_PER_KM;
-
-          // Calculate: baseFare + (extraKm × tierPrice × classMultiplier)
-          distanceCharge = extraKm * tierPricePerKm * classMultiplier;
-          calculatedPrice = transferBaseFare + distanceCharge;
-        }
-
-        // Apply round trip multiplier
-        if (args.transferType === "round_trip") {
-          calculatedPrice = calculatedPrice * 2;
-        }
+        const fare = computeTransferPricing({
+          distanceKm: args.distanceKm ?? 0,
+          transferType: args.transferType ?? "one_way",
+          vehicleClass,
+          tiers: pricingTiers,
+        });
 
         return {
           ...vehicle,
           imageUrl,
-          transferBaseFare,
-          classMultiplier,
-          distanceCharge: Math.round(distanceCharge * 100) / 100,
-          calculatedPrice: Math.round(calculatedPrice * 100) / 100,
+          transferBaseFare: fare.baseFare,
+          classMultiplier: vehicleClass?.transferMultiplier ?? 1.0,
+          distanceCharge: fare.distanceCharge,
+          calculatedPrice: fare.totalPrice,
         };
       }),
     );

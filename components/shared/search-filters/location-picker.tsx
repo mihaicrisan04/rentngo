@@ -5,35 +5,7 @@ import { MapPin } from "lucide-react";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
-
-export interface LocationWithPrice {
-  name: string;
-  price: number;
-}
-
-export const LOCATION_DATA: LocationWithPrice[] = [
-  { name: "Aeroport Cluj-Napoca", price: 0 },
-  { name: "Alba-Iulia", price: 80 },
-  { name: "Bacau", price: 220 },
-  { name: "Baia mare", price: 120 },
-  { name: "Bistrita", price: 80 },
-  { name: "Brasov", price: 180 },
-  { name: "Bucuresti", price: 220 },
-  { name: "Cluj-Napoca", price: 10 },
-  { name: "Floresti", price: 10 },
-  { name: "Oradea", price: 120 },
-  { name: "Satu mare", price: 120 },
-  { name: "Sibiu", price: 120 },
-  { name: "Suceava", price: 220 },
-  { name: "Targu Mures", price: 70 },
-  { name: "Timisoara", price: 200 },
-];
-
-// Utility function to get location price by name
-export const getLocationPrice = (locationName: string): number => {
-  const location = LOCATION_DATA.find(loc => loc.name === locationName);
-  return location ? location.price : 0;
-};
+import { LOCATION_DATA, type LocationWithPrice } from "@/lib/pricing";
 
 interface LocationSelectProps {
   id: string;

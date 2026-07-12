@@ -3,6 +3,15 @@ import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import { getCurrentUser, getCurrentUserOrThrow, requireAdmin } from "./users";
+import {
+  assertValidReservationExtras,
+  calculateMultiplierForDateRange,
+  computeReservationPricing,
+  extractLegacyExtras,
+  isKnownLocation,
+  msToDateString,
+  DEFAULT_ADDITIONAL_50KM_PRICE,
+} from "../lib/pricing";
 
 // Validator for reservation status, strictly aligned with schema.ts
 const reservationStatusValidator = v.union(
@@ -67,23 +76,153 @@ export const createReservation = mutation({
     })),
     pricePerDayUsed: v.optional(v.number()),
     locale: v.optional(v.string()),
+    // Structured extras (new clients). When present, the server recomputes
+    // ALL charges from these; the legacy prose `additionalCharges` are then
+    // only used for the email rendering.
+    extras: v.optional(v.object({
+      snowChains: v.boolean(),
+      childSeat1to4: v.number(),
+      childSeat5to12: v.number(),
+      extraKilometers: v.number(),
+    })),
   },
   returns: v.object({
     reservationId: v.id("reservations"),
     reservationNumber: v.number(),
   }),
   handler: async (ctx, args) => {
-    // Get the current authenticated user (if any)
+    // Reject malformed extras (negative/fractional counts) before any money
+    // math — v.number() alone puts no lower bound on them
+    assertValidReservationExtras(args.extras);
+
+    // Get the current authenticated user (if any) — never trust a
+    // client-supplied userId
     const currentUser = await getCurrentUser(ctx);
 
-    // Compute next reservation number
-    const allReservations = await ctx.db.query("reservations").collect();
-    const hasAny = allReservations.length > 0;
-    const maxNumber = allReservations.reduce((max, r) => {
-      const num = (r as any).reservationNumber ?? 0;
-      return num > max ? num : max;
-    }, 0);
-    const nextReservationNumber = hasAny ? (maxNumber + 1) : 10000;
+    const vehicle = await ctx.db.get(args.vehicleId);
+    if (!vehicle) {
+      throw new Error("Vehicle not found.");
+    }
+
+    // The picker offers a fixed location list, so an unknown name never
+    // comes from an honest client. It prices as fee 0 rather than failing
+    // the booking (the list may drift between deploys / stored searches);
+    // log it so tampering or drift is visible
+    for (const location of [args.pickupLocation, args.restitutionLocation]) {
+      if (location && !isKnownLocation(location)) {
+        console.warn("[pricing] createReservation unknown location (fee 0)", {
+          location,
+          vehicleId: args.vehicleId,
+        });
+      }
+    }
+
+    // Resolve the seasonal multiplier from server data (same algorithm the
+    // client display uses, fed from the same tables)
+    const activeSeasons = await ctx.db
+      .query("seasons")
+      .withIndex("by_active", (q) => q.eq("isActive", true))
+      .collect();
+    const currentSeasonRow = await ctx.db.query("currentSeason").first();
+    const currentSeasonDoc = currentSeasonRow
+      ? await ctx.db.get(currentSeasonRow.seasonId)
+      : null;
+    const seasonResult = calculateMultiplierForDateRange(
+      msToDateString(args.startDate),
+      msToDateString(args.endDate),
+      activeSeasons,
+      currentSeasonDoc
+        ? { seasonId: currentSeasonDoc._id, season: currentSeasonDoc }
+        : null,
+    );
+
+    const vehicleClass = vehicle.classId
+      ? await ctx.db.get(vehicle.classId)
+      : null;
+
+    // Authoritative recompute — client-submitted money fields are never
+    // persisted (SCDW uses the base-tier seasonal rate per the owner
+    // decision on RNGO-13, matching the on-screen total)
+    const pricing = computeReservationPricing({
+      vehicle,
+      startDate: new Date(args.startDate),
+      endDate: new Date(args.endDate),
+      pickupTime: args.pickupTime,
+      restitutionTime: args.restitutionTime,
+      pickupLocation: args.pickupLocation,
+      restitutionLocation: args.restitutionLocation,
+      seasonalMultiplier: seasonResult.multiplier,
+      isSCDWSelected: args.isSCDWSelected,
+      extras: args.extras,
+      additional50kmPrice:
+        vehicleClass?.additional50kmPrice ?? DEFAULT_ADDITIONAL_50KM_PRICE,
+    });
+
+    let totalPrice: number;
+    let persistedCharges;
+    if (args.extras) {
+      totalPrice = pricing.totalPrice;
+      persistedCharges =
+        pricing.additionalCharges.length > 0
+          ? pricing.additionalCharges
+          : undefined;
+    } else {
+      // TRANSITIONAL legacy path — goes away when RNGO-17 ships the
+      // structured `extras` arg. Dates, locations and protection are fully
+      // recomputed above, but pre-RNGO-17 clients send physical extras only
+      // as localized prose line items mixed with the location-fee entries.
+      // extractLegacyExtras strips the fee entries (head-first, matching the
+      // known client's push order) and sums the rest as the extras total, so
+      // the stored total still reconciles with its line items. The prose
+      // array is persisted as-is so the confirmation page and email keep
+      // rendering labels until RNGO-17/19 switch to coded charges.
+      const legacy = extractLegacyExtras(
+        args.additionalCharges ?? [],
+        pricing.deliveryFee,
+        pricing.returnFee,
+      );
+      if (legacy.ambiguousFeeMatch || legacy.droppedInvalidAmounts) {
+        console.warn("[pricing] createReservation ambiguous legacy charges", {
+          ambiguousFeeMatch: legacy.ambiguousFeeMatch,
+          droppedInvalidAmounts: legacy.droppedInvalidAmounts,
+          clientCharges: args.additionalCharges,
+          deliveryFee: pricing.deliveryFee,
+          returnFee: pricing.returnFee,
+          vehicleId: args.vehicleId,
+        });
+      }
+      totalPrice =
+        pricing.basePrice +
+        pricing.protectionCost +
+        pricing.totalLocationFees +
+        legacy.extrasTotal;
+      persistedCharges = args.additionalCharges;
+    }
+
+    // Soft drift telemetry during rollout: the server value always wins, but
+    // a mismatch signals a client bug (or tampering) worth investigating
+    if (Math.abs(args.totalPrice - totalPrice) > 0.5) {
+      console.warn("[pricing] createReservation client/server total mismatch", {
+        clientTotal: args.totalPrice,
+        serverTotal: totalPrice,
+        clientProtectionCost: args.protectionCost,
+        serverProtectionCost: pricing.protectionCost,
+        vehicleId: args.vehicleId,
+        startDate: args.startDate,
+        endDate: args.endDate,
+        seasonalMultiplier: seasonResult.multiplier,
+      });
+    }
+
+    // Compute next reservation number (highest existing via index)
+    const latestNumbered = await ctx.db
+      .query("reservations")
+      .withIndex("by_number")
+      .order("desc")
+      .first();
+    const nextReservationNumber = latestNumbered
+      ? (latestNumbered.reservationNumber ?? 0) + 1
+      : 10000;
 
     const newReservationData = {
       reservationNumber: nextReservationNumber,
@@ -97,30 +236,29 @@ export const createReservation = mutation({
       restitutionLocation: args.restitutionLocation,
       paymentMethod: args.paymentMethod,
       status: "pending" as ReservationStatusType, // Initial status
-      totalPrice: args.totalPrice,
+      totalPrice,
       customerInfo: args.customerInfo,
       promoCode: args.promoCode,
-      additionalCharges: args.additionalCharges,
+      additionalCharges: persistedCharges,
       isSCDWSelected: args.isSCDWSelected,
-      deductibleAmount: args.deductibleAmount,
-      protectionCost: args.protectionCost,
-      seasonId: args.seasonId,
-      seasonalMultiplier: args.seasonalMultiplier,
+      deductibleAmount: pricing.deductibleAmount,
+      protectionCost:
+        pricing.protectionCost > 0 ? pricing.protectionCost : undefined,
+      seasonId: seasonResult.seasonId as Id<"seasons"> | undefined,
+      seasonalMultiplier: seasonResult.multiplier,
+      pricePerDay: pricing.pricePerDay,
+      rentalDays: pricing.rentalDays,
+      basePrice: pricing.basePrice,
     };
 
     const reservationId = await ctx.db.insert("reservations", newReservationData);
 
     // Schedule email sending if vehicle info is provided
     if (args.vehicleInfo) {
-      // Calculate number of days
-      const startDate = new Date(args.startDate);
-      const endDate = new Date(args.endDate);
-      const numberOfDays = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
-      
       // Format dates for email
       const timeZone = 'Europe/Bucharest';
-      const startDateString = startDate.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone });
-      const endDateString = endDate.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone });
+      const startDateString = new Date(args.startDate).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone });
+      const endDateString = new Date(args.endDate).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone });
 
       await ctx.scheduler.runAfter(0, internal.emails.sendReservationConfirmationEmail, {
         reservationNumber: nextReservationNumber,
@@ -133,17 +271,21 @@ export const createReservation = mutation({
           restitutionTime: args.restitutionTime,
           pickupLocation: args.pickupLocation,
           restitutionLocation: args.restitutionLocation,
-          numberOfDays,
+          numberOfDays: pricing.rentalDays,
         },
         pricingDetails: {
-          pricePerDay: args.pricePerDayUsed ?? Math.round(args.totalPrice / numberOfDays),
-          totalPrice: args.totalPrice,
+          // Server-computed values so the email matches what was stored.
+          // Line items stay on the legacy localized prose until RNGO-24
+          // teaches the templates to render coded charges.
+          pricePerDay: pricing.pricePerDay,
+          totalPrice,
           paymentMethod: args.paymentMethod,
           promoCode: args.promoCode,
           additionalCharges: args.additionalCharges,
           isSCDWSelected: args.isSCDWSelected,
-          deductibleAmount: args.deductibleAmount,
-          protectionCost: args.protectionCost,
+          deductibleAmount: pricing.deductibleAmount,
+          protectionCost:
+            pricing.protectionCost > 0 ? pricing.protectionCost : undefined,
         },
         locale: args.locale,
       });
