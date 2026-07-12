@@ -472,6 +472,7 @@
         "wrongBookingType": "Acest cupon nu se aplică acestui tip de rezervare.",
         "belowMinimum": "Totalul comenzii este sub minimul cerut de acest cupon.",
         "alreadyUsed": "Ai folosit deja acest cupon.",
+        "emailRequired": "Introdu adresa de email înainte de a aplica un cupon.",
         "submitFailed": "Cuponul nu a putut fi aplicat. Verifică din nou codul și reîncearcă."
       }
     }

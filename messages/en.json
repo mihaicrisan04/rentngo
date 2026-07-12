@@ -472,6 +472,7 @@
         "wrongBookingType": "This coupon doesn't apply to this type of booking.",
         "belowMinimum": "The order total is below this coupon's minimum.",
         "alreadyUsed": "You've already used this coupon.",
+        "emailRequired": "Enter your email address before applying a coupon.",
         "submitFailed": "The coupon could not be applied. Please re-check the code and try again."
       }
     }

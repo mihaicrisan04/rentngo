@@ -4,6 +4,7 @@ import { Doc, Id } from "./_generated/dataModel";
 import { requireAdmin } from "./users";
 import {
   evaluateCoupon,
+  hasCouponIdentity,
   normalizeCouponCode,
   normalizeCustomerEmail,
   type CouponBookingType,
@@ -213,6 +214,7 @@ const invalidReasonValidator = v.union(
   v.literal("wrongBookingType"),
   v.literal("belowMinimum"),
   v.literal("alreadyUsed"),
+  v.literal("emailRequired"),
 );
 
 /**
@@ -262,9 +264,17 @@ export const validateCoupon = query({
       return { valid: false as const, reason: evaluation.reason };
     }
 
+    const userId = (await currentUserId(ctx)) ?? undefined;
+
+    // The once-per-user check needs a real identity (account or non-empty
+    // email); without one the preview mirrors the redemption path's refusal.
+    if (!hasCouponIdentity({ userId, email: args.email })) {
+      return { valid: false as const, reason: "emailRequired" as const };
+    }
+
     if (
       await hasPriorRedemption(ctx, coupon._id, {
-        userId: (await currentUserId(ctx)) ?? undefined,
+        userId,
         email: args.email,
       })
     ) {
@@ -373,6 +383,14 @@ export async function applyAndRedeemCoupon(
   });
   if (!evaluation.valid) {
     throw invalid(evaluation.reason);
+  }
+
+  // Refuse redemption without a usable identity: the booking mutations accept
+  // any string for customerEmail, so an empty/whitespace email would let a
+  // guest bypass the once-per-user rule (hasPriorRedemption skips the email
+  // lookup when the email is blank) and redeem the same code repeatedly.
+  if (!hasCouponIdentity({ userId: args.userId, email: args.customerEmail })) {
+    throw invalid("emailRequired");
   }
 
   if (

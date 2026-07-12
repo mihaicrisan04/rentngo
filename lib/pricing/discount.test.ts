@@ -4,6 +4,7 @@ import {
   bucharestEndOfDayMs,
   computeCouponDiscount,
   evaluateCoupon,
+  hasCouponIdentity,
   normalizeCouponCode,
   normalizeCustomerEmail,
   pickDiscount,
@@ -33,6 +34,30 @@ describe("normalizeCustomerEmail", () => {
     expect(normalizeCustomerEmail(" John@Example.COM ")).toBe(
       "john@example.com",
     );
+  });
+});
+
+describe("hasCouponIdentity", () => {
+  it("rejects a guest with no email — redemption/validation must refuse", () => {
+    expect(hasCouponIdentity({})).toBe(false);
+    expect(hasCouponIdentity({ email: undefined })).toBe(false);
+  });
+
+  it("rejects a guest with an empty or whitespace-only email", () => {
+    expect(hasCouponIdentity({ email: "" })).toBe(false);
+    expect(hasCouponIdentity({ email: "   " })).toBe(false);
+    expect(hasCouponIdentity({ email: "\t\n " })).toBe(false);
+  });
+
+  it("accepts a non-empty email (after normalization)", () => {
+    expect(hasCouponIdentity({ email: "john@example.com" })).toBe(true);
+    expect(hasCouponIdentity({ email: " John@Example.COM " })).toBe(true);
+  });
+
+  it("accepts a signed-in user even without an email", () => {
+    expect(hasCouponIdentity({ userId: "user_123" })).toBe(true);
+    expect(hasCouponIdentity({ userId: "user_123", email: "" })).toBe(true);
+    expect(hasCouponIdentity({ userId: "user_123", email: "   " })).toBe(true);
   });
 });
 

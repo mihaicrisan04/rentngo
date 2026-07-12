@@ -72,6 +72,23 @@ export function normalizeCustomerEmail(email: string): string {
 }
 
 /**
+ * True when the once-per-user check has a real identity to key off: a user
+ * account, or a non-empty normalized email. Redemption MUST be refused
+ * otherwise — the booking mutations accept any string for the customer email,
+ * so an empty/whitespace email would let a guest bypass the per-user limit by
+ * simply leaving the field blank on every booking.
+ */
+export function hasCouponIdentity(identity: {
+  userId?: string;
+  email?: string;
+}): boolean {
+  return (
+    identity.userId !== undefined ||
+    normalizeCustomerEmail(identity.email ?? "").length > 0
+  );
+}
+
+/**
  * EUR discount for a subtotal, rounded to cents. Fixed amounts clamp to the
  * subtotal so the discounted total can never go negative; percentages are
  * validated to (0, 100] at coupon creation.
