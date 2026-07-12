@@ -290,15 +290,15 @@ export default function TransferBookingPage() {
         Back to Vehicle Selection
       </Button>
 
+      <div className="text-center lg:text-left mb-8">
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{t("booking.title")}</h1>
+        <p className="text-muted-foreground mt-2">
+          Complete your booking details below
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <div className="text-center lg:text-left mb-6">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{t("booking.title")}</h1>
-            <p className="text-muted-foreground mt-2">
-              Complete your booking details below
-            </p>
-          </div>
-
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Personal Information */}
             <Card>
@@ -364,13 +364,6 @@ export default function TransferBookingPage() {
               </CardContent>
             </Card>
 
-            <CouponCodeInput
-              bookingType="transfers"
-              subtotal={pricing?.totalPrice ?? null}
-              email={personalInfo.email}
-              onAppliedChange={setAppliedCoupon}
-            />
-
             {/* Payment Method */}
             <Card>
               <CardHeader>
@@ -415,7 +408,7 @@ export default function TransferBookingPage() {
 
         {/* Summary Sidebar */}
         <div className="lg:col-span-1">
-          <div className="sticky top-24">
+          <div className="sticky top-24 space-y-6">
             <TransferSummaryCard
               pickupCoordinates={searchData.pickupLocation.coordinates}
               dropoffCoordinates={searchData.dropoffLocation.coordinates}
@@ -441,6 +434,13 @@ export default function TransferBookingPage() {
               totalPrice={totalPrice}
               appliedCoupon={appliedCoupon}
               appliedAffiliateDiscount={affiliateDiscount}
+            />
+
+            <CouponCodeInput
+              bookingType="transfers"
+              subtotal={pricing?.totalPrice ?? null}
+              email={personalInfo.email}
+              onAppliedChange={setAppliedCoupon}
             />
           </div>
         </div>

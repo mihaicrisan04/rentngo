@@ -247,6 +247,35 @@ export function TransferSearchForm({
     pickupTime &&
     (transferType === "one_way" || (returnDate && returnTime));
 
+  // Rendered in the right column for one-way trips (where the return
+  // date/time slot would otherwise leave an empty gap), and as a
+  // full-width row below for round trips.
+  const passengersField = (
+    <div>
+      <Label
+        htmlFor="passengers"
+        className="text-sm font-medium mb-1.5 block"
+      >
+        {t("searchForm.passengers")}
+      </Label>
+      <div className="relative">
+        <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <NativeSelect
+          id="passengers"
+          value={passengers.toString()}
+          onChange={(e) => setPassengers(parseInt(e.target.value))}
+          className="w-full h-12 pl-10"
+        >
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
+            <NativeSelectOption key={num} value={num.toString()}>
+              {t("searchForm.passengerCount", { count: num })}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+      </div>
+    </div>
+  );
+
   return (
     <Card className="w-full shadow-xl relative">
       <form onSubmit={handleSubmit}>
@@ -324,7 +353,7 @@ export function TransferSearchForm({
                 disabled={isLoading}
               />
 
-              {transferType === "round_trip" && (
+              {transferType === "round_trip" ? (
                 <DateTimePicker
                   id="returnDateTime"
                   label={t("searchForm.returnDateTime")}
@@ -340,33 +369,15 @@ export function TransferSearchForm({
                   pickupDate={pickupDate}
                   pickupTime={pickupTime}
                 />
+              ) : (
+                passengersField
               )}
             </div>
           </div>
 
-          <div className="mt-6">
-            <Label
-              htmlFor="passengers"
-              className="text-sm font-medium mb-1.5 block"
-            >
-              {t("searchForm.passengers")}
-            </Label>
-            <div className="relative">
-              <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-              <NativeSelect
-                id="passengers"
-                value={passengers.toString()}
-                onChange={(e) => setPassengers(parseInt(e.target.value))}
-                className="w-full h-12 pl-10"
-              >
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-                  <NativeSelectOption key={num} value={num.toString()}>
-                    {t("searchForm.passengerCount", { count: num })}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
-            </div>
-          </div>
+          {transferType === "round_trip" && (
+            <div className="mt-6">{passengersField}</div>
+          )}
 
           {passengers >= 4 && (
             <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">

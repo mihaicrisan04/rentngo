@@ -79,7 +79,7 @@ export function RentalDetails({
   }, [onUpdateDetails]);
 
   return (
-    <Card className="mb-6">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
           <Calendar className="h-5 w-5" />

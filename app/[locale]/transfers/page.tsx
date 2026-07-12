@@ -80,7 +80,7 @@ export default function TransfersPage() {
         <div className="section-divider max-w-5xl mx-auto w-full my-4"></div>
 
         {/* How It Works Section */}
-        <section className="py-16 lg:py-24">
+        <section className="py-12 lg:py-16">
           <div className="container mx-auto px-4">
             <AnimatedGroup
               variants={sectionAnimationVariants}
@@ -121,7 +121,7 @@ export default function TransfersPage() {
         <div className="section-divider max-w-5xl mx-auto w-full"></div>
 
         {/* Features Grid */}
-        <section className="py-16 lg:py-24 relative grain-overlay">
+        <section className="py-12 lg:py-16 relative grain-overlay">
           <div className="container mx-auto px-4 relative z-10">
             <AnimatedGroup
               variants={sectionAnimationVariants}

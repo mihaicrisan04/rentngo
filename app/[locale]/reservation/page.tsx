@@ -379,6 +379,13 @@ function ReservationPageContent() {
               extraKilometersCount={extraKilometersCount}
               onExtraKilometersCountChange={setExtraKilometersCount}
             />
+
+            <CouponCodeInput
+              bookingType="rentals"
+              subtotal={breakdown?.totalPrice ?? null}
+              email={personalInfo.email}
+              onAppliedChange={setAppliedCoupon}
+            />
           </div>
 
           {/* Right Column */}
@@ -399,14 +406,6 @@ function ReservationPageContent() {
             />
           </div>
         </div>
-
-        <CouponCodeInput
-          className="mt-8"
-          bookingType="rentals"
-          subtotal={breakdown?.totalPrice ?? null}
-          email={personalInfo.email}
-          onAppliedChange={setAppliedCoupon}
-        />
 
         <ReservationSummaryCard
           vehicle={vehicle}
