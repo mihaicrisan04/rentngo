@@ -95,7 +95,10 @@ export function CarDetailClient({
   }, []);
 
   const currency = "EUR";
-  const reservationUrl = `/reservation?vehicleId=${vehicle._id}`;
+  // Stash the vehicle in storage instead of the URL so a locale switch on the
+  // reservation page keeps the selection (the URL stays a bare /reservation).
+  const handleReserve = () =>
+    searchStorage.save({ selectedVehicleId: vehicle._id });
 
   const vehicleName = formatVehicleName(
     vehicle.make,
@@ -184,7 +187,9 @@ export function CarDetailClient({
                 className="w-full bg-[#055E3B] hover:bg-[#055E3B]/80 text-white font-bold py-4 text-lg rounded-xl h-14"
                 asChild
               >
-                <Link href={reservationUrl}>{t("reserveThisCar")}</Link>
+                <Link href="/reservation" onClick={handleReserve}>
+                  {t("reserveThisCar")}
+                </Link>
               </Button>
               <p className="text-sm text-muted-foreground text-center">
                 {t("reserveDescription")}

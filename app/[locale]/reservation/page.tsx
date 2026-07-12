@@ -38,8 +38,22 @@ function ReservationPageContent() {
   const tCoupon = useTranslations("common.coupon");
   const locale = useLocale();
 
-  // Only get vehicleId from URL - all form data comes from localStorage
-  const vehicleId = searchParams.get("vehicleId");
+  // The chosen vehicle now lives in localStorage (like the form data) so a
+  // ro↔en locale switch doesn't drop it from the URL. A legacy `?vehicleId=`
+  // link is still honoured and migrated into storage on mount.
+  const [vehicleId, setVehicleId] = React.useState<string | null>(null);
+  const [vehicleIdReady, setVehicleIdReady] = React.useState(false);
+
+  React.useEffect(() => {
+    const fromUrl = searchParams.get("vehicleId");
+    if (fromUrl) {
+      searchStorage.save({ selectedVehicleId: fromUrl });
+      setVehicleId(fromUrl);
+    } else {
+      setVehicleId(searchStorage.load().selectedVehicleId ?? null);
+    }
+    setVehicleIdReady(true);
+  }, [searchParams]);
 
   // All form state, localStorage persistence, Clerk autofill and validation
   const {
@@ -262,6 +276,16 @@ function ReservationPageContent() {
       setIsSubmitting(false);
     }
   };
+
+  if (!vehicleIdReady) {
+    return (
+      <div className="grow flex items-center justify-center p-4 md:p-8">
+        <p className="text-muted-foreground">
+          {t("reservation.loadingDetails")}
+        </p>
+      </div>
+    );
+  }
 
   if (!vehicleId) {
     return (
