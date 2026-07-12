@@ -77,8 +77,9 @@ export default function ProfilePage() {
         <div className="space-y-8">
           {/* User Details Card */}
           <Card className="rounded-2xl border-border/50 overflow-hidden">
-            {/* Profile header with subtle background */}
-            <div className="relative bg-gradient-to-br from-primary/5 via-transparent to-primary/5 px-6 pt-8 pb-6">
+            {/* Profile header with subtle background — pulled up over the
+                Card's py-6 so the gradient reaches the top edge */}
+            <div className="relative -mt-6 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 px-6 pt-8 pb-6">
               <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
               <div className="flex flex-col items-center gap-4">
                 <Avatar className="h-24 w-24 ring-4 ring-background shadow-xl">

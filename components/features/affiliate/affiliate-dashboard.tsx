@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -25,10 +26,41 @@ import { Check, Copy, Link2 } from "lucide-react";
 export function AffiliateDashboard() {
   const t = useTranslations("profile.affiliate");
   const locale = useLocale();
+  const currentUser = useQuery(api.users.get);
   const affiliate = useQuery(api.affiliates.getMyAffiliate);
   const [copied, setCopied] = React.useState(false);
 
-  if (!affiliate) return null;
+  // Both queries resolve to `null` for "no Convex user record yet" (provisioning
+  // lag, or a Clerk↔Convex id mismatch) as well as their real empty states, so
+  // gate on the user record first: while it's loading (undefined) or unresolved
+  // (null) render nothing, rather than mislabelling an actual affiliate as "not
+  // enrolled". Only once the user exists do we trust affiliate === null.
+  if (currentUser === undefined || affiliate === undefined) return null;
+  if (currentUser === null) return null;
+
+  if (affiliate === null) {
+    return (
+      <Card className="rounded-2xl border-border/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Link2 className="h-5 w-5" />
+            {t("title")}
+          </CardTitle>
+          <CardDescription>{t("description")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-xl border border-border/50 bg-muted/40 p-6 text-center space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {t("notEnrolled.body")}
+            </p>
+            <Button asChild variant="outline">
+              <Link href={`/${locale}/contact`}>{t("notEnrolled.cta")}</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const referralUrl = `${
     typeof window !== "undefined"

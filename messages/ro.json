@@ -563,6 +563,10 @@
       "title": "Program de Recomandare",
       "description": "Distribuie linkul tău și primești recompense când recomandările tale rezervă",
       "inactive": "Contul tău de afiliat este momentan inactiv.",
+      "notEnrolled": {
+        "body": "Câștigi recompense de fiecare dată când cineva rezervă prin linkul tău personal. Înscrierea se face pe bază de invitație deocamdată — contactează-ne și te configurăm.",
+        "cta": "Contactează-ne"
+      },
       "yourLink": "Linkul tău de recomandare",
       "copyLink": "Copiază linkul de recomandare",
       "referredDiscountInfo": "Cei care rezervă prin linkul tău primesc o reducere de {discount}.",
