@@ -13,15 +13,6 @@ export {
 export type { PriceDetails } from "@/lib/pricing";
 
 /**
- * Build reservation URL with vehicle ID
- */
-export function buildReservationUrl(vehicleId: string): string {
-  const params = new URLSearchParams();
-  params.append("vehicleId", vehicleId);
-  return `/reservation?${params.toString()}`;
-}
-
-/**
  * Format vehicle name for display
  */
 export function formatVehicleName(make: string, model: string, year?: number): string {

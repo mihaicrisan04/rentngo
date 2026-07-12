@@ -9,10 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Cog, Fuel, CarFront, Icon } from "lucide-react";
 import { gearbox } from "@lucide/lab";
 import { Vehicle } from "@/types/vehicle";
-import {
-  buildReservationUrl,
-  calculateVehiclePricingWithSeason,
-} from "@/lib/vehicle-utils";
+import { calculateVehiclePricingWithSeason } from "@/lib/vehicle-utils";
 import { getBasePricePerDay } from "@/types/vehicle";
 import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
 import { useTranslations, useLocale } from "next-intl";
@@ -99,7 +96,9 @@ export function VehicleCardWithPreloadedImage({
   }, [priceDetails.days, priceDetails.basePrice, vehicle, currentMultiplier]);
 
   const currency = "EUR";
-  const reservationUrl = vehicle ? buildReservationUrl(vehicle._id) : "#";
+  // Carry the vehicle in the href so new-tab/cmd-click works; the reservation
+  // page moves it into per-tab storage and strips it back to a bare URL.
+  const reservationUrl = vehicle ? `/reservation?vehicleId=${vehicle._id}` : "#";
   const carDetailsUrl = vehicle ? buildCarDetailsUrl(vehicle.slug, vehicle._id) : "#";
 
   if (!vehicle || typeof vehicle._id !== "string") {

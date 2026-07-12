@@ -95,6 +95,8 @@ export function CarDetailClient({
   }, []);
 
   const currency = "EUR";
+  // Carry the vehicle in the href so new-tab/cmd-click works; the reservation
+  // page moves it into per-tab storage and strips it back to a bare URL.
   const reservationUrl = `/reservation?vehicleId=${vehicle._id}`;
 
   const vehicleName = formatVehicleName(

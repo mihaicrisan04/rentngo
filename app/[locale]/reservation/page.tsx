@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft } from "lucide-react";
 import { searchStorage } from "@/lib/search-storage";
+import { reservationVehicle } from "@/lib/reservation-vehicle";
 import { buildLegacyChargeDescriptions } from "@/lib/reservation-charges";
 import { hasFormErrors } from "@/lib/reservation-schema";
 import { useReservationForm } from "@/hooks/use-reservation-form";
@@ -38,8 +39,27 @@ function ReservationPageContent() {
   const tCoupon = useTranslations("common.coupon");
   const locale = useLocale();
 
-  // Only get vehicleId from URL - all form data comes from localStorage
-  const vehicleId = searchParams.get("vehicleId");
+  // The vehicle arrives as `/reservation?vehicleId=…` (so normal clicks,
+  // cmd/middle-click into a new tab, and bookmarks all carry it), then we move
+  // it into per-tab session storage and strip the query param. The bare URL
+  // means a later ro↔en locale switch — which drops query params — reads the
+  // selection back from storage instead of losing it. Session (not local)
+  // storage keeps each tab's pick isolated.
+  const [vehicleId, setVehicleId] = React.useState<string | null>(null);
+  const [vehicleIdReady, setVehicleIdReady] = React.useState(false);
+
+  React.useEffect(() => {
+    const fromUrl = searchParams.get("vehicleId");
+    if (fromUrl) {
+      reservationVehicle.set(fromUrl);
+      setVehicleId(fromUrl);
+      // Drop the param so the URL is a bare /reservation from here on.
+      window.history.replaceState(null, "", window.location.pathname);
+    } else {
+      setVehicleId(reservationVehicle.get());
+    }
+    setVehicleIdReady(true);
+  }, [searchParams]);
 
   // All form state, localStorage persistence, Clerk autofill and validation
   const {
@@ -245,8 +265,9 @@ function ReservationPageContent() {
         description: t("reservation.successDescription")
       });
 
-      // Clear localStorage and redirect
+      // Clear storage (form data + the reserved vehicle) and redirect
       searchStorage.clear();
+      reservationVehicle.clear();
       router.push(`/reservation/confirmation?reservationId=${reservationId}`);
     } catch (error) {
       console.error("Error creating reservation:", error);
@@ -262,6 +283,16 @@ function ReservationPageContent() {
       setIsSubmitting(false);
     }
   };
+
+  if (!vehicleIdReady) {
+    return (
+      <div className="grow flex items-center justify-center p-4 md:p-8">
+        <p className="text-muted-foreground">
+          {t("reservation.loadingDetails")}
+        </p>
+      </div>
+    );
+  }
 
   if (!vehicleId) {
     return (
