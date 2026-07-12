@@ -1,9 +1,9 @@
 import { defineConfig } from "vitest/config";
 
-// Unit tests for the pure pricing engine only — no React/jsdom needed.
+// Unit tests for pure lib code (pricing engine + helpers) — no React/jsdom.
 export default defineConfig({
   test: {
-    include: ["lib/pricing/**/*.test.ts"],
+    include: ["lib/**/*.test.ts"],
     environment: "node",
   },
 });

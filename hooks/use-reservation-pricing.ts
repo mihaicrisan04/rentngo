@@ -1,110 +1,132 @@
-import { useMemo } from "react";
-import { differenceInDays } from "date-fns";
-import { getLocationPrice } from "@/lib/pricing";
-import { AdditionalFeatures } from "./use-reservation-form";
-import { getBasePricePerDay } from "@/types/vehicle";
+import * as React from "react";
+import {
+  computeReservationPricing,
+  getBasePricePerDay,
+  type ReservationPricingBreakdown,
+  type VehiclePricingData,
+} from "@/lib/pricing";
 
-export interface PricingDetails {
-  basePrice: number | null;
-  totalPrice: number | null;
-  days: number | null;
-  deliveryFee: number;
-  returnFee: number;
-  totalLocationFees: number;
-  scdwPrice: number;
+export interface UseReservationPricingInput {
+  vehicle: VehiclePricingData | null | undefined;
+  pickupDate: Date | undefined;
+  returnDate: Date | undefined;
+  pickupTime: string | null;
+  returnTime: string | null;
+  deliveryLocation: string;
+  restitutionLocation: string;
+  seasonalMultiplier: number;
+  isSCDWSelected: boolean;
+  snowChainsSelected: boolean;
+  childSeat1to4Count: number;
+  childSeat5to12Count: number;
+  /** Extra-km packages selected (each = 50 km). */
+  extraKilometersCount: number;
+  additional50kmPrice: number;
+}
+
+export interface UseReservationPricingResult {
+  /** null until vehicle, both dates and both times are set (return >= pickup). */
+  breakdown: ReservationPricingBreakdown | null;
+  // Per-feature amounts for the summary rows (0 while breakdown is null)
   snowChainsPrice: number;
   childSeat1to4Price: number;
   childSeat5to12Price: number;
+  extraKilometersPrice: number;
+  /** Physical extras only — excludes location fees, matching the summary row. */
   totalAdditionalFeatures: number;
+  /**
+   * Daily rate for the vehicle summary: the duration-tier seasonal rate once
+   * dates are picked, else the base-tier seasonal rate.
+   */
+  displayPricePerDay: number | null;
 }
 
-export interface UseReservationPricingParams {
-  pickupDate: Date | undefined;
-  returnDate: Date | undefined;
-  deliveryLocation: string;
-  restitutionLocation: string;
-  additionalFeatures: AdditionalFeatures;
-  vehicle?: any; // Pass the vehicle object instead of just pricePerDay
-}
-
-// SCDW calculation function
-const calculateSCDW = (days: number, dailyRate: number): number => {
-  const base = dailyRate * 2; // cost for 1–3 days
-  if (days <= 3) {
-    return base;
-  }
-  const blocks = Math.ceil((days - 3) / 3);
-  return base + 6 + 5 * (blocks - 1);
-};
-
-export function useReservationPricing({
-  pickupDate,
-  returnDate,
-  deliveryLocation,
-  restitutionLocation,
-  additionalFeatures,
-  vehicle
-}: UseReservationPricingParams): PricingDetails {
-
-  return useMemo(() => {
-    if (!pickupDate || !returnDate || !vehicle) {
-      return {
-        basePrice: null,
-        totalPrice: null,
-        days: null,
-        deliveryFee: 0,
-        returnFee: 0,
-        totalLocationFees: 0,
-        scdwPrice: 0,
-        snowChainsPrice: 0,
-        childSeat1to4Price: 0,
-        childSeat5to12Price: 0,
-        totalAdditionalFeatures: 0
-      };
-    }
-
-    const days = Math.max(1, differenceInDays(returnDate, pickupDate));
-    const pricePerDay = getBasePricePerDay(vehicle);
-    const basePrice = days * pricePerDay;
-
-    // Add location fees
-    const deliveryFee = getLocationPrice(deliveryLocation);
-    const returnFee = getLocationPrice(restitutionLocation);
-    const totalLocationFees = deliveryFee + returnFee;
-
-    // Add SCDW if selected
-    const scdwPrice = additionalFeatures.scdwSelected ? calculateSCDW(days, pricePerDay) : 0;
-
-    // Add additional features
-    const snowChainsPrice = additionalFeatures.snowChainsSelected ? days * 3 : 0;
-    const childSeat1to4Price = additionalFeatures.childSeat1to4Count * days * 3;
-    const childSeat5to12Price = additionalFeatures.childSeat5to12Count * days * 3;
-    const totalAdditionalFeatures = snowChainsPrice + childSeat1to4Price + childSeat5to12Price;
-
-    const totalPrice = basePrice + totalLocationFees + scdwPrice + totalAdditionalFeatures;
-
-    return {
-      basePrice,
-      totalPrice,
-      days,
-      deliveryFee,
-      returnFee,
-      totalLocationFees,
-      scdwPrice,
-      snowChainsPrice,
-      childSeat1to4Price,
-      childSeat5to12Price,
-      totalAdditionalFeatures
-    };
-  }, [
+/**
+ * Single memoized pricing derivation for the reservation page, wrapping the
+ * canonical lib/pricing engine. Both the summary UI and the submit payload
+ * read this one object, so what the customer sees is exactly what is sent —
+ * and the server recomputes the same breakdown from the same module.
+ */
+export function useReservationPricing(
+  input: UseReservationPricingInput,
+): UseReservationPricingResult {
+  const {
+    vehicle,
     pickupDate,
     returnDate,
+    pickupTime,
+    returnTime,
     deliveryLocation,
     restitutionLocation,
-    additionalFeatures.scdwSelected,
-    additionalFeatures.snowChainsSelected,
-    additionalFeatures.childSeat1to4Count,
-    additionalFeatures.childSeat5to12Count,
-    vehicle
+    seasonalMultiplier,
+    isSCDWSelected,
+    snowChainsSelected,
+    childSeat1to4Count,
+    childSeat5to12Count,
+    extraKilometersCount,
+    additional50kmPrice,
+  } = input;
+
+  return React.useMemo(() => {
+    const breakdown =
+      vehicle &&
+      pickupDate &&
+      returnDate &&
+      pickupTime &&
+      returnTime &&
+      returnDate.getTime() >= pickupDate.getTime()
+        ? computeReservationPricing({
+            vehicle,
+            startDate: pickupDate,
+            endDate: returnDate,
+            pickupTime,
+            restitutionTime: returnTime,
+            pickupLocation: deliveryLocation,
+            restitutionLocation,
+            seasonalMultiplier,
+            isSCDWSelected,
+            extras: {
+              snowChains: snowChainsSelected,
+              childSeat1to4: childSeat1to4Count,
+              childSeat5to12: childSeat5to12Count,
+              extraKilometers: extraKilometersCount * 50,
+            },
+            additional50kmPrice,
+          })
+        : null;
+
+    const amountFor = (code: string) =>
+      breakdown?.additionalCharges.find((charge) => charge.code === code)
+        ?.amount ?? 0;
+
+    return {
+      breakdown,
+      snowChainsPrice: amountFor("snowChains"),
+      childSeat1to4Price: amountFor("childSeat1to4"),
+      childSeat5to12Price: amountFor("childSeat5to12"),
+      extraKilometersPrice: amountFor("extraKm"),
+      totalAdditionalFeatures: breakdown
+        ? breakdown.totalAdditionalCharges - breakdown.totalLocationFees
+        : 0,
+      displayPricePerDay: vehicle
+        ? (breakdown?.pricePerDay ??
+          Math.round(getBasePricePerDay(vehicle) * seasonalMultiplier))
+        : null,
+    };
+  }, [
+    vehicle,
+    pickupDate,
+    returnDate,
+    pickupTime,
+    returnTime,
+    deliveryLocation,
+    restitutionLocation,
+    seasonalMultiplier,
+    isSCDWSelected,
+    snowChainsSelected,
+    childSeat1to4Count,
+    childSeat5to12Count,
+    extraKilometersCount,
+    additional50kmPrice,
   ]);
-} 
+}

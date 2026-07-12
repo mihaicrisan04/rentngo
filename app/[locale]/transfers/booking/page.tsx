@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { useQuery, useMutation } from "convex/react";
@@ -14,12 +13,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import { transferStorage, TransferSearchData } from "@/lib/transfer-storage";
 import { TransferSummaryCard } from "@/components/features/transfers/transfer-summary-card";
+import { CheckoutPaymentMethods } from "@/components/features/checkout/checkout-payment-methods";
+import { TermsAcceptance } from "@/components/features/checkout/terms-acceptance";
+import {
+  ContactFields,
+  type ContactFieldValues,
+} from "@/components/features/checkout/contact-fields";
+import type { PaymentMethod } from "@/lib/checkout-payment-methods";
 
 interface PersonalInfo {
   name: string;
@@ -36,25 +39,6 @@ interface FormErrors {
   paymentMethod?: string;
   termsAccepted?: string;
 }
-
-const paymentMethods = [
-  {
-    id: "cash_on_delivery",
-    label: "Cash on delivery",
-    description: "Pay cash when the driver arrives",
-  },
-  {
-    id: "card_on_delivery",
-    label: "Card payment on delivery",
-    description: "Pay with card when the driver arrives",
-  },
-  {
-    id: "card_online",
-    label: "Card payment online",
-    description: "Pay now with your card",
-    disabled: true,
-  },
-];
 
 export default function TransferBookingPage() {
   const router = useRouter();
@@ -74,7 +58,9 @@ export default function TransferBookingPage() {
     message: "",
     flightNumber: "",
   });
-  const [paymentMethod, setPaymentMethod] = React.useState<string>("");
+  const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod | "">(
+    "",
+  );
   const [termsAccepted, setTermsAccepted] = React.useState(false);
   const [errors, setErrors] = React.useState<FormErrors>({});
   const [luggageCount, setLuggageCount] = React.useState<number>(0);
@@ -171,7 +157,8 @@ export default function TransferBookingPage() {
       !searchData?.pickupDate ||
       !searchData?.pickupTime ||
       !vehicleId ||
-      !pricing
+      !pricing ||
+      !paymentMethod
     ) {
       toast.error("Missing required transfer information");
       return;
@@ -208,10 +195,7 @@ export default function TransferBookingPage() {
           message: personalInfo.message || undefined,
           flightNumber: personalInfo.flightNumber || undefined,
         },
-        paymentMethod: paymentMethod as
-          | "cash_on_delivery"
-          | "card_on_delivery"
-          | "card_online",
+        paymentMethod,
         luggageCount: luggageCount > 0 ? luggageCount : undefined,
         locale,
       });
@@ -296,89 +280,18 @@ export default function TransferBookingPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="name" className="mb-2">
-                    {tReservation("personalInfo.fullName")} *
-                  </Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder={tReservation("personalInfo.fullNamePlaceholder")}
-                    value={personalInfo.name}
-                    onChange={(e) =>
-                      setPersonalInfo((prev) => ({ ...prev, name: e.target.value }))
-                    }
-                    className={cn(errors.name && "border-red-500")}
-                  />
-                  {errors.name && (
-                    <p className="text-sm text-red-500 mt-1 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.name}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="email" className="mb-2">
-                    {tReservation("personalInfo.emailAddress")} *
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder={tReservation("personalInfo.emailPlaceholder")}
-                    value={personalInfo.email}
-                    onChange={(e) =>
-                      setPersonalInfo((prev) => ({ ...prev, email: e.target.value }))
-                    }
-                    className={cn(errors.email && "border-red-500")}
-                  />
-                  {errors.email && (
-                    <p className="text-sm text-red-500 mt-1 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.email}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="phone" className="mb-2">
-                    {tReservation("personalInfo.phoneNumber")} *
-                  </Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder={tReservation("personalInfo.phonePlaceholder")}
-                    value={personalInfo.phone}
-                    onChange={(e) =>
-                      setPersonalInfo((prev) => ({ ...prev, phone: e.target.value }))
-                    }
-                    className={cn(errors.phone && "border-red-500")}
-                  />
-                  {errors.phone && (
-                    <p className="text-sm text-red-500 mt-1 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.phone}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="flightNumber" className="mb-2">
-                    {tReservation("personalInfo.flightNumber")}
-                  </Label>
-                  <Input
-                    id="flightNumber"
-                    type="text"
-                    placeholder={tReservation("personalInfo.flightPlaceholder")}
-                    value={personalInfo.flightNumber}
-                    onChange={(e) =>
-                      setPersonalInfo((prev) => ({
-                        ...prev,
-                        flightNumber: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
+                <ContactFields
+                  values={personalInfo}
+                  onChange={(field: keyof ContactFieldValues, value) =>
+                    setPersonalInfo((prev) => ({ ...prev, [field]: value }))
+                  }
+                  errors={{
+                    name: errors.name,
+                    email: errors.email,
+                    phone: errors.phone,
+                  }}
+                  showRequiredMarkers
+                />
 
                 <div>
                   <Label htmlFor="luggage" className="mb-2 flex items-center gap-1">
@@ -431,107 +344,18 @@ export default function TransferBookingPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                  {paymentMethods.map((method) => (
-                    <label
-                      key={method.id}
-                      htmlFor={method.id}
-                      className={cn(
-                        "flex items-center space-x-3 rounded-xl border p-4 cursor-pointer transition-colors",
-                        paymentMethod === method.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/50",
-                        method.disabled && "opacity-50 cursor-not-allowed"
-                      )}
-                    >
-                      <RadioGroupItem
-                        value={method.id}
-                        id={method.id}
-                        disabled={method.disabled}
-                      />
-                      <div className="flex-1">
-                        <Label
-                          htmlFor={method.id}
-                          className="font-medium cursor-pointer"
-                        >
-                          {method.label}
-                        </Label>
-                        <p className="text-sm text-muted-foreground">
-                          {method.description}
-                        </p>
-                      </div>
-                    </label>
-                  ))}
-                </RadioGroup>
-                {errors.paymentMethod && (
-                  <p className="text-sm text-red-500 flex items-center">
-                    <AlertCircle className="h-4 w-4 mr-1" />
-                    {errors.paymentMethod}
-                  </p>
-                )}
+                <CheckoutPaymentMethods
+                  value={paymentMethod}
+                  onChange={setPaymentMethod}
+                  error={errors.paymentMethod}
+                  variant="bordered"
+                />
 
-                <div className="pt-4 border-t">
-                  <div className="flex items-start space-x-2">
-                    <Checkbox
-                      id="terms"
-                      checked={termsAccepted}
-                      onCheckedChange={(checked) =>
-                        setTermsAccepted(checked as boolean)
-                      }
-                    />
-                    <div className="text-sm leading-relaxed">
-                      {locale === "ro" ? (
-                        <>
-                          Accept{" "}
-                          <Link
-                            href="/terms"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:text-primary/80 underline"
-                          >
-                            Termenii și Condițiile
-                          </Link>{" "}
-                          și{" "}
-                          <Link
-                            href="/privacy"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:text-primary/80 underline"
-                          >
-                            Politica de Confidențialitate
-                          </Link>
-                        </>
-                      ) : (
-                        <>
-                          I accept the{" "}
-                          <Link
-                            href="/terms"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:text-primary/80 underline"
-                          >
-                            Terms and Conditions
-                          </Link>{" "}
-                          and{" "}
-                          <Link
-                            href="/privacy"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:text-primary/80 underline"
-                          >
-                            Privacy Policy
-                          </Link>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  {errors.termsAccepted && (
-                    <p className="text-sm text-red-500 mt-1 flex items-center">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {errors.termsAccepted}
-                    </p>
-                  )}
-                </div>
+                <TermsAcceptance
+                  checked={termsAccepted}
+                  onCheckedChange={setTermsAccepted}
+                  error={errors.termsAccepted}
+                />
               </CardContent>
             </Card>
 
