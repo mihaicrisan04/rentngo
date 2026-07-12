@@ -70,3 +70,10 @@ export function setStoredReferral(
 
 /** Event dispatched by the consent banner when the visitor accepts. */
 export const CONSENT_GRANTED_EVENT = "rngo:consent-granted";
+
+/**
+ * Event dispatched by ReferralCapture after the attribution is recorded and
+ * the cookie is written. The checkout hook listens for it so a checkout that
+ * mounted before the (async) capture still picks the referral up.
+ */
+export const REFERRAL_CAPTURED_EVENT = "rngo:referral-captured";

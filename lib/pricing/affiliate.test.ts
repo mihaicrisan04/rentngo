@@ -6,6 +6,7 @@ import {
   isValidAffiliateSlug,
   nextTier,
   normalizeAffiliateSlug,
+  referredEligibility,
   resolveTierRewardPercent,
   validateAffiliateSettings,
   DEFAULT_AFFILIATE_SETTINGS,
@@ -151,6 +152,67 @@ describe("conversionTransition (void on cancel, re-confirm on un-cancel)", () =>
 
   it("leaves a live confirmed conversion alone on non-cancel status changes", () => {
     expect(conversionTransition("confirmed", true)).toBeNull();
+  });
+});
+
+describe("referredEligibility", () => {
+  const owner = { id: "affiliate_user", email: "owner@example.com" };
+  const base = {
+    ownerUser: owner,
+    bookerUserId: undefined,
+    customerEmail: "customer@example.com",
+    hasLiveConversion: false,
+  };
+
+  it("grants the referred discount on the happy path", () => {
+    expect(referredEligibility(base)).toEqual({ eligible: true });
+  });
+
+  it("FAILS CLOSED when the affiliate's owner user is missing", () => {
+    expect(referredEligibility({ ...base, ownerUser: null })).toEqual({
+      eligible: false,
+      reason: "missingOwner",
+    });
+    // ...even for a booking that would otherwise be eligible in every way
+    expect(
+      referredEligibility({
+        ...base,
+        ownerUser: null,
+        customerEmail: owner.email,
+      }),
+    ).toEqual({ eligible: false, reason: "missingOwner" });
+  });
+
+  it("blocks self-referral by user id", () => {
+    expect(
+      referredEligibility({ ...base, bookerUserId: "affiliate_user" }),
+    ).toEqual({ eligible: false, reason: "selfReferral" });
+  });
+
+  it("blocks self-referral by email, case- and whitespace-insensitively", () => {
+    expect(
+      referredEligibility({ ...base, customerEmail: " Owner@Example.COM " }),
+    ).toEqual({ eligible: false, reason: "selfReferral" });
+  });
+
+  it("blocks a repeat while a live (non-voided) conversion exists", () => {
+    expect(referredEligibility({ ...base, hasLiveConversion: true })).toEqual({
+      eligible: false,
+      reason: "duplicate",
+    });
+  });
+
+  it("allows again once every prior conversion is voided", () => {
+    // The DB layer maps "only voided priors" to hasLiveConversion: false
+    expect(
+      referredEligibility({ ...base, hasLiveConversion: false }),
+    ).toEqual({ eligible: true });
+  });
+
+  it("a guest (no user id) never matches the owner's id", () => {
+    expect(
+      referredEligibility({ ...base, bookerUserId: undefined }),
+    ).toEqual({ eligible: true });
   });
 });
 

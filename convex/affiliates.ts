@@ -8,6 +8,7 @@ import {
   conversionTransition,
   hasCouponIdentity,
   isValidAffiliateSlug,
+  referredEligibility,
   nextTier,
   normalizeAffiliateSlug,
   normalizeCustomerEmail,
@@ -493,23 +494,42 @@ export async function resolveAffiliateCandidates(
         : null;
 
     if (affiliate && affiliate.isActive) {
-      const affiliateUser = await ctx.db.get(affiliate.userId);
-      const isSelfReferral =
-        (args.currentUser && args.currentUser._id === affiliate.userId) ||
-        (affiliateUser && normalizeCustomerEmail(affiliateUser.email) === email);
+      const ownerUser = await ctx.db.get(affiliate.userId);
 
-      // One referred discount/conversion per customer per affiliate: a live
-      // (non-voided) prior conversion blocks a repeat; a voided one (the
-      // earlier booking was cancelled) allows another try.
-      const prior = await ctx.db
-        .query("referralConversions")
-        .withIndex("by_affiliate_email", (q) =>
-          q.eq("affiliateId", affiliate._id).eq("referredEmail", email),
+      // One referred discount/conversion per customer per affiliate: any
+      // live (non-voided) prior conversion blocks a repeat; voided ones (the
+      // earlier booking was cancelled) free the slot. Status is in the index,
+      // so each live status is a targeted .first() — no amount of voided
+      // history can hide an existing live conversion. Race-safe like the
+      // coupon checks: a losing OCC transaction re-runs this read after the
+      // winner's insert.
+      const livePrior = (
+        await Promise.all(
+          (["confirmed", "pending"] as const).map((status) =>
+            ctx.db
+              .query("referralConversions")
+              .withIndex("by_affiliate_email_status", (q) =>
+                q
+                  .eq("affiliateId", affiliate._id)
+                  .eq("referredEmail", email)
+                  .eq("status", status),
+              )
+              .first(),
+          ),
         )
-        .take(100);
-      const hasLivePrior = prior.some((c) => c.status !== "voided");
+      ).some((row) => row !== null);
 
-      if (!isSelfReferral && !hasLivePrior) {
+      // Fails closed when the owner user row is missing (orphaned affiliate)
+      const eligibility = referredEligibility({
+        ownerUser: ownerUser
+          ? { id: ownerUser._id, email: ownerUser.email }
+          : null,
+        bookerUserId: args.currentUser?._id,
+        customerEmail: email,
+        hasLiveConversion: livePrior,
+      });
+
+      if (eligibility.eligible) {
         referred = {
           affiliateId: affiliate._id,
           slug: affiliate.slug,

@@ -27,6 +27,7 @@ import {
   type AppliedCoupon,
 } from "@/components/features/checkout/coupon-code-input";
 import { useAffiliateDiscount } from "@/hooks/use-affiliate-discount";
+import { getStoredReferral } from "@/lib/referral";
 import type { PaymentMethod } from "@/lib/checkout-payment-methods";
 import { ConvexError } from "convex/values";
 
@@ -215,8 +216,9 @@ export default function TransferBookingPage() {
         luggageCount: luggageCount > 0 ? luggageCount : undefined,
         // Re-validated and redeemed server-side; the shown discount is advisory
         promoCode: appliedCoupon?.code,
-        // Referral attribution from the consented cookie — server-validated
-        referral: referral ?? undefined,
+        // Referral attribution — read the cookie fresh at submit so a
+        // capture that landed after mount is never dropped; server-validated
+        referral: getStoredReferral() ?? referral ?? undefined,
         locale,
       });
 

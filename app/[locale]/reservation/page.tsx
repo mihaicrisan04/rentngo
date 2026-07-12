@@ -29,6 +29,7 @@ import {
   type AppliedCoupon,
 } from "@/components/features/checkout/coupon-code-input";
 import { useAffiliateDiscount } from "@/hooks/use-affiliate-discount";
+import { getStoredReferral } from "@/lib/referral";
 import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
 import { ConvexError } from "convex/values";
@@ -208,8 +209,9 @@ function ReservationPageContent() {
         // The server re-validates and redeems the coupon atomically; the
         // client-shown discount is advisory only
         promoCode: appliedCoupon?.code,
-        // Referral attribution from the consented cookie — server-validated
-        referral: referral ?? undefined,
+        // Referral attribution — read the cookie fresh at submit so a
+        // capture that landed after mount is never dropped; server-validated
+        referral: getStoredReferral() ?? referral ?? undefined,
         additionalCharges:
           additionalCharges.length > 0 ? additionalCharges : undefined,
         isSCDWSelected: isSCDWSelected,

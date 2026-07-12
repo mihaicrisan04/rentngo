@@ -394,8 +394,15 @@ export default defineSchema({
     .index("by_affiliate", ["affiliateId"])
     .index("by_reservation", ["reservationId"])
     .index("by_transfer", ["transferId"])
-    // Enforces one referred discount/conversion per customer per affiliate
-    .index("by_affiliate_email", ["affiliateId", "referredEmail"]),
+    // Enforces one referred discount/conversion per customer per affiliate:
+    // status is part of the index so the "any live (non-voided) prior?"
+    // check is a targeted lookup, not a scan that voided rows could push the
+    // live one out of
+    .index("by_affiliate_email_status", [
+      "affiliateId",
+      "referredEmail",
+      "status",
+    ]),
 
   // Email logs table - tracks sent emails
   emailLogs: defineTable({

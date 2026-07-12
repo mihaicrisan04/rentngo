@@ -11,7 +11,7 @@
  * (booking cancelled) automatically demotes the tier on the next booking.
  */
 
-import { computeCouponDiscount } from "./discount";
+import { computeCouponDiscount, normalizeCustomerEmail } from "./discount";
 
 export interface AffiliateTier {
   /** Confirmed conversions required to unlock this tier. */
@@ -123,6 +123,44 @@ export function computeReferrerReward(
 }
 
 export type ConversionStatus = "pending" | "confirmed" | "voided";
+
+export type ReferredIneligibilityReason =
+  | "missingOwner"
+  | "selfReferral"
+  | "duplicate";
+
+/**
+ * Eligibility decision for the referred discount + conversion, given the
+ * facts the DB layer looked up. FAILS CLOSED when the affiliate's owner user
+ * row is missing: an orphaned affiliate must not grant discounts or
+ * accumulate conversions, and without the owner's email the self-referral
+ * check cannot run. `hasLiveConversion` is the one-per-customer rule: any
+ * non-voided prior conversion for this (affiliate, email) blocks a repeat;
+ * voided ones (cancelled bookings) free the slot.
+ */
+export function referredEligibility(params: {
+  ownerUser: { id: string; email: string } | null;
+  bookerUserId?: string;
+  customerEmail: string;
+  hasLiveConversion: boolean;
+}):
+  | { eligible: true }
+  | { eligible: false; reason: ReferredIneligibilityReason } {
+  if (!params.ownerUser) {
+    return { eligible: false, reason: "missingOwner" };
+  }
+  const isSelfReferral =
+    params.bookerUserId === params.ownerUser.id ||
+    normalizeCustomerEmail(params.ownerUser.email) ===
+      normalizeCustomerEmail(params.customerEmail);
+  if (isSelfReferral) {
+    return { eligible: false, reason: "selfReferral" };
+  }
+  if (params.hasLiveConversion) {
+    return { eligible: false, reason: "duplicate" };
+  }
+  return { eligible: true };
+}
 
 /**
  * Conversion lifecycle: how an existing conversion reacts to its booking's

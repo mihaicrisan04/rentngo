@@ -9,6 +9,7 @@ import {
   getStoredReferral,
   setStoredReferral,
   CONSENT_GRANTED_EVENT,
+  REFERRAL_CAPTURED_EVENT,
 } from "@/lib/referral";
 
 /**
@@ -46,6 +47,8 @@ function ReferralCaptureInner() {
             { slug: ref, visitorKey },
             result.attributionWindowDays,
           );
+          // Wake any already-mounted checkout so it re-reads the cookie
+          window.dispatchEvent(new Event(REFERRAL_CAPTURED_EVENT));
         }
       } catch {
         // Attribution is best-effort; never disturb the visit
