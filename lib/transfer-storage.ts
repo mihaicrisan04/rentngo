@@ -17,6 +17,14 @@ export interface TransferSearchData {
   transferType?: "one_way" | "round_trip";
   distanceKm?: number;
   estimatedDurationMinutes?: number;
+  /**
+   * Identifies the exact pickup/dropoff coordinate pair that `distanceKm` and
+   * `estimatedDurationMinutes` were computed for. On restore the metrics are
+   * only trusted when this key matches the current pair, so a location change
+   * with a still-pending Directions request can't leave stale distance (and
+   * therefore a wrong fare) associated with the new pair.
+   */
+  routeInfoKey?: string;
   selectedVehicleId?: string;
 }
 

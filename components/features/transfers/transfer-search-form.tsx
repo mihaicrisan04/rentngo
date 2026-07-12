@@ -83,19 +83,25 @@ export function TransferSearchForm({
     if (stored.returnTime) setReturnTime(stored.returnTime);
     if (stored.passengers) setPassengers(stored.passengers);
     if (stored.transferType) setTransferType(stored.transferType);
-    if (stored.distanceKm && stored.estimatedDurationMinutes) {
+    // Only trust restored route metrics when their stored key provably matches
+    // the restored location pair. Otherwise the calc effect below recalculates
+    // (correct-but-costs one Directions call), guarding against stale distance.
+    if (
+      stored.distanceKm &&
+      stored.estimatedDurationMinutes &&
+      stored.routeInfoKey &&
+      stored.pickupLocation &&
+      stored.dropoffLocation &&
+      stored.routeInfoKey ===
+        routeKey(stored.pickupLocation, stored.dropoffLocation)
+    ) {
       const restoredInfo = {
         distanceKm: stored.distanceKm,
         durationMinutes: stored.estimatedDurationMinutes,
       };
       setRouteInfo(restoredInfo);
-      if (stored.pickupLocation && stored.dropoffLocation) {
-        routeInfoKeyRef.current = routeKey(
-          stored.pickupLocation,
-          stored.dropoffLocation,
-        );
-        onRouteCalculated?.(restoredInfo);
-      }
+      routeInfoKeyRef.current = stored.routeInfoKey;
+      onRouteCalculated?.(restoredInfo);
     }
     setIsHydrated(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -103,6 +109,19 @@ export function TransferSearchForm({
 
   React.useEffect(() => {
     if (!isHydrated) return;
+
+    // Persist route metrics only when they provably belong to the CURRENT
+    // pair (the ref is updated together with routeInfo). While a location
+    // change has a pending Directions request, routeInfo still holds the
+    // previous pair's distance — writing it here against the new pair would
+    // let a remount restore a wrong distance. In that window we write
+    // `undefined`, which clears any stale metrics from storage.
+    const currentKey =
+      pickupLocation && dropoffLocation
+        ? routeKey(pickupLocation, dropoffLocation)
+        : null;
+    const metricsMatchPair =
+      currentKey !== null && routeInfoKeyRef.current === currentKey && !!routeInfo;
 
     transferStorage.save({
       pickupLocation: pickupLocation || undefined,
@@ -113,8 +132,11 @@ export function TransferSearchForm({
       returnTime,
       passengers,
       transferType,
-      distanceKm: routeInfo?.distanceKm,
-      estimatedDurationMinutes: routeInfo?.durationMinutes,
+      distanceKm: metricsMatchPair ? routeInfo.distanceKm : undefined,
+      estimatedDurationMinutes: metricsMatchPair
+        ? routeInfo.durationMinutes
+        : undefined,
+      routeInfoKey: metricsMatchPair ? currentKey : undefined,
     });
   }, [
     pickupLocation,
@@ -192,6 +214,12 @@ export function TransferSearchForm({
       }
     }
 
+    // Same guard as the save effect: only persist metrics that provably match
+    // this pair, so the vehicles page never prices against a stale distance.
+    const submitKey = routeKey(pickupLocation, dropoffLocation);
+    const metricsMatchPair =
+      routeInfoKeyRef.current === submitKey && !!routeInfo;
+
     transferStorage.save({
       pickupLocation,
       dropoffLocation,
@@ -201,8 +229,11 @@ export function TransferSearchForm({
       returnTime: transferType === "round_trip" ? returnTime : undefined,
       passengers,
       transferType,
-      distanceKm: routeInfo?.distanceKm,
-      estimatedDurationMinutes: routeInfo?.durationMinutes,
+      distanceKm: metricsMatchPair ? routeInfo.distanceKm : undefined,
+      estimatedDurationMinutes: metricsMatchPair
+        ? routeInfo.durationMinutes
+        : undefined,
+      routeInfoKey: metricsMatchPair ? submitKey : undefined,
       selectedVehicleId: undefined,
     });
 
