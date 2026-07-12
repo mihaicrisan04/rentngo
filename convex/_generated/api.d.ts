@@ -10,6 +10,7 @@
 
 import type * as auth from "../auth.js";
 import type * as blogs from "../blogs.js";
+import type * as coupons from "../coupons.js";
 import type * as emails from "../emails.js";
 import type * as emails_components_customer_info_section from "../emails/components/customer_info_section.js";
 import type * as emails_components_email_footer from "../emails/components/email_footer.js";
@@ -50,6 +51,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   blogs: typeof blogs;
+  coupons: typeof coupons;
   emails: typeof emails;
   "emails/components/customer_info_section": typeof emails_components_customer_info_section;
   "emails/components/email_footer": typeof emails_components_email_footer;

@@ -69,7 +69,6 @@ const reservationSchema = z.object({
   customerPhone: z.string().min(1, "Customer phone is required"),
   customerMessage: z.string().optional(),
   flightNumber: z.string().optional(),
-  promoCode: z.string().optional(),
   isSCDWSelected: z.boolean(),
   deductibleAmount: z.string()
     .regex(/^\d+(\.\d{1,2})?$/, "Deductible must be a valid number with up to 2 decimal places"),
@@ -113,7 +112,6 @@ export function CreateReservationDialog({
       customerPhone: "",
       customerMessage: "",
       flightNumber: "",
-      promoCode: "",
       isSCDWSelected: false,
       deductibleAmount: "0",
       protectionCost: "0",
@@ -160,7 +158,6 @@ export function CreateReservationDialog({
           message: values.customerMessage || undefined,
           flightNumber: values.flightNumber || undefined,
         },
-        promoCode: values.promoCode || undefined,
         additionalCharges: undefined,
         isSCDWSelected: values.isSCDWSelected,
         deductibleAmount: parseFloat(values.deductibleAmount),
@@ -636,24 +633,6 @@ export function CreateReservationDialog({
                       )}
                     />
                   </div>
-
-                  <FormField
-                    control={form.control}
-                    name="promoCode"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Promo Code (Optional)</FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            placeholder="e.g., SUMMER2024"
-                            disabled={isSubmitting}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
 
                   {/* Pricing Breakdown */}
                   <div className="bg-muted/50 p-4 rounded-lg space-y-2">

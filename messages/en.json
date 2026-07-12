@@ -314,6 +314,7 @@
     "paymentMethod": "Payment Method:",
     "additionalCharges": "Additional Charges:",
     "totalAmount": "Total Amount:",
+    "discountLine": "Discount ({code})",
     "scdwLine": "SCDW (zero deductible)",
     "warrantyLine": "Warranty (deductible)",
     "baseRentalLine": "Rental ({days} {days, plural, one {day} other {days}} × {price} EUR/day)",
@@ -454,6 +455,25 @@
       "pending": "Pending",
       "cancelled": "Cancelled",
       "completed": "Completed"
+    },
+    "coupon": {
+      "title": "Coupon Code",
+      "placeholder": "Enter coupon code",
+      "apply": "Apply",
+      "checking": "Checking...",
+      "applied": "Coupon {code} applied",
+      "remove": "Remove coupon",
+      "discount": "Discount",
+      "errors": {
+        "notFound": "This coupon code doesn't exist.",
+        "inactive": "This coupon is no longer active.",
+        "expired": "This coupon has expired.",
+        "exhausted": "This coupon has reached its usage limit.",
+        "wrongBookingType": "This coupon doesn't apply to this type of booking.",
+        "belowMinimum": "The order total is below this coupon's minimum.",
+        "alreadyUsed": "You've already used this coupon.",
+        "submitFailed": "The coupon could not be applied. Please re-check the code and try again."
+      }
     }
   },
   "navigation": {

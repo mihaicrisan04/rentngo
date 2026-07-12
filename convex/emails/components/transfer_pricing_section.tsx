@@ -19,6 +19,7 @@ interface TransferPricingSectionProps {
     heading?: string;
     distance?: string;
     roundTrip?: string;
+    discount?: string;
     totalAmount?: string;
     paymentMethod?: string;
   };
@@ -52,6 +53,22 @@ export const TransferPricingSection: React.FC<TransferPricingSectionProps> = ({
           </Text>
         </Column>
       </Row>
+
+      {pricingDetails.promoCode &&
+        pricingDetails.discountAmount !== undefined && (
+          <Row className="mb-[8px]">
+            <Column className="w-2/3">
+              <Text className="text-[16px] text-green-600 m-0">
+                {labels?.discount ?? "Discount:"} {pricingDetails.promoCode}
+              </Text>
+            </Column>
+            <Column className="w-1/3 text-right">
+              <Text className="text-[16px] text-green-600 m-0">
+                −{formatCurrency(pricingDetails.discountAmount)}
+              </Text>
+            </Column>
+          </Row>
+        )}
 
       <Hr className="border-gray-300 my-[12px]" />
 

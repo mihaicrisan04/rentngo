@@ -9,7 +9,8 @@ import {
   ArrowRightLeft,
   LayoutDashboard,
   Building2,
-  NotepadText
+  NotepadText,
+  TicketPercent
 
 } from "lucide-react"
 
@@ -51,6 +52,11 @@ const navItems = [
     title: "Transfers",
     url: "/admin/transfers",
     icon: ArrowRightLeft,
+  },
+  {
+    title: "Coupons",
+    url: "/admin/coupons",
+    icon: TicketPercent,
   },
   {
     title: "Blogs",

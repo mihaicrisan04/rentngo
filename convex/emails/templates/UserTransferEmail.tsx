@@ -76,6 +76,7 @@ export const UserTransferEmail: React.FC<UserTransferEmailProps> = ({
       heading: isRo ? "Detalii Preț" : "Pricing Details",
       distance: isRo ? "Distanță:" : "Distance:",
       roundTrip: isRo ? "Dus-Întors" : "Round Trip",
+      discount: isRo ? "Reducere aplicată:" : "Discount Applied:",
       totalAmount: isRo ? "Sumă Totală:" : "Total Amount:",
       paymentMethod: isRo ? "Metoda de Plată:" : "Payment Method:",
     },
@@ -162,6 +163,7 @@ export const UserTransferEmail: React.FC<UserTransferEmailProps> = ({
               heading: t.pricing.heading,
               distance: t.pricing.distance,
               roundTrip: t.pricing.roundTrip,
+              discount: t.pricing.discount,
               totalAmount: t.pricing.totalAmount,
               paymentMethod: t.pricing.paymentMethod,
             }}

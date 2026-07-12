@@ -314,6 +314,7 @@
     "paymentMethod": "Metoda de Plată:",
     "additionalCharges": "Taxe Suplimentare:",
     "totalAmount": "Suma Totală:",
+    "discountLine": "Reducere ({code})",
     "scdwLine": "SCDW (nerestituibilă)",
     "warrantyLine": "Garanție (restituibilă)",
     "baseRentalLine": "Închiriere ({days} {days, plural, one {zi} other {zile}} × {price} EUR/zi)",
@@ -454,6 +455,25 @@
       "pending": "În Așteptare",
       "cancelled": "Anulată",
       "completed": "Finalizată"
+    },
+    "coupon": {
+      "title": "Cod de reducere",
+      "placeholder": "Introdu codul de reducere",
+      "apply": "Aplică",
+      "checking": "Se verifică...",
+      "applied": "Cuponul {code} a fost aplicat",
+      "remove": "Elimină cuponul",
+      "discount": "Reducere",
+      "errors": {
+        "notFound": "Acest cod de reducere nu există.",
+        "inactive": "Acest cupon nu mai este activ.",
+        "expired": "Acest cupon a expirat.",
+        "exhausted": "Acest cupon a atins limita de utilizări.",
+        "wrongBookingType": "Acest cupon nu se aplică acestui tip de rezervare.",
+        "belowMinimum": "Totalul comenzii este sub minimul cerut de acest cupon.",
+        "alreadyUsed": "Ai folosit deja acest cupon.",
+        "submitFailed": "Cuponul nu a putut fi aplicat. Verifică din nou codul și reîncearcă."
+      }
     }
   },
   "navigation": {

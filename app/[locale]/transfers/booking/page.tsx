@@ -22,7 +22,12 @@ import {
   ContactFields,
   type ContactFieldValues,
 } from "@/components/features/checkout/contact-fields";
+import {
+  CouponCodeInput,
+  type AppliedCoupon,
+} from "@/components/features/checkout/coupon-code-input";
 import type { PaymentMethod } from "@/lib/checkout-payment-methods";
+import { ConvexError } from "convex/values";
 
 interface PersonalInfo {
   name: string;
@@ -45,6 +50,7 @@ export default function TransferBookingPage() {
   const { user } = useUser();
   const t = useTranslations("transferPage");
   const tReservation = useTranslations("reservationPage");
+  const tCoupon = useTranslations("common.coupon");
   const locale = useLocale();
 
   const [searchData, setSearchData] = React.useState<TransferSearchData | null>(null);
@@ -64,6 +70,8 @@ export default function TransferBookingPage() {
   const [termsAccepted, setTermsAccepted] = React.useState(false);
   const [errors, setErrors] = React.useState<FormErrors>({});
   const [luggageCount, setLuggageCount] = React.useState<number>(0);
+  const [appliedCoupon, setAppliedCoupon] =
+    React.useState<AppliedCoupon | null>(null);
 
   const currentUser = useQuery(api.users.get);
   const createTransfer = useMutation(api.transfers.createTransfer);
@@ -197,6 +205,8 @@ export default function TransferBookingPage() {
         },
         paymentMethod,
         luggageCount: luggageCount > 0 ? luggageCount : undefined,
+        // Re-validated and redeemed server-side; the shown discount is advisory
+        promoCode: appliedCoupon?.code,
         locale,
       });
 
@@ -209,9 +219,16 @@ export default function TransferBookingPage() {
       router.push(`/transfers/confirmation/${result.transferId}`);
     } catch (error) {
       console.error("Failed to create transfer:", error);
-      toast.error("Failed to book transfer", {
-        description: "Please try again or contact support.",
-      });
+      if (
+        error instanceof ConvexError &&
+        (error.data as { code?: string })?.code === "COUPON_INVALID"
+      ) {
+        toast.error(tCoupon("errors.submitFailed"));
+      } else {
+        toast.error("Failed to book transfer", {
+          description: "Please try again or contact support.",
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -335,6 +352,13 @@ export default function TransferBookingPage() {
               </CardContent>
             </Card>
 
+            <CouponCodeInput
+              bookingType="transfers"
+              subtotal={pricing?.totalPrice ?? null}
+              email={personalInfo.email}
+              onAppliedChange={setAppliedCoupon}
+            />
+
             {/* Payment Method */}
             <Card>
               <CardHeader>
@@ -403,6 +427,7 @@ export default function TransferBookingPage() {
                   : null
               }
               totalPrice={totalPrice}
+              appliedCoupon={appliedCoupon}
             />
           </div>
         </div>

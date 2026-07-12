@@ -12,8 +12,12 @@ import {
 } from "@/components/ui/hover-card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { calculateIncludedKilometers } from "@/lib/pricing";
+import {
+  applyDiscountToTotal,
+  calculateIncludedKilometers,
+} from "@/lib/pricing";
 import type { UseReservationPricingResult } from "@/hooks/use-reservation-pricing";
+import type { AppliedCoupon } from "@/components/features/checkout/coupon-code-input";
 import type { Vehicle } from "@/types/vehicle";
 
 interface ReservationSummaryCardProps {
@@ -32,6 +36,7 @@ interface ReservationSummaryCardProps {
   isSCDWSelected: boolean;
   onSCDWChange: (selected: boolean) => void;
   pricing: UseReservationPricingResult;
+  appliedCoupon: AppliedCoupon | null;
   isSubmitting: boolean;
   onSubmit: () => void;
 }
@@ -53,10 +58,12 @@ export const ReservationSummaryCard = React.memo(
     isSCDWSelected,
     onSCDWChange,
     pricing,
+    appliedCoupon,
     isSubmitting,
     onSubmit,
   }: ReservationSummaryCardProps) {
     const t = useTranslations("reservationPage");
+    const tCoupon = useTranslations("common.coupon");
     const locale = useLocale();
 
     const {
@@ -69,7 +76,13 @@ export const ReservationSummaryCard = React.memo(
     } = pricing;
     const days = breakdown?.rentalDays ?? null;
     const basePrice = breakdown?.basePrice ?? null;
-    const totalPrice = breakdown?.totalPrice ?? null;
+    // Advisory discount preview — the server recomputes the authoritative
+    // amount inside createReservation
+    const discountAmount = appliedCoupon?.discountAmount ?? 0;
+    const totalPrice =
+      breakdown !== null
+        ? applyDiscountToTotal(breakdown.totalPrice, discountAmount)
+        : null;
     const deliveryFee = breakdown?.deliveryFee ?? 0;
     const returnFee = breakdown?.returnFee ?? 0;
     const totalLocationFees = breakdown?.totalLocationFees ?? 0;
@@ -353,6 +366,15 @@ export const ReservationSummaryCard = React.memo(
                 <div className="flex justify-between text-sm text-muted-foreground/60">
                   <span>{t("reservationSummary.totalAdditionalFeatures")}:</span>
                   <span>{totalAdditionalFeatures} EUR</span>
+                </div>
+              )}
+
+              {appliedCoupon && discountAmount > 0 && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>
+                    {tCoupon("discount")} ({appliedCoupon.code}):
+                  </span>
+                  <span>−{discountAmount} EUR</span>
                 </div>
               )}
 

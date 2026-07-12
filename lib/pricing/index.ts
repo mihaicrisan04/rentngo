@@ -15,3 +15,4 @@ export * from "./extras";
 export * from "./transfer";
 export * from "./reservation";
 export * from "./legacy";
+export * from "./discount";
