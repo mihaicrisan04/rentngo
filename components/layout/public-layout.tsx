@@ -19,7 +19,7 @@ export function PublicLayout({ children }: PublicLayoutProps) {
       <main className="flex-1">{children}</main>
       <Footer
         logo={
-          <Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} style={{ width: 'auto', height: 'auto' }} />
+          <Image src="/logo.png" alt="Rent'n Go Logo" width={150} height={50} className="h-10 w-auto" />
         }
         brandName=""
       />

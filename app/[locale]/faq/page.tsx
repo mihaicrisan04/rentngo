@@ -61,12 +61,6 @@ export default async function FaqPage({ params }: FaqPageProps) {
         title={t("title")}
         description={t("description")}
         items={items}
-        ctaSection={{
-          title: t("cta.title"),
-          description: t("cta.description"),
-          buttonText: t("cta.buttonText"),
-          href: `/${locale}/cars`,
-        }}
       />
     </>
   );

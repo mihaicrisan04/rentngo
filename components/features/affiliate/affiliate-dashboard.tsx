@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -28,7 +29,34 @@ export function AffiliateDashboard() {
   const affiliate = useQuery(api.affiliates.getMyAffiliate);
   const [copied, setCopied] = React.useState(false);
 
-  if (!affiliate) return null;
+  // `undefined` while the query loads; `null` once we know the signed-in user
+  // isn't an affiliate. Show nothing on the first, an invite blurb on the
+  // second so the profile always surfaces the program's status.
+  if (affiliate === undefined) return null;
+
+  if (affiliate === null) {
+    return (
+      <Card className="rounded-2xl border-border/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Link2 className="h-5 w-5" />
+            {t("title")}
+          </CardTitle>
+          <CardDescription>{t("description")}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-xl border border-border/50 bg-muted/40 p-6 text-center space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {t("notEnrolled.body")}
+            </p>
+            <Button asChild variant="outline">
+              <Link href={`/${locale}/contact`}>{t("notEnrolled.cta")}</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const referralUrl = `${
     typeof window !== "undefined"

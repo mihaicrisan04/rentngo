@@ -563,6 +563,10 @@
       "title": "Referral Program",
       "description": "Share your link and earn rewards when your referrals book",
       "inactive": "Your affiliate account is currently inactive.",
+      "notEnrolled": {
+        "body": "Earn rewards every time someone books through your personal link. Enrolment is invite-based for now — get in touch and we'll set you up.",
+        "cta": "Contact us"
+      },
       "yourLink": "Your referral link",
       "copyLink": "Copy referral link",
       "referredDiscountInfo": "People who book through your link get {discount} off.",
