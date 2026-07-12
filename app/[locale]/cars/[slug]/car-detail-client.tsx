@@ -129,6 +129,18 @@ export function CarDetailClient({
           </Breadcrumb>
         </div>
 
+        {/* Title — full width so both columns start level */}
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+            {vehicleName}
+          </h1>
+          {vehicle.type && (
+            <Badge variant="outline" className="mt-3 rounded-lg px-3 py-1">
+              {getVehicleTypeLabel(vehicle.type)}
+            </Badge>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12">
           {/* Left column — images + specs */}
           <div className="space-y-6">
@@ -144,19 +156,8 @@ export function CarDetailClient({
             <VehicleSpecifications vehicle={vehicle} />
           </div>
 
-          {/* Right column — details + pricing + CTA */}
+          {/* Right column — rental details + pricing + CTA */}
           <div className="space-y-6">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-                {vehicleName}
-              </h1>
-              {vehicle.type && (
-                <Badge variant="outline" className="mt-3 rounded-lg px-3 py-1">
-                  {getVehicleTypeLabel(vehicle.type)}
-                </Badge>
-              )}
-            </div>
-
             <RentalDetails
               deliveryLocation={rentalState.deliveryLocation}
               pickupDate={rentalState.pickupDate}

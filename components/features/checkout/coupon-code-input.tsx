@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CheckCircle2, TicketPercent, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface AppliedCoupon {
   code: string;
@@ -27,6 +28,12 @@ interface CouponCodeInputProps {
    */
   onAppliedChange: (applied: AppliedCoupon | null) => void;
   className?: string;
+  /**
+   * "card" (default) wraps the field in its own Card; "embedded" renders just
+   * the labelled field, for placing inside another card (e.g. the reservation
+   * summary).
+   */
+  variant?: "card" | "embedded";
 }
 
 /**
@@ -41,6 +48,7 @@ export function CouponCodeInput({
   email,
   onAppliedChange,
   className,
+  variant = "card",
 }: CouponCodeInputProps) {
   const t = useTranslations("common.coupon");
   const [inputValue, setInputValue] = React.useState("");
@@ -78,16 +86,9 @@ export function CouponCodeInput({
 
   const isChecking = submittedCode !== null && result === undefined;
 
-  return (
-    <Card className={className}>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <TicketPercent className="h-5 w-5" />
-          <span>{t("title")}</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {result?.valid && submittedCode ? (
+  const content = (
+    <>
+      {result?.valid && submittedCode ? (
           <div className="flex items-center justify-between rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 p-3">
             <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
               <CheckCircle2 className="h-4 w-4 shrink-0" />
@@ -137,12 +138,35 @@ export function CouponCodeInput({
             </Button>
           </div>
         )}
-        {result && !result.valid && submittedCode && (
-          <p className="text-sm text-destructive">
-            {t(`errors.${result.reason}`)}
-          </p>
-        )}
-      </CardContent>
+      {result && !result.valid && submittedCode && (
+        <p className="text-sm text-destructive">
+          {t(`errors.${result.reason}`)}
+        </p>
+      )}
+    </>
+  );
+
+  if (variant === "embedded") {
+    return (
+      <div className={cn("space-y-3", className)}>
+        <h4 className="flex items-center gap-2 font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+          <TicketPercent className="h-4 w-4" />
+          {t("title")}
+        </h4>
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <TicketPercent className="h-5 w-5" />
+          <span>{t("title")}</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">{content}</CardContent>
     </Card>
   );
 }

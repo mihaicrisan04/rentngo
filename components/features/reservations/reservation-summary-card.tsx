@@ -17,7 +17,10 @@ import {
   calculateIncludedKilometers,
 } from "@/lib/pricing";
 import type { UseReservationPricingResult } from "@/hooks/use-reservation-pricing";
-import type { AppliedCoupon } from "@/components/features/checkout/coupon-code-input";
+import {
+  CouponCodeInput,
+  type AppliedCoupon,
+} from "@/components/features/checkout/coupon-code-input";
 import type { AffiliateDiscountPreview } from "@/hooks/use-affiliate-discount";
 import type { Vehicle } from "@/types/vehicle";
 
@@ -38,6 +41,10 @@ interface ReservationSummaryCardProps {
   onSCDWChange: (selected: boolean) => void;
   pricing: UseReservationPricingResult;
   appliedCoupon: AppliedCoupon | null;
+  /** Customer email, so the coupon once-per-user check runs in the preview. */
+  customerEmail: string;
+  /** Fired when a coupon is applied/removed in the embedded field. */
+  onCouponAppliedChange: (coupon: AppliedCoupon | null) => void;
   /** Automatic affiliate discount; an explicit coupon always beats it. */
   appliedAffiliateDiscount?: AffiliateDiscountPreview | null;
   isSubmitting: boolean;
@@ -62,6 +69,8 @@ export const ReservationSummaryCard = React.memo(
     onSCDWChange,
     pricing,
     appliedCoupon,
+    customerEmail,
+    onCouponAppliedChange,
     appliedAffiliateDiscount,
     isSubmitting,
     onSubmit,
@@ -292,6 +301,17 @@ export const ReservationSummaryCard = React.memo(
                   </p>
                 </div>
               </div>
+            </div>
+
+            {/* Coupon code */}
+            <div className="border-t pt-4">
+              <CouponCodeInput
+                variant="embedded"
+                bookingType="rentals"
+                subtotal={breakdown?.totalPrice ?? null}
+                email={customerEmail}
+                onAppliedChange={onCouponAppliedChange}
+              />
             </div>
 
             {/* Pricing Summary */}

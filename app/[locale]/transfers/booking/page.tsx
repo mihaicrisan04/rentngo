@@ -22,10 +22,7 @@ import {
   ContactFields,
   type ContactFieldValues,
 } from "@/components/features/checkout/contact-fields";
-import {
-  CouponCodeInput,
-  type AppliedCoupon,
-} from "@/components/features/checkout/coupon-code-input";
+import type { AppliedCoupon } from "@/components/features/checkout/coupon-code-input";
 import { useAffiliateDiscount } from "@/hooks/use-affiliate-discount";
 import { getStoredReferral } from "@/lib/referral";
 import type { PaymentMethod } from "@/lib/checkout-payment-methods";
@@ -284,22 +281,26 @@ export default function TransferBookingPage() {
   const totalPrice = pricing?.totalPrice ?? 0;
 
   return (
-    <div className="container mx-auto px-4 lg:px-0 py-10 max-w-4xl">
+    <div className="container mx-auto px-4 lg:px-0 py-10 max-w-5xl">
       <Button variant="ghost" onClick={handleBack} className="mb-6 rounded-xl">
         <ArrowLeft className="h-4 w-4 mr-2" />
         Back to Vehicle Selection
       </Button>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="text-center lg:text-left mb-6">
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{t("booking.title")}</h1>
-            <p className="text-muted-foreground mt-2">
-              Complete your booking details below
-            </p>
-          </div>
+      <div className="text-center lg:text-left mb-8">
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight">{t("booking.title")}</h1>
+        <p className="text-muted-foreground mt-2">
+          Complete your booking details below
+        </p>
+      </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+        <div className="lg:col-span-3 space-y-6">
+          <form
+            id="transfer-booking-form"
+            onSubmit={handleSubmit}
+            className="space-y-6"
+          >
             {/* Personal Information */}
             <Card>
               <CardHeader>
@@ -364,13 +365,6 @@ export default function TransferBookingPage() {
               </CardContent>
             </Card>
 
-            <CouponCodeInput
-              bookingType="transfers"
-              subtotal={pricing?.totalPrice ?? null}
-              email={personalInfo.email}
-              onAppliedChange={setAppliedCoupon}
-            />
-
             {/* Payment Method */}
             <Card>
               <CardHeader>
@@ -394,28 +388,12 @@ export default function TransferBookingPage() {
                 />
               </CardContent>
             </Card>
-
-            <Button
-              type="submit"
-              size="lg"
-              className="w-full rounded-xl h-13 text-base"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {t("booking.processing")}
-                </>
-              ) : (
-                t("booking.confirmBooking")
-              )}
-            </Button>
           </form>
         </div>
 
         {/* Summary Sidebar */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-24">
+        <div className="lg:col-span-2">
+          <div className="sticky top-24 space-y-6">
             <TransferSummaryCard
               pickupCoordinates={searchData.pickupLocation.coordinates}
               dropoffCoordinates={searchData.dropoffLocation.coordinates}
@@ -440,10 +418,31 @@ export default function TransferBookingPage() {
               }
               totalPrice={totalPrice}
               appliedCoupon={appliedCoupon}
+              customerEmail={personalInfo.email}
+              onCouponAppliedChange={setAppliedCoupon}
               appliedAffiliateDiscount={affiliateDiscount}
             />
           </div>
         </div>
+
+        {/* Confirm — last in DOM so it sits at the end on mobile (after the
+            summary); on desktop it drops under the form column. */}
+        <Button
+          type="submit"
+          form="transfer-booking-form"
+          size="lg"
+          className="w-full rounded-xl h-13 text-base lg:col-span-3"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              {t("booking.processing")}
+            </>
+          ) : (
+            t("booking.confirmBooking")
+          )}
+        </Button>
       </div>
     </div>
   );

@@ -24,10 +24,7 @@ import {
   PaymentMethodCard,
   ReservationSummaryCard,
 } from "@/components/features/reservations";
-import {
-  CouponCodeInput,
-  type AppliedCoupon,
-} from "@/components/features/checkout/coupon-code-input";
+import type { AppliedCoupon } from "@/components/features/checkout/coupon-code-input";
 import { useAffiliateDiscount } from "@/hooks/use-affiliate-discount";
 import { getStoredReferral } from "@/lib/referral";
 import { useTranslations, useLocale } from "next-intl";
@@ -400,14 +397,6 @@ function ReservationPageContent() {
           </div>
         </div>
 
-        <CouponCodeInput
-          className="mt-8"
-          bookingType="rentals"
-          subtotal={breakdown?.totalPrice ?? null}
-          email={personalInfo.email}
-          onAppliedChange={setAppliedCoupon}
-        />
-
         <ReservationSummaryCard
           vehicle={vehicle}
           deliveryLocation={deliveryLocation}
@@ -425,6 +414,8 @@ function ReservationPageContent() {
           onSCDWChange={setIsSCDWSelected}
           pricing={pricing}
           appliedCoupon={appliedCoupon}
+          customerEmail={personalInfo.email}
+          onCouponAppliedChange={setAppliedCoupon}
           appliedAffiliateDiscount={affiliateDiscount}
           isSubmitting={isSubmitting}
           onSubmit={handleSendReservation}
