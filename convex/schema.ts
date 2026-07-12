@@ -123,6 +123,17 @@ export default defineSchema({
     promoCode: v.optional(v.string()),
     couponId: v.optional(v.id("coupons")),
     discountAmount: v.optional(v.number()),
+    // Which source the single applied discount came from (one discount per
+    // booking). Legacy coupon docs predate this field: couponId set +
+    // discountSource undefined means "coupon".
+    discountSource: v.optional(
+      v.union(v.literal("coupon"), v.literal("affiliate")),
+    ),
+    // Affiliate attribution: the referrer credited for this booking (set
+    // whenever a referral conversion was recorded, even if a coupon won the
+    // single-discount rule), or the booking user's own affiliate when their
+    // tier reward was applied.
+    affiliateId: v.optional(v.id("affiliates")),
     // Store any additional charges or fees (delivery fees, extras, etc.).
     // New docs carry locale-free `code` + `params` (translated at render
     // time); legacy docs carry only the localized `description` prose.
@@ -223,6 +234,11 @@ export default defineSchema({
     promoCode: v.optional(v.string()),
     couponId: v.optional(v.id("coupons")),
     discountAmount: v.optional(v.number()),
+    // See the reservations table for the semantics of these two fields
+    discountSource: v.optional(
+      v.union(v.literal("coupon"), v.literal("affiliate")),
+    ),
+    affiliateId: v.optional(v.id("affiliates")),
 
     // Customer information
     customerInfo: v.object({
@@ -292,6 +308,101 @@ export default defineSchema({
     .index("by_coupon", ["couponId"])
     .index("by_coupon_email", ["couponId", "customerEmail"])
     .index("by_coupon_user", ["couponId", "userId"]),
+
+  // Affiliates - users with a shareable referral link (rngo.ro/r/<slug>).
+  // Rewards are derived dynamically: confirmedConversions -> tier table in
+  // affiliateSettings (or the per-affiliate override), never minted as coupons.
+  affiliates: defineTable({
+    userId: v.id("users"),
+    slug: v.string(), // normalized lowercase, unique; ^[a-z0-9-]{3,32}$
+    isActive: v.boolean(), // admin kill-switch per affiliate
+    // Denormalized count of non-voided conversions. Maintained inside the
+    // booking/cancel mutations (same transaction as the conversion row), so
+    // Convex OCC keeps it consistent under concurrency.
+    confirmedConversions: v.number(),
+    // Per-affiliate overrides; undefined falls back to affiliateSettings
+    rewardPercentOverride: v.optional(v.number()),
+    referredDiscountOverride: v.optional(
+      v.object({
+        type: v.union(v.literal("percentage"), v.literal("fixed")),
+        value: v.number(),
+      }),
+    ),
+    createdAt: v.number(),
+  })
+    .index("by_slug", ["slug"])
+    .index("by_user", ["userId"]),
+
+  // Global affiliate program configuration (singleton, mirrors currentSeason).
+  // All business numbers live here or in per-affiliate overrides — nothing is
+  // hardcoded. Absent doc = seeded defaults (lib/pricing/affiliate.ts).
+  affiliateSettings: defineTable({
+    enabled: v.boolean(),
+    attributionWindowDays: v.number(),
+    referredDiscountType: v.union(v.literal("percentage"), v.literal("fixed")),
+    referredDiscountValue: v.number(), // percentage (0-100] or EUR
+    // Tier table: highest tier with minConversions <= confirmedConversions
+    // wins. Small bounded list, safe to embed.
+    tiers: v.array(
+      v.object({
+        minConversions: v.number(),
+        rewardPercent: v.number(),
+      }),
+    ),
+    updatedAt: v.number(),
+  }),
+
+  // One row per consented referral click (last-click wins per visitor). The
+  // booking mutation requires a live row matching the client's cookie, so a
+  // fabricated visitorKey never attributes anything.
+  referralAttributions: defineTable({
+    affiliateId: v.id("affiliates"),
+    slug: v.string(), // denormalized for observability
+    visitorKey: v.string(), // random UUID minted client-side, stored in the cookie
+    createdAt: v.number(),
+    expiresAt: v.number(), // createdAt + attribution window
+  })
+    .index("by_visitor_key", ["visitorKey"])
+    .index("by_affiliate", ["affiliateId"]),
+
+  // One row per referred booking. Lifecycle (owner decision, RNGO-26):
+  // created = confirmed immediately; voided when the booking is cancelled or
+  // hard-deleted (and re-confirmed if an admin un-cancels), so the referrer's
+  // counter only ever reflects live bookings. "pending" is reserved for a
+  // future explicit confirmation step and is not written today.
+  referralConversions: defineTable({
+    affiliateId: v.id("affiliates"),
+    bookingType: v.union(v.literal("reservation"), v.literal("transfer")),
+    reservationId: v.optional(v.id("reservations")),
+    transferId: v.optional(v.id("transfers")),
+    referredUserId: v.optional(v.id("users")),
+    referredEmail: v.string(), // normalized (lowercase, trimmed)
+    status: v.union(
+      v.literal("pending"),
+      v.literal("confirmed"),
+      v.literal("voided"),
+    ),
+    // EUR discount actually granted to the referred customer (0 when another
+    // discount won the one-per-booking rule)
+    referredDiscountAmount: v.number(),
+    // Snapshot of the referrer's tier reward percent at conversion time (audit)
+    referrerRewardPercentAtConversion: v.number(),
+    createdAt: v.number(),
+    confirmedAt: v.optional(v.number()),
+    voidedAt: v.optional(v.number()),
+  })
+    .index("by_affiliate", ["affiliateId"])
+    .index("by_reservation", ["reservationId"])
+    .index("by_transfer", ["transferId"])
+    // Enforces one referred discount/conversion per customer per affiliate:
+    // status is part of the index so the "any live (non-voided) prior?"
+    // check is a targeted lookup, not a scan that voided rows could push the
+    // live one out of
+    .index("by_affiliate_email_status", [
+      "affiliateId",
+      "referredEmail",
+      "status",
+    ]),
 
   // Email logs table - tracks sent emails
   emailLogs: defineTable({

@@ -28,6 +28,8 @@ import {
   CouponCodeInput,
   type AppliedCoupon,
 } from "@/components/features/checkout/coupon-code-input";
+import { useAffiliateDiscount } from "@/hooks/use-affiliate-discount";
+import { getStoredReferral } from "@/lib/referral";
 import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
 import { ConvexError } from "convex/values";
@@ -133,6 +135,13 @@ function ReservationPageContent() {
   });
   const { breakdown } = pricing;
 
+  // Automatic affiliate discount (referral cookie or own tier reward) —
+  // advisory; the server re-resolves it and an explicit coupon wins
+  const { referral, affiliateDiscount } = useAffiliateDiscount({
+    subtotal: breakdown?.totalPrice ?? null,
+    email: personalInfo.email,
+  });
+
   // Handle reservation submission
   const handleSendReservation = async () => {
     const formErrors = validate();
@@ -200,6 +209,9 @@ function ReservationPageContent() {
         // The server re-validates and redeems the coupon atomically; the
         // client-shown discount is advisory only
         promoCode: appliedCoupon?.code,
+        // Referral attribution — read the cookie fresh at submit so a
+        // capture that landed after mount is never dropped; server-validated
+        referral: getStoredReferral() ?? referral ?? undefined,
         additionalCharges:
           additionalCharges.length > 0 ? additionalCharges : undefined,
         isSCDWSelected: isSCDWSelected,
@@ -413,6 +425,7 @@ function ReservationPageContent() {
           onSCDWChange={setIsSCDWSelected}
           pricing={pricing}
           appliedCoupon={appliedCoupon}
+          appliedAffiliateDiscount={affiliateDiscount}
           isSubmitting={isSubmitting}
           onSubmit={handleSendReservation}
         />

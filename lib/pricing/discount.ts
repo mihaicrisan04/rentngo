@@ -5,13 +5,13 @@
  * the database and live in convex/coupons.ts; everything money-shaped is here.
  *
  * Single-discount seam (owner decision, RNGO-25): a booking carries at most
- * ONE discount. `AppliedDiscount.source` is the extension point — the
- * affiliate program (RNGO-26) adds its own source, and `pickDiscount` defines
- * the precedence when both are present: an explicitly entered coupon code
- * beats an automatic affiliate discount (pending owner confirmation).
+ * ONE discount. `AppliedDiscount.source` is the extension point and
+ * `pickDiscount` defines the precedence: an explicitly entered coupon code
+ * beats an automatic affiliate discount (owner decision, RNGO-26). Affiliate
+ * math (tier resolution, referred discount) lives in ./affiliate.ts.
  */
 
-export type DiscountSource = "coupon"; // RNGO-26 extends: | "affiliate"
+export type DiscountSource = "coupon" | "affiliate";
 
 export interface AppliedDiscount {
   source: DiscountSource;

@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { UserProfileForm } from "@/components/shared/auth/user-profile-form";
 import { UserReservationsTable } from "@/components/features/reservations/user-reservations-table";
+import { AffiliateDashboard } from "@/components/features/affiliate/affiliate-dashboard";
 import { Separator } from "@/components/ui/separator";
 
 export default function ProfilePage() {
@@ -106,6 +107,9 @@ export default function ProfilePage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Affiliate program (renders only for enrolled affiliates) */}
+          <AffiliateDashboard />
 
           {/* Reservations Card */}
           <Card className="rounded-2xl border-border/50">

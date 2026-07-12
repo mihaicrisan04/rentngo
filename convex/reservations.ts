@@ -5,7 +5,15 @@ import { Id } from "./_generated/dataModel";
 import { getCurrentUser, getCurrentUserOrThrow, requireAdmin } from "./users";
 import { applyAndRedeemCoupon } from "./coupons";
 import {
+  recordReferralConversion,
+  referralArgValidator,
+  resolveAffiliateCandidates,
+  syncConversionForBooking,
+} from "./affiliates";
+import {
   applyDiscountToTotal,
+  pickDiscount,
+  type AppliedDiscount,
   assertValidReservationExtras,
   calculateIncludedKilometers,
   calculateMultiplierForDateRange,
@@ -62,6 +70,10 @@ export const createReservation = mutation({
     // Coupon code to redeem — validated server-side; an invalid code fails
     // the booking (no longer a free-text pass-through)
     promoCode: v.optional(v.string()),
+    // Referral cookie payload — validated against the recorded attribution;
+    // an invalid/expired/fabricated pair silently attributes nothing (the
+    // referral is automatic, so it never fails the booking)
+    referral: v.optional(referralArgValidator),
     additionalCharges: v.optional(v.array(additionalChargeValidator)),
     isSCDWSelected: v.boolean(),
     deductibleAmount: v.number(),
@@ -219,10 +231,15 @@ export const createReservation = mutation({
       });
     }
 
-    // Apply the coupon (if any) to the server-recomputed total. Validation,
-    // the redemption-count increment and the audit row all happen inside this
-    // mutation's transaction, so a capped code cannot over-redeem under
-    // concurrency and an invalid code rolls the whole booking back.
+    // Single-discount seam: gather every candidate against the
+    // server-recomputed total, then pickDiscount applies exactly one
+    // (explicit coupon > referred discount > own affiliate tier reward).
+    //
+    // Coupon: validation, the redemption-count increment and the audit row
+    // all happen inside this mutation's transaction, so a capped code cannot
+    // over-redeem under concurrency and an invalid code rolls the whole
+    // booking back. A present coupon always wins the pick, so redeeming it
+    // unconditionally is correct.
     const redeemedCoupon = args.promoCode?.trim()
       ? await applyAndRedeemCoupon(ctx, {
           code: args.promoCode,
@@ -232,11 +249,44 @@ export const createReservation = mutation({
           customerEmail: args.customerInfo.email,
         })
       : null;
-    if (redeemedCoupon) {
-      totalPrice = applyDiscountToTotal(
-        totalPrice,
-        redeemedCoupon.discountAmount,
-      );
+    const affiliateCandidates = await resolveAffiliateCandidates(ctx, {
+      referral: args.referral,
+      currentUser,
+      customerEmail: args.customerInfo.email,
+      subtotal: totalPrice,
+    });
+
+    const couponDiscount: AppliedDiscount | null = redeemedCoupon
+      ? {
+          source: "coupon",
+          code: redeemedCoupon.code,
+          amount: redeemedCoupon.discountAmount,
+        }
+      : null;
+    const referredDiscount: AppliedDiscount | null =
+      affiliateCandidates.referred &&
+      affiliateCandidates.referred.discountAmount > 0
+        ? {
+            source: "affiliate",
+            code: affiliateCandidates.referred.slug,
+            amount: affiliateCandidates.referred.discountAmount,
+          }
+        : null;
+    const ownRewardDiscount: AppliedDiscount | null =
+      affiliateCandidates.ownReward
+        ? {
+            source: "affiliate",
+            code: affiliateCandidates.ownReward.slug,
+            amount: affiliateCandidates.ownReward.discountAmount,
+          }
+        : null;
+    const appliedDiscount = pickDiscount([
+      couponDiscount,
+      referredDiscount,
+      ownRewardDiscount,
+    ]);
+    if (appliedDiscount) {
+      totalPrice = applyDiscountToTotal(totalPrice, appliedDiscount.amount);
     }
 
     // Compute next reservation number (highest existing via index)
@@ -265,7 +315,15 @@ export const createReservation = mutation({
       customerInfo: args.customerInfo,
       promoCode: redeemedCoupon?.code,
       couponId: redeemedCoupon?.couponId,
-      discountAmount: redeemedCoupon?.discountAmount,
+      discountAmount: appliedDiscount?.amount,
+      discountSource: appliedDiscount?.source,
+      // Referrer credited for this booking (attribution), or the booker's own
+      // affiliate when their tier reward was the applied discount
+      affiliateId:
+        affiliateCandidates.referred?.affiliateId ??
+        (appliedDiscount === ownRewardDiscount
+          ? affiliateCandidates.ownReward?.affiliateId
+          : undefined),
       additionalCharges: persistedCharges,
       isSCDWSelected: args.isSCDWSelected,
       deductibleAmount: pricing.deductibleAmount,
@@ -283,6 +341,25 @@ export const createReservation = mutation({
     // Link the redemption audit row to the booking it paid for
     if (redeemedCoupon) {
       await ctx.db.patch(redeemedCoupon.redemptionId, { reservationId });
+    }
+
+    // Conversion lifecycle (owner decision): a referred booking confirms a
+    // conversion the moment it is created — even when a coupon won the
+    // one-discount rule — and is voided if the booking is later cancelled.
+    if (affiliateCandidates.referred) {
+      const conversionId = await recordReferralConversion(ctx, {
+        affiliateId: affiliateCandidates.referred.affiliateId,
+        bookingType: "reservation",
+        referredUserId: currentUser?._id,
+        referredEmail: args.customerInfo.email,
+        referredDiscountAmount:
+          referredDiscount && appliedDiscount === referredDiscount
+            ? referredDiscount.amount
+            : 0,
+        rewardPercentSnapshot:
+          affiliateCandidates.referred.rewardPercentSnapshot,
+      });
+      await ctx.db.patch(conversionId, { reservationId });
     }
 
     // Schedule email sending if vehicle info is provided
@@ -320,8 +397,9 @@ export const createReservation = mutation({
           pricePerDay: pricing.pricePerDay,
           totalPrice,
           paymentMethod: args.paymentMethod,
-          promoCode: redeemedCoupon?.code,
-          discountAmount: redeemedCoupon?.discountAmount,
+          promoCode: appliedDiscount?.code,
+          discountAmount: appliedDiscount?.amount,
+          isReferralDiscount: appliedDiscount?.source === "affiliate",
           additionalCharges: args.additionalCharges,
           isSCDWSelected: args.isSCDWSelected,
           deductibleAmount: pricing.deductibleAmount,
@@ -465,6 +543,13 @@ export const updateReservationStatus = mutation({
 
     await ctx.db.patch(args.reservationId, { status: args.newStatus });
 
+    // Void the linked referral conversion on cancel (re-confirm on un-cancel)
+    await syncConversionForBooking(ctx, {
+      bookingType: "reservation",
+      bookingId: args.reservationId,
+      bookingIsLive: args.newStatus !== "cancelled",
+    });
+
     return { success: true };
   },
 });
@@ -540,6 +625,14 @@ export const updateReservationDetails = mutation({
 
     await ctx.db.patch(reservationId, updatesToApply);
 
+    if (updatesToApply.status !== undefined) {
+      await syncConversionForBooking(ctx, {
+        bookingType: "reservation",
+        bookingId: reservationId,
+        bookingIsLive: updatesToApply.status !== "cancelled",
+      });
+    }
+
     return { success: true, reservationId };
   },
 });
@@ -569,6 +662,14 @@ export const cancelReservation = mutation({
 
     await ctx.db.patch(args.reservationId, { status: "cancelled" as ReservationStatusType });
 
+    // Owner decision (RNGO-26): a cancelled booking must not keep crediting
+    // the referrer — void the conversion and decrement their counter
+    await syncConversionForBooking(ctx, {
+      bookingType: "reservation",
+      bookingId: args.reservationId,
+      bookingIsLive: false,
+    });
+
     return { success: true, message: "Reservation cancelled." };
   },
 });
@@ -588,6 +689,12 @@ export const deleteReservationPermanently = mutation({
       return { success: true, message: "Reservation not found or already deleted." };
     }
 
+    // A hard-deleted booking is not live: void its conversion first
+    await syncConversionForBooking(ctx, {
+      bookingType: "reservation",
+      bookingId: args.reservationId,
+      bookingIsLive: false,
+    });
     await ctx.db.delete(args.reservationId);
 
     return { success: true, message: "Reservation permanently deleted." };

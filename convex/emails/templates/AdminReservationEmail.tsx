@@ -61,7 +61,13 @@ export const AdminReservationEmail: React.FC<AdminReservationEmailProps> = ({
         isRo
           ? `Închiriere (${days} ${days === 1 ? "zi" : "zile"} × ${pricePerDay} EUR/zi):`
           : `Rental (${days} ${days === 1 ? "day" : "days"} × ${pricePerDay} EUR/day):`,
-      promoCode: isRo ? "Cod Promoțional Aplicat:" : "Promo Code Applied:",
+      promoCode: pricingDetails.isReferralDiscount
+        ? isRo
+          ? "Reducere Recomandare:"
+          : "Referral Discount:"
+        : isRo
+          ? "Cod Promoțional Aplicat:"
+          : "Promo Code Applied:",
       additionalCharges: isRo ? "Taxă Suplimentară" : "Additional Charge",
       totalAmount: isRo ? "Sumă Totală:" : "Total Amount:",
       paymentMethod: isRo ? "Metoda de Plată:" : "Payment Method:",

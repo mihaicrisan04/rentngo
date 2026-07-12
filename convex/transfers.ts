@@ -4,9 +4,17 @@ import { internal } from "./_generated/api";
 import { getCurrentUser, getCurrentUserOrThrow, requireAdmin } from "./users";
 import { applyAndRedeemCoupon } from "./coupons";
 import {
+  recordReferralConversion,
+  referralArgValidator,
+  resolveAffiliateCandidates,
+  syncConversionForBooking,
+} from "./affiliates";
+import {
   applyDiscountToTotal,
   assertValidTransferDistance,
   computeTransferPricing,
+  pickDiscount,
+  type AppliedDiscount,
 } from "../lib/pricing";
 
 const transferStatusValidator = v.union(
@@ -64,6 +72,8 @@ export const createTransfer = mutation({
     // Coupon code to redeem — validated server-side; an invalid code fails
     // the booking
     promoCode: v.optional(v.string()),
+    // Referral cookie payload — see createReservation; never fails the booking
+    referral: v.optional(referralArgValidator),
     locale: v.optional(v.string()),
   },
   returns: v.object({
@@ -110,10 +120,10 @@ export const createTransfer = mutation({
       });
     }
 
-    // Apply the coupon (if any) to the server-recomputed fare. Validation,
-    // the redemption-count increment and the audit row all happen inside this
-    // mutation's transaction — see applyAndRedeemCoupon for the concurrency
-    // argument.
+    // Single-discount seam — same shape as createReservation: coupon
+    // redemption is transactional (see applyAndRedeemCoupon for the OCC
+    // argument) and a present coupon always beats the automatic affiliate
+    // candidates in pickDiscount.
     const redeemedCoupon = args.promoCode?.trim()
       ? await applyAndRedeemCoupon(ctx, {
           code: args.promoCode,
@@ -123,8 +133,44 @@ export const createTransfer = mutation({
           customerEmail: args.customerInfo.email,
         })
       : null;
-    const totalPrice = redeemedCoupon
-      ? applyDiscountToTotal(fare.totalPrice, redeemedCoupon.discountAmount)
+    const affiliateCandidates = await resolveAffiliateCandidates(ctx, {
+      referral: args.referral,
+      currentUser,
+      customerEmail: args.customerInfo.email,
+      subtotal: fare.totalPrice,
+    });
+
+    const couponDiscount: AppliedDiscount | null = redeemedCoupon
+      ? {
+          source: "coupon",
+          code: redeemedCoupon.code,
+          amount: redeemedCoupon.discountAmount,
+        }
+      : null;
+    const referredDiscount: AppliedDiscount | null =
+      affiliateCandidates.referred &&
+      affiliateCandidates.referred.discountAmount > 0
+        ? {
+            source: "affiliate",
+            code: affiliateCandidates.referred.slug,
+            amount: affiliateCandidates.referred.discountAmount,
+          }
+        : null;
+    const ownRewardDiscount: AppliedDiscount | null =
+      affiliateCandidates.ownReward
+        ? {
+            source: "affiliate",
+            code: affiliateCandidates.ownReward.slug,
+            amount: affiliateCandidates.ownReward.discountAmount,
+          }
+        : null;
+    const appliedDiscount = pickDiscount([
+      couponDiscount,
+      referredDiscount,
+      ownRewardDiscount,
+    ]);
+    const totalPrice = appliedDiscount
+      ? applyDiscountToTotal(fare.totalPrice, appliedDiscount.amount)
       : fare.totalPrice;
 
     // Compute next transfer number (highest existing via index)
@@ -155,7 +201,13 @@ export const createTransfer = mutation({
       pricePerKm: fare.tierPricePerKm,
       promoCode: redeemedCoupon?.code,
       couponId: redeemedCoupon?.couponId,
-      discountAmount: redeemedCoupon?.discountAmount,
+      discountAmount: appliedDiscount?.amount,
+      discountSource: appliedDiscount?.source,
+      affiliateId:
+        affiliateCandidates.referred?.affiliateId ??
+        (appliedDiscount === ownRewardDiscount
+          ? affiliateCandidates.ownReward?.affiliateId
+          : undefined),
       customerInfo: args.customerInfo,
       paymentMethod: args.paymentMethod,
       luggageCount: args.luggageCount,
@@ -167,6 +219,23 @@ export const createTransfer = mutation({
     // Link the redemption audit row to the booking it paid for
     if (redeemedCoupon) {
       await ctx.db.patch(redeemedCoupon.redemptionId, { transferId });
+    }
+
+    // Conversion lifecycle — see createReservation for the rationale
+    if (affiliateCandidates.referred) {
+      const conversionId = await recordReferralConversion(ctx, {
+        affiliateId: affiliateCandidates.referred.affiliateId,
+        bookingType: "transfer",
+        referredUserId: currentUser?._id,
+        referredEmail: args.customerInfo.email,
+        referredDiscountAmount:
+          referredDiscount && appliedDiscount === referredDiscount
+            ? referredDiscount.amount
+            : 0,
+        rewardPercentSnapshot:
+          affiliateCandidates.referred.rewardPercentSnapshot,
+      });
+      await ctx.db.patch(conversionId, { transferId });
     }
 
     // Format pickup date for email
@@ -213,8 +282,9 @@ export const createTransfer = mutation({
         distancePrice: fare.distanceCharge,
         totalPrice,
         pricePerKm: fare.tierPricePerKm,
-        promoCode: redeemedCoupon?.code,
-        discountAmount: redeemedCoupon?.discountAmount,
+        promoCode: appliedDiscount?.code,
+        discountAmount: appliedDiscount?.amount,
+        isReferralDiscount: appliedDiscount?.source === "affiliate",
       },
       paymentMethod: args.paymentMethod,
       locale: args.locale,
@@ -322,6 +392,13 @@ export const updateTransferStatus = mutation({
       status: args.newStatus as TransferStatusType,
     });
 
+    // Void the linked referral conversion on cancel (re-confirm on un-cancel)
+    await syncConversionForBooking(ctx, {
+      bookingType: "transfer",
+      bookingId: args.transferId,
+      bookingIsLive: args.newStatus !== "cancelled",
+    });
+
     return { success: true };
   },
 });
@@ -371,6 +448,14 @@ export const updateTransferDetails = mutation({
       await ctx.db.patch(transferId, updatesToApply);
     }
 
+    if (updates.status !== undefined) {
+      await syncConversionForBooking(ctx, {
+        bookingType: "transfer",
+        bookingId: transferId,
+        bookingIsLive: updates.status !== "cancelled",
+      });
+    }
+
     return { success: true };
   },
 });
@@ -402,6 +487,14 @@ export const cancelTransfer = mutation({
 
     await ctx.db.patch(args.transferId, { status: "cancelled" });
 
+    // Owner decision (RNGO-26): void the referral conversion so the
+    // referrer's counter only reflects live bookings
+    await syncConversionForBooking(ctx, {
+      bookingType: "transfer",
+      bookingId: args.transferId,
+      bookingIsLive: false,
+    });
+
     return { success: true, message: "Transfer cancelled successfully" };
   },
 });
@@ -418,6 +511,12 @@ export const deleteTransferPermanently = mutation({
       return { success: false, message: "Transfer not found" };
     }
 
+    // A hard-deleted booking is not live: void its conversion first
+    await syncConversionForBooking(ctx, {
+      bookingType: "transfer",
+      bookingId: args.transferId,
+      bookingIsLive: false,
+    });
     await ctx.db.delete(args.transferId);
 
     return { success: true, message: "Transfer deleted permanently" };

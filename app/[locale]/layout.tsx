@@ -8,6 +8,8 @@ import { GoogleTagManager } from "@next/third-parties/google";
 import { fontClassNames } from "../fonts";
 import { Providers, LocaleProviders } from "../providers";
 import { PublicLayout } from "@/components/layout/public-layout";
+import { CookieConsentBanner } from "@/components/shared/consent/cookie-consent-banner";
+import { ReferralCapture } from "@/components/shared/referral/referral-capture";
 
 const locales = ["ro", "en"];
 
@@ -115,6 +117,9 @@ export default async function LocaleLayout({
         <Providers>
           <LocaleProviders locale={locale} messages={messages}>
             <PublicLayout>{children}</PublicLayout>
+            {/* Consent gate + consent-gated referral capture (RNGO-26) */}
+            <CookieConsentBanner />
+            <ReferralCapture />
           </LocaleProviders>
         </Providers>
       </body>
