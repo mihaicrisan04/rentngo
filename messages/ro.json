@@ -804,5 +804,13 @@
     "availableCars": "Mașini disponibile",
     "couldNotLoadVehicles": "Nu s-au putut încărca vehiculele. Încercați să căutați din nou.",
     "noVehiclesFoundMessage": "Nu s-au găsit vehicule care să corespundă criteriilor. Încercați să extindeți căutarea sau verificați mai târziu."
+  },
+  "reservationCharges": {
+    "pickupLocationFee": "Taxă locație ridicare ({location})",
+    "returnLocationFee": "Taxă locație returnare ({location})",
+    "snowChains": "Lanțuri de zăpadă ({days, plural, one {# zi} few {# zile} other {# de zile}})",
+    "childSeat1to4": "Scaun copil 1-4 ani ×{count} ({days, plural, one {# zi} few {# zile} other {# de zile}})",
+    "childSeat5to12": "Scaun copil 5-12 ani ×{count} ({days, plural, one {# zi} few {# zile} other {# de zile}})",
+    "extraKm": "Kilometri suplimentari (+{km} km)"
   }
 }

@@ -804,5 +804,13 @@
     "availableCars": "Available Cars",
     "couldNotLoadVehicles": "Could not load vehicles. Please try searching again.",
     "noVehiclesFoundMessage": "No vehicles found matching your criteria. Try broadening your search or check back later."
+  },
+  "reservationCharges": {
+    "pickupLocationFee": "Pick-up location fee ({location})",
+    "returnLocationFee": "Return location fee ({location})",
+    "snowChains": "Snow chains ({days, plural, one {# day} other {# days}})",
+    "childSeat1to4": "Child seat 1-4 years ×{count} ({days, plural, one {# day} other {# days}})",
+    "childSeat5to12": "Child seat 5-12 years ×{count} ({days, plural, one {# day} other {# days}})",
+    "extraKm": "Extra kilometers (+{km} km)"
   }
 }

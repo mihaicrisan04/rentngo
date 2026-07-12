@@ -28,12 +28,16 @@ import {
   Plane,
 } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
-import { getPriceForDurationWithSeason } from "@/lib/vehicle-utils";
+import {
+  calculateRentalDays,
+  getPriceForDurationWithSeason,
+} from "@/lib/pricing";
 
 function ReservationConfirmationContent() {
   const searchParams = useSearchParams();
   const reservationId = searchParams.get("reservationId");
   const t = useTranslations("confirmationPage");
+  const tCharges = useTranslations("reservationCharges");
   const locale = useLocale();
 
   // Get reservation details
@@ -130,49 +134,36 @@ function ReservationConfirmationContent() {
   const startDate = new Date(reservation.startDate);
   const endDate = new Date(reservation.endDate);
 
-  // Compute rental days similar to pricing logic
-  const computeRentalDays = (
-    start: Date,
-    end: Date,
-    pickupTimeStr: string,
-    restitutionTimeStr: string,
-  ) => {
-    const startMid = new Date(start);
-    startMid.setHours(0, 0, 0, 0);
-    const endMid = new Date(end);
-    endMid.setHours(0, 0, 0, 0);
-    const baseDays = Math.max(
-      0,
-      Math.round((endMid.getTime() - startMid.getTime()) / 86400000),
+  // Render the breakdown persisted by the server recompute at booking time —
+  // the values the customer was actually charged. Old docs predating the
+  // persisted fields fall back to recomputing against the vehicle's current
+  // tiers (best effort, may drift if pricing changed since).
+  const rentalDays =
+    reservation.rentalDays ??
+    calculateRentalDays(
+      startDate,
+      endDate,
+      reservation.pickupTime || "00:00",
+      reservation.restitutionTime || "00:00",
     );
-    const [ph, pm] = (pickupTimeStr || "00:00").split(":").map(Number);
-    const [rh, rm] = (restitutionTimeStr || "00:00").split(":").map(Number);
-    let calculated = baseDays;
-    if (baseDays === 0) {
-      calculated = 1;
-    } else {
-      if (rh <= ph + 2) {
-        calculated = baseDays;
-      } else if (rh > ph + 2) {
-        calculated = baseDays + 1;
-      } else if (rh < ph) {
-        calculated = baseDays;
-      }
-    }
-    return Math.max(1, calculated);
-  };
-
-  const rentalDays = computeRentalDays(
-    startDate,
-    endDate,
-    reservation.pickupTime,
-    reservation.restitutionTime,
-  );
   const seasonalMultiplier = reservation.seasonalMultiplier ?? 1.0;
-  const pricePerDayUsed = vehicle
-    ? getPriceForDurationWithSeason(vehicle, rentalDays, seasonalMultiplier)
-    : 0;
-  const rentalSubtotal = rentalDays * pricePerDayUsed;
+  const pricePerDayUsed =
+    reservation.pricePerDay ??
+    (vehicle
+      ? getPriceForDurationWithSeason(vehicle, rentalDays, seasonalMultiplier)
+      : 0);
+  const rentalSubtotal = reservation.basePrice ?? rentalDays * pricePerDayUsed;
+
+  // Coded charges (new docs) are translated at render; legacy docs carry
+  // only the localized prose description
+  const chargeLabel = (charge: {
+    description?: string;
+    code?: string;
+    params?: Record<string, string | number>;
+  }) =>
+    charge.code
+      ? tCharges(charge.code, charge.params ?? {})
+      : (charge.description ?? "");
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -471,7 +462,7 @@ function ReservationConfirmationContent() {
                           key={index}
                           className="flex justify-between text-sm"
                         >
-                          <span>{charge.description}</span>
+                          <span>{chargeLabel(charge)}</span>
                           <span>{charge.amount} EUR</span>
                         </div>
                       ))}
