@@ -6,7 +6,6 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import { Vehicle } from "@/types/vehicle";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -34,13 +33,8 @@ import {
 import { LocationPicker } from "@/components/shared/search-filters/location-picker";
 import { DateTimePicker } from "@/components/shared/search-filters/date-time-picker";
 import { searchStorage } from "@/lib/search-storage";
-import {
-  calculateVehiclePricingWithSeason,
-  getPriceForDurationWithSeason,
-  calculateIncludedKilometers,
-  calculateExtraKilometersPrice,
-} from "@/lib/vehicle-utils";
-import { getBasePricePerDay } from "@/types/vehicle";
+import { calculateIncludedKilometers } from "@/lib/pricing";
+import { buildLegacyChargeDescriptions } from "@/lib/reservation-charges";
 import { SignInButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -51,28 +45,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { hasFormErrors } from "@/lib/reservation-schema";
 import { PAYMENT_METHODS, PaymentMethod } from "@/lib/checkout-payment-methods";
 import { useReservationForm } from "@/hooks/use-reservation-form";
-
-interface PricingCalculation {
-  basePrice: number | null;
-  totalPrice: number | null;
-  days: number | null;
-  deliveryFee: number;
-  returnFee: number;
-  totalLocationFees: number;
-  warrantyAmount: number;
-  scdwPrice: number;
-  protectionCost: number;
-  deductibleAmount: number;
-  snowChainsPrice: number;
-  childSeat1to4Price: number;
-  childSeat5to12Price: number;
-  extraKilometersPrice: number;
-  totalAdditionalFeatures: number;
-  seasonalMultiplier: number;
-  seasonalAdjustment?: number;
-  basePriceBeforeSeason: number | null;
-  seasonalPricePerDay: number | null;
-}
+import { useReservationPricing } from "@/hooks/use-reservation-pricing";
 
 function ReservationPageContent() {
   const searchParams = useSearchParams();
@@ -163,190 +136,41 @@ function ReservationPageContent() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // SCDW calculation function
-  const calculateSCDW = (days: number, dailyRate: number): number => {
-    const base = dailyRate * 2; // costul asigurării pentru 1–3 zile
-    if (days <= 3) {
-      return base;
-    }
-    const blocks = Math.ceil((days - 3) / 3);
-    return base + 6 + 5 * (blocks - 1);
-  };
-
-  // Warranty calculation function - use vehicle warranty or fallback based on type
-  const calculateWarranty = (vehicle: Vehicle | null | undefined): number => {
-    // If vehicle has warranty field, use it
-    if (vehicle?.warranty) {
-      return vehicle.warranty;
-    }
-
-    // Fallback to type-based calculation for backward compatibility
-    const vehicleType = vehicle?.type || "standard";
-    switch (vehicleType.toLowerCase()) {
-      case "economy":
-        return 300;
-      case "compact":
-        return 400;
-      case "midsize":
-      case "intermediate":
-        return 500;
-      case "standard":
-      case "fullsize":
-        return 600;
-      case "suv":
-      case "premium":
-        return 800;
-      case "luxury":
-        return 1000;
-      default:
-        return 500; // Default warranty amount
-    }
-  };
-
-  // Calculate pricing using enhanced vehicle pricing utility with seasonal adjustments
-  const calculateTotalPrice = (): PricingCalculation => {
-    if (pickupDate && returnDate && vehicle) {
-      // Use the enhanced pricing calculation with seasonal adjustment
-      const vehiclePricing = calculateVehiclePricingWithSeason(
-        vehicle,
-        seasonalMultiplier,
-        pickupDate,
-        returnDate,
-        deliveryLocation || undefined,
-        restitutionLocation || undefined,
-        pickupTime,
-        returnTime,
-      );
-
-      const {
-        basePrice,
-        days,
-        deliveryFee,
-        returnFee,
-        totalLocationFees,
-        seasonalAdjustment,
-        basePriceBeforeSeason,
-      } = vehiclePricing;
-
-      if (basePrice === null || days === null) {
-        return {
-          basePrice: null,
-          totalPrice: null,
-          days: null,
-          deliveryFee: 0,
-          returnFee: 0,
-          totalLocationFees: 0,
-          warrantyAmount: 0,
-          scdwPrice: 0,
-          protectionCost: 0,
-          deductibleAmount: 0,
-          snowChainsPrice: 0,
-          childSeat1to4Price: 0,
-          childSeat5to12Price: 0,
-          extraKilometersPrice: 0,
-          totalAdditionalFeatures: 0,
-          seasonalMultiplier,
-          seasonalAdjustment: 0,
-          basePriceBeforeSeason: null,
-          seasonalPricePerDay: null,
-        };
-      }
-
-      // Single source of truth for seasonal-adjusted price per day
-      const seasonalPricePerDay = getPriceForDurationWithSeason(
-        vehicle,
-        days,
-        seasonalMultiplier,
-      );
-
-      // Calculate protection costs (warranty or SCDW) using base price without seasonal adjustments
-      const warrantyAmount = calculateWarranty(vehicle);
-      const scdwPrice = calculateSCDW(days, Math.round(getBasePricePerDay(vehicle) * seasonalMultiplier));
-
-      // Calculate protection cost and deductible based on selection
-      const protectionCost = isSCDWSelected ? scdwPrice : 0;
-      const deductibleAmount = isSCDWSelected ? 0 : warrantyAmount || 0;
-
-      // Add additional features
-      const snowChainsPrice = snowChainsSelected ? days * 3 : 0;
-      const childSeat1to4Price = childSeat1to4Count * days * 3;
-      const childSeat5to12Price = childSeat5to12Count * days * 3;
-      const extraKilometersPrice = calculateExtraKilometersPrice(
-        extraKilometersCount * 50,
-        additional50kmPrice,
-      );
-      const totalAdditionalFeatures =
-        snowChainsPrice +
-        childSeat1to4Price +
-        childSeat5to12Price +
-        extraKilometersPrice;
-
-      return {
-        basePrice,
-        totalPrice:
-          basePrice +
-          totalLocationFees +
-          protectionCost +
-          totalAdditionalFeatures,
-        days,
-        deliveryFee,
-        returnFee,
-        totalLocationFees,
-        warrantyAmount,
-        scdwPrice,
-        protectionCost,
-        deductibleAmount,
-        snowChainsPrice,
-        childSeat1to4Price,
-        childSeat5to12Price,
-        extraKilometersPrice,
-        totalAdditionalFeatures,
-        seasonalMultiplier,
-        seasonalAdjustment: seasonalAdjustment ?? 0,
-        basePriceBeforeSeason: basePriceBeforeSeason ?? null,
-        seasonalPricePerDay,
-      };
-    }
-
-    return {
-      basePrice: null,
-      totalPrice: null,
-      days: null,
-      deliveryFee: 0,
-      returnFee: 0,
-      totalLocationFees: 0,
-      warrantyAmount: 0,
-      scdwPrice: 0,
-      protectionCost: 0,
-      deductibleAmount: 0,
-      snowChainsPrice: 0,
-      childSeat1to4Price: 0,
-      childSeat5to12Price: 0,
-      extraKilometersPrice: 0,
-      totalAdditionalFeatures: 0,
-      seasonalMultiplier,
-      seasonalAdjustment: 0,
-      basePriceBeforeSeason: null,
-      seasonalPricePerDay: null,
-    };
-  };
-
+  // Single memoized pricing derivation (lib/pricing) — the summary UI and
+  // the submit payload both read this one breakdown
+  const pricing = useReservationPricing({
+    vehicle,
+    pickupDate,
+    returnDate,
+    pickupTime,
+    returnTime,
+    deliveryLocation,
+    restitutionLocation,
+    seasonalMultiplier,
+    isSCDWSelected,
+    snowChainsSelected,
+    childSeat1to4Count,
+    childSeat5to12Count,
+    extraKilometersCount,
+    additional50kmPrice,
+  });
   const {
-    basePrice,
-    totalPrice,
-    days,
-    deliveryFee,
-    returnFee,
-    totalLocationFees,
-    warrantyAmount,
-    scdwPrice,
+    breakdown,
     snowChainsPrice,
     childSeat1to4Price,
     childSeat5to12Price,
     extraKilometersPrice,
     totalAdditionalFeatures,
-    seasonalPricePerDay,
-  } = calculateTotalPrice();
+    displayPricePerDay,
+  } = pricing;
+  const days = breakdown?.rentalDays ?? null;
+  const basePrice = breakdown?.basePrice ?? null;
+  const totalPrice = breakdown?.totalPrice ?? null;
+  const deliveryFee = breakdown?.deliveryFee ?? 0;
+  const returnFee = breakdown?.returnFee ?? 0;
+  const totalLocationFees = breakdown?.totalLocationFees ?? 0;
+  const warrantyAmount = breakdown?.warrantyAmount ?? 0;
+  const scdwPrice = breakdown?.scdwPrice ?? 0;
 
   // Handle reservation submission
   const handleSendReservation = async () => {
@@ -361,7 +185,8 @@ function ReservationPageContent() {
     if (
       !vehicleId ||
       !vehicle ||
-      !totalPrice ||
+      !breakdown ||
+      !breakdown.totalPrice ||
       !pickupDate ||
       !returnDate ||
       !paymentMethod
@@ -369,7 +194,7 @@ function ReservationPageContent() {
       return;
     }
 
-    if (days === null || days < 0) {
+    if (breakdown.rentalDays <= 0) {
       toast.error(t("validation.invalidRentalDuration"));
       setIsSubmitting(false);
       return;
@@ -378,86 +203,13 @@ function ReservationPageContent() {
     setIsSubmitting(true);
 
     try {
-      // Prepare additional charges for location fees and SCDW (core info is now in dedicated fields)
-      const additionalCharges = [];
-
-      // Add location fees as charges if they exist
-      if (deliveryFee > 0) {
-        additionalCharges.push({
-          description: t("payment.additionalCharges.pickupLocationFee", {
-            location: deliveryLocation,
-          }),
-          amount: deliveryFee,
-        });
-      }
-
-      if (returnFee > 0) {
-        additionalCharges.push({
-          description: t("payment.additionalCharges.returnLocationFee", {
-            location: restitutionLocation,
-          }),
-          amount: returnFee,
-        });
-      }
-
-      // Protection cost is now handled via dedicated fields, no need to add as additional charge
-      // Note: Warranty is now handled via deductibleAmount field, not as additional charge
-
-      // Add additional features
-      if (snowChainsSelected && snowChainsPrice > 0 && days) {
-        additionalCharges.push({
-          description: t("payment.additionalCharges.snowChains", {
-            days: days,
-            price: snowChainsPrice,
-          }),
-          amount: snowChainsPrice,
-        });
-      }
-
-      if (childSeat1to4Count > 0 && childSeat1to4Price > 0 && days) {
-        additionalCharges.push({
-          description: t("payment.additionalCharges.childSeat1to4", {
-            count: childSeat1to4Count,
-            days: days,
-            price: childSeat1to4Price,
-          }),
-          amount: childSeat1to4Price,
-        });
-      }
-
-      if (childSeat5to12Count > 0 && childSeat5to12Price > 0 && days) {
-        additionalCharges.push({
-          description: t("payment.additionalCharges.childSeat5to12", {
-            count: childSeat5to12Count,
-            days: days,
-            price: childSeat5to12Price,
-          }),
-          amount: childSeat5to12Price,
-        });
-      }
-
-      if (extraKilometersCount > 0 && extraKilometersPrice > 0) {
-        additionalCharges.push({
-          description: t("payment.additionalCharges.extraKilometers", {
-            count: extraKilometersCount,
-            kilometers: extraKilometersCount * 50,
-            price: extraKilometersPrice,
-          }),
-          amount: extraKilometersPrice,
-        });
-      }
-
-      // Calculate protection values for the mutation using already-calculated seasonal price
-      const currentWarrantyAmount = calculateWarranty(vehicle);
-      const currentPricePerDay =
-        seasonalPricePerDay ||
-        Math.round(getBasePricePerDay(vehicle) * seasonalMultiplier);
-      const currentScdwPrice =
-        days > 0 ? calculateSCDW(days, currentPricePerDay) : 0;
-      const currentProtectionCost = isSCDWSelected ? currentScdwPrice : 0;
-      const currentDeductibleAmount = isSCDWSelected
-        ? 0
-        : currentWarrantyAmount;
+      // Localized prose duplicates of the coded charges — the server persists
+      // its own recomputed coded charges; this array only feeds the email
+      // templates until RNGO-19 lands their coded-charge catalog
+      const additionalCharges = buildLegacyChargeDescriptions(
+        breakdown.additionalCharges,
+        t,
+      );
 
       // Get the Convex user ID (not the Clerk user ID)
       const created = await createReservationMutation({
@@ -470,7 +222,7 @@ function ReservationPageContent() {
         pickupLocation: deliveryLocation.trim(),
         restitutionLocation: restitutionLocation.trim(),
         paymentMethod,
-        totalPrice: totalPrice,
+        totalPrice: breakdown.totalPrice,
         customerInfo: {
           name: personalInfo.name.trim(),
           email: personalInfo.email.trim(),
@@ -488,11 +240,19 @@ function ReservationPageContent() {
         additionalCharges:
           additionalCharges.length > 0 ? additionalCharges : undefined,
         isSCDWSelected: isSCDWSelected,
-        deductibleAmount: currentDeductibleAmount,
+        deductibleAmount: breakdown.deductibleAmount,
         protectionCost:
-          currentProtectionCost > 0 ? currentProtectionCost : undefined,
+          breakdown.protectionCost > 0 ? breakdown.protectionCost : undefined,
         seasonId: seasonId as Id<"seasons"> | undefined,
         seasonalMultiplier: seasonalMultiplier,
+        // Structured extras — the server recomputes and persists all coded
+        // charges from these
+        extras: {
+          snowChains: snowChainsSelected,
+          childSeat1to4: childSeat1to4Count,
+          childSeat5to12: childSeat5to12Count,
+          extraKilometers: extraKilometersCount * 50,
+        },
         // Email data - triggers email sending from Convex backend
         vehicleInfo: {
           make: vehicle.make,
@@ -504,7 +264,6 @@ function ReservationPageContent() {
           fuelType: vehicle.fuelType,
           features: vehicle.features || [],
         },
-        pricePerDayUsed: currentPricePerDay,
         locale,
       });
       const reservationId = created?.reservationId ?? created;
@@ -748,11 +507,7 @@ function ReservationPageContent() {
                     <p className="text-muted-foreground">{vehicle.year}</p>
                     <div>
                       <p className="text-lg font-bold text-yellow-500">
-                        {seasonalPricePerDay ||
-                          Math.round(
-                            getBasePricePerDay(vehicle) * seasonalMultiplier,
-                          )}{" "}
-                        EUR / Day
+                        {displayPricePerDay} EUR / Day
                       </p>
                       {days &&
                         vehicle.pricingTiers &&
