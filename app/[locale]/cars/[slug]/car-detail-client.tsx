@@ -25,7 +25,6 @@ import { useTranslations } from "next-intl";
 import { Vehicle } from "@/types/vehicle";
 import React, { useState, useEffect, useCallback } from "react";
 import { searchStorage, SearchData } from "@/lib/search-storage";
-import { reservationVehicle } from "@/lib/reservation-vehicle";
 import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
 
 
@@ -96,10 +95,9 @@ export function CarDetailClient({
   }, []);
 
   const currency = "EUR";
-  // Stash the vehicle in per-tab storage instead of the URL so a locale switch
-  // on the reservation page keeps the selection (the URL stays a bare
-  // /reservation).
-  const handleReserve = () => reservationVehicle.set(vehicle._id);
+  // Carry the vehicle in the href so new-tab/cmd-click works; the reservation
+  // page moves it into per-tab storage and strips it back to a bare URL.
+  const reservationUrl = `/reservation?vehicleId=${vehicle._id}`;
 
   const vehicleName = formatVehicleName(
     vehicle.make,
@@ -188,9 +186,7 @@ export function CarDetailClient({
                 className="w-full bg-[#055E3B] hover:bg-[#055E3B]/80 text-white font-bold py-4 text-lg rounded-xl h-14"
                 asChild
               >
-                <Link href="/reservation" onClick={handleReserve}>
-                  {t("reserveThisCar")}
-                </Link>
+                <Link href={reservationUrl}>{t("reserveThisCar")}</Link>
               </Button>
               <p className="text-sm text-muted-foreground text-center">
                 {t("reserveDescription")}

@@ -39,9 +39,12 @@ function ReservationPageContent() {
   const tCoupon = useTranslations("common.coupon");
   const locale = useLocale();
 
-  // The chosen vehicle lives in per-tab session storage (not the URL) so a
-  // ro↔en locale switch doesn't drop it. A legacy `?vehicleId=` link is still
-  // honoured and migrated into storage on mount.
+  // The vehicle arrives as `/reservation?vehicleId=…` (so normal clicks,
+  // cmd/middle-click into a new tab, and bookmarks all carry it), then we move
+  // it into per-tab session storage and strip the query param. The bare URL
+  // means a later ro↔en locale switch — which drops query params — reads the
+  // selection back from storage instead of losing it. Session (not local)
+  // storage keeps each tab's pick isolated.
   const [vehicleId, setVehicleId] = React.useState<string | null>(null);
   const [vehicleIdReady, setVehicleIdReady] = React.useState(false);
 
@@ -50,6 +53,8 @@ function ReservationPageContent() {
     if (fromUrl) {
       reservationVehicle.set(fromUrl);
       setVehicleId(fromUrl);
+      // Drop the param so the URL is a bare /reservation from here on.
+      window.history.replaceState(null, "", window.location.pathname);
     } else {
       setVehicleId(reservationVehicle.get());
     }
