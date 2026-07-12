@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   calculateChildSeatPrice,
   calculateExtraKilometersPrice,
+  calculateExtraKmPackages,
   calculateIncludedKilometers,
   calculateSnowChainsPrice,
 } from "./extras";
@@ -56,6 +57,20 @@ describe("physical extras", () => {
     expect(calculateExtraKilometersPrice(100, 7)).toBe(14);
     // partial packages are not charged: 149 km → floor(149/50) = 2 packages
     expect(calculateExtraKilometersPrice(149, 5)).toBe(10);
+  });
+
+  it("package count floors partial packages (display must match the charge)", () => {
+    expect(calculateExtraKmPackages(40)).toBe(0);
+    expect(calculateExtraKmPackages(50)).toBe(1);
+    expect(calculateExtraKmPackages(75)).toBe(1);
+    expect(calculateExtraKmPackages(100)).toBe(2);
+    // the count shown in emails × package price must equal the charged amount
+    expect(calculateExtraKmPackages(75) * 5).toBe(
+      calculateExtraKilometersPrice(75, 5),
+    );
+    expect(calculateExtraKmPackages(40) * 5).toBe(
+      calculateExtraKilometersPrice(40, 5),
+    );
   });
 
   it("includes 200 km per rental day", () => {

@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Section, Text, Row, Column } from "@react-email/components";
 import { EXTRA_KM_PACKAGE_SIZE } from "../../../lib/pricing/constants";
+import { calculateExtraKmPackages } from "../../../lib/pricing/extras";
 import { RentalDetails } from "../types";
 
 interface RentalDetailsSectionProps {
@@ -76,9 +77,7 @@ export const RentalDetailsSection: React.FC<RentalDetailsSectionProps> = ({
               </Text>
               <Text className="text-[16px] text-gray-800 m-0 mt-[4px]">
                 +{rentalDetails.extraKilometers} km (
-                {Math.round(
-                  (rentalDetails.extraKilometers ?? 0) / EXTRA_KM_PACKAGE_SIZE
-                )}{" "}
+                {calculateExtraKmPackages(rentalDetails.extraKilometers ?? 0)}{" "}
                 × {EXTRA_KM_PACKAGE_SIZE} km)
               </Text>
             </Column>

@@ -25,6 +25,15 @@ export function calculateIncludedKilometers(days: number): number {
 }
 
 /**
+ * Number of extra-km packages actually purchased.
+ * Only complete 50km packages are charged (partial packages are free),
+ * so any display of the package count must use this same derivation.
+ */
+export function calculateExtraKmPackages(extraKilometers: number): number {
+  return Math.floor(extraKilometers / EXTRA_KM_PACKAGE_SIZE);
+}
+
+/**
  * Calculate extra kilometers price
  * Each extra 50km costs a configurable price (default 5 EUR)
  */
@@ -32,8 +41,7 @@ export function calculateExtraKilometersPrice(
   extraKilometers: number,
   pricePerExtra50km: number = DEFAULT_ADDITIONAL_50KM_PRICE,
 ): number {
-  const extraPackages = Math.floor(extraKilometers / EXTRA_KM_PACKAGE_SIZE);
-  return extraPackages * pricePerExtra50km;
+  return calculateExtraKmPackages(extraKilometers) * pricePerExtra50km;
 }
 
 /**
