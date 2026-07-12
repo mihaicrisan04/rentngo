@@ -5,6 +5,7 @@ import { Id } from "./_generated/dataModel";
 import { getCurrentUser, getCurrentUserOrThrow, requireAdmin } from "./users";
 import {
   assertValidReservationExtras,
+  calculateIncludedKilometers,
   calculateMultiplierForDateRange,
   computeReservationPricing,
   extractLegacyExtras,
@@ -272,11 +273,19 @@ export const createReservation = mutation({
           pickupLocation: args.pickupLocation,
           restitutionLocation: args.restitutionLocation,
           numberOfDays: pricing.rentalDays,
+          includedKm: calculateIncludedKilometers(pricing.rentalDays),
+          // Only structured clients declare extra km; legacy bookings carry
+          // it solely as a prose additional-charge line, so the explicit row
+          // is omitted for them rather than parsed out of localized text
+          extraKilometers:
+            args.extras && args.extras.extraKilometers > 0
+              ? args.extras.extraKilometers
+              : undefined,
         },
         pricingDetails: {
           // Server-computed values so the email matches what was stored.
-          // Line items stay on the legacy localized prose until RNGO-24
-          // teaches the templates to render coded charges.
+          // Line items stay on the legacy localized prose until RNGO-19
+          // gives the templates a coded-charge translation catalog.
           pricePerDay: pricing.pricePerDay,
           totalPrice,
           paymentMethod: args.paymentMethod,

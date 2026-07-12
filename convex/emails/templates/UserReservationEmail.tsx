@@ -42,6 +42,8 @@ export const UserReservationEmail: React.FC<UserReservationEmailProps> = ({
       returnDateTime: isRo ? "Data și Ora Returnării:" : "Return Date & Time:",
       pickupLocation: isRo ? "Locația de Ridicare:" : "Pickup Location:",
       returnLocation: isRo ? "Locația de Returnare:" : "Return Location:",
+      includedKm: isRo ? "Kilometri Incluși:" : "Included Kilometers:",
+      extraKm: isRo ? "Kilometri Extra:" : "Extra Kilometers:",
     },
     vehicle: {
       heading: isRo ? "Informații Vehicul" : "Vehicle Information",
@@ -96,6 +98,8 @@ export const UserReservationEmail: React.FC<UserReservationEmailProps> = ({
               returnDateTime: t.rental.returnDateTime,
               pickupLocation: t.rental.pickupLocation,
               returnLocation: t.rental.returnLocation,
+              includedKm: t.rental.includedKm,
+              extraKm: t.rental.extraKm,
             }}
           />
 
@@ -124,6 +128,8 @@ export const UserReservationEmail: React.FC<UserReservationEmailProps> = ({
               additionalCharges: t.pricing.additionalCharges,
               totalAmount: t.pricing.totalAmount,
               paymentMethod: t.pricing.paymentMethod,
+              scdwText: t.pricing.scdwText,
+              warrantyText: t.pricing.warrantyText,
             }}
           />
 

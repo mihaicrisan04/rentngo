@@ -49,6 +49,8 @@ const rentalDetailsValidator = v.object({
   pickupLocation: v.string(),
   restitutionLocation: v.string(),
   numberOfDays: v.number(),
+  includedKm: v.optional(v.number()),
+  extraKilometers: v.optional(v.number()),
 });
 
 const pricingDetailsValidator = v.object({
