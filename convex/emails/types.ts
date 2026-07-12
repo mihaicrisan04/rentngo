@@ -28,6 +28,11 @@ export interface RentalDetails {
   pickupLocation: string;
   restitutionLocation: string;
   numberOfDays: number;
+  // Base included-km allowance (rentalDays × INCLUDED_KM_PER_DAY)
+  includedKm?: number;
+  // Extra kilometers purchased (50km packages; absent on legacy bookings
+  // that only carry the prose additional-charge line)
+  extraKilometers?: number;
 }
 
 export interface PricingDetails {

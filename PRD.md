@@ -58,6 +58,7 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | Dead Code Cleanup | Jul 11 | 16 files (~1,290 lines) deleted: vehicle-card fork orphans, lib email stack, dead hooks/libs, admin settings page; dead `searchAvailableVehicles` query, VehicleSearchFilterForm uncontrolled fallback; deps removed: `@clerk/react`, `@googlemaps/google-maps-services-js`, `framer-motion` (consolidated on `motion`) (RNGO-15) |
 | Server-side Pricing Engine | Jul 11 | Pure `lib/pricing` module (SCDW base-tier×season per owner decision, tiers, seasons, location fees, extras, transfer formula); `createReservation`/`createTransfer` recompute+overwrite money fields; persisted `pricePerDay`/`rentalDays`/`basePrice` + coded `additionalCharges`; Vitest suite (51 tests) + CI test job (RNGO-13) |
 | Frontend Performance | Jul 12 | Split root layouts ([locale] + admin) to drop `headers()` — all public routes now static/ISR (1h) with per-locale `<html lang>`; static-safe Convex fetch helper; mapbox-gl (~1.6MB) code-split out of transfer routes; hero via next/image fill+priority; card image priority for first 4 only; MDX toolchain out of public blog bundles; lazy testimonial avatars; mapbox suggest stale-guard; skip redundant Directions call on restore (RNGO-16) |
+| Reservation Email Fixes | Jul 12 | Included-km row (days×200) + extra-km-opted row in confirmation emails; RO SCDW/warranty labels now passed to pricing section (were falling back to EN); SCDW amount + day count come from the persisted server pricing breakdown (RNGO-24; explicit extra-km row activates when RNGO-17 sends structured extras) |
 
 ---
 
@@ -108,7 +109,6 @@ Full plans in `.claude/plans/` (one file per workstream); tackle order + client 
 | Priority | Task | Plan |
 |----------|------|------|
 | P0 | Security: auth on 28 admin Convex writes, ownership checks, PII queries, email route | `audit-pricing-security.md` |
-| P1 | Email fixes: SCDW, day count, included/extra km | `feature-email-fixes.md` |
 | P1 | Convex perf: counter doc, indexes, pagination, stats | `audit-convex-performance.md` (absorbs "Convex Hardening" section above) |
 | P2 | Reservation page decomposition; admin dialog dedup; frontend perf; i18n extraction; misc bug batches | `audit-*.md` |
 | P3 | AI-SEO pages (robots/llms.txt/FAQ/local business) | `feature-ai-seo.md` |
