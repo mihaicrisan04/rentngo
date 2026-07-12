@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft } from "lucide-react";
 import { searchStorage } from "@/lib/search-storage";
+import { reservationVehicle } from "@/lib/reservation-vehicle";
 import { buildLegacyChargeDescriptions } from "@/lib/reservation-charges";
 import { hasFormErrors } from "@/lib/reservation-schema";
 import { useReservationForm } from "@/hooks/use-reservation-form";
@@ -38,19 +39,19 @@ function ReservationPageContent() {
   const tCoupon = useTranslations("common.coupon");
   const locale = useLocale();
 
-  // The chosen vehicle now lives in localStorage (like the form data) so a
-  // ro↔en locale switch doesn't drop it from the URL. A legacy `?vehicleId=`
-  // link is still honoured and migrated into storage on mount.
+  // The chosen vehicle lives in per-tab session storage (not the URL) so a
+  // ro↔en locale switch doesn't drop it. A legacy `?vehicleId=` link is still
+  // honoured and migrated into storage on mount.
   const [vehicleId, setVehicleId] = React.useState<string | null>(null);
   const [vehicleIdReady, setVehicleIdReady] = React.useState(false);
 
   React.useEffect(() => {
     const fromUrl = searchParams.get("vehicleId");
     if (fromUrl) {
-      searchStorage.save({ selectedVehicleId: fromUrl });
+      reservationVehicle.set(fromUrl);
       setVehicleId(fromUrl);
     } else {
-      setVehicleId(searchStorage.load().selectedVehicleId ?? null);
+      setVehicleId(reservationVehicle.get());
     }
     setVehicleIdReady(true);
   }, [searchParams]);
@@ -259,8 +260,9 @@ function ReservationPageContent() {
         description: t("reservation.successDescription")
       });
 
-      // Clear localStorage and redirect
+      // Clear storage (form data + the reserved vehicle) and redirect
       searchStorage.clear();
+      reservationVehicle.clear();
       router.push(`/reservation/confirmation?reservationId=${reservationId}`);
     } catch (error) {
       console.error("Error creating reservation:", error);

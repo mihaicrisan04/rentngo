@@ -25,6 +25,7 @@ import { useTranslations } from "next-intl";
 import { Vehicle } from "@/types/vehicle";
 import React, { useState, useEffect, useCallback } from "react";
 import { searchStorage, SearchData } from "@/lib/search-storage";
+import { reservationVehicle } from "@/lib/reservation-vehicle";
 import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
 
 
@@ -95,10 +96,10 @@ export function CarDetailClient({
   }, []);
 
   const currency = "EUR";
-  // Stash the vehicle in storage instead of the URL so a locale switch on the
-  // reservation page keeps the selection (the URL stays a bare /reservation).
-  const handleReserve = () =>
-    searchStorage.save({ selectedVehicleId: vehicle._id });
+  // Stash the vehicle in per-tab storage instead of the URL so a locale switch
+  // on the reservation page keeps the selection (the URL stays a bare
+  // /reservation).
+  const handleReserve = () => reservationVehicle.set(vehicle._id);
 
   const vehicleName = formatVehicleName(
     vehicle.make,

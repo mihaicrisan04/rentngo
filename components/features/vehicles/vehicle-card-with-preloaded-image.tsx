@@ -10,7 +10,7 @@ import { Cog, Fuel, CarFront, Icon } from "lucide-react";
 import { gearbox } from "@lucide/lab";
 import { Vehicle } from "@/types/vehicle";
 import { calculateVehiclePricingWithSeason } from "@/lib/vehicle-utils";
-import { searchStorage } from "@/lib/search-storage";
+import { reservationVehicle } from "@/lib/reservation-vehicle";
 import { getBasePricePerDay } from "@/types/vehicle";
 import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
 import { useTranslations, useLocale } from "next-intl";
@@ -97,10 +97,10 @@ export function VehicleCardWithPreloadedImage({
   }, [priceDetails.days, priceDetails.basePrice, vehicle, currentMultiplier]);
 
   const currency = "EUR";
-  // Vehicle goes into storage (not the URL) so a locale switch on the
+  // Vehicle goes into per-tab storage (not the URL) so a locale switch on the
   // reservation page keeps the selection.
   const handleReserve = () => {
-    if (vehicle) searchStorage.save({ selectedVehicleId: vehicle._id });
+    if (vehicle) reservationVehicle.set(vehicle._id);
   };
   const carDetailsUrl = vehicle ? buildCarDetailsUrl(vehicle.slug, vehicle._id) : "#";
 

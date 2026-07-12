@@ -5,12 +5,6 @@ export interface SearchData {
   restitutionLocation?: string;
   returnDate?: Date;
   returnTime?: string | null;
-  /**
-   * Vehicle chosen for the reservation. Kept in storage (not the URL) so a
-   * ro↔en locale switch — which rewrites the path but drops query params —
-   * doesn't lose the selection.
-   */
-  selectedVehicleId?: string;
 }
 
 const SEARCH_STORAGE_KEY = "carRentalSearchData";
