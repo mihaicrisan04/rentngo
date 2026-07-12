@@ -40,6 +40,7 @@ export const PaymentMethodCard = React.memo(function PaymentMethodCard({
             value={paymentMethod}
             onChange={onPaymentMethodChange}
             error={errors?.method}
+            variant="bordered"
           />
 
           <TermsAcceptance
