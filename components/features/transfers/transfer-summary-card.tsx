@@ -25,7 +25,10 @@ import { LocationData } from "@/lib/transfer-storage";
 import { cn } from "@/lib/utils";
 import { TransferRouteMap } from "@/components/features/transfers/transfer-route-map";
 import { applyDiscountToTotal } from "@/lib/pricing";
-import type { AppliedCoupon } from "@/components/features/checkout/coupon-code-input";
+import {
+  CouponCodeInput,
+  type AppliedCoupon,
+} from "@/components/features/checkout/coupon-code-input";
 import type { AffiliateDiscountPreview } from "@/hooks/use-affiliate-discount";
 
 interface Coordinates {
@@ -54,6 +57,13 @@ interface TransferSummaryCardProps {
   totalPrice: number;
   /** Advisory coupon preview; the server recomputes at booking time. */
   appliedCoupon?: AppliedCoupon | null;
+  /** Customer email, so the coupon once-per-user check runs in the preview. */
+  customerEmail?: string;
+  /**
+   * When provided, an embedded coupon field renders in the card footer and
+   * fires this on apply/remove. Omit for a read-only summary.
+   */
+  onCouponAppliedChange?: (coupon: AppliedCoupon | null) => void;
   /** Automatic affiliate discount; an explicit coupon always beats it. */
   appliedAffiliateDiscount?: AffiliateDiscountPreview | null;
   className?: string;
@@ -75,6 +85,8 @@ export function TransferSummaryCard({
   vehicle,
   totalPrice,
   appliedCoupon,
+  customerEmail,
+  onCouponAppliedChange,
   appliedAffiliateDiscount,
   className,
 }: TransferSummaryCardProps) {
@@ -249,7 +261,17 @@ export function TransferSummaryCard({
           )}
         </div>
       </CardContent>
-      <CardFooter className="flex-col items-stretch gap-2 border-t pt-4">
+      <CardFooter className="flex-col items-stretch gap-4 border-t pt-4">
+        {onCouponAppliedChange && (
+          <CouponCodeInput
+            variant="embedded"
+            bookingType="transfers"
+            subtotal={totalPrice}
+            email={customerEmail}
+            onAppliedChange={onCouponAppliedChange}
+          />
+        )}
+        <div className="flex flex-col gap-2">
         {appliedCoupon && discountAmount > 0 && (
           <div className="flex justify-between items-baseline text-sm text-green-600">
             <span>
@@ -273,6 +295,7 @@ export function TransferSummaryCard({
           <span className="text-2xl font-bold text-primary">
             €{displayedTotal.toFixed(2)}
           </span>
+        </div>
         </div>
       </CardFooter>
     </Card>
