@@ -48,74 +48,12 @@ import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
 import { useTranslations, useLocale } from "next-intl";
-import { z } from "zod";
-import { isValidInternationalPhoneNumber } from "@/lib/phone-validation";
-
-// Validation schema for reservation form - will be updated with translations
-const createReservationSchema = (t: ReturnType<typeof useTranslations>) =>
-  z.object({
-    // Personal info
-    name: z.string().min(1, t("validation.nameRequired")),
-    email: z.string().email(t("validation.emailRequired")),
-    phone: z
-      .string()
-      .min(1, t("validation.phoneRequired"))
-      .refine(
-        (val) => isValidInternationalPhoneNumber(val),
-        t("validation.phoneFormatInvalid"),
-      ),
-    flightNumber: z.string().optional(),
-    message: z.string().optional(),
-
-    // Rental details
-    deliveryLocation: z.string().min(1, t("validation.pickupLocationRequired")),
-    pickupDate: z.date({ error: t("validation.pickupDateRequired") }),
-    pickupTime: z.string().refine((val) => val.trim().length > 0, {
-      message: t("validation.pickupTimeRequired"),
-    }),
-    restitutionLocation: z
-      .string()
-      .min(1, t("validation.returnLocationRequired")),
-    returnDate: z.date({ error: t("validation.returnDateRequired") }),
-    returnTime: z.string().refine((val) => val.trim().length > 0, {
-      message: t("validation.returnTimeRequired"),
-    }),
-
-    // Payment
-    paymentMethod: z
-      .union([
-        z.enum(["cash_on_delivery", "card_on_delivery", "card_online"]),
-        z.undefined(),
-      ])
-      .refine((val) => val !== undefined, {
-        message: t("validation.paymentMethodRequired"),
-      }),
-    termsAccepted: z
-      .boolean()
-      .refine((val) => val === true, t("validation.termsAcceptanceRequired")),
-  });
-
-// Form validation errors interface
-interface FormErrors {
-  personalInfo?: {
-    name?: string;
-    email?: string;
-    phone?: string;
-    flightNumber?: string;
-  };
-  rentalDetails?: {
-    deliveryLocation?: string;
-    pickupDate?: string;
-    pickupTime?: string;
-    restitutionLocation?: string;
-    returnDate?: string;
-    returnTime?: string;
-  };
-  payment?: {
-    method?: string;
-    termsAccepted?: string;
-  };
-}
+import {
+  FormErrors,
+  hasFormErrors,
+  validateReservationForm,
+} from "@/lib/reservation-schema";
+import { PAYMENT_METHODS, PaymentMethod } from "@/lib/checkout-payment-methods";
 
 interface PricingCalculation {
   basePrice: number | null;
@@ -146,27 +84,13 @@ function ReservationPageContent() {
   const t = useTranslations("reservationPage");
   const locale = useLocale();
 
-  // Payment method options - now using translations
-  const paymentMethods = [
-    {
-      id: "cash_on_delivery",
-      label: t("payment.methods.cashOnDelivery.label"),
-      description: t("payment.methods.cashOnDelivery.description"),
-      disabled: false,
-    },
-    {
-      id: "card_on_delivery",
-      label: t("payment.methods.cardOnDelivery.label"),
-      description: t("payment.methods.cardOnDelivery.description"),
-      disabled: false,
-    },
-    {
-      id: "card_online",
-      label: t("payment.methods.cardOnline.label"),
-      description: t("payment.methods.cardOnline.description"),
-      disabled: true,
-    },
-  ];
+  // Payment method options - shared config, translated at render
+  const paymentMethods = PAYMENT_METHODS.map((method) => ({
+    id: method.id,
+    label: t(`payment.methods.${method.translationKey}.label`),
+    description: t(`payment.methods.${method.translationKey}.description`),
+    disabled: method.disabled,
+  }));
 
   // Only get vehicleId from URL - all form data comes from localStorage
   const vehicleId = searchParams.get("vehicleId");
@@ -205,7 +129,9 @@ function ReservationPageContent() {
   });
 
   // Payment state
-  const [paymentMethod, setPaymentMethod] = React.useState<string>("");
+  const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod | "">(
+    "",
+  );
   const [termsAccepted, setTermsAccepted] = React.useState(false);
 
   // Protection state (SCDW vs Standard warranty)
@@ -535,105 +461,45 @@ function ReservationPageContent() {
     termsAccepted,
   ]);
 
-  // Form validation using Zod</parameter>
-  const validateForm = (): FormErrors => {
-    const formData = {
-      name: personalInfo.name.trim(),
-      email: personalInfo.email.trim(),
-      phone: personalInfo.phone.trim(),
-      flightNumber: personalInfo.flightNumber?.trim() || undefined,
-      message: personalInfo.message?.trim() || undefined,
-      deliveryLocation,
-      pickupDate,
-      pickupTime: pickupTime || "",
-      restitutionLocation,
-      returnDate,
-      returnTime: returnTime || "",
-      paymentMethod: paymentMethod || undefined,
-      termsAccepted,
-    };
-
-    const result = createReservationSchema(t).safeParse(formData);
-    const newErrors: FormErrors = {};
-
-    if (!result.success) {
-      result.error.issues.forEach((error) => {
-        const path = error.path[0] as string;
-
-        // Map field names to error structure
-        if (["name", "email", "phone", "flightNumber"].includes(path)) {
-          newErrors.personalInfo = {
-            ...newErrors.personalInfo,
-            [path]: error.message,
-          };
-        } else if (
-          [
-            "deliveryLocation",
-            "pickupDate",
-            "pickupTime",
-            "restitutionLocation",
-            "returnDate",
-            "returnTime",
-          ].includes(path)
-        ) {
-          newErrors.rentalDetails = {
-            ...newErrors.rentalDetails,
-            [path]: error.message,
-          };
-        } else if (["paymentMethod"].includes(path)) {
-          newErrors.payment = { ...newErrors.payment, method: error.message };
-        } else if (["termsAccepted"].includes(path)) {
-          newErrors.payment = {
-            ...newErrors.payment,
-            termsAccepted: error.message,
-          };
-        }
-      });
-    }
-
-    // Additional validation for same-day time logic
-    if (pickupDate && returnDate && pickupTime && returnTime) {
-      const isSameDay =
-        pickupDate.getFullYear() === returnDate.getFullYear() &&
-        pickupDate.getMonth() === returnDate.getMonth() &&
-        pickupDate.getDate() === returnDate.getDate();
-
-      if (isSameDay) {
-        const [pickupHour, pickupMinute] = pickupTime.split(":").map(Number);
-        const [returnHour, returnMinute] = returnTime.split(":").map(Number);
-
-        if (
-          returnHour < pickupHour ||
-          (returnHour === pickupHour && returnMinute <= pickupMinute)
-        ) {
-          newErrors.rentalDetails = {
-            ...newErrors.rentalDetails,
-            returnTime: t("validation.returnTimeSameDay"),
-          };
-        }
-      }
-    }
-
-    return newErrors;
-  };
+  // Form validation using Zod
+  const validateForm = (): FormErrors =>
+    validateReservationForm(
+      {
+        name: personalInfo.name.trim(),
+        email: personalInfo.email.trim(),
+        phone: personalInfo.phone.trim(),
+        flightNumber: personalInfo.flightNumber?.trim() || undefined,
+        message: personalInfo.message?.trim() || undefined,
+        deliveryLocation,
+        pickupDate,
+        pickupTime: pickupTime || "",
+        restitutionLocation,
+        returnDate,
+        returnTime: returnTime || "",
+        paymentMethod: paymentMethod || undefined,
+        termsAccepted,
+      },
+      t,
+    );
 
   // Handle reservation submission
   const handleSendReservation = async () => {
     const formErrors = validateForm();
     setErrors(formErrors);
 
-    // Check if there are any errors
-    const hasErrors = Object.keys(formErrors).some(
-      (key) =>
-        Object.keys(formErrors[key as keyof FormErrors] || {}).length > 0,
-    );
-
-    if (hasErrors) {
+    if (hasFormErrors(formErrors)) {
       toast.error(t("validation.formErrors"));
       return;
     }
 
-    if (!vehicleId || !vehicle || !totalPrice || !pickupDate || !returnDate) {
+    if (
+      !vehicleId ||
+      !vehicle ||
+      !totalPrice ||
+      !pickupDate ||
+      !returnDate ||
+      !paymentMethod
+    ) {
       return;
     }
 
@@ -737,10 +603,7 @@ function ReservationPageContent() {
         restitutionTime: returnTime || "00:00",
         pickupLocation: deliveryLocation.trim(),
         restitutionLocation: restitutionLocation.trim(),
-        paymentMethod: paymentMethod as
-          | "cash_on_delivery"
-          | "card_on_delivery"
-          | "card_online",
+        paymentMethod,
         totalPrice: totalPrice,
         customerInfo: {
           name: personalInfo.name.trim(),
@@ -1448,7 +1311,9 @@ function ReservationPageContent() {
                 <div className="space-y-4">
                   <RadioGroup
                     value={paymentMethod}
-                    onValueChange={setPaymentMethod}
+                    onValueChange={(value) =>
+                      setPaymentMethod(value as PaymentMethod)
+                    }
                     className="space-y-3"
                   >
                     {paymentMethods.map((method) => (
