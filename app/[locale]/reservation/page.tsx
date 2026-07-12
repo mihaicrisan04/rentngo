@@ -41,19 +41,16 @@ import {
   calculateExtraKilometersPrice,
 } from "@/lib/vehicle-utils";
 import { getBasePricePerDay } from "@/types/vehicle";
-import { useUser, SignInButton } from "@clerk/nextjs";
+import { SignInButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 import { Progress } from "@/components/ui/progress";
 import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
 import { useTranslations, useLocale } from "next-intl";
-import {
-  FormErrors,
-  hasFormErrors,
-  validateReservationForm,
-} from "@/lib/reservation-schema";
+import { hasFormErrors } from "@/lib/reservation-schema";
 import { PAYMENT_METHODS, PaymentMethod } from "@/lib/checkout-payment-methods";
+import { useReservationForm } from "@/hooks/use-reservation-form";
 
 interface PricingCalculation {
   basePrice: number | null;
@@ -80,7 +77,6 @@ interface PricingCalculation {
 function ReservationPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { user } = useUser();
   const t = useTranslations("reservationPage");
   const locale = useLocale();
 
@@ -95,129 +91,57 @@ function ReservationPageContent() {
   // Only get vehicleId from URL - all form data comes from localStorage
   const vehicleId = searchParams.get("vehicleId");
 
-  // Rental details state - initialize with default locations
-  const [deliveryLocation, setDeliveryLocation] = React.useState<string>(
-    searchStorage.getDefaultLocation(),
-  );
-  const [pickupDate, setPickupDate] = React.useState<Date | undefined>(
-    undefined,
-  );
-  const [pickupTime, setPickupTime] = React.useState<string | null>(null);
-  const [restitutionLocation, setRestitutionLocation] = React.useState<string>(
-    searchStorage.getDefaultLocation(),
-  );
-  const [returnDate, setReturnDate] = React.useState<Date | undefined>(
-    undefined,
-  );
-  const [returnTime, setReturnTime] = React.useState<string | null>(null);
+  // All form state, localStorage persistence, Clerk autofill and validation
+  const {
+    user,
+    currentUser,
+    deliveryLocation,
+    setDeliveryLocation,
+    pickupDate,
+    handlePickupDateChange,
+    pickupTime,
+    setPickupTime,
+    restitutionLocation,
+    setRestitutionLocation,
+    returnDate,
+    handleReturnDateChange,
+    returnTime,
+    setReturnTime,
+    pickupCalendarOpen,
+    setPickupCalendarOpen,
+    returnCalendarOpen,
+    setReturnCalendarOpen,
+    personalInfo,
+    setPersonalInfo,
+    paymentMethod,
+    setPaymentMethod,
+    termsAccepted,
+    setTermsAccepted,
+    isSCDWSelected,
+    setIsSCDWSelected,
+    snowChainsSelected,
+    setSnowChainsSelected,
+    childSeat1to4Count,
+    setChildSeat1to4Count,
+    childSeat5to12Count,
+    setChildSeat5to12Count,
+    extraKilometersCount,
+    setExtraKilometersCount,
+    errors,
+    setErrors,
+    formProgress,
+    validate,
+  } = useReservationForm();
 
-  // Calendar open states for sequential flow
-  const [pickupCalendarOpen, setPickupCalendarOpen] = React.useState(false);
-  const [returnCalendarOpen, setReturnCalendarOpen] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Add date-based seasonal pricing
   const { multiplier: seasonalMultiplier, seasonId } =
     useDateBasedSeasonalPricing(pickupDate, returnDate);
 
-  // Personal information state
-  const [personalInfo, setPersonalInfo] = React.useState({
-    name: "",
-    email: "",
-    phone: "",
-    message: "",
-    flightNumber: "",
-  });
-
-  // Payment state
-  const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod | "">(
-    "",
-  );
-  const [termsAccepted, setTermsAccepted] = React.useState(false);
-
-  // Protection state (SCDW vs Standard warranty)
-  const [isSCDWSelected, setIsSCDWSelected] = React.useState(false); // Default to standard warranty
-
-  // Additional features state
-  const [snowChainsSelected, setSnowChainsSelected] = React.useState(false);
-  const [childSeat1to4Count, setChildSeat1to4Count] = React.useState(0);
-  const [childSeat5to12Count, setChildSeat5to12Count] = React.useState(0);
-  const [extraKilometersCount, setExtraKilometersCount] = React.useState(0);
-
-  // Form state
-  const [isHydrated, setIsHydrated] = React.useState(false);
-  const [errors, setErrors] = React.useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-
-  // Queries and mutations
-  const currentUser = useQuery(api.users.get);
   const createReservationMutation = useMutation(
     api.reservations.createReservation,
   );
-
-  // Load data from localStorage after hydration
-  React.useEffect(() => {
-    const storedData = searchStorage.load();
-
-    // Apply stored data with defaults (searchStorage.load() already handles defaults and validation)
-    setDeliveryLocation(
-      storedData.deliveryLocation || searchStorage.getDefaultLocation(),
-    );
-    setRestitutionLocation(
-      storedData.restitutionLocation || searchStorage.getDefaultLocation(),
-    );
-
-    if (storedData.pickupDate) {
-      setPickupDate(storedData.pickupDate);
-    }
-    // Always set times (defaults to 10:00 from searchStorage)
-    setPickupTime(storedData.pickupTime ?? null);
-    if (storedData.returnDate) {
-      setReturnDate(storedData.returnDate);
-    }
-    // Always set times (defaults to 10:00 from searchStorage)
-    setReturnTime(storedData.returnTime ?? null);
-
-    setIsHydrated(true);
-  }, []);
-
-  // Auto-fill personal info when user data is available
-  React.useEffect(() => {
-    if (user && currentUser && isHydrated) {
-      setPersonalInfo((prev) => ({
-        ...prev,
-        name: prev.name || currentUser.name || user.fullName || "",
-        email:
-          prev.email ||
-          currentUser.email ||
-          user.primaryEmailAddress?.emailAddress ||
-          "",
-        phone: prev.phone || currentUser.phone || "",
-        flightNumber: prev.flightNumber || "", // Keep existing flight number if any
-      }));
-    }
-  }, [user, currentUser, isHydrated]);
-
-  // Save changes to localStorage when form data changes (only after hydration)
-  React.useEffect(() => {
-    if (!isHydrated) return;
-
-    searchStorage.save({
-      deliveryLocation: deliveryLocation || undefined,
-      pickupDate: pickupDate,
-      pickupTime: pickupTime,
-      restitutionLocation: restitutionLocation || undefined,
-      returnDate: returnDate,
-      returnTime: returnTime,
-    });
-  }, [
-    deliveryLocation,
-    pickupDate,
-    pickupTime,
-    restitutionLocation,
-    returnDate,
-    returnTime,
-    isHydrated,
-  ]);
 
   const vehicle = useQuery(
     api.vehicles.getById,
@@ -424,67 +348,9 @@ function ReservationPageContent() {
     seasonalPricePerDay,
   } = calculateTotalPrice();
 
-  // Calculate form completion progress
-  const formProgress = React.useMemo(() => {
-    let filledFields = 0;
-    const totalRequiredFields = 9; // Total required fields to track
-
-    // Rental details (6 fields)
-    if (deliveryLocation) filledFields++;
-    if (pickupDate) filledFields++;
-    if (pickupTime) filledFields++;
-    if (restitutionLocation) filledFields++;
-    if (returnDate) filledFields++;
-    if (returnTime) filledFields++;
-
-    // Personal info (3 fields)
-    if (personalInfo.name.trim()) filledFields++;
-    if (personalInfo.email.trim()) filledFields++;
-    if (personalInfo.phone.trim()) filledFields++;
-
-    // Payment (2 fields)
-    if (paymentMethod) filledFields++;
-    if (termsAccepted) filledFields++;
-
-    return Math.round((filledFields / (totalRequiredFields + 2)) * 100);
-  }, [
-    deliveryLocation,
-    pickupDate,
-    pickupTime,
-    restitutionLocation,
-    returnDate,
-    returnTime,
-    personalInfo.name,
-    personalInfo.email,
-    personalInfo.phone,
-    paymentMethod,
-    termsAccepted,
-  ]);
-
-  // Form validation using Zod
-  const validateForm = (): FormErrors =>
-    validateReservationForm(
-      {
-        name: personalInfo.name.trim(),
-        email: personalInfo.email.trim(),
-        phone: personalInfo.phone.trim(),
-        flightNumber: personalInfo.flightNumber?.trim() || undefined,
-        message: personalInfo.message?.trim() || undefined,
-        deliveryLocation,
-        pickupDate,
-        pickupTime: pickupTime || "",
-        restitutionLocation,
-        returnDate,
-        returnTime: returnTime || "",
-        paymentMethod: paymentMethod || undefined,
-        termsAccepted,
-      },
-      t,
-    );
-
   // Handle reservation submission
   const handleSendReservation = async () => {
-    const formErrors = validateForm();
+    const formErrors = validate();
     setErrors(formErrors);
 
     if (hasFormErrors(formErrors)) {
@@ -767,17 +633,7 @@ function ReservationPageContent() {
                       id="res-pickup-datetime"
                       label={t("rentalDetails.pickupDateTime")}
                       dateState={pickupDate}
-                      setDateState={(date) => {
-                        setPickupDate(date);
-                        // Auto-adjust return date if needed
-                        if (
-                          date &&
-                          returnDate &&
-                          date.getTime() > returnDate.getTime()
-                        ) {
-                          setReturnDate(date);
-                        }
-                      }}
+                      setDateState={handlePickupDateChange}
                       timeState={pickupTime}
                       setTimeState={setPickupTime}
                       minDate={today}
@@ -831,20 +687,7 @@ function ReservationPageContent() {
                       id="res-return-datetime"
                       label={t("rentalDetails.returnDateTime")}
                       dateState={returnDate}
-                      setDateState={(date) => {
-                        if (date) {
-                          if (
-                            pickupDate &&
-                            date.getTime() < pickupDate.getTime()
-                          ) {
-                            setReturnDate(pickupDate);
-                          } else {
-                            setReturnDate(date);
-                          }
-                        } else {
-                          setReturnDate(undefined);
-                        }
-                      }}
+                      setDateState={handleReturnDateChange}
                       timeState={returnTime}
                       setTimeState={setReturnTime}
                       minDate={pickupDate || today}
