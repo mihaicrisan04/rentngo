@@ -724,7 +724,14 @@ export const getFleetSummary = query({
     ]);
     const classMap = new Map(vehicleClasses.map((c) => [c._id, c]));
 
-    return vehicles.map((vehicle) => {
+    // Exclude transfer-only inventory: those records describe VIP transfer
+    // vehicles (no rental daily price / rental page) and must not be published
+    // in llms.txt's rental Fleet section.
+    const rentalVehicles = vehicles.filter(
+      (vehicle) => !vehicle.isTransferVehicle,
+    );
+
+    return rentalVehicles.map((vehicle) => {
       const vehicleClass = vehicle.classId
         ? classMap.get(vehicle.classId)
         : undefined;
