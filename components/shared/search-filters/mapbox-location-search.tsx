@@ -71,24 +71,38 @@ export function MapboxLocationSearch({
       return;
     }
 
-    setLoading(true);
+    // Stale-response guard: without it, fast typing over a slow network can
+    // resolve requests out of order and display suggestions for an older
+    // query. `loading` is only set inside the debounced callback so each
+    // keystroke doesn't flash the loading state before the request even fires.
+    let cancelled = false;
 
     const timer = setTimeout(async () => {
+      setLoading(true);
       try {
         const results = await suggestLocations(
           searchValue,
           sessionTokenRef.current
         );
-        setSuggestions(results);
+        if (!cancelled) {
+          setSuggestions(results);
+        }
       } catch (error) {
-        console.error("Error fetching suggestions:", error);
-        setSuggestions([]);
+        if (!cancelled) {
+          console.error("Error fetching suggestions:", error);
+          setSuggestions([]);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }, 200);
 
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [searchValue]);
 
   const handleSelect = React.useCallback(

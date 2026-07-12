@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils"
-import { Avatar, AvatarImage } from "@/components/ui/avatar"
 
 export interface TestimonialAuthor {
   name: string
@@ -36,9 +35,22 @@ export function TestimonialCard({
       )}
     >
       <div className="flex items-center gap-3">
-        <Avatar className="h-12 w-12">
-          <AvatarImage src={author.avatar} alt={author.name} />
-        </Avatar>
+        {/*
+          Plain lazy <img> instead of the Radix Avatar: the marquee renders
+          ~38 cards on the landing page and Radix eagerly preloads every
+          remote avatar via a JS Image() object, firing ~17 third-party
+          requests during first paint.
+        */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={author.avatar}
+          alt={author.name}
+          width={48}
+          height={48}
+          loading="lazy"
+          decoding="async"
+          className="h-12 w-12 shrink-0 rounded-full object-cover"
+        />
         <div className="flex flex-col items-start">
           <h3 className="text-md font-semibold leading-none">
             {author.name}

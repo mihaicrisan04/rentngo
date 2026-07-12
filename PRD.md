@@ -57,6 +57,7 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | Fix Broken Image Uploads | Jul 11 | Direct-to-storage uploads via `files.generateUploadUrl` + per-file POST; narrow `vehicles.addImages` persist; deleted bytes-through-args actions; blob-URL leak fix (RNGO-11) |
 | Dead Code Cleanup | Jul 11 | 16 files (~1,290 lines) deleted: vehicle-card fork orphans, lib email stack, dead hooks/libs, admin settings page; dead `searchAvailableVehicles` query, VehicleSearchFilterForm uncontrolled fallback; deps removed: `@clerk/react`, `@googlemaps/google-maps-services-js`, `framer-motion` (consolidated on `motion`) (RNGO-15) |
 | Server-side Pricing Engine | Jul 11 | Pure `lib/pricing` module (SCDW base-tier×season per owner decision, tiers, seasons, location fees, extras, transfer formula); `createReservation`/`createTransfer` recompute+overwrite money fields; persisted `pricePerDay`/`rentalDays`/`basePrice` + coded `additionalCharges`; Vitest suite (51 tests) + CI test job (RNGO-13) |
+| Frontend Performance | Jul 12 | Split root layouts ([locale] + admin) to drop `headers()` — all public routes now static/ISR (1h) with per-locale `<html lang>`; static-safe Convex fetch helper; mapbox-gl (~1.6MB) code-split out of transfer routes; hero via next/image fill+priority; card image priority for first 4 only; MDX toolchain out of public blog bundles; lazy testimonial avatars; mapbox suggest stale-guard; skip redundant Directions call on restore (RNGO-16) |
 
 ---
 

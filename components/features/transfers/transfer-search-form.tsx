@@ -25,6 +25,12 @@ interface TransferSearchFormProps {
   onRouteCalculated?: (routeInfo: RouteInfo | null) => void;
 }
 
+function routeKey(pickup: LocationData, dropoff: LocationData): string {
+  const { lng: plng, lat: plat } = pickup.coordinates;
+  const { lng: dlng, lat: dlat } = dropoff.coordinates;
+  return `${plng},${plat}|${dlng},${dlat}`;
+}
+
 export function TransferSearchForm({
   initialData,
   onRouteCalculated,
@@ -62,6 +68,11 @@ export function TransferSearchForm({
   const [routeInfo, setRouteInfo] = React.useState<RouteInfo | null>(null);
   const [isHydrated, setIsHydrated] = React.useState(false);
 
+  // Location pair the current routeInfo was calculated (or restored) for.
+  // Lets the route-calculation effect skip the paid Mapbox Directions call
+  // when route info was just restored from storage for the same pair.
+  const routeInfoKeyRef = React.useRef<string | null>(null);
+
   React.useEffect(() => {
     const stored = transferStorage.load();
     if (stored.pickupLocation) setPickupLocation(stored.pickupLocation);
@@ -73,12 +84,21 @@ export function TransferSearchForm({
     if (stored.passengers) setPassengers(stored.passengers);
     if (stored.transferType) setTransferType(stored.transferType);
     if (stored.distanceKm && stored.estimatedDurationMinutes) {
-      setRouteInfo({
+      const restoredInfo = {
         distanceKm: stored.distanceKm,
         durationMinutes: stored.estimatedDurationMinutes,
-      });
+      };
+      setRouteInfo(restoredInfo);
+      if (stored.pickupLocation && stored.dropoffLocation) {
+        routeInfoKeyRef.current = routeKey(
+          stored.pickupLocation,
+          stored.dropoffLocation,
+        );
+        onRouteCalculated?.(restoredInfo);
+      }
     }
     setIsHydrated(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   React.useEffect(() => {
@@ -110,10 +130,22 @@ export function TransferSearchForm({
   ]);
 
   React.useEffect(() => {
+    // Wait for the storage restore to run first, so a restored route isn't
+    // clobbered (and then re-fetched) by this effect's initial null pass.
+    if (!isHydrated) return;
+
     const calculateRoute = async () => {
       if (!pickupLocation || !dropoffLocation) {
+        routeInfoKeyRef.current = null;
         setRouteInfo(null);
         onRouteCalculated?.(null);
+        return;
+      }
+
+      // Route info for this exact pair was already calculated or restored
+      // from storage — skip the redundant (paid) Directions API round-trip.
+      const key = routeKey(pickupLocation, dropoffLocation);
+      if (routeInfoKeyRef.current === key) {
         return;
       }
 
@@ -123,10 +155,12 @@ export function TransferSearchForm({
           pickupLocation.coordinates,
           dropoffLocation.coordinates,
         );
+        routeInfoKeyRef.current = key;
         setRouteInfo(info);
         onRouteCalculated?.(info);
       } catch (error) {
         console.error("Failed to calculate route:", error);
+        routeInfoKeyRef.current = null;
         setRouteInfo(null);
         onRouteCalculated?.(null);
       } finally {
@@ -135,7 +169,7 @@ export function TransferSearchForm({
     };
 
     calculateRoute();
-  }, [pickupLocation, dropoffLocation, onRouteCalculated]);
+  }, [isHydrated, pickupLocation, dropoffLocation, onRouteCalculated]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
