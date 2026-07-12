@@ -28,9 +28,12 @@ const intlMiddleware = createMiddleware({
 export default clerkMiddleware(async (auth, req) => {
   const pathname = req.nextUrl.pathname;
 
-  // Skip internationalization for admin routes, API routes, and static files
+  // Skip internationalization for admin routes, API routes, referral links
+  // (/r/<slug> is a locale-less Route Handler that must not be redirected to
+  // /ro/r/<slug>), and static files
   if (isAdminRoute(req) ||
       pathname.startsWith('/api/') ||
+      pathname.startsWith('/r/') ||
       pathname.startsWith('/_next/') ||
       pathname.includes('.')) {
 
