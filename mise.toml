@@ -20,7 +20,7 @@ run = "convex dev --until-success"
 [tasks."dev:frontend"]
 description = "Start Next.js dev server"
 hide = true
-run = "next dev --webpack"
+run = "next dev"
 
 [tasks."dev:backend"]
 description = "Start Convex dev server"
