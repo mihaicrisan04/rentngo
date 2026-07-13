@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "bun run --parallel dev:frontend dev:backend",
-    "dev:frontend": "next dev --webpack",
+    "dev:frontend": "next dev",
     "dev:backend": "convex dev",
     "predev": "convex dev --until-success && convex dashboard",
     "build": "next build --webpack",
