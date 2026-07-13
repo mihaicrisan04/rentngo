@@ -66,6 +66,7 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | Booking Flow Layout Uniformity | Jul 12 | Layout-only: reservation coupon card into left column (columns balance, no stranded full-width row); car detail title lifted above the grid (level columns, title-first on mobile, removed double gap under rental details); transfers booking heading above grid + coupon into sticky summary sidebar; transfer search form passengers fills the empty right slot on one-way; transfers landing section paddings tightened |
 | Dev Environment (develop → dev.rngo.ro) | Jul 13 | Named Convex deployment `develop` (prod-type, same project) seeded from prod snapshot; Vercel Preview `CONVEX_DEPLOY_KEY` scoped to `develop` branch; `dev.rngo.ro` branch domain; Clerk dev instance + Resend wired; convex 1.42.1 + @convex-dev/resend 0.2.5 |
 | Dev Environment Differentiation | Jul 13 | Non-production deployments noindexed (robots.ts disallow-all + layout robots meta via `VERCEL_ENV`); email sender/subject env-driven (`EMAIL_FROM`, `EMAIL_SUBJECT_PREFIX` → "Rent'n Go [DEV]"/"[DEV] " on develop); email logo origin via `SITE_URL` |
+| Mise Setup | Jul 13 | `mise.toml` with node pinning, `.env.local` loading, and task runner replacing npm scripts |
 
 ---
 

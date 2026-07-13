@@ -55,6 +55,18 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 
 ## Commands
 
+This project uses [mise](https://mise.jdx.dev) for tool version management, env vars, and task running. See `mise.toml` for all tasks.
+
+```bash
+mise dev             # Start development (frontend + backend)
+mise build           # Build for production
+mise lint            # Run linter
+mise run check       # Lint + format check + typecheck
+mise run convex:deploy  # Deploy backend
+```
+
+Fallback (no mise installed):
+
 ```bash
 npm run dev          # Start development (frontend + backend)
 npm run build        # Build for production
