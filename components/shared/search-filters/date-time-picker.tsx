@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { format } from "date-fns";
+import type { Matcher } from "react-day-picker";
 import { CalendarIcon, ChevronDownIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -71,6 +72,18 @@ export function DateTimePicker({
 
   // Use controlled or internal state
   const calendarOpen = controlledCalendarOpen ?? internalCalendarOpen;
+
+  // react-day-picker v10 dropped the `fromDate` prop; fold the min-date lower
+  // bound into the `disabled` matcher alongside the caller's disabled ranges.
+  const disabledMatcher = React.useMemo<Matcher | Matcher[]>(() => {
+    const matchers: Matcher[] = [];
+    if (minDate) matchers.push({ before: minDate });
+    if (disabledDateRanges) {
+      if (Array.isArray(disabledDateRanges)) matchers.push(...disabledDateRanges);
+      else matchers.push(disabledDateRanges);
+    }
+    return matchers;
+  }, [minDate, disabledDateRanges]);
 
   const setCalendarOpen = (open: boolean) => {
     if (onCalendarOpenChange) {
@@ -204,11 +217,10 @@ export function DateTimePicker({
               mode="single"
               selected={dateState}
               onSelect={handleDateChange}
-              fromDate={minDate}
               captionLayout="dropdown"
-              disabled={disabledDateRanges}
-              fromYear={new Date().getFullYear()}
-              toYear={new Date().getFullYear() + 20}
+              disabled={disabledMatcher}
+              startMonth={minDate ?? new Date(new Date().getFullYear(), 0)}
+              endMonth={new Date(new Date().getFullYear() + 20, 11)}
               autoFocus
             />
           </PopoverContent>
