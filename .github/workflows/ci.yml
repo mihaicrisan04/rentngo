@@ -21,7 +21,7 @@ jobs:
       # executes tsc/next/convex/vitest (we never pass --bun), so pin both.
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -42,7 +42,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -59,7 +59,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
 
       - uses: oven-sh/setup-bun@v2
         with:
