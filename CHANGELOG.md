@@ -10,6 +10,9 @@ automatically by [release-please](https://github.com/googleapis/release-please) 
 
 ## [Unreleased]
 
+### Infrastructure
+- Dev environment: `develop` branch now deploys to a dedicated Convex deployment (`develop`, same project) and is served at dev.rngo.ro; upgraded `convex` to 1.42.1 and `@convex-dev/resend` to 0.2.5
+
 ## [2.4.0] - 2026-06-02
 
 ### Added
