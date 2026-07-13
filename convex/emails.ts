@@ -19,7 +19,11 @@ import { ReservationEmailData, TransferEmailData } from "./emails/types";
 export const resend = new Resend(components.resend, { testMode: false });
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "office@rngo.ro";
-const FROM_EMAIL = "Rent'n Go <noreply@rngo.ro>";
+// EMAIL_FROM / EMAIL_SUBJECT_PREFIX are set per Convex deployment so the
+// develop environment sends visibly distinct emails (e.g. "Rent'n Go [DEV]"
+// with "[DEV] " subjects) from the same verified sender domain.
+const FROM_EMAIL = process.env.EMAIL_FROM || "Rent'n Go <noreply@rngo.ro>";
+const SUBJECT_PREFIX = process.env.EMAIL_SUBJECT_PREFIX || "";
 
 // Validators for email data
 const customerInfoValidator = v.object({
@@ -103,7 +107,7 @@ export const sendReservationConfirmationEmail = internalAction({
       await resend.sendEmail(ctx, {
         from: FROM_EMAIL,
         to: [ADMIN_EMAIL],
-        subject: `New reservation request #${args.reservationNumber}`,
+        subject: `${SUBJECT_PREFIX}New reservation request #${args.reservationNumber}`,
         html: adminHtml,
         replyTo: [args.customerInfo.email],
       });
@@ -115,7 +119,7 @@ export const sendReservationConfirmationEmail = internalAction({
       await resend.sendEmail(ctx, {
         from: FROM_EMAIL,
         to: [args.customerInfo.email],
-        subject: `Request submitted #${args.reservationNumber}`,
+        subject: `${SUBJECT_PREFIX}Request submitted #${args.reservationNumber}`,
         html: userHtml,
         replyTo: ["office@rngo.ro"],
       });
@@ -212,7 +216,7 @@ export const sendTransferConfirmationEmail = internalAction({
       await resend.sendEmail(ctx, {
         from: FROM_EMAIL,
         to: [ADMIN_EMAIL],
-        subject: `New Transfer Booking #${args.transferNumber}`,
+        subject: `${SUBJECT_PREFIX}New Transfer Booking #${args.transferNumber}`,
         html: adminHtml,
         replyTo: [args.customerInfo.email],
       });
@@ -226,9 +230,9 @@ export const sendTransferConfirmationEmail = internalAction({
       await resend.sendEmail(ctx, {
         from: FROM_EMAIL,
         to: [args.customerInfo.email],
-        subject: locale === "ro" 
-          ? `Cerere trimisă #${args.transferNumber}` 
-          : `Request submitted #${args.transferNumber}`,
+        subject: locale === "ro"
+          ? `${SUBJECT_PREFIX}Cerere trimisă #${args.transferNumber}`
+          : `${SUBJECT_PREFIX}Request submitted #${args.transferNumber}`,
         html: userHtml,
         replyTo: ["office@rngo.ro"],
       });

@@ -10,6 +10,7 @@ import { Providers, LocaleProviders } from "../providers";
 import { PublicLayout } from "@/components/layout/public-layout";
 import { CookieConsentBanner } from "@/components/shared/consent/cookie-consent-banner";
 import { ReferralCapture } from "@/components/shared/referral/referral-capture";
+import { IS_PRODUCTION_DEPLOYMENT } from "@/lib/env";
 
 const locales = ["ro", "en"];
 
@@ -36,17 +37,22 @@ export const metadata: Metadata = {
   authors: [{ name: "Rent'n Go" }],
   creator: "Rent'n Go",
   publisher: "Rent'n Go",
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-    },
-  },
+  robots: IS_PRODUCTION_DEPLOYMENT
+    ? {
+        index: true,
+        follow: true,
+        googleBot: {
+          index: true,
+          follow: true,
+          "max-video-preview": -1,
+          "max-image-preview": "large",
+          "max-snippet": -1,
+        },
+      }
+    : {
+        index: false,
+        follow: false,
+      },
   openGraph: {
     type: "website",
     locale: "ro_RO",
