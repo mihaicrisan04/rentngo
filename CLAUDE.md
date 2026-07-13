@@ -68,12 +68,17 @@ mise run convex:deploy  # Deploy backend
 Fallback (no mise installed):
 
 ```bash
-npm run dev          # Start development (frontend + backend)
-npm run build        # Build for production
-npm run lint         # Run linter
-npx convex deploy    # Deploy backend
-npm run typecheck:fast # tsgo, fast + advisory; run the real `npm run typecheck` (tsc) before a PR
+bun run dev          # Start development (frontend + backend)
+bun run build        # Build for production
+bun run lint         # Run linter
+bunx convex deploy   # Deploy backend
+bun run typecheck:fast # tsgo, fast + advisory; run the real `bun run typecheck` (tsc) before a PR
 ```
+
+**Package manager: bun is PM + script-runner only — Node stays the runtime.** `bun install`
+and `bun run <script>` are fine, but **never pass `--bun`** to `next` or `convex` (both have
+open bugs under the bun runtime — Convex WS 101 on deploy, Next 16 build resolution errors).
+Scripts invoke `next`/`convex` via the default shebang, so they run under Node.
 
 ## Project Structure
 
