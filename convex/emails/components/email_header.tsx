@@ -1,6 +1,10 @@
 import * as React from "react";
 import { Section, Img, Text } from "@react-email/components";
 
+// SITE_URL is set per Convex deployment (https://dev.rngo.ro on develop) so
+// demo emails don't point back at the production site.
+const SITE_URL = process.env.SITE_URL || "https://rngo.ro";
+
 interface EmailHeaderProps {
   title: string;
   logoUrl?: string;
@@ -9,7 +13,7 @@ interface EmailHeaderProps {
 
 export const EmailHeader: React.FC<EmailHeaderProps> = ({
   title,
-  logoUrl = "https://rngo.ro/_next/image?url=%2Flogo.png&w=256&q=75",
+  logoUrl = `${SITE_URL}/_next/image?url=%2Flogo.png&w=256&q=75`,
   logoAlt = "Rent'n Go Logo",
 }) => {
   return (

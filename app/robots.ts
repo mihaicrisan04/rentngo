@@ -1,4 +1,5 @@
 import { MetadataRoute } from "next";
+import { IS_PRODUCTION_DEPLOYMENT } from "@/lib/env";
 
 const DISALLOWED_PATHS = ["/admin/", "/api/"];
 
@@ -41,6 +42,14 @@ const AI_CRAWLERS = [
 ];
 
 export default function robots(): MetadataRoute.Robots {
+  // Preview deployments (dev.rngo.ro) would otherwise be indexed as duplicate
+  // content competing with rngo.ro.
+  if (!IS_PRODUCTION_DEPLOYMENT) {
+    return {
+      rules: [{ userAgent: "*", disallow: "/" }],
+    };
+  }
+
   return {
     rules: [
       {
