@@ -13,6 +13,8 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "typecheck:fast": "tsgo --noEmit --tsBuildInfoFile .tsgo-cache/tsconfig.tsbuildinfo",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -93,6 +95,7 @@
     "@types/node": "^22.20.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.2.10",
     "npm-run-all": "^4.1.5",

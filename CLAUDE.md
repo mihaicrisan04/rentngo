@@ -72,6 +72,7 @@ npm run dev          # Start development (frontend + backend)
 npm run build        # Build for production
 npm run lint         # Run linter
 npx convex deploy    # Deploy backend
+npm run typecheck:fast # tsgo, fast + advisory; run the real `npm run typecheck` (tsc) before a PR
 ```
 
 ## Project Structure
