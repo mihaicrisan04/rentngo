@@ -54,6 +54,7 @@ RentNGo is a car rental platform with VIP transfer services for the Romanian mar
 | Release Automation | Jun 2 | release-please (Conventional Commits → release PR, tag, GitHub Release). Reconciled `package.json` to 2.4.0 to match CHANGELOG |
 | CI Quality Gate | Jun 2 | GitHub Actions runs `tsc --noEmit` on PRs to main/develop. Build verified via Vercel preview |
 | Fix ESLint Config | Jun 2 | `npm run lint` was crashing (FlatCompat + ESLint 9.39); switched to Next 16 native flat-config exports — lint runs again |
+| Security Hardening | Jul 11 | `requireAdmin` on all 28 unguarded admin Convex writes (vehicles, blogs, seasons, vehicleClasses, transferPricing), booking ownership checks, auth on PII queries + email route (RNGO-10) |
 | Fix Broken Image Uploads | Jul 11 | Direct-to-storage uploads via `files.generateUploadUrl` + per-file POST; narrow `vehicles.addImages` persist; deleted bytes-through-args actions; blob-URL leak fix (RNGO-11) |
 | Dead Code Cleanup | Jul 11 | 16 files (~1,290 lines) deleted: vehicle-card fork orphans, lib email stack, dead hooks/libs, admin settings page; dead `searchAvailableVehicles` query, VehicleSearchFilterForm uncontrolled fallback; deps removed: `@clerk/react`, `@googlemaps/google-maps-services-js`, `framer-motion` (consolidated on `motion`) (RNGO-15) |
 | Server-side Pricing Engine | Jul 11 | Pure `lib/pricing` module (SCDW base-tier×season per owner decision, tiers, seasons, location fees, extras, transfer formula); `createReservation`/`createTransfer` recompute+overwrite money fields; persisted `pricePerDay`/`rentalDays`/`basePrice` + coded `additionalCharges`; Vitest suite (51 tests) + CI test job (RNGO-13) |
@@ -112,12 +113,11 @@ Tasks from a full audit of Convex functions against official guidelines and best
 
 ## Planned Tasks — July 2026 Roadmap
 
-Full plans in `.claude/plans/` (one file per workstream); tackle order + client decisions needed in `.claude/plans/00-priorities.md`. Based on the 103-finding audit in `AUDIT.md` + client feature requests.
+Full plans in `.claude/plans/` (one file per workstream); tackle order + client decisions needed in `.claude/plans/00-priorities.md`. Based on the 103-finding audit (fully converted to Linear — see the "Audit remediation & client roadmap" project; original `AUDIT.md` removed Jul 15, coverage map lives in `audit-misc-bugs.md`) + client feature requests.
 
 | Priority | Task | Plan |
 |----------|------|------|
-| P0 | Security: auth on 28 admin Convex writes, ownership checks, PII queries, email route | `audit-pricing-security.md` |
-| P0 | Clerk→Convex user sync via webhooks + safety net (RNGO-32) — **code implemented, awaiting deploy + config** (set `CLERK_WEBHOOK_SECRET`, register Clerk webhook endpoints, run backfill) | `clerk-convex-user-sync.md` |
+| P0 | Clerk→Convex user sync via webhooks + safety net (RNGO-32) — **live on dev** (webhook + secret + deploy + backfill done); prod config pending | `clerk-convex-user-sync.md` |
 | P1 | Convex perf: counter doc, indexes, pagination, stats | `audit-convex-performance.md` (absorbs "Convex Hardening" section above) |
 | P2 | Admin dialog dedup; frontend perf; i18n extraction; misc bug batches | `audit-*.md` |
 | P3 | AI-SEO pages (robots/llms.txt/FAQ/local business) | `feature-ai-seo.md` |
