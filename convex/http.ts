@@ -8,12 +8,12 @@ const http = httpRouter();
 
 /**
  * Clerk webhook endpoint (registered in the Clerk dashboard as
- * https://<deployment>.convex.site/clerk-webhook, subscribed to
+ * https://<deployment>.convex.site/webhooks/clerk, subscribed to
  * user.created, user.updated and user.deleted). Primary Clerk -> Convex
  * user sync; getOrCreateCurrentUser in booking mutations is the safety net.
  */
 http.route({
-  path: "/clerk-webhook",
+  path: "/webhooks/clerk",
   method: "POST",
   handler: httpAction(async (ctx, request) => {
     const event = await validateRequest(request);
