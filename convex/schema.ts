@@ -17,6 +17,10 @@ export default defineSchema({
         notifications: v.boolean(),
       }),
     ),
+    // Soft delete (set by the Clerk user.deleted webhook or self-serve
+    // removal). PII is anonymized at the same time; userId references in
+    // reservations/transfers/affiliates stay valid.
+    deletedAt: v.optional(v.number()),
   })
     .index("by_email", ["email"])
     .index("by_clerk_id", ["clerkId"]),

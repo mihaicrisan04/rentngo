@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { getCurrentUser, getCurrentUserOrThrow, requireAdmin } from "./users";
+import { getCurrentUser, getOrCreateCurrentUser, requireAdmin } from "./users";
 import { applyAndRedeemCoupon } from "./coupons";
 import {
   recordReferralConversion,
@@ -81,8 +81,10 @@ export const createTransfer = mutation({
     transferNumber: v.number(),
   }),
   handler: async (ctx, args) => {
-    // Derive the user from auth — never trust a client-supplied userId
-    const currentUser = await getCurrentUser(ctx);
+    // Derive the user from auth — never trust a client-supplied userId.
+    // Creates the row from the JWT when the Clerk webhook sync hasn't
+    // landed yet, so a missed webhook can't block or orphan a booking.
+    const currentUser = await getOrCreateCurrentUser(ctx);
 
     // Sanity-check the distance before any fare math. The fare FORMULA is
     // server-authoritative, but distanceKm itself still comes from the
@@ -465,7 +467,10 @@ export const cancelTransfer = mutation({
     transferId: v.id("transfers"),
   },
   handler: async (ctx, args) => {
-    const user = await getCurrentUserOrThrow(ctx);
+    const user = await getOrCreateCurrentUser(ctx);
+    if (!user) {
+      throw new Error("User not authenticated.");
+    }
 
     const transfer = await ctx.db.get(args.transferId);
     if (!transfer) {
