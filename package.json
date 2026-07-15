@@ -87,6 +87,7 @@
     "remark-gfm": "^4.0.1",
     "resend": "^6.17.2",
     "sonner": "^2.0.7",
+    "svix": "^1.96.1",
     "tailwind-merge": "^3.6.0",
     "vaul": "^1.1.2",
     "zod": "^4.4.3"

@@ -2,7 +2,12 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
-import { getCurrentUser, getCurrentUserOrThrow, requireAdmin } from "./users";
+import {
+  getCurrentUser,
+  getCurrentUserOrThrow,
+  getOrCreateCurrentUser,
+  requireAdmin,
+} from "./users";
 import { applyAndRedeemCoupon } from "./coupons";
 import {
   recordReferralConversion,
@@ -113,8 +118,10 @@ export const createReservation = mutation({
     assertValidReservationExtras(args.extras);
 
     // Get the current authenticated user (if any) — never trust a
-    // client-supplied userId
-    const currentUser = await getCurrentUser(ctx);
+    // client-supplied userId. Creates the row from the JWT when the Clerk
+    // webhook sync hasn't landed yet, so a missed webhook can't block or
+    // orphan a booking.
+    const currentUser = await getOrCreateCurrentUser(ctx);
 
     const vehicle = await ctx.db.get(args.vehicleId);
     if (!vehicle) {
@@ -530,7 +537,10 @@ export const updateReservationStatus = mutation({
     newStatus: reservationStatusValidator,
   },
   handler: async (ctx, args) => {
-    const user = await getCurrentUserOrThrow(ctx);
+    const user = await getOrCreateCurrentUser(ctx);
+    if (!user) {
+      throw new Error("User not authenticated.");
+    }
 
     const reservation = await ctx.db.get(args.reservationId);
     if (!reservation) {
@@ -586,7 +596,10 @@ export const updateReservationDetails = mutation({
     seasonalMultiplier: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const user = await getCurrentUserOrThrow(ctx);
+    const user = await getOrCreateCurrentUser(ctx);
+    if (!user) {
+      throw new Error("User not authenticated.");
+    }
     const { reservationId, ...updatesIn } = args;
 
     const reservation = await ctx.db.get(reservationId);
@@ -641,7 +654,10 @@ export const updateReservationDetails = mutation({
 export const cancelReservation = mutation({
   args: { reservationId: v.id("reservations") },
   handler: async (ctx, args) => {
-    const user = await getCurrentUserOrThrow(ctx);
+    const user = await getOrCreateCurrentUser(ctx);
+    if (!user) {
+      throw new Error("User not authenticated.");
+    }
 
     const reservation = await ctx.db.get(args.reservationId);
     if (!reservation) {

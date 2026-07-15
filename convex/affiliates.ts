@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query, MutationCtx, QueryCtx } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
-import { getCurrentUser, requireAdmin } from "./users";
+import { getCurrentUser, getOrCreateCurrentUser, requireAdmin } from "./users";
 import {
   computeReferredDiscount,
   computeReferrerReward,
@@ -170,8 +170,9 @@ export const listAffiliates = query({
             affiliate.confirmedConversions,
             affiliate.rewardPercentOverride,
           ),
-          userName: user?.name ?? "(deleted user)",
-          userEmail: user?.email ?? "",
+          userName:
+            user && user.deletedAt === undefined ? user.name : "(deleted user)",
+          userEmail: user && user.deletedAt === undefined ? user.email : "",
         };
       }),
     );
@@ -221,7 +222,7 @@ export const createAffiliate = mutation({
         q.eq("email", args.userEmail.trim()),
       )
       .first();
-    if (!user) {
+    if (!user || user.deletedAt !== undefined) {
       throw new Error(
         "No user with that email. They must sign in once before becoming an affiliate.",
       );
@@ -400,8 +401,9 @@ export const recordReferralAttribution = mutation({
 
     // Self-referral guard (where determinable): an affiliate clicking their
     // own link while signed in gets no attribution. The email-based guard at
-    // booking time covers the rest.
-    const currentUser = await getCurrentUser(ctx);
+    // booking time covers the rest. Get-or-create so a signed-in visitor the
+    // webhook sync missed still gets their row created here.
+    const currentUser = await getOrCreateCurrentUser(ctx);
     if (currentUser && currentUser._id === affiliate.userId) return null;
 
     const now = Date.now();
@@ -494,7 +496,12 @@ export async function resolveAffiliateCandidates(
         : null;
 
     if (affiliate && affiliate.isActive) {
-      const ownerUser = await ctx.db.get(affiliate.userId);
+      // A soft-deleted owner is treated as missing — eligibility fails closed
+      const ownerUserDoc = await ctx.db.get(affiliate.userId);
+      const ownerUser =
+        ownerUserDoc && ownerUserDoc.deletedAt === undefined
+          ? ownerUserDoc
+          : null;
 
       // One referred discount/conversion per customer per affiliate: any
       // live (non-voided) prior conversion blocks a repeat; voided ones (the

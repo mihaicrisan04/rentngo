@@ -117,6 +117,7 @@ Full plans in `.claude/plans/` (one file per workstream); tackle order + client 
 | Priority | Task | Plan |
 |----------|------|------|
 | P0 | Security: auth on 28 admin Convex writes, ownership checks, PII queries, email route | `audit-pricing-security.md` |
+| P0 | Clerk→Convex user sync via webhooks + safety net (RNGO-32) — **code implemented, awaiting deploy + config** (set `CLERK_WEBHOOK_SECRET`, register Clerk webhook endpoints, run backfill) | `clerk-convex-user-sync.md` |
 | P1 | Convex perf: counter doc, indexes, pagination, stats | `audit-convex-performance.md` (absorbs "Convex Hardening" section above) |
 | P2 | Admin dialog dedup; frontend perf; i18n extraction; misc bug batches | `audit-*.md` |
 | P3 | AI-SEO pages (robots/llms.txt/FAQ/local business) | `feature-ai-seo.md` |

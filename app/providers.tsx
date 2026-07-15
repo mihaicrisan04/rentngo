@@ -3,7 +3,6 @@
 import ConvexClientProvider from "@/components/shared/providers/convex-client-provider";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "next-themes";
-import { UserEnsurer } from "@/components/shared/auth/user-ensurer";
 import { Toaster } from "@/components/ui/sonner";
 import { NextIntlClientProvider } from 'next-intl';
 
@@ -16,17 +15,15 @@ export function Providers({
   return (
     <ClerkProvider>
       <ConvexClientProvider>
-        <UserEnsurer>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange={false}
-          >
-            {children}
-            <Toaster />
-          </ThemeProvider>
-        </UserEnsurer>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange={false}
+        >
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </ConvexClientProvider>
     </ClerkProvider>
   )

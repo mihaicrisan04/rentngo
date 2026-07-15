@@ -10,6 +10,9 @@ automatically by [release-please](https://github.com/googleapis/release-please) 
 
 ## [Unreleased]
 
+### Fixed
+- Clerk→Convex user sync (RNGO-32): users are now synced server-side via Clerk webhooks (`POST /webhooks/clerk` Convex HTTP action, Svix-verified) handling `user.created`/`user.updated`/`user.deleted`, with an idempotent `getOrCreateCurrentUser` safety net in renter-facing booking mutations; `user.deleted` and self-serve account removal soft-delete + anonymize the row (`deletedAt` + PII scrub) so booking references stay valid; client-side `UserEnsurer`/`ensureUser` removed; one-off Clerk backfill action added (`migrations/backfillClerkUsers`). Awaiting deploy + Clerk dashboard/webhook-secret config.
+
 ### Infrastructure
 - Dev environment: `develop` branch now deploys to a dedicated Convex deployment (`develop`, same project) and is served at dev.rngo.ro; upgraded `convex` to 1.42.1 and `@convex-dev/resend` to 0.2.5
 - Non-production deployments are excluded from search indexing (robots.txt + noindex meta), and dev emails are visibly differentiated (env-driven sender name, `[DEV]` subject prefix, site-URL-aware logo)
