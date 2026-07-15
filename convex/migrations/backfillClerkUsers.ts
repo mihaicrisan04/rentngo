@@ -24,8 +24,13 @@ export default internalAction({
     let processed = 0;
 
     for (;;) {
+      const params = new URLSearchParams({
+        limit: String(PAGE_SIZE),
+        offset: String(offset),
+        order_by: "+created_at",
+      });
       const response = await fetch(
-        `https://api.clerk.com/v1/users?limit=${PAGE_SIZE}&offset=${offset}&order_by=+created_at`,
+        `https://api.clerk.com/v1/users?${params}`,
         { headers: { Authorization: `Bearer ${secretKey}` } },
       );
       if (!response.ok) {
