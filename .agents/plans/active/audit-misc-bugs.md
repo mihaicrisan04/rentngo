@@ -1,3 +1,9 @@
+---
+linear: unlinked
+last-verified: 2026-07-22
+verification-source: repository-only
+---
+
 # Remediation Plan — Miscellaneous Bugs & Boundary Fixes (catch-all)
 
 This plan is the **catch-all** for the thermo-nuclear audit. It owns every AUDIT.md

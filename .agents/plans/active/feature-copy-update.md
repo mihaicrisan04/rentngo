@@ -1,3 +1,9 @@
+---
+linear: unlinked
+last-verified: 2026-07-22
+verification-source: repository-only
+---
+
 # Feature: Site Copy / Text Update ("texte" from client)
 
 ## Status: waiting on copy from client

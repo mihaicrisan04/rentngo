@@ -1,0 +1,11 @@
+.next/
+.claude/worktrees/
+.tsgo-cache/
+.vercel/
+.agents/plans/
+.agents/skills/convex*/
+convex/_generated/
+node_modules/
+coverage/
+bun.lock
+*.tsbuildinfo

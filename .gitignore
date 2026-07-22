@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/.agents/artifacts/
+/.claude/worktrees/
 
 # next.js
 /.next/

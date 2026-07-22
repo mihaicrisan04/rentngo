@@ -1,3 +1,9 @@
+---
+linear: unlinked
+last-verified: 2026-07-22
+verification-source: repository-only
+---
+
 # Feature: modificare calendar (calendar modification)
 
 > **Client brief was literally just "modificare calendar" with no further detail.**
