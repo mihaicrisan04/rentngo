@@ -55,8 +55,25 @@ run = "prettier --check ."
 
 [tasks.check]
 alias = "c"
-description = "Run lint + format check + typecheck"
-depends = ["lint", "format:check", "typecheck"]
+description = "Run lint + format check + typecheck + tests"
+depends = ["agents:check", "lint", "format:check", "typecheck", "test"]
+
+[tasks."agents:check"]
+description = "Validate agent instructions, skills, and compatibility symlinks"
+run = "bun run agents:check"
+
+[tasks."agents:refresh-convex"]
+description = "Refresh official Convex AI files and restore portable skill adapters"
+run = "bun run agents:refresh-convex"
+
+[tasks.test]
+alias = "t"
+description = "Run unit tests"
+run = "bun run test"
+
+[tasks."test:watch"]
+description = "Run unit tests in watch mode"
+run = "bun run test:watch"
 
 [tasks.typecheck]
 alias = "tc"

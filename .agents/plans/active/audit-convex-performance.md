@@ -1,3 +1,9 @@
+---
+linear: unlinked
+last-verified: 2026-07-22
+verification-source: repository-only
+---
+
 # Convex Backend Performance & Convention Remediation
 
 ## Scope

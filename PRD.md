@@ -2,6 +2,8 @@
 
 **Last Updated:** June 2, 2026
 
+Linear is the source of truth for task status, priority, assignment, and roadmap ordering. Task tables below are historical product context and may lag Linear. Files under `.agents/plans/` preserve implementation context and are not an issue tracker.
+
 ---
 
 ## Product Overview
@@ -113,7 +115,7 @@ Tasks from a full audit of Convex functions against official guidelines and best
 
 ## Planned Tasks — July 2026 Roadmap
 
-Full plans in `.claude/plans/` (one file per workstream); tackle order + client decisions needed in `.claude/plans/00-priorities.md`. Based on the 103-finding audit (fully converted to Linear — see the "Audit remediation & client roadmap" project; original `AUDIT.md` removed Jul 15, coverage map lives in `audit-misc-bugs.md`) + client feature requests.
+Historical implementation plans live under `.agents/plans/`. Check Linear before using their status or ordering. Audit findings were converted to the "Audit remediation & client roadmap" Linear project; the coverage map remains in `audit-misc-bugs.md`.
 
 | Priority | Task | Plan |
 |----------|------|------|

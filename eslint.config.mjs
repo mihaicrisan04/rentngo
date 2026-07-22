@@ -3,7 +3,13 @@ import nextTypescript from "eslint-config-next/typescript";
 
 const eslintConfig = [
   {
-    ignores: [".next/**", "convex/_generated/**", "node_modules/**"],
+    ignores: [
+      ".next/**",
+      ".claude/worktrees/**",
+      ".vercel/**",
+      "convex/_generated/**",
+      "node_modules/**",
+    ],
   },
   ...nextCoreWebVitals,
   ...nextTypescript,
