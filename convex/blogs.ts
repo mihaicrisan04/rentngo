@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { paginationOptsValidator } from "convex/server";
 import { query, mutation } from "./_generated/server";
 import { requireAdmin } from "./users";
+import { getBlogUpdatePatch } from "../lib/blog-cover-update";
 
 const localeValidator = v.union(v.literal("ro"), v.literal("en"));
 
@@ -406,7 +407,7 @@ export const update = mutation({
     description_en: v.optional(v.string()),
     content_ro: v.optional(v.string()),
     content_en: v.optional(v.string()),
-    coverImage: v.optional(v.id("_storage")),
+    coverImage: v.optional(v.union(v.id("_storage"), v.null())),
     images: v.optional(v.array(v.id("_storage"))),
     tags: v.optional(v.array(v.string())),
     publishedAt: v.optional(v.number()),
@@ -418,7 +419,7 @@ export const update = mutation({
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
-    const { id, ...updates } = args;
+    const { id, coverImage, ...updates } = args;
 
     if (updates.slug_ro) {
       const existing = await ctx.db
@@ -440,7 +441,7 @@ export const update = mutation({
       }
     }
 
-    await ctx.db.patch(id, updates);
+    await ctx.db.patch(id, getBlogUpdatePatch(updates, coverImage));
   },
 });
 

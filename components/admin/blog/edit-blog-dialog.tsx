@@ -45,6 +45,7 @@ import { generateSlugFromTitle, calculateReadingTime } from "@/lib/blog-utils";
 import { Badge } from "@/components/ui/badge";
 import { BlogPreview } from "@/components/features/blog/blog-preview";
 import { useImageUpload } from "@/hooks/use-image-upload";
+import { getCoverImagePayload } from "@/lib/blog-cover-update";
 
 const Tabs = TabsPrimitive.Root;
 const TabsList = TabsPrimitive.List;
@@ -457,7 +458,7 @@ export function EditBlogDialog({
         content_en: data.content_en,
         status: data.status,
         tags: data.tags || [],
-        coverImage: coverImageId,
+        coverImage: getCoverImagePayload(coverImageId),
         images: uploadedImageIds,
         publishedAt,
         readingTime_ro: data.readingTime_ro,
@@ -469,9 +470,8 @@ export function EditBlogDialog({
       setPendingImageIds([]);
       // The save dropped the removed images from the blog's `images`, so
       // their storage can go too — except IDs still used inside the markdown
-      // content (admins paste storage IDs there) or still set as the server's
-      // cover (clearing the cover doesn't persist an unset, see coverImage
-      // above), where deleting would break the rendered blog.
+      // content or the former cover. Client cleanup cannot prove those files
+      // are unreferenced elsewhere, so leave them for storage GC.
       const deletableIds = removedImageIds.filter(
         (id) =>
           id !== fullBlog?.coverImage &&
