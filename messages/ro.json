@@ -415,6 +415,13 @@
         "successBody": "Transferul #{number} a fost confirmat.",
         "failedTitle": "Transferul nu a putut fi rezervat",
         "failedBody": "Încercați din nou sau contactați echipa de suport."
+      },
+      "errors": {
+        "routeChanged": "Traseul sau prețul s-a modificat. Revino la căutarea traseului și recalculează înainte de rezervare.",
+        "invalidCoordinates": "Selectează locații valide de preluare și destinație, apoi recalculează traseul.",
+        "noRoute": "Nu a fost găsit un traseu rutier între aceste locații. Alege alt traseu.",
+        "providerUnavailable": "Nu putem verifica traseul momentan. Încearcă din nou în scurt timp.",
+        "clientUpgradeRequired": "Această pagină de rezervare este învechită. Reîncarcă pagina și încearcă din nou."
       }
     },
     "confirmation": {

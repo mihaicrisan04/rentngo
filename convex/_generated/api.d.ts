@@ -38,6 +38,7 @@ import type * as migrations_clearDeprecatedPricePerDay from "../migrations/clear
 import type * as migrations_migrateVehicleClasses from "../migrations/migrateVehicleClasses.js";
 import type * as migrations_seedVehicleClasses from "../migrations/seedVehicleClasses.js";
 import type * as reservations from "../reservations.js";
+import type * as routing from "../routing.js";
 import type * as seasons from "../seasons.js";
 import type * as transferPricing from "../transferPricing.js";
 import type * as transfers from "../transfers.js";
@@ -82,6 +83,7 @@ declare const fullApi: ApiFromModules<{
   "migrations/migrateVehicleClasses": typeof migrations_migrateVehicleClasses;
   "migrations/seedVehicleClasses": typeof migrations_seedVehicleClasses;
   reservations: typeof reservations;
+  routing: typeof routing;
   seasons: typeof seasons;
   transferPricing: typeof transferPricing;
   transfers: typeof transfers;

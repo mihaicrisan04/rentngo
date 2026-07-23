@@ -1,6 +1,13 @@
-import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { ConvexError, v, type Infer } from "convex/values";
+import {
+  action,
+  internalMutation,
+  mutation,
+  query,
+  type MutationCtx,
+} from "./_generated/server";
 import { internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import { getCurrentUser, getOrCreateCurrentUser, requireAdmin } from "./users";
 import { applyAndRedeemCoupon } from "./coupons";
 import {
@@ -13,9 +20,11 @@ import {
   applyDiscountToTotal,
   assertValidTransferDistance,
   computeTransferPricing,
+  isWithinDistanceTolerance,
   pickDiscount,
   type AppliedDiscount,
 } from "../lib/pricing";
+import { resolveRouteDistance } from "./routing";
 
 const transferStatusValidator = v.union(
   v.literal("pending"),
@@ -48,211 +57,232 @@ const paymentMethodValidator = v.union(
   v.literal("card_online"),
 );
 
-export const createTransfer = mutation({
-  args: {
-    userId: v.optional(v.id("users")),
-    vehicleId: v.id("vehicles"),
-    transferType: v.union(v.literal("one_way"), v.literal("round_trip")),
-    pickupLocation: locationValidator,
-    pickupDate: v.number(),
-    pickupTime: v.string(),
-    dropoffLocation: locationValidator,
-    returnDate: v.optional(v.number()),
-    returnTime: v.optional(v.string()),
-    passengers: v.number(),
+const transferBookingValidator = v.object({
+  vehicleId: v.id("vehicles"),
+  transferType: v.union(v.literal("one_way"), v.literal("round_trip")),
+  pickupLocation: locationValidator,
+  pickupDate: v.number(),
+  pickupTime: v.string(),
+  dropoffLocation: locationValidator,
+  returnDate: v.optional(v.number()),
+  returnTime: v.optional(v.string()),
+  passengers: v.number(),
+  distanceKm: v.number(),
+  estimatedDurationMinutes: v.number(),
+  customerInfo: customerInfoValidator,
+  paymentMethod: paymentMethodValidator,
+  luggageCount: v.optional(v.number()),
+  // Coupon code to redeem — validated server-side; an invalid code fails
+  // the booking
+  promoCode: v.optional(v.string()),
+  // Referral cookie payload — see createReservation; never fails the booking
+  referral: v.optional(referralArgValidator),
+  locale: v.optional(v.string()),
+});
+
+const legacyTransferValidator = transferBookingValidator.extend({
+  userId: v.optional(v.id("users")),
+  baseFare: v.number(),
+  distancePrice: v.number(),
+  totalPrice: v.number(),
+  pricePerKm: v.number(),
+});
+
+const transferWriteValidator = transferBookingValidator
+  .omit("distanceKm", "estimatedDurationMinutes")
+  .extend({
     distanceKm: v.number(),
     estimatedDurationMinutes: v.number(),
-    baseFare: v.number(),
-    distancePrice: v.number(),
-    totalPrice: v.number(),
-    pricePerKm: v.number(),
-    customerInfo: customerInfoValidator,
-    paymentMethod: paymentMethodValidator,
-    luggageCount: v.optional(v.number()),
-    // Coupon code to redeem — validated server-side; an invalid code fails
-    // the booking
-    promoCode: v.optional(v.string()),
-    // Referral cookie payload — see createReservation; never fails the booking
-    referral: v.optional(referralArgValidator),
-    locale: v.optional(v.string()),
-  },
-  returns: v.object({
-    transferId: v.id("transfers"),
-    transferNumber: v.number(),
-  }),
-  handler: async (ctx, args) => {
-    // Derive the user from auth — never trust a client-supplied userId.
-    // Creates the row from the JWT when the Clerk webhook sync hasn't
-    // landed yet, so a missed webhook can't block or orphan a booking.
-    const currentUser = await getOrCreateCurrentUser(ctx);
+    distanceSource: v.union(
+      v.literal("server_mapbox"),
+      v.literal("route_cache"),
+    ),
+  });
 
-    // Sanity-check the distance before any fare math. The fare FORMULA is
-    // server-authoritative, but distanceKm itself still comes from the
-    // client's Mapbox route — re-deriving it server-side from the stored
-    // coordinates is tracked as RNGO-30. This clamp only blocks the worst
-    // abuse (negative/non-finite/absurd values setting a bogus fare).
-    assertValidTransferDistance(args.distanceKm);
+const transferResultValidator = v.object({
+  transferId: v.id("transfers"),
+  transferNumber: v.number(),
+});
 
-    // Authoritative fare recompute from server data; client-submitted money
-    // fields are never persisted
-    const vehicle = await ctx.db.get(args.vehicleId);
-    if (!vehicle) {
-      throw new Error("Vehicle not found.");
-    }
-    const vehicleClass = vehicle.classId
-      ? await ctx.db.get(vehicle.classId)
-      : null;
-    const tiers = await ctx.db.query("transferPricingTiers").collect();
+type TransferWriteArgs = Infer<typeof transferWriteValidator>;
+interface TransferResult {
+  transferId: Id<"transfers">;
+  transferNumber: number;
+}
 
-    const fare = computeTransferPricing({
-      distanceKm: args.distanceKm,
-      transferType: args.transferType,
-      vehicleClass,
-      tiers,
-    });
+async function createTransferHandler(
+  ctx: MutationCtx,
+  args: TransferWriteArgs,
+): Promise<TransferResult> {
+  // Derive the user from auth — never trust a client-supplied userId.
+  // Creates the row from the JWT when the Clerk webhook sync hasn't
+  // landed yet, so a missed webhook can't block or orphan a booking.
+  const currentUser = await getOrCreateCurrentUser(ctx);
 
-    // Soft drift telemetry during rollout: the server value always wins
-    if (Math.abs(args.totalPrice - fare.totalPrice) > 0.5) {
-      console.warn("[pricing] createTransfer client/server total mismatch", {
-        clientTotal: args.totalPrice,
-        serverTotal: fare.totalPrice,
-        vehicleId: args.vehicleId,
-        distanceKm: args.distanceKm,
-        transferType: args.transferType,
-      });
-    }
+  assertValidTransferDistance(args.distanceKm);
 
-    // Single-discount seam — same shape as createReservation: coupon
-    // redemption is transactional (see applyAndRedeemCoupon for the OCC
-    // argument) and a present coupon always beats the automatic affiliate
-    // candidates in pickDiscount.
-    const redeemedCoupon = args.promoCode?.trim()
-      ? await applyAndRedeemCoupon(ctx, {
-          code: args.promoCode,
-          bookingType: "transfers",
-          subtotal: fare.totalPrice,
-          userId: currentUser?._id,
-          customerEmail: args.customerInfo.email,
-        })
-      : null;
-    const affiliateCandidates = await resolveAffiliateCandidates(ctx, {
-      referral: args.referral,
-      currentUser,
-      customerEmail: args.customerInfo.email,
-      subtotal: fare.totalPrice,
-    });
+  // Authoritative fare recompute from server data; client-submitted money
+  // fields are never persisted
+  const vehicle = await ctx.db.get(args.vehicleId);
+  if (!vehicle) {
+    throw new Error("Vehicle not found.");
+  }
+  const vehicleClass = vehicle.classId
+    ? await ctx.db.get(vehicle.classId)
+    : null;
+  const tiers = await ctx.db.query("transferPricingTiers").collect();
 
-    const couponDiscount: AppliedDiscount | null = redeemedCoupon
+  const fare = computeTransferPricing({
+    distanceKm: args.distanceKm,
+    transferType: args.transferType,
+    vehicleClass,
+    tiers,
+  });
+
+  // Single-discount seam — same shape as createReservation: coupon
+  // redemption is transactional (see applyAndRedeemCoupon for the OCC
+  // argument) and a present coupon always beats the automatic affiliate
+  // candidates in pickDiscount.
+  const redeemedCoupon = args.promoCode?.trim()
+    ? await applyAndRedeemCoupon(ctx, {
+        code: args.promoCode,
+        bookingType: "transfers",
+        subtotal: fare.totalPrice,
+        userId: currentUser?._id,
+        customerEmail: args.customerInfo.email,
+      })
+    : null;
+  const affiliateCandidates = await resolveAffiliateCandidates(ctx, {
+    referral: args.referral,
+    currentUser,
+    customerEmail: args.customerInfo.email,
+    subtotal: fare.totalPrice,
+  });
+
+  const couponDiscount: AppliedDiscount | null = redeemedCoupon
+    ? {
+        source: "coupon",
+        code: redeemedCoupon.code,
+        amount: redeemedCoupon.discountAmount,
+      }
+    : null;
+  const referredDiscount: AppliedDiscount | null =
+    affiliateCandidates.referred &&
+    affiliateCandidates.referred.discountAmount > 0
       ? {
-          source: "coupon",
-          code: redeemedCoupon.code,
-          amount: redeemedCoupon.discountAmount,
+          source: "affiliate",
+          code: affiliateCandidates.referred.slug,
+          amount: affiliateCandidates.referred.discountAmount,
         }
       : null;
-    const referredDiscount: AppliedDiscount | null =
-      affiliateCandidates.referred &&
-      affiliateCandidates.referred.discountAmount > 0
-        ? {
-            source: "affiliate",
-            code: affiliateCandidates.referred.slug,
-            amount: affiliateCandidates.referred.discountAmount,
-          }
-        : null;
-    const ownRewardDiscount: AppliedDiscount | null =
-      affiliateCandidates.ownReward
-        ? {
-            source: "affiliate",
-            code: affiliateCandidates.ownReward.slug,
-            amount: affiliateCandidates.ownReward.discountAmount,
-          }
-        : null;
-    const appliedDiscount = pickDiscount([
-      couponDiscount,
-      referredDiscount,
-      ownRewardDiscount,
-    ]);
-    const totalPrice = appliedDiscount
-      ? applyDiscountToTotal(fare.totalPrice, appliedDiscount.amount)
-      : fare.totalPrice;
+  const ownRewardDiscount: AppliedDiscount | null =
+    affiliateCandidates.ownReward
+      ? {
+          source: "affiliate",
+          code: affiliateCandidates.ownReward.slug,
+          amount: affiliateCandidates.ownReward.discountAmount,
+        }
+      : null;
+  const appliedDiscount = pickDiscount([
+    couponDiscount,
+    referredDiscount,
+    ownRewardDiscount,
+  ]);
+  const totalPrice = appliedDiscount
+    ? applyDiscountToTotal(fare.totalPrice, appliedDiscount.amount)
+    : fare.totalPrice;
 
-    // Compute next transfer number (highest existing via index)
-    const latestNumbered = await ctx.db
-      .query("transfers")
-      .withIndex("by_number")
-      .order("desc")
-      .first();
-    const nextTransferNumber = (latestNumbered?.transferNumber ?? 0) + 1;
+  // Compute next transfer number (highest existing via index)
+  const latestNumbered = await ctx.db
+    .query("transfers")
+    .withIndex("by_number")
+    .order("desc")
+    .first();
+  const nextTransferNumber = (latestNumbered?.transferNumber ?? 0) + 1;
 
-    const newTransferData = {
-      transferNumber: nextTransferNumber,
-      userId: currentUser?._id ?? undefined,
-      vehicleId: args.vehicleId,
-      transferType: args.transferType,
-      pickupLocation: args.pickupLocation,
-      pickupDate: args.pickupDate,
-      pickupTime: args.pickupTime,
-      dropoffLocation: args.dropoffLocation,
-      returnDate: args.returnDate,
-      returnTime: args.returnTime,
-      passengers: args.passengers,
-      distanceKm: args.distanceKm,
-      estimatedDurationMinutes: args.estimatedDurationMinutes,
-      baseFare: fare.baseFare,
-      distancePrice: fare.distanceCharge,
-      totalPrice,
-      pricePerKm: fare.tierPricePerKm,
-      promoCode: redeemedCoupon?.code,
-      couponId: redeemedCoupon?.couponId,
-      discountAmount: appliedDiscount?.amount,
-      discountSource: appliedDiscount?.source,
-      affiliateId:
-        affiliateCandidates.referred?.affiliateId ??
-        (appliedDiscount === ownRewardDiscount
-          ? affiliateCandidates.ownReward?.affiliateId
-          : undefined),
-      customerInfo: args.customerInfo,
-      paymentMethod: args.paymentMethod,
-      luggageCount: args.luggageCount,
-      status: "pending" as const,
-    };
+  const newTransferData = {
+    transferNumber: nextTransferNumber,
+    userId: currentUser?._id ?? undefined,
+    vehicleId: args.vehicleId,
+    transferType: args.transferType,
+    pickupLocation: args.pickupLocation,
+    pickupDate: args.pickupDate,
+    pickupTime: args.pickupTime,
+    dropoffLocation: args.dropoffLocation,
+    returnDate: args.returnDate,
+    returnTime: args.returnTime,
+    passengers: args.passengers,
+    distanceKm: args.distanceKm,
+    estimatedDurationMinutes: args.estimatedDurationMinutes,
+    distanceSource: args.distanceSource,
+    baseFare: fare.baseFare,
+    distancePrice: fare.distanceCharge,
+    totalPrice,
+    pricePerKm: fare.tierPricePerKm,
+    promoCode: redeemedCoupon?.code,
+    couponId: redeemedCoupon?.couponId,
+    discountAmount: appliedDiscount?.amount,
+    discountSource: appliedDiscount?.source,
+    affiliateId:
+      affiliateCandidates.referred?.affiliateId ??
+      (appliedDiscount === ownRewardDiscount
+        ? affiliateCandidates.ownReward?.affiliateId
+        : undefined),
+    customerInfo: args.customerInfo,
+    paymentMethod: args.paymentMethod,
+    luggageCount: args.luggageCount,
+    status: "pending" as const,
+  };
 
-    const transferId = await ctx.db.insert("transfers", newTransferData);
+  const transferId = await ctx.db.insert("transfers", newTransferData);
 
-    // Link the redemption audit row to the booking it paid for
-    if (redeemedCoupon) {
-      await ctx.db.patch(redeemedCoupon.redemptionId, { transferId });
-    }
+  // Link the redemption audit row to the booking it paid for
+  if (redeemedCoupon) {
+    await ctx.db.patch(redeemedCoupon.redemptionId, { transferId });
+  }
 
-    // Conversion lifecycle — see createReservation for the rationale
-    if (affiliateCandidates.referred) {
-      const conversionId = await recordReferralConversion(ctx, {
-        affiliateId: affiliateCandidates.referred.affiliateId,
-        bookingType: "transfer",
-        referredUserId: currentUser?._id,
-        referredEmail: args.customerInfo.email,
-        referredDiscountAmount:
-          referredDiscount && appliedDiscount === referredDiscount
-            ? referredDiscount.amount
-            : 0,
-        rewardPercentSnapshot:
-          affiliateCandidates.referred.rewardPercentSnapshot,
-      });
-      await ctx.db.patch(conversionId, { transferId });
-    }
+  // Conversion lifecycle — see createReservation for the rationale
+  if (affiliateCandidates.referred) {
+    const conversionId = await recordReferralConversion(ctx, {
+      affiliateId: affiliateCandidates.referred.affiliateId,
+      bookingType: "transfer",
+      referredUserId: currentUser?._id,
+      referredEmail: args.customerInfo.email,
+      referredDiscountAmount:
+        referredDiscount && appliedDiscount === referredDiscount
+          ? referredDiscount.amount
+          : 0,
+      rewardPercentSnapshot: affiliateCandidates.referred.rewardPercentSnapshot,
+    });
+    await ctx.db.patch(conversionId, { transferId });
+  }
 
-    // Format pickup date for email
-    const pickupDateObj = new Date(args.pickupDate);
-    const timeZone = 'Europe/Bucharest';
-    const pickupDateString = pickupDateObj.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone });
-    
-    let returnDateString: string | undefined;
-    if (args.returnDate) {
-      const returnDateObj = new Date(args.returnDate);
-      returnDateString = returnDateObj.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone });
-    }
+  // Format pickup date for email
+  const pickupDateObj = new Date(args.pickupDate);
+  const timeZone = "Europe/Bucharest";
+  const pickupDateString = pickupDateObj.toLocaleDateString("en-GB", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone,
+  });
 
-    // Schedule email sending
-    await ctx.scheduler.runAfter(0, internal.emails.sendTransferConfirmationEmail, {
+  let returnDateString: string | undefined;
+  if (args.returnDate) {
+    const returnDateObj = new Date(args.returnDate);
+    returnDateString = returnDateObj.toLocaleDateString("en-GB", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      timeZone,
+    });
+  }
+
+  // Schedule email sending
+  await ctx.scheduler.runAfter(
+    0,
+    internal.emails.sendTransferConfirmationEmail,
+    {
       transferNumber: nextTransferNumber,
       customerInfo: args.customerInfo,
       vehicleInfo: {
@@ -290,12 +320,63 @@ export const createTransfer = mutation({
       },
       paymentMethod: args.paymentMethod,
       locale: args.locale,
-    });
+    },
+  );
 
-    return {
-      transferId,
-      transferNumber: nextTransferNumber,
-    };
+  return {
+    transferId,
+    transferNumber: nextTransferNumber,
+  };
+}
+
+export const createTransferInternal = internalMutation({
+  args: transferWriteValidator.fields,
+  returns: transferResultValidator,
+  handler: createTransferHandler,
+});
+
+export const bookTransfer = action({
+  args: transferBookingValidator.fields,
+  returns: transferResultValidator,
+  handler: async (ctx, args): Promise<TransferResult> => {
+    const route = await resolveRouteDistance(ctx, {
+      pickup: args.pickupLocation.coordinates,
+      dropoff: args.dropoffLocation.coordinates,
+    });
+    if (!isWithinDistanceTolerance(args.distanceKm, route.distanceKm)) {
+      throw new ConvexError({
+        code: "ROUTE_CHANGED",
+        message: "The verified route changed. Recalculate it before booking.",
+      });
+    }
+    const {
+      distanceKm: advisoryDistanceKm,
+      estimatedDurationMinutes,
+      ...booking
+    } = args;
+    void advisoryDistanceKm;
+    void estimatedDurationMinutes;
+    const result: TransferResult = await ctx.runMutation(
+      internal.transfers.createTransferInternal,
+      {
+        ...booking,
+        distanceKm: route.distanceKm,
+        estimatedDurationMinutes: route.durationMinutes,
+        distanceSource: route.source,
+      },
+    );
+    return result;
+  },
+});
+
+export const createTransfer = mutation({
+  args: legacyTransferValidator.fields,
+  returns: transferResultValidator,
+  handler: async () => {
+    throw new ConvexError({
+      code: "CLIENT_UPGRADE_REQUIRED",
+      message: "Refresh the application before booking this transfer.",
+    });
   },
 });
 
@@ -667,7 +748,7 @@ export const getTransferVehicles = query({
     const minSeats = args.minSeats;
     if (minSeats !== undefined) {
       return availableVehicles.filter((v) => {
-        const effectiveCapacity = v.transferSeats ?? ((v.seats ?? 0) - 2);
+        const effectiveCapacity = v.transferSeats ?? (v.seats ?? 0) - 2;
         return effectiveCapacity >= minSeats;
       });
     }
@@ -680,7 +761,9 @@ export const getTransferVehiclesWithImages = query({
   args: {
     minSeats: v.optional(v.number()),
     distanceKm: v.optional(v.number()),
-    transferType: v.optional(v.union(v.literal("one_way"), v.literal("round_trip"))),
+    transferType: v.optional(
+      v.union(v.literal("one_way"), v.literal("round_trip")),
+    ),
   },
   handler: async (ctx, args) => {
     const vehicles = await ctx.db
@@ -692,12 +775,13 @@ export const getTransferVehiclesWithImages = query({
 
     // Filter by transferSeats (if set) or fallback to seats - 2
     const minSeats = args.minSeats;
-    const filteredVehicles = minSeats !== undefined
-      ? availableVehicles.filter((v) => {
-          const effectiveCapacity = v.transferSeats ?? ((v.seats ?? 0) - 2);
-          return effectiveCapacity >= minSeats;
-        })
-      : availableVehicles;
+    const filteredVehicles =
+      minSeats !== undefined
+        ? availableVehicles.filter((v) => {
+            const effectiveCapacity = v.transferSeats ?? (v.seats ?? 0) - 2;
+            return effectiveCapacity >= minSeats;
+          })
+        : availableVehicles;
 
     // Fetch all vehicle classes for base fare and multiplier lookup
     const vehicleClasses = await ctx.db.query("vehicleClasses").collect();
@@ -714,7 +798,9 @@ export const getTransferVehiclesWithImages = query({
           imageUrl = await ctx.storage.getUrl(imageId);
         }
 
-        const vehicleClass = vehicle.classId ? classMap.get(vehicle.classId) : null;
+        const vehicleClass = vehicle.classId
+          ? classMap.get(vehicle.classId)
+          : null;
 
         const fare = computeTransferPricing({
           distanceKm: args.distanceKm ?? 0,
@@ -735,6 +821,8 @@ export const getTransferVehiclesWithImages = query({
     );
 
     // Sort by calculated price (ascending)
-    return vehiclesWithImages.sort((a, b) => a.calculatedPrice - b.calculatedPrice);
+    return vehiclesWithImages.sort(
+      (a, b) => a.calculatedPrice - b.calculatedPrice,
+    );
   },
 });

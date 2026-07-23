@@ -228,6 +228,9 @@ export default defineSchema({
     luggageCount: v.optional(v.number()), // Number of medium-size luggage items
     distanceKm: v.number(),
     estimatedDurationMinutes: v.number(),
+    distanceSource: v.optional(
+      v.union(v.literal("server_mapbox"), v.literal("route_cache")),
+    ),
 
     // Pricing
     baseFare: v.number(), // Minimum fare
@@ -273,6 +276,13 @@ export default defineSchema({
     .index("by_pickup_date", ["pickupDate"])
     .index("by_status", ["status"])
     .index("by_number", ["transferNumber"]),
+
+  routeCache: defineTable({
+    key: v.string(),
+    distanceKm: v.number(),
+    durationMinutes: v.number(),
+    createdAt: v.number(),
+  }).index("by_key", ["key"]),
 
   // Coupons table - admin-generated discount codes redeemed at checkout
   coupons: defineTable({

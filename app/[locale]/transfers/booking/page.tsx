@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
-import { useQuery, useMutation } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import { useUser } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -83,7 +83,7 @@ export default function TransferBookingPage() {
     React.useState<AppliedCoupon | null>(null);
 
   const currentUser = useQuery(api.users.get);
-  const createTransfer = useMutation(api.transfers.createTransfer);
+  const bookTransfer = useAction(api.transfers.bookTransfer);
 
   const vehicleId = searchData?.selectedVehicleId as Id<"vehicles"> | undefined;
   const vehicle = useQuery(
@@ -195,8 +195,7 @@ export default function TransferBookingPage() {
     setIsSubmitting(true);
 
     try {
-      const result = await createTransfer({
-        userId: currentUser?._id,
+      const result = await bookTransfer({
         vehicleId: vehicleId,
         transferType: transferType,
         pickupLocation: searchData.pickupLocation,
@@ -214,10 +213,6 @@ export default function TransferBookingPage() {
         passengers: searchData.passengers || 1,
         distanceKm: distanceKm,
         estimatedDurationMinutes: searchData.estimatedDurationMinutes || 0,
-        baseFare: pricing.baseFare,
-        distancePrice: pricing.distanceCharge,
-        totalPrice: pricing.totalPrice,
-        pricePerKm: pricing.tierPricePerKm,
         customerInfo: {
           name: personalInfo.name,
           email: personalInfo.email,
@@ -246,11 +241,22 @@ export default function TransferBookingPage() {
       router.push(`/transfers/confirmation/${result.transferId}`);
     } catch (error) {
       console.error("Failed to create transfer:", error);
-      if (
-        error instanceof ConvexError &&
-        (error.data as { code?: string })?.code === "COUPON_INVALID"
-      ) {
+      const errorCode =
+        error instanceof ConvexError
+          ? (error.data as { code?: string })?.code
+          : undefined;
+      if (errorCode === "COUPON_INVALID") {
         toast.error(tCoupon("errors.submitFailed"));
+      } else if (errorCode === "ROUTE_CHANGED") {
+        toast.error(t("booking.errors.routeChanged"));
+      } else if (errorCode === "INVALID_COORDINATES") {
+        toast.error(t("booking.errors.invalidCoordinates"));
+      } else if (errorCode === "NO_ROUTE") {
+        toast.error(t("booking.errors.noRoute"));
+      } else if (errorCode === "ROUTE_PROVIDER_UNAVAILABLE") {
+        toast.error(t("booking.errors.providerUnavailable"));
+      } else if (errorCode === "CLIENT_UPGRADE_REQUIRED") {
+        toast.error(t("booking.errors.clientUpgradeRequired"));
       } else {
         toast.error(t("booking.toasts.failedTitle"), {
           description: t("booking.toasts.failedBody"),

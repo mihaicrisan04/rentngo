@@ -415,6 +415,13 @@
         "successBody": "Your transfer #{number} has been confirmed.",
         "failedTitle": "Failed to book transfer",
         "failedBody": "Please try again or contact support."
+      },
+      "errors": {
+        "routeChanged": "The route or price has changed. Return to the route search and recalculate before booking.",
+        "invalidCoordinates": "Select valid pickup and dropoff locations, then recalculate the route.",
+        "noRoute": "No driving route was found between these locations. Choose a different route.",
+        "providerUnavailable": "We cannot verify the route right now. Please try again shortly.",
+        "clientUpgradeRequired": "This booking page is outdated. Refresh the page and try again."
       }
     },
     "confirmation": {
