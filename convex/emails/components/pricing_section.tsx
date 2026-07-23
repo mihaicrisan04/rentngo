@@ -12,6 +12,7 @@ import {
   calculatePricingBreakdown,
   getPaymentMethodLabel,
   formatCurrency,
+  formatReservationCharge,
 } from "../utils";
 
 interface PricingSectionProps {
@@ -27,17 +28,19 @@ interface PricingSectionProps {
     scdwText?: string;
     warrantyText?: string;
   };
+  locale?: "en" | "ro";
 }
 
 export const PricingSection: React.FC<PricingSectionProps> = ({
   pricingDetails,
   rentalDetails,
   labels,
+  locale = "en",
 }) => {
   const { rentalSubtotal } = calculatePricingBreakdown(
     pricingDetails.pricePerDay,
     rentalDetails.numberOfDays,
-    pricingDetails.additionalCharges
+    pricingDetails.additionalCharges,
   );
 
   return (
@@ -52,7 +55,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
             {labels?.rentalLine
               ? labels.rentalLine(
                   rentalDetails.numberOfDays,
-                  pricingDetails.pricePerDay
+                  pricingDetails.pricePerDay,
                 )
               : `Rental (${rentalDetails.numberOfDays} ${rentalDetails.numberOfDays === 1 ? "day" : "days"} × ${formatCurrency(pricingDetails.pricePerDay)}/day):`}
           </Text>
@@ -87,8 +90,9 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
           <Row key={index} className="mb-[8px]">
             <Column className="w-2/3">
               <Text className="text-[16px] text-gray-800 m-0">
-                {labels?.additionalCharges ?? "Additional Charge"}
-                {charge.description ? `: ${charge.description}` : ""}
+                {formatReservationCharge(charge, locale) ||
+                  labels?.additionalCharges ||
+                  "Additional Charge"}
               </Text>
             </Column>
             <Column className="w-1/3 text-right">

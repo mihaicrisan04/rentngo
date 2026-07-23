@@ -69,10 +69,23 @@ const pricingDetailsValidator = v.object({
   additionalCharges: v.optional(
     v.array(
       v.object({
-        description: v.string(),
+        description: v.optional(v.string()),
+        code: v.optional(
+          v.union(
+            v.literal("pickupLocationFee"),
+            v.literal("returnLocationFee"),
+            v.literal("snowChains"),
+            v.literal("childSeat1to4"),
+            v.literal("childSeat5to12"),
+            v.literal("extraKm"),
+          ),
+        ),
+        params: v.optional(
+          v.record(v.string(), v.union(v.string(), v.number())),
+        ),
         amount: v.number(),
-      })
-    )
+      }),
+    ),
   ),
   isSCDWSelected: v.optional(v.boolean()),
   deductibleAmount: v.optional(v.number()),
@@ -95,13 +108,16 @@ export const sendReservationConfirmationEmail = internalAction({
       customerInfo: args.customerInfo,
       vehicleInfo: args.vehicleInfo as ReservationEmailData["vehicleInfo"],
       rentalDetails: args.rentalDetails,
-      pricingDetails: args.pricingDetails as ReservationEmailData["pricingDetails"],
+      pricingDetails:
+        args.pricingDetails as ReservationEmailData["pricingDetails"],
       locale: (args.locale === "ro" ? "ro" : "en") as "en" | "ro",
     };
 
     try {
       // Render admin email
-      const adminHtml = await render(AdminReservationEmail({ data: emailData }) as React.ReactElement);
+      const adminHtml = await render(
+        AdminReservationEmail({ data: emailData }) as React.ReactElement,
+      );
 
       // Send admin notification email
       await resend.sendEmail(ctx, {
@@ -113,7 +129,9 @@ export const sendReservationConfirmationEmail = internalAction({
       });
 
       // Render user email
-      const userHtml = await render(UserReservationEmail({ data: emailData }) as React.ReactElement);
+      const userHtml = await render(
+        UserReservationEmail({ data: emailData }) as React.ReactElement,
+      );
 
       // Send user confirmation email
       await resend.sendEmail(ctx, {
@@ -125,7 +143,7 @@ export const sendReservationConfirmationEmail = internalAction({
       });
 
       console.log(
-        `Reservation confirmation emails sent for #${args.reservationNumber}`
+        `Reservation confirmation emails sent for #${args.reservationNumber}`,
       );
     } catch (error) {
       console.error("Error sending reservation emails:", error);
@@ -182,7 +200,7 @@ export const sendTransferConfirmationEmail = internalAction({
   },
   handler: async (ctx, args) => {
     const locale = (args.locale === "ro" ? "ro" : "en") as "en" | "ro";
-    
+
     const emailData: TransferEmailData = {
       transferNumber: args.transferNumber,
       customerInfo: args.customerInfo,
@@ -200,16 +218,14 @@ export const sendTransferConfirmationEmail = internalAction({
       estimatedDurationMinutes: args.estimatedDurationMinutes,
       pricingDetails: args.pricingDetails,
       paymentMethod: args.paymentMethod as
-        | "cash_on_delivery"
-        | "card_on_delivery"
-        | "card_online",
+        "cash_on_delivery" | "card_on_delivery" | "card_online",
       locale,
     };
 
     try {
       // Render admin transfer email
       const adminHtml = await render(
-        AdminTransferEmail({ data: emailData, locale }) as React.ReactElement
+        AdminTransferEmail({ data: emailData, locale }) as React.ReactElement,
       );
 
       // Send admin notification email
@@ -223,22 +239,23 @@ export const sendTransferConfirmationEmail = internalAction({
 
       // Render user transfer email
       const userHtml = await render(
-        UserTransferEmail({ data: emailData, locale }) as React.ReactElement
+        UserTransferEmail({ data: emailData, locale }) as React.ReactElement,
       );
 
       // Send customer confirmation email
       await resend.sendEmail(ctx, {
         from: FROM_EMAIL,
         to: [args.customerInfo.email],
-        subject: locale === "ro"
-          ? `${SUBJECT_PREFIX}Cerere trimisă #${args.transferNumber}`
-          : `${SUBJECT_PREFIX}Request submitted #${args.transferNumber}`,
+        subject:
+          locale === "ro"
+            ? `${SUBJECT_PREFIX}Cerere trimisă #${args.transferNumber}`
+            : `${SUBJECT_PREFIX}Request submitted #${args.transferNumber}`,
         html: userHtml,
         replyTo: ["office@rngo.ro"],
       });
 
       console.log(
-        `Transfer confirmation emails sent for #${args.transferNumber}`
+        `Transfer confirmation emails sent for #${args.transferNumber}`,
       );
     } catch (error) {
       console.error("Error sending transfer emails:", error);

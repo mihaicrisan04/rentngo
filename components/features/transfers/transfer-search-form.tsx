@@ -12,13 +12,13 @@ import {
   NativeSelectOption,
 } from "@/components/ui/native-select";
 
-import { MapboxLocationSearch, LocationData } from "@/components/shared/search-filters/mapbox-location-search";
-import { DateTimePicker } from "@/components/shared/search-filters/date-time-picker";
 import {
-  transferStorage,
-  TransferSearchData,
-} from "@/lib/transfer-storage";
-import { getRouteInfo, RouteInfo } from "@/lib/mapbox";
+  MapboxLocationSearch,
+  LocationData,
+} from "@/components/shared/search-filters/mapbox-location-search";
+import { DateTimePicker } from "@/components/shared/search-filters/date-time-picker";
+import { transferStorage, TransferSearchData } from "@/lib/transfer-storage";
+import { formatDuration, getRouteInfo, RouteInfo } from "@/lib/mapbox";
 
 interface TransferSearchFormProps {
   initialData?: TransferSearchData;
@@ -121,7 +121,9 @@ export function TransferSearchForm({
         ? routeKey(pickupLocation, dropoffLocation)
         : null;
     const metricsMatchPair =
-      currentKey !== null && routeInfoKeyRef.current === currentKey && !!routeInfo;
+      currentKey !== null &&
+      routeInfoKeyRef.current === currentKey &&
+      !!routeInfo;
 
     transferStorage.save({
       pickupLocation: pickupLocation || undefined,
@@ -252,10 +254,7 @@ export function TransferSearchForm({
   // full-width row below for round trips.
   const passengersField = (
     <div>
-      <Label
-        htmlFor="passengers"
-        className="text-sm font-medium mb-1.5 block"
-      >
+      <Label htmlFor="passengers" className="text-sm font-medium mb-1.5 block">
         {t("searchForm.passengers")}
       </Label>
       <div className="relative">
@@ -362,7 +361,9 @@ export function TransferSearchForm({
                   timeState={returnTime}
                   setTimeState={setReturnTime}
                   minDate={pickupDate || today}
-                  disabledDateRanges={(date: Date) => date < (pickupDate || today)}
+                  disabledDateRanges={(date: Date) =>
+                    date < (pickupDate || today)
+                  }
                   popoverAlign="end"
                   contentAlign="start"
                   isLoading={isLoading}
@@ -382,7 +383,7 @@ export function TransferSearchForm({
           {passengers >= 4 && (
             <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
               <p className="text-sm text-blue-700 dark:text-blue-400">
-                <span className="font-medium">💡 Tip:</span> For 4+ passengers, consider booking with 2 vehicles or a van for more comfort.
+                {t("searchForm.passengerTip")}
               </p>
             </div>
           )}
@@ -395,16 +396,16 @@ export function TransferSearchForm({
                     <span className="text-muted-foreground">
                       {t("vehicleSelection.distanceLabel")}:{" "}
                     </span>
-                    <span className="font-medium">{routeInfo.distanceKm} km</span>
+                    <span className="font-medium">
+                      {routeInfo.distanceKm} km
+                    </span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">
                       {t("vehicleSelection.durationLabel")}:{" "}
                     </span>
                     <span className="font-medium">
-                      {routeInfo.durationMinutes < 60
-                        ? `${routeInfo.durationMinutes} min`
-                        : `${Math.floor(routeInfo.durationMinutes / 60)}h ${routeInfo.durationMinutes % 60}min`}
+                      {formatDuration(routeInfo.durationMinutes)}
                     </span>
                   </div>
                 </div>
@@ -419,7 +420,7 @@ export function TransferSearchForm({
             <div className="mt-4 p-4 bg-muted/50 rounded-lg">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Calculating route...</span>
+                <span>{t("searchForm.calculatingRoute")}</span>
               </div>
             </div>
           )}

@@ -119,12 +119,13 @@ interface RetrieveResponse {
 export async function suggestLocations(
   query: string,
   sessionToken: string,
+  language: string,
 ): Promise<LocationSuggestion[]> {
   const params = new URLSearchParams({
     q: query,
     access_token: getMapboxToken(),
     session_token: sessionToken,
-    language: "en",
+    language,
     country: "RO",
     types: "address,poi,place",
     proximity: "23.5912,46.7712",
@@ -146,10 +147,12 @@ export async function suggestLocations(
 export async function retrieveLocation(
   mapboxId: string,
   sessionToken: string,
+  language: string,
 ): Promise<RetrievedLocation> {
   const params = new URLSearchParams({
     access_token: getMapboxToken(),
     session_token: sessionToken,
+    language,
   });
 
   const response = await fetch(

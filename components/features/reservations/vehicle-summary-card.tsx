@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Vehicle } from "@/types/vehicle";
 
@@ -21,7 +21,6 @@ export const VehicleSummaryCard = React.memo(function VehicleSummaryCard({
   days,
 }: VehicleSummaryCardProps) {
   const t = useTranslations("reservationPage");
-  const locale = useLocale();
 
   return (
     <Card>
@@ -52,21 +51,17 @@ export const VehicleSummaryCard = React.memo(function VehicleSummaryCard({
             <p className="text-muted-foreground">{vehicle.year}</p>
             <div>
               <p className="text-lg font-bold text-yellow-500">
-                {displayPricePerDay} EUR / Day
+                {t("vehicleDetails.pricePerDay", {
+                  price: displayPricePerDay ?? 0,
+                })}
               </p>
-              {days && vehicle.pricingTiers && vehicle.pricingTiers.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {t("vehicleDetails.rateFor")} {days}{" "}
-                  {locale === "ro"
-                    ? days === 1
-                      ? "zi"
-                      : "zile"
-                    : days === 1
-                      ? "day"
-                      : "days"}{" "}
-                  {t("vehicleDetails.rental")}
-                </p>
-              )}
+              {days &&
+                vehicle.pricingTiers &&
+                vehicle.pricingTiers.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {t("vehicleDetails.rateForDays", { days })}
+                  </p>
+                )}
             </div>
           </div>
         </div>

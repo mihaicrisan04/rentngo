@@ -6,7 +6,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AnimatedGroup } from "@/components/ui/animated-group";
-import { Phone, Mail, MapPin, MessageCircle, ExternalLink, Clock } from "lucide-react";
+import {
+  Phone,
+  Mail,
+  MapPin,
+  MessageCircle,
+  ExternalLink,
+  Clock,
+} from "lucide-react";
 import {
   contactAnimationVariants,
   sectionAnimationVariants,
@@ -24,15 +31,14 @@ const ContactPage = () => {
   };
 
   const handleWhatsAppClick = () => {
-    const whatsappUrl =
-      "https://wa.me/40773932961?text=Hello!%20I'm%20interested%20in%20your%20rental%20services.";
+    const whatsappUrl = `https://wa.me/40773932961?text=${encodeURIComponent(t("whatsappMessage"))}`;
     window.open(whatsappUrl, "_blank");
   };
 
   const handlePhoneClick = () => {
     const phoneNumber = "+40773932961";
     navigator.clipboard.writeText(phoneNumber).then(() => {
-      toast.success("Phone number copied to clipboard!");
+      toast.success(t("phoneCopied"));
     });
   };
 
@@ -197,7 +203,10 @@ const ContactPage = () => {
               >
                 <div className="flex flex-col items-center gap-3 mb-12">
                   <div className="accent-line"></div>
-                  <Badge variant="outline" className="px-4 py-1.5 text-base rounded-full">
+                  <Badge
+                    variant="outline"
+                    className="px-4 py-1.5 text-base rounded-full"
+                  >
                     {t("meetTheMan")}
                   </Badge>
                   <h2 className="text-3xl md:text-4xl font-bold text-foreground text-center">
@@ -232,10 +241,16 @@ const ContactPage = () => {
                           {t("founder.description")}
                         </p>
                         <div className="flex flex-wrap gap-2">
-                          <Badge variant="secondary" className="rounded-lg px-3 py-1">
+                          <Badge
+                            variant="secondary"
+                            className="rounded-lg px-3 py-1"
+                          >
                             {t("founder.badges.expert")}
                           </Badge>
-                          <Badge variant="secondary" className="rounded-lg px-3 py-1">
+                          <Badge
+                            variant="secondary"
+                            className="rounded-lg px-3 py-1"
+                          >
                             {t("founder.badges.customerFirst")}
                           </Badge>
                         </div>
@@ -287,8 +302,9 @@ const ContactPage = () => {
                           <p className="text-muted-foreground flex items-start gap-2 text-sm">
                             <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                             <span>
-                              Cluj "Avram Iancu" International Airport, Strada
-                              Traian Vuia 149-151, Cluj-Napoca 400397
+                              Cluj &quot;Avram Iancu&quot; International
+                              Airport, Strada Traian Vuia 149-151, Cluj-Napoca
+                              400397
                             </span>
                           </p>
                           <Button
@@ -323,9 +339,7 @@ const ContactPage = () => {
                             {t("businessHours.mondayToSundayTime")}
                           </span>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          24/7
-                        </p>
+                        <p className="text-sm text-muted-foreground">24/7</p>
                       </div>
                     </CardContent>
                   </Card>

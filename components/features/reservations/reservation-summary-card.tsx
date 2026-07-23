@@ -173,17 +173,7 @@ export const ReservationSummaryCard = React.memo(
                 </span>
                 <span>
                   {days
-                    ? t("reservationSummary.daysCount", {
-                        days,
-                        plural:
-                          locale === "ro"
-                            ? days === 1
-                              ? ""
-                              : "le"
-                            : days === 1
-                              ? ""
-                              : "s",
-                      })
+                    ? t("reservationSummary.daysCount", { days })
                     : t("reservationSummary.notCalculated")}
                 </span>
               </div>
@@ -318,18 +308,7 @@ export const ReservationSummaryCard = React.memo(
             <div className="border-t pt-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span>
-                  {t("reservationSummary.basePrice", {
-                    days: days || 0,
-                    plural:
-                      locale === "ro"
-                        ? days === 1
-                          ? ""
-                          : "le"
-                        : days === 1
-                          ? ""
-                          : "s",
-                  })}
-                  :
+                  {t("reservationSummary.basePrice", { days: days || 0 })}:
                 </span>
                 <span>{basePrice || 0} EUR</span>
               </div>
@@ -392,7 +371,9 @@ export const ReservationSummaryCard = React.memo(
 
               {totalAdditionalFeatures > 0 && (
                 <div className="flex justify-between text-sm text-muted-foreground/60">
-                  <span>{t("reservationSummary.totalAdditionalFeatures")}:</span>
+                  <span>
+                    {t("reservationSummary.totalAdditionalFeatures")}:
+                  </span>
                   <span>{totalAdditionalFeatures} EUR</span>
                 </div>
               )}

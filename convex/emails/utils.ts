@@ -1,4 +1,22 @@
 // Email utility functions for Convex email actions
+import { createTranslator } from "next-intl";
+import enMessages from "../../messages/en.json";
+import roMessages from "../../messages/ro.json";
+import type { PricingDetails } from "./types";
+
+export function formatReservationCharge(
+  charge: NonNullable<PricingDetails["additionalCharges"]>[number],
+  locale: "en" | "ro",
+): string {
+  if (!charge.code) return charge.description ?? "";
+
+  const t = createTranslator({
+    locale,
+    messages: locale === "ro" ? roMessages : enMessages,
+    namespace: "reservationCharges",
+  });
+  return t(charge.code, charge.params);
+}
 
 // Payment method display names
 export const getPaymentMethodLabel = (method: string): string => {
@@ -13,7 +31,7 @@ export const getPaymentMethodLabel = (method: string): string => {
 // Format currency values
 export const formatCurrency = (
   amount: number,
-  currency: string = "EUR"
+  currency: string = "EUR",
 ): string => {
   return `${amount} ${currency}`;
 };
@@ -22,7 +40,7 @@ export const formatCurrency = (
 export const calculatePricingBreakdown = (
   pricePerDay: number,
   numberOfDays: number,
-  additionalCharges?: Array<{ description: string; amount: number }>
+  additionalCharges?: PricingDetails["additionalCharges"],
 ) => {
   const rentalSubtotal = pricePerDay * numberOfDays;
   const additionalTotal =
