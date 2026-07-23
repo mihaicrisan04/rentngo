@@ -43,7 +43,15 @@ export interface PricingDetails {
   discountAmount?: number;
   isReferralDiscount?: boolean;
   additionalCharges?: Array<{
-    description: string;
+    description?: string;
+    code?:
+      | "pickupLocationFee"
+      | "returnLocationFee"
+      | "snowChains"
+      | "childSeat1to4"
+      | "childSeat5to12"
+      | "extraKm";
+    params?: Record<string, string | number>;
     amount: number;
   }>;
   isSCDWSelected?: boolean;

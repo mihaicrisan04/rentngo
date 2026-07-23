@@ -3,8 +3,7 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "convex/react";
-import { useTranslations } from "next-intl";
-import { format } from "date-fns";
+import { useLocale, useTranslations } from "next-intl";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
@@ -39,6 +38,7 @@ export default function TransferConfirmationPage() {
   const t = useTranslations("transferPage");
   const tConfirmation = useTranslations("confirmationPage");
   const tCommon = useTranslations("common");
+  const locale = useLocale();
 
   const transferId = params.transferId as Id<"transfers">;
 
@@ -48,20 +48,8 @@ export default function TransferConfirmationPage() {
 
   const vehicle = useQuery(
     api.vehicles.getById,
-    transfer?.vehicleId ? { id: transfer.vehicleId } : "skip"
+    transfer?.vehicleId ? { id: transfer.vehicleId } : "skip",
   );
-
-  const formatDuration = (minutes: number): string => {
-    if (minutes < 60) {
-      return `${minutes} min`;
-    }
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    if (remainingMinutes === 0) {
-      return `${hours}h`;
-    }
-    return `${hours}h ${remainingMinutes}min`;
-  };
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -87,7 +75,8 @@ export default function TransferConfirmationPage() {
       },
     };
 
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
+    const config =
+      statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
 
     return (
       <Badge variant={config.variant} className={config.className}>
@@ -135,13 +124,15 @@ export default function TransferConfirmationPage() {
     return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-          <h2 className="text-2xl font-bold mb-4">Transfer Not Found</h2>
+          <h2 className="text-2xl font-bold mb-4">
+            {t("emptyState.notFoundTitle")}
+          </h2>
           <p className="text-muted-foreground mb-6">
-            The transfer you're looking for doesn't exist or has been removed.
+            {t("emptyState.notFoundBody")}
           </p>
           <Button onClick={() => router.push("/transfers")}>
             <Home className="h-4 w-4 mr-2" />
-            Book a New Transfer
+            {t("confirmation.bookAnother")}
           </Button>
         </div>
       </div>
@@ -155,7 +146,9 @@ export default function TransferConfirmationPage() {
         <div className="inline-flex items-center justify-center h-18 w-18 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 mb-5">
           <CheckCircle className="h-9 w-9 text-emerald-600 dark:text-emerald-400" />
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold mb-3 tracking-tight">{t("confirmation.title")}</h1>
+        <h1 className="text-3xl md:text-4xl font-bold mb-3 tracking-tight">
+          {t("confirmation.title")}
+        </h1>
         <p className="text-muted-foreground">{t("confirmation.subtitle")}</p>
         <div className="flex items-center justify-center gap-4 mt-5">
           <Badge variant="outline" className="text-lg px-4 py-1.5 rounded-xl">
@@ -173,15 +166,16 @@ export default function TransferConfirmationPage() {
               <MapPin className="h-5 w-5" />
               {t("confirmation.route")}
             </CardTitle>
-            {transfer.pickupLocation.coordinates && transfer.dropoffLocation.coordinates && (
-              <TransferRouteMap
-                pickupCoordinates={transfer.pickupLocation.coordinates}
-                dropoffCoordinates={transfer.dropoffLocation.coordinates}
-                pickupLabel={transfer.pickupLocation.address.split(",")[0]}
-                dropoffLabel={transfer.dropoffLocation.address.split(",")[0]}
-                className="h-[280px] sm:h-[350px] w-full mt-3 rounded-2xl overflow-hidden"
-              />
-            )}
+            {transfer.pickupLocation.coordinates &&
+              transfer.dropoffLocation.coordinates && (
+                <TransferRouteMap
+                  pickupCoordinates={transfer.pickupLocation.coordinates}
+                  dropoffCoordinates={transfer.dropoffLocation.coordinates}
+                  pickupLabel={transfer.pickupLocation.address.split(",")[0]}
+                  dropoffLabel={transfer.dropoffLocation.address.split(",")[0]}
+                  className="h-[280px] sm:h-[350px] w-full mt-3 rounded-2xl overflow-hidden"
+                />
+              )}
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -194,15 +188,19 @@ export default function TransferConfirmationPage() {
                 <div className="flex-1 space-y-4">
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                      Pickup
+                      {t("confirmation.pickup")}
                     </p>
-                    <p className="font-medium">{transfer.pickupLocation.address}</p>
+                    <p className="font-medium">
+                      {transfer.pickupLocation.address}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                      Dropoff
+                      {t("confirmation.dropoff")}
                     </p>
-                    <p className="font-medium">{transfer.dropoffLocation.address}</p>
+                    <p className="font-medium">
+                      {transfer.dropoffLocation.address}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -213,42 +211,65 @@ export default function TransferConfirmationPage() {
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="text-xs text-muted-foreground">Date</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("confirmation.date")}
+                    </p>
                     <p className="font-medium">
-                      {format(new Date(transfer.pickupDate), "EEE, MMM d, yyyy")}
+                      {new Date(transfer.pickupDate).toLocaleDateString(
+                        locale,
+                        {
+                          weekday: "short",
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        },
+                      )}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="text-xs text-muted-foreground">Time</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("confirmation.time")}
+                    </p>
                     <p className="font-medium">{transfer.pickupTime}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="text-xs text-muted-foreground">{t("confirmation.distance")}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("confirmation.distance")}
+                    </p>
                     <p className="font-medium">{transfer.distanceKm} km</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="text-xs text-muted-foreground">Passengers</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("confirmation.passengers")}
+                    </p>
                     <p className="font-medium">{transfer.passengers}</p>
                   </div>
                 </div>
-                {transfer.luggageCount !== undefined && transfer.luggageCount > 0 && (
-                  <div className="flex items-center gap-2">
-                    <Luggage className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">Luggage</p>
-                      <p className="font-medium">{transfer.luggageCount} bags</p>
+                {transfer.luggageCount !== undefined &&
+                  transfer.luggageCount > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Luggage className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">
+                          {t("confirmation.luggage")}
+                        </p>
+                        <p className="font-medium">
+                          {t("confirmation.bags", {
+                            count: transfer.luggageCount,
+                          })}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
 
               {transfer.transferType === "round_trip" &&
@@ -257,21 +278,35 @@ export default function TransferConfirmationPage() {
                   <>
                     <Separator />
                     <div>
-                      <p className="text-sm font-medium mb-2">Return Trip</p>
+                      <p className="text-sm font-medium mb-2">
+                        {t("confirmation.returnTrip")}
+                      </p>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <div>
-                            <p className="text-xs text-muted-foreground">Return Date</p>
+                            <p className="text-xs text-muted-foreground">
+                              {t("confirmation.returnDate")}
+                            </p>
                             <p className="font-medium">
-                              {format(new Date(transfer.returnDate), "EEE, MMM d, yyyy")}
+                              {new Date(transfer.returnDate).toLocaleDateString(
+                                locale,
+                                {
+                                  weekday: "short",
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                },
+                              )}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4 text-muted-foreground" />
                           <div>
-                            <p className="text-xs text-muted-foreground">Return Time</p>
+                            <p className="text-xs text-muted-foreground">
+                              {t("confirmation.returnTime")}
+                            </p>
                             <p className="font-medium">{transfer.returnTime}</p>
                           </div>
                         </div>
@@ -303,7 +338,7 @@ export default function TransferConfirmationPage() {
                   )}
                 </div>
                 <Badge variant="outline">
-                  {vehicle.seats} seats
+                  {t("confirmation.seats", { count: vehicle.seats ?? 0 })}
                 </Badge>
               </div>
             </CardContent>
@@ -334,13 +369,18 @@ export default function TransferConfirmationPage() {
             {transfer.customerInfo.flightNumber && (
               <div className="flex items-center gap-3">
                 <Plane className="h-4 w-4 text-muted-foreground" />
-                <span>Flight: {transfer.customerInfo.flightNumber}</span>
+                <span>
+                  {t("confirmation.flightPrefix")}{" "}
+                  {transfer.customerInfo.flightNumber}
+                </span>
               </div>
             )}
             {transfer.customerInfo.message && (
               <div className="flex items-start gap-3">
                 <MessageSquare className="h-4 w-4 text-muted-foreground mt-0.5" />
-                <span className="text-muted-foreground">{transfer.customerInfo.message}</span>
+                <span className="text-muted-foreground">
+                  {transfer.customerInfo.message}
+                </span>
               </div>
             )}
           </CardContent>
@@ -368,7 +408,9 @@ export default function TransferConfirmationPage() {
             </div>
             <Separator />
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">{tConfirmation("paymentMethod")}</span>
+              <span className="text-muted-foreground">
+                {tConfirmation("paymentMethod")}
+              </span>
               <span>{getPaymentMethodLabel(transfer.paymentMethod)}</span>
             </div>
             {transfer.promoCode && (transfer.discountAmount ?? 0) > 0 && (
@@ -381,7 +423,9 @@ export default function TransferConfirmationPage() {
             )}
             <Separator />
             <div className="flex justify-between items-baseline">
-              <span className="font-semibold">{tConfirmation("totalAmount")}</span>
+              <span className="font-semibold">
+                {tConfirmation("totalAmount")}
+              </span>
               <span className="text-2xl font-bold text-primary">
                 €{transfer.totalPrice.toFixed(2)}
               </span>
@@ -414,7 +458,9 @@ export default function TransferConfirmationPage() {
                 <span className="text-xs font-bold">2</span>
               </div>
               <div>
-                <p className="font-medium">{tConfirmation("emailConfirmation")}</p>
+                <p className="font-medium">
+                  {tConfirmation("emailConfirmation")}
+                </p>
                 <p className="text-sm text-muted-foreground">
                   {tConfirmation("emailConfirmationDescription")}
                 </p>
@@ -425,9 +471,11 @@ export default function TransferConfirmationPage() {
                 <span className="text-xs font-bold">3</span>
               </div>
               <div>
-                <p className="font-medium">Driver Assignment</p>
+                <p className="font-medium">
+                  {t("confirmation.driverAssignment.title")}
+                </p>
                 <p className="text-sm text-muted-foreground">
-                  A professional driver will be assigned to your transfer and will contact you before pickup.
+                  {t("confirmation.driverAssignment.description")}
                 </p>
               </div>
             </div>
@@ -465,9 +513,7 @@ export default function TransferConfirmationPage() {
             </Link>
           </Button>
           <Button className="rounded-xl h-12 px-6" asChild>
-            <Link href="/transfers">
-              {t("confirmation.bookAnother")}
-            </Link>
+            <Link href="/transfers">{t("confirmation.bookAnother")}</Link>
           </Button>
         </div>
       </div>

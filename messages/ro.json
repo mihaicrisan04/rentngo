@@ -133,7 +133,9 @@
       "title": "Program de Lucru",
       "mondayToSunday": "Luni - Duminică",
       "mondayToSundayTime": "24/7"
-    }
+    },
+    "phoneCopied": "Numărul de telefon a fost copiat!",
+    "whatsappMessage": "Bună! Sunt interesat de serviciile voastre de închiriere."
   },
   "reservationPage": {
     "backToVehicleDetails": "Înapoi la Detaliile Vehiculului",
@@ -171,7 +173,9 @@
       "title": "Detalii Vehicul",
       "noImage": "Fără Imagine",
       "rateFor": "Tarif pentru",
-      "rental": "închiriere"
+      "rental": "închiriere",
+      "pricePerDay": "{price} EUR / zi",
+      "rateForDays": "Tarif pentru o închiriere de {days, plural, one {# zi} few {# zile} other {# de zile}}"
     },
     "additionalFeatures": {
       "title": "Caracteristici Suplimentare",
@@ -234,8 +238,8 @@
       "flight": "Zbor",
       "notSelected": "Nu este selectată",
       "notCalculated": "Nu este calculată",
-      "daysCount": "{days} zi{plural}",
-      "basePrice": "Preț de bază ({days} zi{plural})",
+      "daysCount": "{days, plural, one {# zi} few {# zile} other {# de zile}}",
+      "basePrice": "Preț de bază ({days, plural, one {# zi} few {# zile} other {# de zile}})",
       "pickupLocationFee": "Taxa pentru locația de ridicare",
       "returnLocationFee": "Taxa pentru locația de returnare",
       "totalLocationFees": "Total taxe de relocare",
@@ -367,7 +371,9 @@
       "oneWay": "Doar Dus",
       "roundTrip": "Dus-Întors",
       "searchTransfers": "Caută Transferuri",
-      "searching": "Se caută..."
+      "searching": "Se caută...",
+      "passengerTip": "Pentru 4+ pasageri, luați în considerare rezervarea a 2 vehicule sau a unei dube pentru mai mult confort.",
+      "calculatingRoute": "Se calculează traseul..."
     },
     "vehicleSelection": {
       "title": "Selectează Vehiculul",
@@ -379,7 +385,14 @@
       "passengers": "{count} pasageri max",
       "noVehiclesFound": "Niciun Vehicul Disponibil",
       "routeEstimationNote": "Estimare traseu. Distanța și durata reală pot varia ușor.",
-      "selectPrompt": "Selectează un vehicul pentru a continua"
+      "selectPrompt": "Selectează un vehicul pentru a continua",
+      "noVehiclesFor": "Nu sunt disponibile vehicule pentru {passengers, plural, one {# pasager} few {# pasageri} other {# de pasageri}}. Încercați să reduceți numărul de pasageri.",
+      "routeWarning": "Nu am putut calcula distanța traseului. Verificați locațiile de preluare și destinație.",
+      "resultCount": "{count, plural, one {# vehicul disponibil} few {# vehicule disponibile} other {# de vehicule disponibile}}",
+      "routeFrom": "De la:",
+      "routeTo": "Până la:",
+      "continue": "Continuă",
+      "selected": "Selectat"
     },
     "booking": {
       "title": "Finalizează Rezervarea",
@@ -388,7 +401,28 @@
       "paymentMethod": "Metodă de Plată",
       "summary": "Sumar Transfer",
       "confirmBooking": "Confirmă Transferul",
-      "processing": "Se procesează..."
+      "processing": "Se procesează...",
+      "subtitle": "Completați detaliile rezervării de mai jos",
+      "backToVehicles": "Înapoi la Selectarea Vehiculului",
+      "luggageLabel": "Număr de Bagaje",
+      "luggagePlaceholder": "Număr de bagaje de dimensiune medie",
+      "luggageHelp": "Numărul aproximativ de bagaje de aeroport de dimensiune medie",
+      "messageTooltip": "Adăugați cereri speciale: opriri pe traseu, așteptarea unei persoane, instrucțiuni specifice de preluare etc.",
+      "invalidEmail": "Format de email invalid",
+      "toasts": {
+        "missingInfo": "Lipsesc informații obligatorii despre transfer",
+        "successTitle": "Transfer rezervat cu succes!",
+        "successBody": "Transferul #{number} a fost confirmat.",
+        "failedTitle": "Transferul nu a putut fi rezervat",
+        "failedBody": "Încercați din nou sau contactați echipa de suport."
+      },
+      "errors": {
+        "routeChanged": "Traseul sau prețul s-a modificat. Revino la căutarea traseului și recalculează înainte de rezervare.",
+        "invalidCoordinates": "Selectează locații valide de preluare și destinație, apoi recalculează traseul.",
+        "noRoute": "Nu a fost găsit un traseu rutier între aceste locații. Alege alt traseu.",
+        "providerUnavailable": "Nu putem verifica traseul momentan. Încearcă din nou în scurt timp.",
+        "clientUpgradeRequired": "Această pagină de rezervare este învechită. Reîncarcă pagina și încearcă din nou."
+      }
     },
     "confirmation": {
       "title": "Transfer Confirmat!",
@@ -397,7 +431,23 @@
       "route": "Rută",
       "distance": "Distanță",
       "duration": "Durată Estimată",
-      "bookAnother": "Rezervă Alt Transfer"
+      "bookAnother": "Rezervă Alt Transfer",
+      "pickup": "Preluare",
+      "dropoff": "Destinație",
+      "date": "Dată",
+      "time": "Oră",
+      "passengers": "Pasageri",
+      "luggage": "Bagaje",
+      "bags": "{count, plural, one {# bagaj} few {# bagaje} other {# de bagaje}}",
+      "returnTrip": "Călătorie de Întoarcere",
+      "returnDate": "Data Întoarcerii",
+      "returnTime": "Ora Întoarcerii",
+      "seats": "{count, plural, one {# loc} few {# locuri} other {# de locuri}}",
+      "flightPrefix": "Zbor:",
+      "driverAssignment": {
+        "title": "Alocarea Șoferului",
+        "description": "Un șofer profesionist va fi alocat transferului și vă va contacta înainte de preluare."
+      }
     },
     "pricing": {
       "basePrice": "Tarif de Bază",
@@ -419,6 +469,33 @@
         "title": "Confirmă și Relaxează-te",
         "description": "Finalizează rezervarea și noi ne ocupăm de restul"
       }
+    },
+    "features": {
+      "premium": {
+        "title": "Vehicule Premium",
+        "description": "Călătoriți confortabil cu flota noastră de lux"
+      },
+      "safe": {
+        "title": "Sigur și Fiabil",
+        "description": "Șoferi profesioniști cu experiență verificată"
+      },
+      "onTime": {
+        "title": "Serviciu Punctual",
+        "description": "Preluări și sosiri punctuale garantate"
+      },
+      "destination": {
+        "title": "Orice Destinație",
+        "description": "Transferuri de aeroport și rute între orașe"
+      }
+    },
+    "emptyState": {
+      "missingTitle": "Lipsesc Detaliile Transferului",
+      "bookingBody": "Completați mai întâi căutarea transferului și selectarea vehiculului.",
+      "vehiclesBody": "Completați mai întâi formularul de căutare a transferului.",
+      "startOver": "Începe din Nou",
+      "backToSearch": "Înapoi la Căutare",
+      "notFoundTitle": "Transfer Negăsit",
+      "notFoundBody": "Transferul căutat nu există sau a fost eliminat."
     }
   },
   "common": {
@@ -450,6 +527,7 @@
     "optional": "Opțional",
     "noImage": "Fără Imagine",
     "invalidData": "Date invalide",
+    "termsAcceptance": "Accept <terms>Termenii și Condițiile</terms> și <privacy>Politica de Confidențialitate</privacy>",
     "status": {
       "confirmed": "Confirmată",
       "pending": "În Așteptare",
@@ -517,7 +595,8 @@
       "description": "Rezervă mașina de închiriat azi și descoperă tot ce are Transilvania de oferit.",
       "button": "Vezi Mașinile Noastre"
     },
-    "loadMore": "Încarcă Mai Multe"
+    "loadMore": "Încarcă Mai Multe",
+    "postCount": "{count, plural, one {# articol} few {# articole} other {# de articole}}"
   },
   "blogDetail": {
     "loading": "Se încarcă articolul...",
@@ -557,7 +636,18 @@
       "dates": "Perioada Închirierii",
       "locations": "Ridicare și Returnare",
       "totalPrice": "Preț Total",
-      "status": "Status"
+      "status": "Status",
+      "fromLabel": "De la:",
+      "toLabel": "Până la:",
+      "pickupLabel": "Preluare:",
+      "returnLabel": "Returnare:",
+      "promoLabel": "Promoție:",
+      "scdwZeroDeductible": "SCDW (garanție zero)",
+      "standardWarranty": "Garanție Standard ({amount} EUR garanție)",
+      "showingRange": "Se afișează {from}-{to} din {total} rezervări",
+      "pageOf": "{page} din {total}",
+      "loading": "Se încarcă...",
+      "loadingReservations": "Se încarcă rezervările..."
     },
     "affiliate": {
       "title": "Program de Recomandare",
@@ -606,7 +696,14 @@
     "searchingCars": "Se caută mașini de închiriat...",
     "returnDateAfterPickup": "Data de returnare trebuie să fie după sau aceeași cu data de ridicare.",
     "selectDateFirst": "Selectează mai întâi o dată",
-    "locationRetrieveError": "Nu am putut prelua detaliile locației. Te rugăm să încerci din nou."
+    "locationRetrieveError": "Nu am putut prelua detaliile locației. Te rugăm să încerci din nou.",
+    "defaultLocationPlaceholder": "Introduceți locația...",
+    "mapboxTokenMissing": "Tokenul Mapbox nu este configurat",
+    "locationSearchPlaceholder": "Căutați o locație...",
+    "searchingLocations": "Se caută locații...",
+    "noLocationsFound": "Nu s-au găsit locații.",
+    "minimumCharacters": "Introduceți cel puțin 2 caractere pentru căutare...",
+    "clearSelection": "Șterge selecția"
   },
   "vehicleCard": {
     "or": "sau",
@@ -866,5 +963,11 @@
     "childSeat1to4": "Scaun copil 1-4 ani ×{count} ({days, plural, one {# zi} few {# zile} other {# de zile}})",
     "childSeat5to12": "Scaun copil 5-12 ani ×{count} ({days, plural, one {# zi} few {# zile} other {# de zile}})",
     "extraKm": "Kilometri suplimentari (+{km} km)"
+  },
+  "errorPage": {
+    "title": "Ceva nu a funcționat",
+    "description": "A apărut o eroare neașteptată. Încercați din nou sau reveniți la pagina principală.",
+    "tryAgain": "Încearcă din nou",
+    "goHome": "Pagina principală"
   }
 }

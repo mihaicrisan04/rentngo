@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   suggestLocations,
   retrieveLocation,
@@ -48,7 +48,7 @@ interface MapboxLocationSearchProps {
 export function MapboxLocationSearch({
   id,
   label,
-  placeholder = "Enter location...",
+  placeholder,
   value,
   onSelect,
   disabled = false,
@@ -56,9 +56,12 @@ export function MapboxLocationSearch({
   contentAlign = "start",
 }: MapboxLocationSearchProps) {
   const t = useTranslations("search");
+  const locale = useLocale();
   const [open, setOpen] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState("");
-  const [suggestions, setSuggestions] = React.useState<LocationSuggestion[]>([]);
+  const [suggestions, setSuggestions] = React.useState<LocationSuggestion[]>(
+    [],
+  );
   const [loading, setLoading] = React.useState(false);
   const sessionTokenRef = React.useRef<string>(crypto.randomUUID());
 
@@ -82,7 +85,8 @@ export function MapboxLocationSearch({
       try {
         const results = await suggestLocations(
           searchValue,
-          sessionTokenRef.current
+          sessionTokenRef.current,
+          locale,
         );
         if (!cancelled) {
           setSuggestions(results);
@@ -103,14 +107,15 @@ export function MapboxLocationSearch({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [searchValue]);
+  }, [locale, searchValue]);
 
   const handleSelect = React.useCallback(
     async (suggestion: LocationSuggestion) => {
       try {
         const location = await retrieveLocation(
           suggestion.mapbox_id,
-          sessionTokenRef.current
+          sessionTokenRef.current,
+          locale,
         );
         const address =
           location.fullAddress ||
@@ -135,7 +140,7 @@ export function MapboxLocationSearch({
       setSearchValue("");
       setSuggestions([]);
     },
-    [onSelect, t]
+    [locale, onSelect, t],
   );
 
   const handleClear = React.useCallback(() => {
@@ -151,14 +156,14 @@ export function MapboxLocationSearch({
           htmlFor={id}
           className={cn(
             "text-sm font-medium mb-1.5 block",
-            contentAlign === "end" && "text-right"
+            contentAlign === "end" && "text-right",
           )}
         >
           {label}
         </Label>
         <div className="flex items-center gap-2 w-full rounded-md border border-destructive bg-background px-3 py-2 text-destructive">
           <MapPin className="h-4 w-4 shrink-0" />
-          <span className="text-sm">Mapbox token not configured</span>
+          <span className="text-sm">{t("mapboxTokenMissing")}</span>
         </div>
       </div>
     );
@@ -169,14 +174,14 @@ export function MapboxLocationSearch({
       className={cn(
         "w-full",
         contentAlign === "end" && "text-right",
-        className
+        className,
       )}
     >
       <Label
         htmlFor={id}
         className={cn(
           "text-sm font-medium mb-1.5 block",
-          contentAlign === "end" && "text-right"
+          contentAlign === "end" && "text-right",
         )}
       >
         {label}
@@ -191,13 +196,15 @@ export function MapboxLocationSearch({
             disabled={disabled}
             className={cn(
               "w-full justify-between h-[50px] text-base font-normal",
-              !value && "text-muted-foreground"
+              !value && "text-muted-foreground",
             )}
           >
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
               <span className="truncate">
-                {value?.address || placeholder}
+                {value?.address ||
+                  placeholder ||
+                  t("defaultLocationPlaceholder")}
               </span>
             </div>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -209,7 +216,7 @@ export function MapboxLocationSearch({
         >
           <Command shouldFilter={false}>
             <CommandInput
-              placeholder="Search for a location..."
+              placeholder={t("locationSearchPlaceholder")}
               value={searchValue}
               onValueChange={setSearchValue}
               className="truncate"
@@ -217,17 +224,19 @@ export function MapboxLocationSearch({
             <CommandList>
               {loading && searchValue.length >= 2 && (
                 <div className="py-6 text-center text-sm text-muted-foreground">
-                  Searching locations...
+                  {t("searchingLocations")}
                 </div>
               )}
 
-              {!loading && searchValue.length >= 2 && suggestions.length === 0 && (
-                <CommandEmpty>No locations found.</CommandEmpty>
-              )}
+              {!loading &&
+                searchValue.length >= 2 &&
+                suggestions.length === 0 && (
+                  <CommandEmpty>{t("noLocationsFound")}</CommandEmpty>
+                )}
 
               {!loading && searchValue.length > 0 && searchValue.length < 2 && (
                 <div className="py-6 text-center text-sm text-muted-foreground">
-                  Type at least 2 characters to search...
+                  {t("minimumCharacters")}
                 </div>
               )}
 
@@ -265,7 +274,7 @@ export function MapboxLocationSearch({
                     onSelect={handleClear}
                     className="cursor-pointer text-destructive"
                   >
-                    Clear selection
+                    {t("clearSelection")}
                   </CommandItem>
                 </CommandGroup>
               )}

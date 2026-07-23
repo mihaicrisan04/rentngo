@@ -2,28 +2,26 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 
 export default function LocaleError({
-  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const t = useTranslations("errorPage");
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
       <div className="text-center space-y-4 p-8">
-        <h1 className="text-2xl font-bold">Something went wrong</h1>
-        <p className="text-muted-foreground max-w-md">
-          We encountered an unexpected error. Please try again or go back to the
-          homepage.
-        </p>
+        <h1 className="text-2xl font-bold">{t("title")}</h1>
+        <p className="text-muted-foreground max-w-md">{t("description")}</p>
         <div className="flex gap-3 justify-center">
           <Button onClick={reset} variant="default">
-            Try again
+            {t("tryAgain")}
           </Button>
           <Button asChild variant="outline">
-            <Link href="/">Go home</Link>
+            <Link href="/">{t("goHome")}</Link>
           </Button>
         </div>
       </div>

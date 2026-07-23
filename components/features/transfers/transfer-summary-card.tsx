@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useTranslations } from "next-intl";
-import { format } from "date-fns";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Card,
   CardContent,
@@ -30,6 +29,7 @@ import {
   type AppliedCoupon,
 } from "@/components/features/checkout/coupon-code-input";
 import type { AffiliateDiscountPreview } from "@/hooks/use-affiliate-discount";
+import { formatDuration } from "@/lib/mapbox";
 
 interface Coordinates {
   lng: number;
@@ -93,6 +93,7 @@ export function TransferSummaryCard({
   const t = useTranslations("transferPage");
   const tCoupon = useTranslations("common.coupon");
   const tReferral = useTranslations("common.referral");
+  const locale = useLocale();
 
   // One discount per booking: an explicit coupon beats the automatic
   // affiliate discount (mirrors the server's pickDiscount)
@@ -103,18 +104,6 @@ export function TransferSummaryCard({
     discountAmount > 0
       ? applyDiscountToTotal(totalPrice, discountAmount)
       : totalPrice;
-
-  const formatDuration = (minutes: number): string => {
-    if (minutes < 60) {
-      return `${minutes} min`;
-    }
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    if (remainingMinutes === 0) {
-      return `${hours}h`;
-    }
-    return `${hours}h ${remainingMinutes}min`;
-  };
 
   return (
     <Card className={cn("w-full", className)}>
@@ -145,7 +134,7 @@ export function TransferSummaryCard({
             <div className="flex-1 space-y-3">
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                  Pickup
+                  {t("confirmation.pickup")}
                 </p>
                 <p className="font-medium text-sm leading-tight">
                   {pickupLocation.address}
@@ -153,7 +142,7 @@ export function TransferSummaryCard({
               </div>
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                  Dropoff
+                  {t("confirmation.dropoff")}
                 </p>
                 <p className="font-medium text-sm leading-tight">
                   {dropoffLocation.address}
@@ -169,14 +158,24 @@ export function TransferSummaryCard({
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <div>
-              <p className="text-xs text-muted-foreground">Date</p>
-              <p className="font-medium">{format(pickupDate, "EEE, MMM d")}</p>
+              <p className="text-xs text-muted-foreground">
+                {t("confirmation.date")}
+              </p>
+              <p className="font-medium">
+                {pickupDate.toLocaleDateString(locale, {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-muted-foreground" />
             <div>
-              <p className="text-xs text-muted-foreground">Time</p>
+              <p className="text-xs text-muted-foreground">
+                {t("confirmation.time")}
+              </p>
               <p className="font-medium">{pickupTime}</p>
             </div>
           </div>
@@ -186,20 +185,30 @@ export function TransferSummaryCard({
           <>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <ArrowRight className="h-3 w-3 rotate-180" />
-              <span>Return Trip</span>
+              <span>{t("confirmation.returnTrip")}</span>
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Return Date</p>
-                  <p className="font-medium">{format(returnDate, "EEE, MMM d")}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("confirmation.returnDate")}
+                  </p>
+                  <p className="font-medium">
+                    {returnDate.toLocaleDateString(locale, {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Return Time</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("confirmation.returnTime")}
+                  </p>
                   <p className="font-medium">{returnTime}</p>
                 </div>
               </div>
@@ -212,10 +221,12 @@ export function TransferSummaryCard({
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-muted-foreground" />
-            <span>{passengers} {passengers === 1 ? "Passenger" : "Passengers"}</span>
+            <span>{t("searchForm.passengerCount", { count: passengers })}</span>
           </div>
           <Badge variant="outline">
-            {transferType === "one_way" ? t("searchForm.oneWay") : t("searchForm.roundTrip")}
+            {transferType === "one_way"
+              ? t("searchForm.oneWay")
+              : t("searchForm.roundTrip")}
           </Badge>
         </div>
 
@@ -239,7 +250,9 @@ export function TransferSummaryCard({
                   {vehicle.make} {vehicle.model}
                 </p>
                 {vehicle.year && (
-                  <p className="text-xs text-muted-foreground">{vehicle.year}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {vehicle.year}
+                  </p>
                 )}
               </div>
             </div>
@@ -272,30 +285,30 @@ export function TransferSummaryCard({
           />
         )}
         <div className="flex flex-col gap-2">
-        {appliedCoupon && discountAmount > 0 && (
-          <div className="flex justify-between items-baseline text-sm text-green-600">
-            <span>
-              {tCoupon("discount")} ({appliedCoupon.code})
+          {appliedCoupon && discountAmount > 0 && (
+            <div className="flex justify-between items-baseline text-sm text-green-600">
+              <span>
+                {tCoupon("discount")} ({appliedCoupon.code})
+              </span>
+              <span>−€{discountAmount.toFixed(2)}</span>
+            </div>
+          )}
+          {affiliateDiscount && discountAmount > 0 && (
+            <div className="flex justify-between items-baseline text-sm text-green-600">
+              <span>
+                {affiliateDiscount.kind === "referred"
+                  ? tReferral("discount")
+                  : tReferral("reward")}
+              </span>
+              <span>−€{discountAmount.toFixed(2)}</span>
+            </div>
+          )}
+          <div className="flex justify-between items-baseline">
+            <span className="font-semibold">{t("pricing.totalPrice")}</span>
+            <span className="text-2xl font-bold text-primary">
+              €{displayedTotal.toFixed(2)}
             </span>
-            <span>−€{discountAmount.toFixed(2)}</span>
           </div>
-        )}
-        {affiliateDiscount && discountAmount > 0 && (
-          <div className="flex justify-between items-baseline text-sm text-green-600">
-            <span>
-              {affiliateDiscount.kind === "referred"
-                ? tReferral("discount")
-                : tReferral("reward")}
-            </span>
-            <span>−€{discountAmount.toFixed(2)}</span>
-          </div>
-        )}
-        <div className="flex justify-between items-baseline">
-          <span className="font-semibold">{t("pricing.totalPrice")}</span>
-          <span className="text-2xl font-bold text-primary">
-            €{displayedTotal.toFixed(2)}
-          </span>
-        </div>
         </div>
       </CardFooter>
     </Card>

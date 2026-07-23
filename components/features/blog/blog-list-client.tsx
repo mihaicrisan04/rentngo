@@ -34,7 +34,8 @@ export function BlogListClient({
     locale: locale as "ro" | "en",
   });
 
-  const featuredBlog = liveFeatured !== undefined ? liveFeatured : initialFeatured;
+  const featuredBlog =
+    liveFeatured !== undefined ? liveFeatured : initialFeatured;
 
   // Filter out featured from the list
   const allBlogs = liveAll !== undefined ? liveAll : initialBlogs;
@@ -99,7 +100,7 @@ export function BlogListClient({
                     </h2>
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    {blogs.length} {blogs.length === 1 ? "post" : "posts"}
+                    {t("postCount", { count: blogs.length })}
                   </span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

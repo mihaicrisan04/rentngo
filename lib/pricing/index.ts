@@ -17,3 +17,5 @@ export * from "./reservation";
 export * from "./legacy";
 export * from "./discount";
 export * from "./affiliate";
+export * from "./geo";
+export * from "./mapbox-route";

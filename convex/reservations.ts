@@ -34,13 +34,12 @@ const reservationStatusValidator = v.union(
   v.literal("pending"),
   v.literal("confirmed"),
   v.literal("cancelled"),
-  v.literal("completed")
+  v.literal("completed"),
 );
 
 // Explicit type for ReservationStatus based on the schema
-type ReservationStatusType = "pending" | "confirmed" | "cancelled" | "completed";
-
- 
+type ReservationStatusType =
+  "pending" | "confirmed" | "cancelled" | "completed";
 
 // Validator for additional charges, aligned with schema.ts
 const additionalChargeValidator = v.object({
@@ -54,7 +53,7 @@ export const createReservation = mutation({
     userId: v.optional(v.id("users")),
     vehicleId: v.id("vehicles"),
     startDate: v.number(), // Unix timestamp
-    endDate: v.number(),   // Unix timestamp
+    endDate: v.number(), // Unix timestamp
     pickupTime: v.string(), // Time in "HH:MM" format
     restitutionTime: v.string(), // Time in "HH:MM" format
     pickupLocation: v.string(), // Name of pickup location
@@ -62,7 +61,7 @@ export const createReservation = mutation({
     paymentMethod: v.union(
       v.literal("cash_on_delivery"),
       v.literal("card_on_delivery"),
-      v.literal("card_online")
+      v.literal("card_online"),
     ),
     totalPrice: v.number(),
     customerInfo: v.object({
@@ -86,27 +85,31 @@ export const createReservation = mutation({
     seasonId: v.optional(v.id("seasons")),
     seasonalMultiplier: v.optional(v.number()),
     // Email data fields
-    vehicleInfo: v.optional(v.object({
-      make: v.string(),
-      model: v.string(),
-      year: v.optional(v.number()),
-      type: v.optional(v.string()),
-      seats: v.optional(v.number()),
-      transmission: v.optional(v.string()),
-      fuelType: v.optional(v.string()),
-      features: v.optional(v.array(v.string())),
-    })),
+    vehicleInfo: v.optional(
+      v.object({
+        make: v.string(),
+        model: v.string(),
+        year: v.optional(v.number()),
+        type: v.optional(v.string()),
+        seats: v.optional(v.number()),
+        transmission: v.optional(v.string()),
+        fuelType: v.optional(v.string()),
+        features: v.optional(v.array(v.string())),
+      }),
+    ),
     pricePerDayUsed: v.optional(v.number()),
     locale: v.optional(v.string()),
     // Structured extras (new clients). When present, the server recomputes
     // ALL charges from these; the legacy prose `additionalCharges` are then
     // only used for the email rendering.
-    extras: v.optional(v.object({
-      snowChains: v.boolean(),
-      childSeat1to4: v.number(),
-      childSeat5to12: v.number(),
-      extraKilometers: v.number(),
-    })),
+    extras: v.optional(
+      v.object({
+        snowChains: v.boolean(),
+        childSeat1to4: v.number(),
+        childSeat5to12: v.number(),
+        extraKilometers: v.number(),
+      }),
+    ),
   },
   returns: v.object({
     reservationId: v.id("reservations"),
@@ -343,7 +346,10 @@ export const createReservation = mutation({
       basePrice: pricing.basePrice,
     };
 
-    const reservationId = await ctx.db.insert("reservations", newReservationData);
+    const reservationId = await ctx.db.insert(
+      "reservations",
+      newReservationData,
+    );
 
     // Link the redemption audit row to the booking it paid for
     if (redeemedCoupon) {
@@ -372,49 +378,59 @@ export const createReservation = mutation({
     // Schedule email sending if vehicle info is provided
     if (args.vehicleInfo) {
       // Format dates for email
-      const timeZone = 'Europe/Bucharest';
-      const startDateString = new Date(args.startDate).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone });
-      const endDateString = new Date(args.endDate).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone });
-
-      await ctx.scheduler.runAfter(0, internal.emails.sendReservationConfirmationEmail, {
-        reservationNumber: nextReservationNumber,
-        customerInfo: args.customerInfo,
-        vehicleInfo: args.vehicleInfo,
-        rentalDetails: {
-          startDate: startDateString,
-          endDate: endDateString,
-          pickupTime: args.pickupTime,
-          restitutionTime: args.restitutionTime,
-          pickupLocation: args.pickupLocation,
-          restitutionLocation: args.restitutionLocation,
-          numberOfDays: pricing.rentalDays,
-          includedKm: calculateIncludedKilometers(pricing.rentalDays),
-          // Only structured clients declare extra km; legacy bookings carry
-          // it solely as a prose additional-charge line, so the explicit row
-          // is omitted for them rather than parsed out of localized text
-          extraKilometers:
-            args.extras && args.extras.extraKilometers > 0
-              ? args.extras.extraKilometers
-              : undefined,
-        },
-        pricingDetails: {
-          // Server-computed values so the email matches what was stored.
-          // Line items stay on the legacy localized prose until RNGO-19
-          // gives the templates a coded-charge translation catalog.
-          pricePerDay: pricing.pricePerDay,
-          totalPrice,
-          paymentMethod: args.paymentMethod,
-          promoCode: appliedDiscount?.code,
-          discountAmount: appliedDiscount?.amount,
-          isReferralDiscount: appliedDiscount?.source === "affiliate",
-          additionalCharges: args.additionalCharges,
-          isSCDWSelected: args.isSCDWSelected,
-          deductibleAmount: pricing.deductibleAmount,
-          protectionCost:
-            pricing.protectionCost > 0 ? pricing.protectionCost : undefined,
-        },
-        locale: args.locale,
+      const timeZone = "Europe/Bucharest";
+      const startDateString = new Date(args.startDate).toLocaleDateString(
+        "en-GB",
+        { year: "numeric", month: "long", day: "numeric", timeZone },
+      );
+      const endDateString = new Date(args.endDate).toLocaleDateString("en-GB", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        timeZone,
       });
+
+      await ctx.scheduler.runAfter(
+        0,
+        internal.emails.sendReservationConfirmationEmail,
+        {
+          reservationNumber: nextReservationNumber,
+          customerInfo: args.customerInfo,
+          vehicleInfo: args.vehicleInfo,
+          rentalDetails: {
+            startDate: startDateString,
+            endDate: endDateString,
+            pickupTime: args.pickupTime,
+            restitutionTime: args.restitutionTime,
+            pickupLocation: args.pickupLocation,
+            restitutionLocation: args.restitutionLocation,
+            numberOfDays: pricing.rentalDays,
+            includedKm: calculateIncludedKilometers(pricing.rentalDays),
+            // Only structured clients declare extra km; legacy bookings carry
+            // it solely as a prose additional-charge line, so the explicit row
+            // is omitted for them rather than parsed out of localized text
+            extraKilometers:
+              args.extras && args.extras.extraKilometers > 0
+                ? args.extras.extraKilometers
+                : undefined,
+          },
+          pricingDetails: {
+            // Server-computed values so the email matches what was stored.
+            pricePerDay: pricing.pricePerDay,
+            totalPrice,
+            paymentMethod: args.paymentMethod,
+            promoCode: appliedDiscount?.code,
+            discountAmount: appliedDiscount?.amount,
+            isReferralDiscount: appliedDiscount?.source === "affiliate",
+            additionalCharges: persistedCharges,
+            isSCDWSelected: args.isSCDWSelected,
+            deductibleAmount: pricing.deductibleAmount,
+            protectionCost:
+              pricing.protectionCost > 0 ? pricing.protectionCost : undefined,
+          },
+          locale: args.locale,
+        },
+      );
     }
 
     return { reservationId, reservationNumber: nextReservationNumber };
@@ -430,13 +446,16 @@ export const getReservationById = query({
 
     // Check if user is authenticated and authorized to view this reservation
     const currentUser = await getCurrentUser(ctx);
-    
+
     // Allow access if:
     // 1. User is an admin
     // 2. User is the owner of the reservation
     // 3. Reservation has no userId (guest booking) - you might want to restrict this further
     if (currentUser) {
-      if (currentUser.role === "admin" || reservation.userId === currentUser._id) {
+      if (
+        currentUser.role === "admin" ||
+        reservation.userId === currentUser._id
+      ) {
         return reservation;
       } else {
         throw new Error("User not authorized to view this reservation.");
@@ -490,18 +509,20 @@ export const getReservationsByPickupLocation = query({
 
     return await ctx.db
       .query("reservations")
-      .withIndex("by_pickup_location", (q) => q.eq("pickupLocation", args.pickupLocation))
+      .withIndex("by_pickup_location", (q) =>
+        q.eq("pickupLocation", args.pickupLocation),
+      )
       .collect();
   },
 });
 
 export const getReservationsByPaymentMethod = query({
-  args: { 
+  args: {
     paymentMethod: v.union(
       v.literal("cash_on_delivery"),
       v.literal("card_on_delivery"),
-      v.literal("card_online")
-    ) 
+      v.literal("card_online"),
+    ),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
@@ -512,7 +533,9 @@ export const getReservationsByPaymentMethod = query({
 
     return await ctx.db
       .query("reservations")
-      .withIndex("by_payment_method", (q) => q.eq("paymentMethod", args.paymentMethod))
+      .withIndex("by_payment_method", (q) =>
+        q.eq("paymentMethod", args.paymentMethod),
+      )
       .collect();
   },
 });
@@ -574,19 +597,23 @@ export const updateReservationDetails = mutation({
     restitutionTime: v.optional(v.string()),
     pickupLocation: v.optional(v.string()),
     restitutionLocation: v.optional(v.string()),
-    paymentMethod: v.optional(v.union(
-      v.literal("cash_on_delivery"),
-      v.literal("card_on_delivery"),
-      v.literal("card_online")
-    )),
+    paymentMethod: v.optional(
+      v.union(
+        v.literal("cash_on_delivery"),
+        v.literal("card_on_delivery"),
+        v.literal("card_online"),
+      ),
+    ),
     totalPrice: v.optional(v.number()),
-    customerInfo: v.optional(v.object({
-      name: v.string(),
-      email: v.string(),
-      phone: v.string(),
-      message: v.optional(v.string()),
-      flightNumber: v.optional(v.string()),
-    })),
+    customerInfo: v.optional(
+      v.object({
+        name: v.string(),
+        email: v.string(),
+        phone: v.string(),
+        message: v.optional(v.string()),
+        flightNumber: v.optional(v.string()),
+      }),
+    ),
     status: v.optional(reservationStatusValidator),
     additionalCharges: v.optional(v.array(additionalChargeValidator)),
     isSCDWSelected: v.optional(v.boolean()),
@@ -613,27 +640,43 @@ export const updateReservationDetails = mutation({
 
     // Construct the updates object carefully to pass to patch
     const updatesToApply: Partial<typeof reservation> = {};
-    if (updatesIn.vehicleId !== undefined) updatesToApply.vehicleId = updatesIn.vehicleId;
-    if (updatesIn.startDate !== undefined) updatesToApply.startDate = updatesIn.startDate;
-    if (updatesIn.endDate !== undefined) updatesToApply.endDate = updatesIn.endDate;
-    if (updatesIn.pickupTime !== undefined) updatesToApply.pickupTime = updatesIn.pickupTime;
-    if (updatesIn.restitutionTime !== undefined) updatesToApply.restitutionTime = updatesIn.restitutionTime;
-    if (updatesIn.pickupLocation !== undefined) updatesToApply.pickupLocation = updatesIn.pickupLocation;
-    if (updatesIn.restitutionLocation !== undefined) updatesToApply.restitutionLocation = updatesIn.restitutionLocation;
-    if (updatesIn.paymentMethod !== undefined) updatesToApply.paymentMethod = updatesIn.paymentMethod;
-    if (updatesIn.totalPrice !== undefined) updatesToApply.totalPrice = updatesIn.totalPrice;
-    if (updatesIn.customerInfo !== undefined) updatesToApply.customerInfo = updatesIn.customerInfo;
-    if (updatesIn.status !== undefined) updatesToApply.status = updatesIn.status; // status is already validated by args
-    if (updatesIn.additionalCharges !== undefined) updatesToApply.additionalCharges = updatesIn.additionalCharges;
-    if (updatesIn.isSCDWSelected !== undefined) updatesToApply.isSCDWSelected = updatesIn.isSCDWSelected;
-    if (updatesIn.deductibleAmount !== undefined) updatesToApply.deductibleAmount = updatesIn.deductibleAmount;
-    if (updatesIn.protectionCost !== undefined) updatesToApply.protectionCost = updatesIn.protectionCost;
-    if (updatesIn.seasonId !== undefined) updatesToApply.seasonId = updatesIn.seasonId;
-    if (updatesIn.seasonalMultiplier !== undefined) updatesToApply.seasonalMultiplier = updatesIn.seasonalMultiplier;
-
+    if (updatesIn.vehicleId !== undefined)
+      updatesToApply.vehicleId = updatesIn.vehicleId;
+    if (updatesIn.startDate !== undefined)
+      updatesToApply.startDate = updatesIn.startDate;
+    if (updatesIn.endDate !== undefined)
+      updatesToApply.endDate = updatesIn.endDate;
+    if (updatesIn.pickupTime !== undefined)
+      updatesToApply.pickupTime = updatesIn.pickupTime;
+    if (updatesIn.restitutionTime !== undefined)
+      updatesToApply.restitutionTime = updatesIn.restitutionTime;
+    if (updatesIn.pickupLocation !== undefined)
+      updatesToApply.pickupLocation = updatesIn.pickupLocation;
+    if (updatesIn.restitutionLocation !== undefined)
+      updatesToApply.restitutionLocation = updatesIn.restitutionLocation;
+    if (updatesIn.paymentMethod !== undefined)
+      updatesToApply.paymentMethod = updatesIn.paymentMethod;
+    if (updatesIn.totalPrice !== undefined)
+      updatesToApply.totalPrice = updatesIn.totalPrice;
+    if (updatesIn.customerInfo !== undefined)
+      updatesToApply.customerInfo = updatesIn.customerInfo;
+    if (updatesIn.status !== undefined)
+      updatesToApply.status = updatesIn.status; // status is already validated by args
+    if (updatesIn.additionalCharges !== undefined)
+      updatesToApply.additionalCharges = updatesIn.additionalCharges;
+    if (updatesIn.isSCDWSelected !== undefined)
+      updatesToApply.isSCDWSelected = updatesIn.isSCDWSelected;
+    if (updatesIn.deductibleAmount !== undefined)
+      updatesToApply.deductibleAmount = updatesIn.deductibleAmount;
+    if (updatesIn.protectionCost !== undefined)
+      updatesToApply.protectionCost = updatesIn.protectionCost;
+    if (updatesIn.seasonId !== undefined)
+      updatesToApply.seasonId = updatesIn.seasonId;
+    if (updatesIn.seasonalMultiplier !== undefined)
+      updatesToApply.seasonalMultiplier = updatesIn.seasonalMultiplier;
 
     if (Object.keys(updatesToApply).length === 0) {
-        return { success: true, message: "No changes provided." };
+      return { success: true, message: "No changes provided." };
     }
 
     await ctx.db.patch(reservationId, updatesToApply);
@@ -669,14 +712,21 @@ export const cancelReservation = mutation({
       throw new Error("User not authorized to cancel this reservation.");
     }
 
-    if (user.role !== 'admin' && (reservation.status === "completed" || reservation.status === "cancelled")) {
-       throw new Error(`Reservation is already ${reservation.status} and cannot be modified by user.`);
+    if (
+      user.role !== "admin" &&
+      (reservation.status === "completed" || reservation.status === "cancelled")
+    ) {
+      throw new Error(
+        `Reservation is already ${reservation.status} and cannot be modified by user.`,
+      );
     }
-    
+
     // If reservation was "pending" or "confirmed", it can be "cancelled".
     // If it was already "completed", only an admin should be able to change it further (e.g. to "cancelled" for a special case refund)
 
-    await ctx.db.patch(args.reservationId, { status: "cancelled" as ReservationStatusType });
+    await ctx.db.patch(args.reservationId, {
+      status: "cancelled" as ReservationStatusType,
+    });
 
     // Owner decision (RNGO-26): a cancelled booking must not keep crediting
     // the referrer — void the conversion and decrement their counter
@@ -702,7 +752,10 @@ export const deleteReservationPermanently = mutation({
 
     const reservation = await ctx.db.get(args.reservationId);
     if (!reservation) {
-      return { success: true, message: "Reservation not found or already deleted." };
+      return {
+        success: true,
+        message: "Reservation not found or already deleted.",
+      };
     }
 
     // A hard-deleted booking is not live: void its conversion first
@@ -736,52 +789,56 @@ export const getReservationStats = query({
     }
 
     const allReservations = await ctx.db.query("reservations").collect();
-    
+
     const now = Date.now();
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
     const lastMonthStart = new Date(currentYear, currentMonth - 1, 1).getTime();
     const currentMonthStart = new Date(currentYear, currentMonth, 1).getTime();
-    
+
     // Total reservations
     const totalReservations = allReservations.length;
-    
+
     // Active reservations (confirmed and currently ongoing)
-    const activeReservations = allReservations.filter(r => 
-      r.status === "confirmed" && 
-      r.startDate <= now && 
-      r.endDate >= now
+    const activeReservations = allReservations.filter(
+      (r) => r.status === "confirmed" && r.startDate <= now && r.endDate >= now,
     ).length;
-    
+
     // Pending confirmations
-    const pendingConfirmations = allReservations.filter(r => 
-      r.status === "pending"
+    const pendingConfirmations = allReservations.filter(
+      (r) => r.status === "pending",
     ).length;
-    
+
     // Current month revenue and reservations
-    const currentMonthReservations = allReservations.filter(r => 
-      r._creationTime >= currentMonthStart
+    const currentMonthReservations = allReservations.filter(
+      (r) => r._creationTime >= currentMonthStart,
     );
     const currentMonthRevenue = currentMonthReservations
-      .filter(r => r.status === "confirmed" || r.status === "completed")
+      .filter((r) => r.status === "confirmed" || r.status === "completed")
       .reduce((sum, r) => sum + r.totalPrice, 0);
-    
+
     // Last month revenue for comparison
-    const lastMonthReservations = allReservations.filter(r => 
-      r._creationTime >= lastMonthStart && r._creationTime < currentMonthStart
+    const lastMonthReservations = allReservations.filter(
+      (r) =>
+        r._creationTime >= lastMonthStart &&
+        r._creationTime < currentMonthStart,
     );
     const lastMonthRevenue = lastMonthReservations
-      .filter(r => r.status === "confirmed" || r.status === "completed")
+      .filter((r) => r.status === "confirmed" || r.status === "completed")
       .reduce((sum, r) => sum + r.totalPrice, 0);
-    
+
     // Calculate percentage changes
-    const reservationGrowth = lastMonthReservations.length > 0 
-      ? ((currentMonthReservations.length - lastMonthReservations.length) / lastMonthReservations.length) * 100
-      : 0;
-    
-    const revenueGrowth = lastMonthRevenue > 0 
-      ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
-      : 0;
+    const reservationGrowth =
+      lastMonthReservations.length > 0
+        ? ((currentMonthReservations.length - lastMonthReservations.length) /
+            lastMonthReservations.length) *
+          100
+        : 0;
+
+    const revenueGrowth =
+      lastMonthRevenue > 0
+        ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
+        : 0;
 
     return {
       totalReservations,
@@ -797,11 +854,13 @@ export const getReservationStats = query({
 // Get monthly data for charts (last 6 months)
 export const getMonthlyChartData = query({
   args: {},
-  returns: v.array(v.object({
-    month: v.string(),
-    reservations: v.number(),
-    revenue: v.number(),
-  })),
+  returns: v.array(
+    v.object({
+      month: v.string(),
+      reservations: v.number(),
+      revenue: v.number(),
+    }),
+  ),
   handler: async (ctx) => {
     const user = await getCurrentUserOrThrow(ctx);
 
@@ -810,31 +869,39 @@ export const getMonthlyChartData = query({
     }
 
     const allReservations = await ctx.db.query("reservations").collect();
-    
+
     // Get last 6 months including current month
     const months = [];
     const now = new Date();
-    
+
     for (let i = 5; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const monthStart = date.getTime();
-      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999).getTime();
-      
-      const monthReservations = allReservations.filter(r => 
-        r._creationTime >= monthStart && r._creationTime <= monthEnd
+      const monthEnd = new Date(
+        date.getFullYear(),
+        date.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      ).getTime();
+
+      const monthReservations = allReservations.filter(
+        (r) => r._creationTime >= monthStart && r._creationTime <= monthEnd,
       );
-      
+
       const monthRevenue = monthReservations
-        .filter(r => r.status === "confirmed" || r.status === "completed")
+        .filter((r) => r.status === "confirmed" || r.status === "completed")
         .reduce((sum, r) => sum + r.totalPrice, 0);
-      
+
       months.push({
-        month: date.toLocaleDateString('en-US', { month: 'short' }),
+        month: date.toLocaleDateString("en-US", { month: "short" }),
         reservations: monthReservations.length,
         revenue: Math.round(monthRevenue), // Round to nearest whole number
       });
     }
-    
+
     return months;
   },
 });

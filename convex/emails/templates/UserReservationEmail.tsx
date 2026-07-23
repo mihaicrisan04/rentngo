@@ -1,5 +1,12 @@
 import * as React from "react";
-import { Body, Head, Html, Preview, Hr, Tailwind } from "@react-email/components";
+import {
+  Body,
+  Head,
+  Html,
+  Preview,
+  Hr,
+  Tailwind,
+} from "@react-email/components";
 import { ReservationEmailData } from "../types";
 import { EmailHeader } from "../components/email_header";
 import { EmailFooter } from "../components/email_footer";
@@ -127,6 +134,7 @@ export const UserReservationEmail: React.FC<UserReservationEmailProps> = ({
           <PricingSection
             pricingDetails={pricingDetails}
             rentalDetails={rentalDetails}
+            locale={locale}
             labels={{
               heading: t.pricing.heading,
               rentalLine: t.pricing.rentalLine,

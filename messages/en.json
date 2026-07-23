@@ -133,7 +133,9 @@
       "title": "Business Hours",
       "mondayToSunday": "Monday - Sunday",
       "mondayToSundayTime": "24/7"
-    }
+    },
+    "phoneCopied": "Phone number copied to clipboard!",
+    "whatsappMessage": "Hello! I'm interested in your rental services."
   },
   "reservationPage": {
     "backToVehicleDetails": "Back to Vehicle Details",
@@ -171,7 +173,9 @@
       "title": "Vehicle Details",
       "noImage": "No Image",
       "rateFor": "Rate for",
-      "rental": "rental"
+      "rental": "rental",
+      "pricePerDay": "{price} EUR / day",
+      "rateForDays": "Rate for a {days, plural, one {# day} other {# days}} rental"
     },
     "additionalFeatures": {
       "title": "Additional Features",
@@ -234,8 +238,8 @@
       "flight": "Flight",
       "notSelected": "Not selected",
       "notCalculated": "Not calculated",
-      "daysCount": "{days} day{plural}",
-      "basePrice": "Base price ({days} day{plural})",
+      "daysCount": "{days, plural, one {# day} other {# days}}",
+      "basePrice": "Base price ({days, plural, one {# day} other {# days}})",
       "pickupLocationFee": "Pick-up location fee",
       "returnLocationFee": "Return location fee",
       "totalLocationFees": "Total relocation fees",
@@ -367,7 +371,9 @@
       "oneWay": "One Way",
       "roundTrip": "Round Trip",
       "searchTransfers": "Search Transfers",
-      "searching": "Searching..."
+      "searching": "Searching...",
+      "passengerTip": "For 4+ passengers, consider booking 2 vehicles or a van for more comfort.",
+      "calculatingRoute": "Calculating route..."
     },
     "vehicleSelection": {
       "title": "Select Your Vehicle",
@@ -379,7 +385,14 @@
       "passengers": "{count} passengers max",
       "noVehiclesFound": "No Vehicles Available",
       "routeEstimationNote": "Route estimate only. Actual distance and time may vary.",
-      "selectPrompt": "Select a vehicle to continue"
+      "selectPrompt": "Select a vehicle to continue",
+      "noVehiclesFor": "No vehicles are available for {passengers, plural, one {# passenger} other {# passengers}}. Try reducing the passenger count.",
+      "routeWarning": "Unable to calculate the route distance. Please check your pickup and dropoff locations.",
+      "resultCount": "{count, plural, one {# vehicle available} other {# vehicles available}}",
+      "routeFrom": "From:",
+      "routeTo": "To:",
+      "continue": "Continue",
+      "selected": "Selected"
     },
     "booking": {
       "title": "Complete Your Booking",
@@ -388,7 +401,28 @@
       "paymentMethod": "Payment Method",
       "summary": "Transfer Summary",
       "confirmBooking": "Confirm Transfer",
-      "processing": "Processing..."
+      "processing": "Processing...",
+      "subtitle": "Complete your booking details below",
+      "backToVehicles": "Back to Vehicle Selection",
+      "luggageLabel": "Luggage Count",
+      "luggagePlaceholder": "Number of medium-size bags",
+      "luggageHelp": "Approximate number of medium-size airport bags",
+      "messageTooltip": "Add any special requests: stops along the way, waiting for someone, specific pickup instructions, etc.",
+      "invalidEmail": "Invalid email format",
+      "toasts": {
+        "missingInfo": "Missing required transfer information",
+        "successTitle": "Transfer booked successfully!",
+        "successBody": "Your transfer #{number} has been confirmed.",
+        "failedTitle": "Failed to book transfer",
+        "failedBody": "Please try again or contact support."
+      },
+      "errors": {
+        "routeChanged": "The route or price has changed. Return to the route search and recalculate before booking.",
+        "invalidCoordinates": "Select valid pickup and dropoff locations, then recalculate the route.",
+        "noRoute": "No driving route was found between these locations. Choose a different route.",
+        "providerUnavailable": "We cannot verify the route right now. Please try again shortly.",
+        "clientUpgradeRequired": "This booking page is outdated. Refresh the page and try again."
+      }
     },
     "confirmation": {
       "title": "Transfer Confirmed!",
@@ -397,7 +431,23 @@
       "route": "Route",
       "distance": "Distance",
       "duration": "Estimated Duration",
-      "bookAnother": "Book Another Transfer"
+      "bookAnother": "Book Another Transfer",
+      "pickup": "Pickup",
+      "dropoff": "Dropoff",
+      "date": "Date",
+      "time": "Time",
+      "passengers": "Passengers",
+      "luggage": "Luggage",
+      "bags": "{count, plural, one {# bag} other {# bags}}",
+      "returnTrip": "Return Trip",
+      "returnDate": "Return Date",
+      "returnTime": "Return Time",
+      "seats": "{count, plural, one {# seat} other {# seats}}",
+      "flightPrefix": "Flight:",
+      "driverAssignment": {
+        "title": "Driver Assignment",
+        "description": "A professional driver will be assigned to your transfer and will contact you before pickup."
+      }
     },
     "pricing": {
       "basePrice": "Base Fare",
@@ -419,6 +469,33 @@
         "title": "Confirm & Relax",
         "description": "Complete your booking and we'll handle the rest"
       }
+    },
+    "features": {
+      "premium": {
+        "title": "Premium Vehicles",
+        "description": "Travel in comfort with our luxury fleet"
+      },
+      "safe": {
+        "title": "Safe & Reliable",
+        "description": "Professional drivers with verified backgrounds"
+      },
+      "onTime": {
+        "title": "On-Time Service",
+        "description": "Punctual pickups and drop-offs guaranteed"
+      },
+      "destination": {
+        "title": "Any Destination",
+        "description": "Airport transfers and city-to-city routes"
+      }
+    },
+    "emptyState": {
+      "missingTitle": "Missing Transfer Details",
+      "bookingBody": "Please complete the transfer search and vehicle selection first.",
+      "vehiclesBody": "Please complete the transfer search form first.",
+      "startOver": "Start Over",
+      "backToSearch": "Back to Search",
+      "notFoundTitle": "Transfer Not Found",
+      "notFoundBody": "The transfer you're looking for doesn't exist or has been removed."
     }
   },
   "common": {
@@ -450,6 +527,7 @@
     "optional": "Optional",
     "noImage": "No Image",
     "invalidData": "Invalid data",
+    "termsAcceptance": "I accept the <terms>Terms and Conditions</terms> and <privacy>Privacy Policy</privacy>",
     "status": {
       "confirmed": "Confirmed",
       "pending": "Pending",
@@ -517,7 +595,8 @@
       "description": "Book your rental car today and discover everything Transylvania has to offer.",
       "button": "Browse Our Cars"
     },
-    "loadMore": "Load More"
+    "loadMore": "Load More",
+    "postCount": "{count, plural, one {# post} other {# posts}}"
   },
   "blogDetail": {
     "loading": "Loading blog post...",
@@ -557,7 +636,18 @@
       "dates": "Rental Period",
       "locations": "Pickup & Return",
       "totalPrice": "Total Price",
-      "status": "Status"
+      "status": "Status",
+      "fromLabel": "From:",
+      "toLabel": "To:",
+      "pickupLabel": "Pickup:",
+      "returnLabel": "Return:",
+      "promoLabel": "Promo:",
+      "scdwZeroDeductible": "SCDW (zero deductible)",
+      "standardWarranty": "Standard Warranty ({amount} EUR deductible)",
+      "showingRange": "Showing {from} to {to} of {total} reservations",
+      "pageOf": "{page} of {total}",
+      "loading": "Loading...",
+      "loadingReservations": "Loading reservations..."
     },
     "affiliate": {
       "title": "Referral Program",
@@ -606,7 +696,14 @@
     "searchingCars": "Searching Car Rentals...",
     "returnDateAfterPickup": "Return date must be after or the same as pick-up date.",
     "selectDateFirst": "Select a date first",
-    "locationRetrieveError": "Couldn't get details for that location. Please try again."
+    "locationRetrieveError": "Couldn't get details for that location. Please try again.",
+    "defaultLocationPlaceholder": "Enter location...",
+    "mapboxTokenMissing": "Mapbox token not configured",
+    "locationSearchPlaceholder": "Search for a location...",
+    "searchingLocations": "Searching locations...",
+    "noLocationsFound": "No locations found.",
+    "minimumCharacters": "Type at least 2 characters to search...",
+    "clearSelection": "Clear selection"
   },
   "vehicleCard": {
     "or": "or",
@@ -866,5 +963,11 @@
     "childSeat1to4": "Child seat 1-4 years ×{count} ({days, plural, one {# day} other {# days}})",
     "childSeat5to12": "Child seat 5-12 years ×{count} ({days, plural, one {# day} other {# days}})",
     "extraKm": "Extra kilometers (+{km} km)"
+  },
+  "errorPage": {
+    "title": "Something went wrong",
+    "description": "We encountered an unexpected error. Please try again or go back to the homepage.",
+    "tryAgain": "Try again",
+    "goHome": "Go home"
   }
 }

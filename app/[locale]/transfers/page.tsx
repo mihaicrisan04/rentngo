@@ -15,32 +15,32 @@ export default function TransfersPage() {
     {
       id: "premium",
       icon: Car,
-      title: "Premium Vehicles",
-      description: "Travel in comfort with our luxury fleet",
+      title: t("features.premium.title"),
+      description: t("features.premium.description"),
       color: "text-blue-600 dark:text-blue-400",
       bg: "bg-blue-500/10",
     },
     {
       id: "safe",
       icon: Shield,
-      title: "Safe & Reliable",
-      description: "Professional drivers with verified backgrounds",
+      title: t("features.safe.title"),
+      description: t("features.safe.description"),
       color: "text-emerald-600 dark:text-emerald-400",
       bg: "bg-emerald-500/10",
     },
     {
       id: "ontime",
       icon: Clock,
-      title: "On-Time Service",
-      description: "Punctual pickups and drop-offs guaranteed",
+      title: t("features.onTime.title"),
+      description: t("features.onTime.description"),
       color: "text-amber-600 dark:text-amber-400",
       bg: "bg-amber-500/10",
     },
     {
       id: "destination",
       icon: MapPin,
-      title: "Any Destination",
-      description: "Airport transfers and city-to-city routes",
+      title: t("features.destination.title"),
+      description: t("features.destination.description"),
       color: "text-violet-600 dark:text-violet-400",
       bg: "bg-violet-500/10",
     },
@@ -99,11 +99,26 @@ export default function TransfersPage() {
                 <div className="hidden md:block absolute top-7 left-[16.7%] right-[16.7%] h-[2px] bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20"></div>
 
                 {[
-                  { num: 1, title: t("howItWorks.step1.title"), desc: t("howItWorks.step1.description") },
-                  { num: 2, title: t("howItWorks.step2.title"), desc: t("howItWorks.step2.description") },
-                  { num: 3, title: t("howItWorks.step3.title"), desc: t("howItWorks.step3.description") },
+                  {
+                    num: 1,
+                    title: t("howItWorks.step1.title"),
+                    desc: t("howItWorks.step1.description"),
+                  },
+                  {
+                    num: 2,
+                    title: t("howItWorks.step2.title"),
+                    desc: t("howItWorks.step2.description"),
+                  },
+                  {
+                    num: 3,
+                    title: t("howItWorks.step3.title"),
+                    desc: t("howItWorks.step3.description"),
+                  },
                 ].map((step) => (
-                  <div key={step.num} className="flex flex-col items-center text-center relative">
+                  <div
+                    key={step.num}
+                    className="flex flex-col items-center text-center relative"
+                  >
                     <div className="h-14 w-14 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg mb-5 shadow-lg shadow-primary/20 relative z-10">
                       {step.num}
                     </div>
@@ -140,7 +155,9 @@ export default function TransfersPage() {
                       >
                         <feature.icon className={`w-7 h-7 ${feature.color}`} />
                       </div>
-                      <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
+                      <h3 className="font-semibold text-lg mb-2">
+                        {feature.title}
+                      </h3>
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         {feature.description}
                       </p>
