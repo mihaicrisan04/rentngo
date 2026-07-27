@@ -647,7 +647,9 @@
       "showingRange": "Se afișează {from}-{to} din {total} rezervări",
       "pageOf": "{page} din {total}",
       "loading": "Se încarcă...",
-      "loadingReservations": "Se încarcă rezervările..."
+      "loadingReservations": "Se încarcă rezervările...",
+      "loadMore": "Încarcă mai multe",
+      "vehicleUnavailable": "Vehicul indisponibil"
     },
     "affiliate": {
       "title": "Program de Recomandare",

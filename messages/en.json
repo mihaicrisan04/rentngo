@@ -647,7 +647,9 @@
       "showingRange": "Showing {from} to {to} of {total} reservations",
       "pageOf": "{page} of {total}",
       "loading": "Loading...",
-      "loadingReservations": "Loading reservations..."
+      "loadingReservations": "Loading reservations...",
+      "loadMore": "Load more",
+      "vehicleUnavailable": "Vehicle unavailable"
     },
     "affiliate": {
       "title": "Referral Program",

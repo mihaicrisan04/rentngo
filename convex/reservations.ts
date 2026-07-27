@@ -1,5 +1,9 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import {
+  paginationOptsValidator,
+  paginationResultValidator,
+} from "convex/server";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 import {
@@ -46,6 +50,81 @@ type ReservationStatusType =
 const additionalChargeValidator = v.object({
   description: v.string(),
   amount: v.number(),
+});
+
+const reservationDocValidator = v.object({
+  _id: v.id("reservations"),
+  _creationTime: v.number(),
+  reservationNumber: v.optional(v.number()),
+  userId: v.optional(v.id("users")),
+  vehicleId: v.id("vehicles"),
+  startDate: v.number(),
+  endDate: v.number(),
+  pickupTime: v.string(),
+  restitutionTime: v.string(),
+  pickupLocation: v.string(),
+  restitutionLocation: v.string(),
+  paymentMethod: v.union(
+    v.literal("cash_on_delivery"),
+    v.literal("card_on_delivery"),
+    v.literal("card_online"),
+  ),
+  status: reservationStatusValidator,
+  totalPrice: v.number(),
+  customerInfo: v.object({
+    name: v.string(),
+    email: v.string(),
+    phone: v.string(),
+    message: v.optional(v.string()),
+    flightNumber: v.optional(v.string()),
+  }),
+  promoCode: v.optional(v.string()),
+  couponId: v.optional(v.id("coupons")),
+  discountAmount: v.optional(v.number()),
+  discountSource: v.optional(
+    v.union(v.literal("coupon"), v.literal("affiliate")),
+  ),
+  affiliateId: v.optional(v.id("affiliates")),
+  additionalCharges: v.optional(
+    v.array(
+      v.object({
+        description: v.optional(v.string()),
+        code: v.optional(
+          v.union(
+            v.literal("pickupLocationFee"),
+            v.literal("returnLocationFee"),
+            v.literal("snowChains"),
+            v.literal("childSeat1to4"),
+            v.literal("childSeat5to12"),
+            v.literal("extraKm"),
+          ),
+        ),
+        params: v.optional(
+          v.record(v.string(), v.union(v.string(), v.number())),
+        ),
+        amount: v.number(),
+      }),
+    ),
+  ),
+  isSCDWSelected: v.boolean(),
+  deductibleAmount: v.number(),
+  protectionCost: v.optional(v.number()),
+  seasonId: v.optional(v.id("seasons")),
+  seasonalMultiplier: v.optional(v.number()),
+  pricePerDay: v.optional(v.number()),
+  rentalDays: v.optional(v.number()),
+  basePrice: v.optional(v.number()),
+});
+
+const reservationListItemValidator = reservationDocValidator.extend({
+  vehicle: v.union(
+    v.object({
+      make: v.string(),
+      model: v.string(),
+      year: v.optional(v.number()),
+    }),
+    v.null(),
+  ),
 });
 
 // --- CREATE ---
@@ -481,6 +560,34 @@ export const getCurrentUserReservations = query({
   },
 });
 
+export const getCurrentUserReservationsPaginated = query({
+  args: { paginationOpts: paginationOptsValidator },
+  returns: paginationResultValidator(reservationListItemValidator),
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserOrThrow(ctx);
+    const result = await ctx.db
+      .query("reservations")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .order("desc")
+      .paginate(args.paginationOpts);
+
+    return {
+      ...result,
+      page: await Promise.all(
+        result.page.map(async (reservation) => {
+          const vehicle = await ctx.db.get(reservation.vehicleId);
+          return {
+            ...reservation,
+            vehicle: vehicle
+              ? { make: vehicle.make, model: vehicle.model, year: vehicle.year }
+              : null,
+          };
+        }),
+      ),
+    };
+  },
+});
+
 export const getReservationsByVehicle = query({
   args: { vehicleId: v.id("vehicles") },
   handler: async (ctx, args) => {
@@ -546,6 +653,33 @@ export const getAllReservations = query({
       throw new Error("User not authorized (admin only).");
     }
     return await ctx.db.query("reservations").order("desc").collect();
+  },
+});
+
+export const getAllReservationsPaginated = query({
+  args: { paginationOpts: paginationOptsValidator },
+  returns: paginationResultValidator(reservationListItemValidator),
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const result = await ctx.db
+      .query("reservations")
+      .order("desc")
+      .paginate(args.paginationOpts);
+
+    return {
+      ...result,
+      page: await Promise.all(
+        result.page.map(async (reservation) => {
+          const vehicle = await ctx.db.get(reservation.vehicleId);
+          return {
+            ...reservation,
+            vehicle: vehicle
+              ? { make: vehicle.make, model: vehicle.model, year: vehicle.year }
+              : null,
+          };
+        }),
+      ),
+    };
   },
 });
 

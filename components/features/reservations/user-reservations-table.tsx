@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useQuery } from "convex/react";
+import { usePaginatedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -13,25 +12,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 import { useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 
 const ITEMS_PER_PAGE = 10;
 
 export function UserReservationsTable() {
-  const [currentPage, setCurrentPage] = useState(1);
   const t = useTranslations("profile");
   const tCommon = useTranslations("common");
 
-  const reservations = useQuery(api.reservations.getCurrentUserReservations);
+  const {
+    results: reservations,
+    status: paginationStatus,
+    loadMore,
+  } = usePaginatedQuery(
+    api.reservations.getCurrentUserReservationsPaginated,
+    {},
+    { initialNumItems: ITEMS_PER_PAGE },
+  );
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -71,47 +69,7 @@ export function UserReservationsTable() {
     return `${price.toFixed(2)} EUR`;
   };
 
-  const VehicleInfo = ({ vehicleId }: { vehicleId: Id<"vehicles"> }) => {
-    const vehicle = useQuery(api.vehicles.getById, { id: vehicleId });
-
-    if (!vehicle) {
-      return (
-        <span className="text-muted-foreground">{t("table.loading")}</span>
-      );
-    }
-
-    return (
-      <div>
-        <div className="font-medium">
-          {vehicle.make} {vehicle.model}
-        </div>
-        <div className="text-sm text-muted-foreground">{vehicle.year}</div>
-      </div>
-    );
-  };
-
-  // Memoize pagination calculations (must be before early returns to respect Rules of Hooks)
-  const { paginatedReservations, totalPages, startIndex, endIndex } =
-    useMemo(() => {
-      if (!reservations || reservations.length === 0) {
-        return {
-          paginatedReservations: [],
-          totalPages: 0,
-          startIndex: 0,
-          endIndex: 0,
-        };
-      }
-      const start = (currentPage - 1) * ITEMS_PER_PAGE;
-      const end = start + ITEMS_PER_PAGE;
-      return {
-        startIndex: start,
-        endIndex: end,
-        paginatedReservations: reservations.slice(start, end),
-        totalPages: Math.ceil(reservations.length / ITEMS_PER_PAGE),
-      };
-    }, [reservations, currentPage]);
-
-  if (reservations === undefined) {
+  if (paginationStatus === "LoadingFirstPage") {
     return (
       <div className="flex justify-center py-8">
         <Loader2 className="h-6 w-6 animate-spin" />
@@ -120,7 +78,7 @@ export function UserReservationsTable() {
     );
   }
 
-  if (reservations === null || reservations.length === 0) {
+  if (reservations.length === 0) {
     return (
       <div className="text-center py-8">
         <p className="text-muted-foreground">{t("noReservations")}</p>
@@ -149,10 +107,23 @@ export function UserReservationsTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedReservations.map((reservation) => (
+            {reservations.map((reservation) => (
               <TableRow key={reservation._id}>
                 <TableCell>
-                  <VehicleInfo vehicleId={reservation.vehicleId} />
+                  {reservation.vehicle ? (
+                    <div>
+                      <div className="font-medium">
+                        {reservation.vehicle.make} {reservation.vehicle.model}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {reservation.vehicle.year}
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      {t("table.vehicleUnavailable")}
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <div>
@@ -206,46 +177,17 @@ export function UserReservationsTable() {
         </Table>
       </div>
 
-      {reservations.length > ITEMS_PER_PAGE && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            {t("table.showingRange", {
-              from: startIndex + 1,
-              to: Math.min(endIndex, reservations.length),
-              total: reservations.length,
-            })}
-          </div>
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  className={
-                    currentPage === 1
-                      ? "pointer-events-none opacity-50"
-                      : "cursor-pointer"
-                  }
-                />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink className="cursor-default">
-                  {t("table.pageOf", { page: currentPage, total: totalPages })}
-                </PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() =>
-                    setCurrentPage(Math.min(totalPages, currentPage + 1))
-                  }
-                  className={
-                    currentPage === totalPages
-                      ? "pointer-events-none opacity-50"
-                      : "cursor-pointer"
-                  }
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+      {paginationStatus !== "Exhausted" && (
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            onClick={() => loadMore(ITEMS_PER_PAGE)}
+            disabled={paginationStatus === "LoadingMore"}
+          >
+            {paginationStatus === "LoadingMore"
+              ? t("table.loading")
+              : t("table.loadMore")}
+          </Button>
         </div>
       )}
     </div>
