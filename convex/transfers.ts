@@ -10,6 +10,7 @@ import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { getCurrentUser, getOrCreateCurrentUser, requireAdmin } from "./users";
 import { applyAndRedeemCoupon } from "./coupons";
+import { nextBookingNumber, transferNumberCounter } from "./counters";
 import {
   recordReferralConversion,
   referralArgValidator,
@@ -192,13 +193,10 @@ async function createTransferHandler(
     ? applyDiscountToTotal(fare.totalPrice, appliedDiscount.amount)
     : fare.totalPrice;
 
-  // Compute next transfer number (highest existing via index)
-  const latestNumbered = await ctx.db
-    .query("transfers")
-    .withIndex("by_number")
-    .order("desc")
-    .first();
-  const nextTransferNumber = (latestNumbered?.transferNumber ?? 0) + 1;
+  const nextTransferNumber = await nextBookingNumber(
+    ctx,
+    transferNumberCounter,
+  );
 
   const newTransferData = {
     transferNumber: nextTransferNumber,
