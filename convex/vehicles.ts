@@ -1,6 +1,9 @@
 import { v } from "convex/values";
 import { query, mutation, internalMutation } from "./_generated/server";
-import { paginationOptsValidator } from "convex/server";
+import {
+  paginationOptsValidator,
+  paginationResultValidator,
+} from "convex/server";
 import { requireAdmin } from "./users";
 
 // Pricing tier validator
@@ -8,6 +11,57 @@ const pricingTierValidator = v.object({
   minDays: v.number(),
   maxDays: v.number(),
   pricePerDay: v.number(),
+});
+
+const vehicleTypeValidator = v.union(
+  v.literal("sedan"),
+  v.literal("suv"),
+  v.literal("hatchback"),
+  v.literal("sports"),
+  v.literal("truck"),
+  v.literal("van"),
+);
+const transmissionValidator = v.union(
+  v.literal("automatic"),
+  v.literal("manual"),
+);
+const fuelTypeValidator = v.union(
+  v.literal("diesel"),
+  v.literal("electric"),
+  v.literal("hybrid"),
+  v.literal("benzina"),
+);
+const vehicleStatusValidator = v.union(
+  v.literal("available"),
+  v.literal("rented"),
+  v.literal("maintenance"),
+);
+const vehicleDocValidator = v.object({
+  _id: v.id("vehicles"),
+  _creationTime: v.number(),
+  make: v.string(),
+  model: v.string(),
+  year: v.optional(v.number()),
+  type: v.optional(vehicleTypeValidator),
+  classId: v.optional(v.id("vehicleClasses")),
+  classSortIndex: v.optional(v.number()),
+  seats: v.optional(v.number()),
+  transmission: v.optional(transmissionValidator),
+  fuelType: v.optional(fuelTypeValidator),
+  engineCapacity: v.optional(v.number()),
+  engineType: v.optional(v.string()),
+  pricingTiers: v.optional(v.array(pricingTierValidator)),
+  warranty: v.optional(v.number()),
+  isOwner: v.optional(v.boolean()),
+  location: v.optional(v.string()),
+  features: v.optional(v.array(v.string())),
+  status: vehicleStatusValidator,
+  images: v.optional(v.array(v.id("_storage"))),
+  mainImageId: v.optional(v.id("_storage")),
+  isTransferVehicle: v.optional(v.boolean()),
+  transferPricePerKm: v.optional(v.number()),
+  transferSeats: v.optional(v.number()),
+  slug: v.optional(v.string()),
 });
 
 // Get all vehicles with pagination and filters
@@ -48,6 +102,7 @@ export const getAll = query({
       }),
     ),
   },
+  returns: paginationResultValidator(vehicleDocValidator),
   handler: async (ctx, args) => {
     let query = ctx.db.query("vehicles");
 
@@ -78,6 +133,7 @@ export const getAll = query({
 // Get all vehicles (deprecated - use getAll with pagination instead)
 export const getAllVehicles = query({
   args: {},
+  returns: v.array(vehicleDocValidator),
   handler: async (ctx) => {
     return await ctx.db.query("vehicles").collect();
   },
@@ -86,6 +142,7 @@ export const getAllVehicles = query({
 // Get vehicle by ID
 export const getById = query({
   args: { id: v.id("vehicles") },
+  returns: v.union(vehicleDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db.get(args.id);
   },
@@ -94,6 +151,7 @@ export const getById = query({
 // Get vehicle by slug
 export const getBySlug = query({
   args: { slug: v.string() },
+  returns: v.union(vehicleDocValidator, v.null()),
   handler: async (ctx, args) => {
     const vehicle = await ctx.db
       .query("vehicles")
@@ -178,6 +236,7 @@ export const create = mutation({
     transferSeats: v.optional(v.number()),
     slug: v.optional(v.string()),
   },
+  returns: v.id("vehicles"),
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
@@ -256,6 +315,7 @@ export const update = mutation({
     transferSeats: v.optional(v.number()),
     slug: v.optional(v.string()),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
@@ -272,13 +332,15 @@ export const update = mutation({
       }
     }
 
-    return await ctx.db.patch(id, updates);
+    await ctx.db.patch(id, updates);
+    return null;
   },
 });
 
 // Delete a vehicle
 export const remove = mutation({
   args: { id: v.id("vehicles") },
+  returns: v.null(),
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
@@ -436,6 +498,7 @@ export const setMainImage = mutation({
     vehicleId: v.id("vehicles"),
     imageId: v.id("_storage"),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
@@ -452,9 +515,10 @@ export const setMainImage = mutation({
     }
 
     // Set as main image
-    return await ctx.db.patch(vehicleId, {
+    await ctx.db.patch(vehicleId, {
       mainImageId: imageId,
     });
+    return null;
   },
 });
 
@@ -463,6 +527,7 @@ export const getImageUrl = query({
   args: {
     imageId: v.id("_storage"),
   },
+  returns: v.union(v.string(), v.null()),
   handler: async (ctx, args) => {
     return await ctx.storage.getUrl(args.imageId);
   },
@@ -746,6 +811,22 @@ export const getFleetSummary = query({
         className: vehicleClass?.displayName ?? vehicleClass?.name,
       };
     });
+  },
+});
+
+export const getFleetStats = query({
+  args: {},
+  returns: v.object({ totalVehicles: v.number() }),
+  handler: async (ctx) => {
+    await requireAdmin(ctx);
+    let totalVehicles = 0;
+
+    for await (const _vehicle of ctx.db.query("vehicles")) {
+      void _vehicle;
+      totalVehicles += 1;
+    }
+
+    return { totalVehicles };
   },
 });
 

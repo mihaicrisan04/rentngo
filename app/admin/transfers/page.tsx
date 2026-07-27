@@ -4,6 +4,7 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { usePeriodicNow } from "@/hooks/use-periodic-now";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -79,9 +80,27 @@ const ITEMS_PER_PAGE = 10;
 
 export default function AdminTransfersPage() {
   const [showPricingDialog, setShowPricingDialog] = useState(false);
+  const now = usePeriodicNow();
+  const monthNow =
+    now === null
+      ? null
+      : Date.UTC(new Date(now).getUTCFullYear(), new Date(now).getUTCMonth());
 
-  const stats = useQuery(api.transfers.getTransferStats);
-  const monthlyData = useQuery(api.transfers.getMonthlyTransferChartData);
+  const stats = useQuery(
+    api.transfers.getTransferStats,
+    now === null ? "skip" : { now },
+  );
+  const monthlyData = useQuery(
+    api.transfers.getMonthlyTransferChartData,
+    monthNow === null ? "skip" : { now: monthNow },
+  );
+  const formattedMonthlyData = monthlyData?.map((item) => ({
+    ...item,
+    month: new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      timeZone: "UTC",
+    }).format(new Date(`${item.month}-01T00:00:00Z`)),
+  }));
   const {
     results: transfers,
     status: paginationStatus,
@@ -334,7 +353,7 @@ export default function AdminTransfersPage() {
           <CardContent>
             <ChartContainer config={chartConfig} className="h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyData}>
+                <BarChart data={formattedMonthlyData}>
                   <XAxis dataKey="month" />
                   <YAxis />
                   <ChartTooltip content={<ChartTooltipContent />} />
@@ -359,7 +378,7 @@ export default function AdminTransfersPage() {
           <CardContent>
             <ChartContainer config={chartConfig} className="h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthlyData}>
+                <LineChart data={formattedMonthlyData}>
                   <XAxis dataKey="month" />
                   <YAxis />
                   <ChartTooltip content={<ChartTooltipContent />} />

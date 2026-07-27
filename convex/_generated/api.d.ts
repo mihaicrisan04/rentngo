@@ -31,6 +31,7 @@ import type * as emails_utils from "../emails/utils.js";
 import type * as featuredCars from "../featuredCars.js";
 import type * as files from "../files.js";
 import type * as http from "../http.js";
+import type * as lib_stats from "../lib/stats.js";
 import type * as migrations_addAdditional50kmPrice from "../migrations/addAdditional50kmPrice.js";
 import type * as migrations_backfillClerkUsers from "../migrations/backfillClerkUsers.js";
 import type * as migrations_bilingualBlogs from "../migrations/bilingualBlogs.js";
@@ -77,6 +78,7 @@ declare const fullApi: ApiFromModules<{
   featuredCars: typeof featuredCars;
   files: typeof files;
   http: typeof http;
+  "lib/stats": typeof lib_stats;
   "migrations/addAdditional50kmPrice": typeof migrations_addAdditional50kmPrice;
   "migrations/backfillClerkUsers": typeof migrations_backfillClerkUsers;
   "migrations/bilingualBlogs": typeof migrations_bilingualBlogs;
