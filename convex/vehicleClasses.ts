@@ -114,7 +114,15 @@ export const create = mutation({
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
-    const { name, displayName, description, isActive = true, additional50kmPrice = 5, transferBaseFare = 25, transferMultiplier = 1.0 } = args;
+    const {
+      name,
+      displayName,
+      description,
+      isActive = true,
+      additional50kmPrice = 5,
+      transferBaseFare = 25,
+      transferMultiplier = 1.0,
+    } = args;
 
     // Check if a class with this name already exists
     const existingClass = await ctx.db
@@ -182,7 +190,17 @@ export const update = mutation({
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
-    const { id, name, displayName, description, sortIndex, isActive, additional50kmPrice, transferBaseFare, transferMultiplier } = args;
+    const {
+      id,
+      name,
+      displayName,
+      description,
+      sortIndex,
+      isActive,
+      additional50kmPrice,
+      transferBaseFare,
+      transferMultiplier,
+    } = args;
 
     // Check if the class exists
     const existingClass = await ctx.db.get(id);
@@ -211,9 +229,12 @@ export const update = mutation({
     if (description !== undefined) updateData.description = description;
     if (sortIndex !== undefined) updateData.sortIndex = sortIndex;
     if (isActive !== undefined) updateData.isActive = isActive;
-    if (additional50kmPrice !== undefined) updateData.additional50kmPrice = additional50kmPrice;
-    if (transferBaseFare !== undefined) updateData.transferBaseFare = transferBaseFare;
-    if (transferMultiplier !== undefined) updateData.transferMultiplier = transferMultiplier;
+    if (additional50kmPrice !== undefined)
+      updateData.additional50kmPrice = additional50kmPrice;
+    if (transferBaseFare !== undefined)
+      updateData.transferBaseFare = transferBaseFare;
+    if (transferMultiplier !== undefined)
+      updateData.transferMultiplier = transferMultiplier;
 
     await ctx.db.patch(id, updateData);
 
@@ -243,7 +264,7 @@ export const remove = mutation({
     // Check if any vehicles reference this class
     const vehiclesUsingClass = await ctx.db
       .query("vehicles")
-      .filter((q) => q.eq(q.field("classId"), id))
+      .withIndex("by_class_and_sort", (q) => q.eq("classId", id))
       .first();
 
     if (vehiclesUsingClass) {

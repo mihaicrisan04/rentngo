@@ -53,12 +53,7 @@ export const getAll = query({
 
     // Apply filters if they exist
     if (args.filters) {
-      const {
-        type,
-        transmission,
-        fuelType,
-        status,
-      } = args.filters;
+      const { type, transmission, fuelType, status } = args.filters;
 
       if (type) {
         query = query.filter((q) => q.eq(q.field("type"), type));
@@ -499,10 +494,10 @@ export const getByClass = query({
   handler: async (ctx, args) => {
     const vehicles = await ctx.db
       .query("vehicles")
-      .filter((q) => q.eq(q.field("classId"), args.classId))
+      .withIndex("by_class_and_sort", (q) => q.eq("classId", args.classId))
+      .order("asc")
       .collect();
 
-    // Sort by classSortIndex
     return vehicles
       .map((v) => ({
         _id: v._id,
@@ -669,7 +664,7 @@ export const getAllVehiclesWithClasses = query({
           classDisplayName: vehicleClass?.displayName,
           classSortIndexFromClass: vehicleClass?.sortIndex,
         };
-      })
+      }),
     );
 
     // Sort vehicles by class sortIndex (ascending), then by vehicle classSortIndex (ascending)
@@ -755,7 +750,11 @@ export const getFleetSummary = query({
 });
 
 // Helper function to generate a URL-friendly slug from vehicle make, model, and year
-function generateVehicleSlug(make: string, model: string, year?: number): string {
+function generateVehicleSlug(
+  make: string,
+  model: string,
+  year?: number,
+): string {
   const parts = [make, model];
   if (year) {
     parts.push(year.toString());
@@ -766,8 +765,8 @@ function generateVehicleSlug(make: string, model: string, year?: number): string
     .toLowerCase()
     .trim()
     .replace(/[^\w\s-]/g, "") // Remove special characters except hyphens
-    .replace(/[\s_]+/g, "-")  // Replace spaces and underscores with hyphens
-    .replace(/-+/g, "-")      // Collapse multiple hyphens
+    .replace(/[\s_]+/g, "-") // Replace spaces and underscores with hyphens
+    .replace(/-+/g, "-") // Collapse multiple hyphens
     .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
 }
 
@@ -819,7 +818,9 @@ export const generateSlugsForAllVehicles = internalMutation({
       }
 
       if (existingVehicle) {
-        errors.push(`Failed to generate unique slug for ${vehicle.make} ${vehicle.model} (${vehicle._id})`);
+        errors.push(
+          `Failed to generate unique slug for ${vehicle.make} ${vehicle.model} (${vehicle._id})`,
+        );
         continue;
       }
 
