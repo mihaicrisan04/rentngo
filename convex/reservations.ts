@@ -9,6 +9,7 @@ import {
   requireAdmin,
 } from "./users";
 import { applyAndRedeemCoupon } from "./coupons";
+import { nextBookingNumber, reservationNumberCounter } from "./counters";
 import {
   recordReferralConversion,
   referralArgValidator,
@@ -299,15 +300,10 @@ export const createReservation = mutation({
       totalPrice = applyDiscountToTotal(totalPrice, appliedDiscount.amount);
     }
 
-    // Compute next reservation number (highest existing via index)
-    const latestNumbered = await ctx.db
-      .query("reservations")
-      .withIndex("by_number")
-      .order("desc")
-      .first();
-    const nextReservationNumber = latestNumbered
-      ? (latestNumbered.reservationNumber ?? 0) + 1
-      : 10000;
+    const nextReservationNumber = await nextBookingNumber(
+      ctx,
+      reservationNumberCounter,
+    );
 
     const newReservationData = {
       reservationNumber: nextReservationNumber,
