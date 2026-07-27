@@ -34,7 +34,9 @@ export async function generateMetadata({
   }
 
   const coverImageUrl = blog.coverImage
-    ? await fetchStaticQuery(api.blogs.getImageUrl, { imageId: blog.coverImage })
+    ? await fetchStaticQuery(api.blogs.getImageUrl, {
+        imageId: blog.coverImage,
+      })
     : null;
 
   const roSlug = locale === "ro" ? blog.slug : blog.alternateSlug;
@@ -63,13 +65,10 @@ export async function generateMetadata({
 }
 
 export async function generateStaticParams() {
-  const [roBlogs, enBlogs] = await Promise.all([
-    fetchStaticQuery(api.blogs.getAll, { locale: "ro" }),
-    fetchStaticQuery(api.blogs.getAll, { locale: "en" }),
-  ]);
+  const blogs = await fetchStaticQuery(api.blogs.getPublishedSlugs, {});
   return [
-    ...roBlogs.map((blog) => ({ locale: "ro", slug: blog.slug })),
-    ...enBlogs.map((blog) => ({ locale: "en", slug: blog.slug })),
+    ...blogs.map((blog) => ({ locale: "ro", slug: blog.slugRo })),
+    ...blogs.map((blog) => ({ locale: "en", slug: blog.slugEn })),
   ];
 }
 
@@ -85,7 +84,9 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
   }
 
   const coverImageUrl = blog.coverImage
-    ? await fetchStaticQuery(api.blogs.getImageUrl, { imageId: blog.coverImage })
+    ? await fetchStaticQuery(api.blogs.getImageUrl, {
+        imageId: blog.coverImage,
+      })
     : null;
 
   return (

@@ -92,6 +92,7 @@ export default defineSchema({
     .index("by_type", ["type"])
     .index("by_status", ["status"])
     .index("by_transfer", ["isTransferVehicle"])
+    .index("by_class_and_sort", ["classId", "classSortIndex"])
     .index("by_slug", ["slug"]),
 
   // Reservations table - stores booking records
@@ -529,5 +530,6 @@ export default defineSchema({
     .index("by_slug_ro", ["slug_ro"])
     .index("by_slug_en", ["slug_en"])
     .index("by_status", ["status"])
+    .index("by_featured", ["isFeatured"])
     .index("by_published_at", ["publishedAt"]),
 });
