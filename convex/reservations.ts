@@ -15,6 +15,13 @@ import {
 import { applyAndRedeemCoupon } from "./coupons";
 import { nextBookingNumber, reservationNumberCounter } from "./counters";
 import {
+  bucketMonthlyStats,
+  calculateGrowth,
+  getMonthRange,
+  getRecentMonthKeys,
+  validateContiguousTimestampRanges,
+} from "./lib/stats";
+import {
   recordReferralConversion,
   referralArgValidator,
   resolveAffiliateCandidates,
@@ -125,6 +132,12 @@ const reservationListItemValidator = reservationDocValidator.extend({
     }),
     v.null(),
   ),
+});
+
+const successValidator = v.object({ success: v.boolean() });
+const successMessageValidator = v.object({
+  success: v.boolean(),
+  message: v.string(),
 });
 
 // --- CREATE ---
@@ -515,6 +528,7 @@ export const createReservation = mutation({
 // --- READ ---
 export const getReservationById = query({
   args: { reservationId: v.id("reservations") },
+  returns: v.union(reservationDocValidator, v.null()),
   handler: async (ctx, args) => {
     const reservation = await ctx.db.get(args.reservationId);
     if (!reservation) return null;
@@ -544,19 +558,6 @@ export const getReservationById = query({
         throw new Error("Authentication required to view this reservation.");
       }
     }
-  },
-});
-
-export const getCurrentUserReservations = query({
-  args: {}, // No args needed, uses authenticated user
-  handler: async (ctx) => {
-    const user = await getCurrentUserOrThrow(ctx);
-
-    return await ctx.db
-      .query("reservations")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .order("desc")
-      .collect();
   },
 });
 
@@ -590,6 +591,7 @@ export const getCurrentUserReservationsPaginated = query({
 
 export const getReservationsByVehicle = query({
   args: { vehicleId: v.id("vehicles") },
+  returns: v.array(reservationDocValidator),
   handler: async (ctx, args) => {
     // Admin-only: reservations include customer PII (name/email/phone)
     await requireAdmin(ctx);
@@ -603,6 +605,7 @@ export const getReservationsByVehicle = query({
 
 export const getReservationsByPickupLocation = query({
   args: { pickupLocation: v.string() },
+  returns: v.array(reservationDocValidator),
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
 
@@ -627,6 +630,7 @@ export const getReservationsByPaymentMethod = query({
       v.literal("card_online"),
     ),
   },
+  returns: v.array(reservationDocValidator),
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
 
@@ -640,19 +644,6 @@ export const getReservationsByPaymentMethod = query({
         q.eq("paymentMethod", args.paymentMethod),
       )
       .collect();
-  },
-});
-
-// Admin-only
-export const getAllReservations = query({
-  args: {},
-  handler: async (ctx) => {
-    const user = await getCurrentUserOrThrow(ctx);
-
-    if (user.role !== "admin") {
-      throw new Error("User not authorized (admin only).");
-    }
-    return await ctx.db.query("reservations").order("desc").collect();
   },
 });
 
@@ -689,6 +680,7 @@ export const updateReservationStatus = mutation({
     reservationId: v.id("reservations"),
     newStatus: reservationStatusValidator,
   },
+  returns: successValidator,
   handler: async (ctx, args) => {
     const user = await getOrCreateCurrentUser(ctx);
     if (!user) {
@@ -752,6 +744,13 @@ export const updateReservationDetails = mutation({
     seasonId: v.optional(v.id("seasons")),
     seasonalMultiplier: v.optional(v.number()),
   },
+  returns: v.union(
+    successMessageValidator,
+    v.object({
+      success: v.boolean(),
+      reservationId: v.id("reservations"),
+    }),
+  ),
   handler: async (ctx, args) => {
     const user = await getOrCreateCurrentUser(ctx);
     if (!user) {
@@ -826,6 +825,7 @@ export const updateReservationDetails = mutation({
 // --- DELETE (Soft Delete) ---
 export const cancelReservation = mutation({
   args: { reservationId: v.id("reservations") },
+  returns: successMessageValidator,
   handler: async (ctx, args) => {
     const user = await getOrCreateCurrentUser(ctx);
     if (!user) {
@@ -873,6 +873,7 @@ export const cancelReservation = mutation({
 // Hard delete (admin-only, use with caution)
 export const deleteReservationPermanently = mutation({
   args: { reservationId: v.id("reservations") },
+  returns: successMessageValidator,
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
 
@@ -902,88 +903,64 @@ export const deleteReservationPermanently = mutation({
 
 // Get reservation statistics for admin dashboard
 export const getReservationStats = query({
-  args: {},
+  args: { now: v.number() },
   returns: v.object({
     totalReservations: v.number(),
+    confirmedReservations: v.number(),
     activeReservations: v.number(),
     pendingConfirmations: v.number(),
     currentMonthRevenue: v.number(),
     reservationGrowth: v.number(),
     revenueGrowth: v.number(),
   }),
-  handler: async (ctx) => {
-    const user = await getCurrentUserOrThrow(ctx);
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
 
-    if (user.role !== "admin") {
-      throw new Error("User not authorized (admin only).");
-    }
-
+    // Exact all-time totals and status counts remain Tier B debt until
+    // maintained aggregates replace this scan.
     const allReservations = await ctx.db.query("reservations").collect();
-
-    const now = Date.now();
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-    const lastMonthStart = new Date(currentYear, currentMonth - 1, 1).getTime();
-    const currentMonthStart = new Date(currentYear, currentMonth, 1).getTime();
-
-    // Total reservations
     const totalReservations = allReservations.length;
-
-    // Active reservations (confirmed and currently ongoing)
+    const confirmedReservations = allReservations.filter(
+      (reservation) => reservation.status === "confirmed",
+    ).length;
     const activeReservations = allReservations.filter(
-      (r) => r.status === "confirmed" && r.startDate <= now && r.endDate >= now,
+      (reservation) =>
+        reservation.status === "confirmed" &&
+        reservation.startDate <= args.now &&
+        reservation.endDate >= args.now,
     ).length;
-
-    // Pending confirmations
     const pendingConfirmations = allReservations.filter(
-      (r) => r.status === "pending",
+      (reservation) => reservation.status === "pending",
     ).length;
 
-    // Current month revenue and reservations
-    const currentMonthReservations = allReservations.filter(
-      (r) => r._creationTime >= currentMonthStart,
+    const [previous, current] = bucketMonthlyStats(
+      allReservations.map((reservation) => ({
+        timestamp: reservation._creationTime,
+        revenue:
+          reservation.status === "confirmed" ||
+          reservation.status === "completed"
+            ? reservation.totalPrice
+            : 0,
+      })),
+      args.now,
+      2,
     );
-    const currentMonthRevenue = currentMonthReservations
-      .filter((r) => r.status === "confirmed" || r.status === "completed")
-      .reduce((sum, r) => sum + r.totalPrice, 0);
-
-    // Last month revenue for comparison
-    const lastMonthReservations = allReservations.filter(
-      (r) =>
-        r._creationTime >= lastMonthStart &&
-        r._creationTime < currentMonthStart,
-    );
-    const lastMonthRevenue = lastMonthReservations
-      .filter((r) => r.status === "confirmed" || r.status === "completed")
-      .reduce((sum, r) => sum + r.totalPrice, 0);
-
-    // Calculate percentage changes
-    const reservationGrowth =
-      lastMonthReservations.length > 0
-        ? ((currentMonthReservations.length - lastMonthReservations.length) /
-            lastMonthReservations.length) *
-          100
-        : 0;
-
-    const revenueGrowth =
-      lastMonthRevenue > 0
-        ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
-        : 0;
 
     return {
       totalReservations,
+      confirmedReservations,
       activeReservations,
       pendingConfirmations,
-      currentMonthRevenue,
-      reservationGrowth: Math.round(reservationGrowth * 10) / 10, // Round to 1 decimal
-      revenueGrowth: Math.round(revenueGrowth * 10) / 10,
+      currentMonthRevenue: current.revenue,
+      reservationGrowth: calculateGrowth(current.count, previous.count),
+      revenueGrowth: calculateGrowth(current.revenue, previous.revenue),
     };
   },
 });
 
 // Get monthly data for charts (last 6 months)
 export const getMonthlyChartData = query({
-  args: {},
+  args: { now: v.number() },
   returns: v.array(
     v.object({
       month: v.string(),
@@ -991,47 +968,122 @@ export const getMonthlyChartData = query({
       revenue: v.number(),
     }),
   ),
-  handler: async (ctx) => {
-    const user = await getCurrentUserOrThrow(ctx);
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const oldestMonth = getRecentMonthKeys(args.now, 6)[0];
+    const currentMonth = getRecentMonthKeys(args.now, 1)[0];
+    const reservations = await ctx.db
+      .query("reservations")
+      .withIndex("by_creation_time", (q) =>
+        q
+          .gte("_creationTime", getMonthRange(oldestMonth).start)
+          .lt("_creationTime", getMonthRange(currentMonth).end),
+      )
+      .collect();
 
-    if (user.role !== "admin") {
-      throw new Error("User not authorized (admin only).");
-    }
+    return bucketMonthlyStats(
+      reservations.map((reservation) => ({
+        timestamp: reservation._creationTime,
+        revenue:
+          reservation.status === "confirmed" ||
+          reservation.status === "completed"
+            ? reservation.totalPrice
+            : 0,
+      })),
+      args.now,
+      6,
+    ).map((month) => ({
+      month: month.month,
+      reservations: month.count,
+      revenue: Math.round(month.revenue),
+    }));
+  },
+});
 
-    const allReservations = await ctx.db.query("reservations").collect();
+export const getOverviewMonthlyRevenue = query({
+  args: {
+    months: v.array(
+      v.object({
+        month: v.string(),
+        start: v.number(),
+        end: v.number(),
+      }),
+    ),
+  },
+  returns: v.array(
+    v.object({
+      month: v.string(),
+      revenue: v.number(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    validateContiguousTimestampRanges(
+      args.months,
+      6,
+      32 * 24 * 60 * 60 * 1000,
+      "Month",
+    );
 
-    // Get last 6 months including current month
-    const months = [];
-    const now = new Date();
+    const rangeStart = args.months[0].start;
+    const rangeEnd = args.months[args.months.length - 1].end;
+    const reservations = await ctx.db
+      .query("reservations")
+      .withIndex("by_dates", (q) =>
+        q.gte("startDate", rangeStart).lt("startDate", rangeEnd),
+      )
+      .collect();
 
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthStart = date.getTime();
-      const monthEnd = new Date(
-        date.getFullYear(),
-        date.getMonth() + 1,
-        0,
-        23,
-        59,
-        59,
-        999,
-      ).getTime();
+    return args.months.map((month) => ({
+      month: month.month,
+      revenue: reservations
+        .filter(
+          (reservation) =>
+            reservation.startDate >= month.start &&
+            reservation.startDate < month.end &&
+            (reservation.status === "confirmed" ||
+              reservation.status === "completed"),
+        )
+        .reduce((total, reservation) => total + reservation.totalPrice, 0),
+    }));
+  },
+});
 
-      const monthReservations = allReservations.filter(
-        (r) => r._creationTime >= monthStart && r._creationTime <= monthEnd,
-      );
+export const getWeeklyReservationChartData = query({
+  args: {
+    days: v.array(
+      v.object({
+        day: v.string(),
+        start: v.number(),
+        end: v.number(),
+      }),
+    ),
+  },
+  returns: v.array(
+    v.object({
+      day: v.string(),
+      reservations: v.number(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    validateContiguousTimestampRanges(args.days, 7, 25 * 60 * 60 * 1000, "Day");
 
-      const monthRevenue = monthReservations
-        .filter((r) => r.status === "confirmed" || r.status === "completed")
-        .reduce((sum, r) => sum + r.totalPrice, 0);
+    const rangeStart = args.days[0].start;
+    const rangeEnd = args.days[args.days.length - 1].end;
+    const reservations = await ctx.db
+      .query("reservations")
+      .withIndex("by_dates", (q) =>
+        q.gte("startDate", rangeStart).lt("startDate", rangeEnd),
+      )
+      .collect();
 
-      months.push({
-        month: date.toLocaleDateString("en-US", { month: "short" }),
-        reservations: monthReservations.length,
-        revenue: Math.round(monthRevenue), // Round to nearest whole number
-      });
-    }
-
-    return months;
+    return args.days.map((day) => ({
+      day: day.day,
+      reservations: reservations.filter(
+        (reservation) =>
+          reservation.startDate >= day.start && reservation.startDate < day.end,
+      ).length,
+    }));
   },
 });

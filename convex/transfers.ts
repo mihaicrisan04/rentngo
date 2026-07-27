@@ -16,6 +16,12 @@ import { getCurrentUser, getOrCreateCurrentUser, requireAdmin } from "./users";
 import { applyAndRedeemCoupon } from "./coupons";
 import { nextBookingNumber, transferNumberCounter } from "./counters";
 import {
+  bucketMonthlyStats,
+  calculateGrowth,
+  getMonthRange,
+  getRecentMonthKeys,
+} from "./lib/stats";
+import {
   recordReferralConversion,
   referralArgValidator,
   resolveAffiliateCandidates,
@@ -109,6 +115,64 @@ const transferListItemValidator = transferDocValidator.extend({
   ),
 });
 
+const vehicleDocValidator = v.object({
+  _id: v.id("vehicles"),
+  _creationTime: v.number(),
+  make: v.string(),
+  model: v.string(),
+  year: v.optional(v.number()),
+  type: v.optional(
+    v.union(
+      v.literal("sedan"),
+      v.literal("suv"),
+      v.literal("hatchback"),
+      v.literal("sports"),
+      v.literal("truck"),
+      v.literal("van"),
+    ),
+  ),
+  classId: v.optional(v.id("vehicleClasses")),
+  classSortIndex: v.optional(v.number()),
+  seats: v.optional(v.number()),
+  transmission: v.optional(
+    v.union(v.literal("automatic"), v.literal("manual")),
+  ),
+  fuelType: v.optional(
+    v.union(
+      v.literal("diesel"),
+      v.literal("electric"),
+      v.literal("hybrid"),
+      v.literal("benzina"),
+    ),
+  ),
+  engineCapacity: v.optional(v.number()),
+  engineType: v.optional(v.string()),
+  pricingTiers: v.optional(
+    v.array(
+      v.object({
+        minDays: v.number(),
+        maxDays: v.number(),
+        pricePerDay: v.number(),
+      }),
+    ),
+  ),
+  warranty: v.optional(v.number()),
+  isOwner: v.optional(v.boolean()),
+  location: v.optional(v.string()),
+  features: v.optional(v.array(v.string())),
+  status: v.union(
+    v.literal("available"),
+    v.literal("rented"),
+    v.literal("maintenance"),
+  ),
+  images: v.optional(v.array(v.id("_storage"))),
+  mainImageId: v.optional(v.id("_storage")),
+  isTransferVehicle: v.optional(v.boolean()),
+  transferPricePerKm: v.optional(v.number()),
+  transferSeats: v.optional(v.number()),
+  slug: v.optional(v.string()),
+});
+
 const transferBookingValidator = v.object({
   vehicleId: v.id("vehicles"),
   transferType: v.union(v.literal("one_way"), v.literal("round_trip")),
@@ -154,6 +218,12 @@ const transferWriteValidator = transferBookingValidator
 const transferResultValidator = v.object({
   transferId: v.id("transfers"),
   transferNumber: v.number(),
+});
+
+const successValidator = v.object({ success: v.boolean() });
+const successMessageValidator = v.object({
+  success: v.boolean(),
+  message: v.string(),
 });
 
 type TransferWriteArgs = Infer<typeof transferWriteValidator>;
@@ -433,6 +503,7 @@ export const getTransferById = query({
   args: {
     transferId: v.id("transfers"),
   },
+  returns: v.union(transferDocValidator, v.null()),
   handler: async (ctx, args) => {
     const transfer = await ctx.db.get(args.transferId);
     if (!transfer) return null;
@@ -458,6 +529,7 @@ export const getTransferById = query({
 
 export const getCurrentUserTransfers = query({
   args: {},
+  returns: v.array(transferDocValidator),
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
@@ -486,6 +558,7 @@ export const getTransfersByVehicle = query({
   args: {
     vehicleId: v.id("vehicles"),
   },
+  returns: v.array(transferDocValidator),
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
@@ -494,16 +567,6 @@ export const getTransfersByVehicle = query({
       .withIndex("by_vehicle", (q) => q.eq("vehicleId", args.vehicleId))
       .collect();
     return transfers;
-  },
-});
-
-export const getAllTransfers = query({
-  args: {},
-  handler: async (ctx) => {
-    await requireAdmin(ctx);
-
-    const transfers = await ctx.db.query("transfers").collect();
-    return transfers.sort((a, b) => b.pickupDate - a.pickupDate);
   },
 });
 
@@ -540,6 +603,7 @@ export const updateTransferStatus = mutation({
     transferId: v.id("transfers"),
     newStatus: transferStatusValidator,
   },
+  returns: successValidator,
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
@@ -587,6 +651,7 @@ export const updateTransferDetails = mutation({
     paymentMethod: v.optional(paymentMethodValidator),
     status: v.optional(transferStatusValidator),
   },
+  returns: successValidator,
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
@@ -624,6 +689,7 @@ export const cancelTransfer = mutation({
   args: {
     transferId: v.id("transfers"),
   },
+  returns: successMessageValidator,
   handler: async (ctx, args) => {
     const user = await getOrCreateCurrentUser(ctx);
     if (!user) {
@@ -666,6 +732,7 @@ export const deleteTransferPermanently = mutation({
   args: {
     transferId: v.id("transfers"),
   },
+  returns: successMessageValidator,
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
@@ -687,7 +754,7 @@ export const deleteTransferPermanently = mutation({
 });
 
 export const getTransferStats = query({
-  args: {},
+  args: { now: v.number() },
   returns: v.object({
     totalTransfers: v.number(),
     activeTransfers: v.number(),
@@ -696,76 +763,43 @@ export const getTransferStats = query({
     transferGrowth: v.number(),
     revenueGrowth: v.number(),
   }),
-  handler: async (ctx) => {
+  handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
+    // Exact all-time totals and status counts remain Tier B debt until
+    // maintained aggregates replace this scan.
     const allTransfers = await ctx.db.query("transfers").collect();
-
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    const lastMonthStart = new Date(currentYear, currentMonth - 1, 1).getTime();
-    const currentMonthStart = new Date(currentYear, currentMonth, 1).getTime();
-
     const totalTransfers = allTransfers.length;
-
     const activeTransfers = allTransfers.filter(
-      (t) => t.status === "confirmed" && t.pickupDate >= Date.now(),
+      (transfer) =>
+        transfer.status === "confirmed" && transfer.pickupDate >= args.now,
     ).length;
-
     const pendingConfirmations = allTransfers.filter(
-      (t) => t.status === "pending",
+      (transfer) => transfer.status === "pending",
     ).length;
 
-    const currentMonthTransfers = allTransfers.filter(
-      (t) => t.pickupDate >= currentMonthStart,
+    const [previous, current] = bucketMonthlyStats(
+      allTransfers.map((transfer) => ({
+        timestamp: transfer.pickupDate,
+        revenue: transfer.totalPrice,
+      })),
+      args.now,
+      2,
     );
-    const currentMonthRevenue = currentMonthTransfers.reduce(
-      (sum, t) => sum + t.totalPrice,
-      0,
-    );
-
-    const lastMonthTransfers = allTransfers.filter(
-      (t) => t.pickupDate >= lastMonthStart && t.pickupDate < currentMonthStart,
-    );
-    const lastMonthRevenue = lastMonthTransfers.reduce(
-      (sum, t) => sum + t.totalPrice,
-      0,
-    );
-
-    const transferGrowth =
-      lastMonthTransfers.length > 0
-        ? Math.round(
-            ((currentMonthTransfers.length - lastMonthTransfers.length) /
-              lastMonthTransfers.length) *
-              100,
-          )
-        : currentMonthTransfers.length > 0
-          ? 100
-          : 0;
-
-    const revenueGrowth =
-      lastMonthRevenue > 0
-        ? Math.round(
-            ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100,
-          )
-        : currentMonthRevenue > 0
-          ? 100
-          : 0;
 
     return {
       totalTransfers,
       activeTransfers,
       pendingConfirmations,
-      currentMonthRevenue: Math.round(currentMonthRevenue),
-      transferGrowth,
-      revenueGrowth,
+      currentMonthRevenue: Math.round(current.revenue),
+      transferGrowth: calculateGrowth(current.count, previous.count, 100),
+      revenueGrowth: calculateGrowth(current.revenue, previous.revenue, 100),
     };
   },
 });
 
 export const getMonthlyTransferChartData = query({
-  args: {},
+  args: { now: v.number() },
   returns: v.array(
     v.object({
       month: v.string(),
@@ -773,40 +807,31 @@ export const getMonthlyTransferChartData = query({
       revenue: v.number(),
     }),
   ),
-  handler: async (ctx) => {
+  handler: async (ctx, args) => {
     await requireAdmin(ctx);
+    const oldestMonth = getRecentMonthKeys(args.now, 6)[0];
+    const currentMonth = getRecentMonthKeys(args.now, 1)[0];
+    const transfers = await ctx.db
+      .query("transfers")
+      .withIndex("by_pickup_date", (q) =>
+        q
+          .gte("pickupDate", getMonthRange(oldestMonth).start)
+          .lt("pickupDate", getMonthRange(currentMonth).end),
+      )
+      .collect();
 
-    const allTransfers = await ctx.db.query("transfers").collect();
-
-    const months = [];
-    const now = new Date();
-
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthStart = date.getTime();
-      const monthEnd = new Date(
-        date.getFullYear(),
-        date.getMonth() + 1,
-        0,
-      ).getTime();
-
-      const monthTransfers = allTransfers.filter(
-        (t) => t.pickupDate >= monthStart && t.pickupDate <= monthEnd,
-      );
-
-      const monthRevenue = monthTransfers.reduce(
-        (sum, t) => sum + t.totalPrice,
-        0,
-      );
-
-      months.push({
-        month: date.toLocaleString("default", { month: "short" }),
-        transfers: monthTransfers.length,
-        revenue: Math.round(monthRevenue),
-      });
-    }
-
-    return months;
+    return bucketMonthlyStats(
+      transfers.map((transfer) => ({
+        timestamp: transfer.pickupDate,
+        revenue: transfer.totalPrice,
+      })),
+      args.now,
+      6,
+    ).map((month) => ({
+      month: month.month,
+      transfers: month.count,
+      revenue: Math.round(month.revenue),
+    }));
   },
 });
 
@@ -814,6 +839,7 @@ export const getTransferVehicles = query({
   args: {
     minSeats: v.optional(v.number()),
   },
+  returns: v.array(vehicleDocValidator),
   handler: async (ctx, args) => {
     const vehicles = await ctx.db
       .query("vehicles")
@@ -842,6 +868,15 @@ export const getTransferVehiclesWithImages = query({
       v.union(v.literal("one_way"), v.literal("round_trip")),
     ),
   },
+  returns: v.array(
+    vehicleDocValidator.extend({
+      imageUrl: v.union(v.string(), v.null()),
+      transferBaseFare: v.number(),
+      classMultiplier: v.number(),
+      distanceCharge: v.number(),
+      calculatedPrice: v.number(),
+    }),
+  ),
   handler: async (ctx, args) => {
     const vehicles = await ctx.db
       .query("vehicles")
