@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { useQuery, useMutation } from "convex/react";
+import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
@@ -16,14 +16,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,8 +57,11 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 
 const TransferPricingDialog = dynamic(
-  () => import("@/components/admin/transfers/transfer-pricing-dialog").then(m => m.TransferPricingDialog),
-  { ssr: false }
+  () =>
+    import("@/components/admin/transfers/transfer-pricing-dialog").then(
+      (m) => m.TransferPricingDialog,
+    ),
+  { ssr: false },
 );
 
 const chartConfig = {
@@ -83,19 +78,26 @@ const chartConfig = {
 const ITEMS_PER_PAGE = 10;
 
 export default function AdminTransfersPage() {
-  const [currentPage, setCurrentPage] = useState(1);
   const [showPricingDialog, setShowPricingDialog] = useState(false);
 
   const stats = useQuery(api.transfers.getTransferStats);
   const monthlyData = useQuery(api.transfers.getMonthlyTransferChartData);
-  const transfers = useQuery(api.transfers.getAllTransfers);
+  const {
+    results: transfers,
+    status: paginationStatus,
+    loadMore,
+  } = usePaginatedQuery(
+    api.transfers.getAllTransfersPaginated,
+    {},
+    { initialNumItems: ITEMS_PER_PAGE },
+  );
 
   const updateStatus = useMutation(api.transfers.updateTransferStatus);
   const deleteTransfer = useMutation(api.transfers.deleteTransferPermanently);
 
   const handleStatusUpdate = async (
     transferId: Id<"transfers">,
-    newStatus: "pending" | "confirmed" | "cancelled" | "completed"
+    newStatus: "pending" | "confirmed" | "cancelled" | "completed",
   ) => {
     try {
       await updateStatus({ transferId, newStatus });
@@ -114,11 +116,11 @@ export default function AdminTransfersPage() {
 
   const handleDelete = async (
     transferId: Id<"transfers">,
-    customerName: string
+    customerName: string,
   ) => {
     if (
       confirm(
-        `Are you sure you want to permanently delete the transfer for ${customerName}? This action cannot be undone.`
+        `Are you sure you want to permanently delete the transfer for ${customerName}? This action cannot be undone.`,
       )
     ) {
       try {
@@ -175,29 +177,10 @@ export default function AdminTransfersPage() {
     return `€${price.toFixed(2)}`;
   };
 
-  const VehicleInfo = ({ vehicleId }: { vehicleId: Id<"vehicles"> }) => {
-    const vehicle = useQuery(api.vehicles.getById, { id: vehicleId });
-
-    if (!vehicle) {
-      return <span className="text-muted-foreground">Loading...</span>;
-    }
-
-    return (
-      <div>
-        <div className="font-medium">
-          {vehicle.make} {vehicle.model}
-        </div>
-        {vehicle.year && (
-          <div className="text-sm text-muted-foreground">{vehicle.year}</div>
-        )}
-      </div>
-    );
-  };
-
   if (
     stats === undefined ||
     monthlyData === undefined ||
-    transfers === undefined
+    paginationStatus === "LoadingFirstPage"
   ) {
     return (
       <div className="space-y-6">
@@ -255,11 +238,6 @@ export default function AdminTransfersPage() {
       </div>
     );
   }
-
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const paginatedTransfers = transfers.slice(startIndex, endIndex);
-  const totalPages = Math.ceil(transfers.length / ITEMS_PER_PAGE);
 
   return (
     <div className="space-y-6">
@@ -425,7 +403,7 @@ export default function AdminTransfersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedTransfers.length === 0 ? (
+                  {transfers.length === 0 ? (
                     <TableRow>
                       <TableCell
                         colSpan={9}
@@ -435,7 +413,7 @@ export default function AdminTransfersPage() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    paginatedTransfers.map((transfer) => (
+                    transfers.map((transfer) => (
                       <TableRow key={transfer._id}>
                         <TableCell className="font-medium">
                           #{transfer.transferNumber}
@@ -473,7 +451,20 @@ export default function AdminTransfersPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <VehicleInfo vehicleId={transfer.vehicleId} />
+                          {transfer.vehicle ? (
+                            <div>
+                              <div className="font-medium">
+                                {transfer.vehicle.make} {transfer.vehicle.model}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                {transfer.vehicle.year}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">
+                              Vehicle unavailable
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <div>
@@ -484,10 +475,7 @@ export default function AdminTransfersPage() {
                               {transfer.pickupTime}
                             </div>
                             {transfer.transferType === "round_trip" && (
-                              <Badge
-                                variant="outline"
-                                className="text-xs mt-1"
-                              >
+                              <Badge variant="outline" className="text-xs mt-1">
                                 Round Trip
                               </Badge>
                             )}
@@ -500,12 +488,13 @@ export default function AdminTransfersPage() {
                               <span>{transfer.passengers} pax</span>
                             </div>
                             <div>{transfer.distanceKm} km</div>
-                            {transfer.luggageCount !== undefined && transfer.luggageCount > 0 && (
-                              <div className="flex items-center gap-1">
-                                <Luggage className="h-3 w-3" />
-                                <span>{transfer.luggageCount} bags</span>
-                              </div>
-                            )}
+                            {transfer.luggageCount !== undefined &&
+                              transfer.luggageCount > 0 && (
+                                <div className="flex items-center gap-1">
+                                  <Luggage className="h-3 w-3" />
+                                  <span>{transfer.luggageCount} bags</span>
+                                </div>
+                              )}
                             {transfer.customerInfo.flightNumber && (
                               <div className="text-muted-foreground">
                                 ✈ {transfer.customerInfo.flightNumber}
@@ -535,7 +524,7 @@ export default function AdminTransfersPage() {
                                   onClick={() =>
                                     handleStatusUpdate(
                                       transfer._id,
-                                      "confirmed"
+                                      "confirmed",
                                     )
                                   }
                                   className="cursor-pointer"
@@ -549,7 +538,7 @@ export default function AdminTransfersPage() {
                                   onClick={() =>
                                     handleStatusUpdate(
                                       transfer._id,
-                                      "completed"
+                                      "completed",
                                     )
                                   }
                                   className="cursor-pointer"
@@ -564,7 +553,7 @@ export default function AdminTransfersPage() {
                                   onClick={() =>
                                     handleStatusUpdate(
                                       transfer._id,
-                                      "cancelled"
+                                      "cancelled",
                                     )
                                   }
                                   className="cursor-pointer text-red-600 hover:text-red-700"
@@ -577,7 +566,7 @@ export default function AdminTransfersPage() {
                                 onClick={() =>
                                   handleDelete(
                                     transfer._id,
-                                    transfer.customerInfo.name
+                                    transfer.customerInfo.name,
                                   )
                                 }
                                 className="cursor-pointer text-red-600 hover:text-red-700"
@@ -595,48 +584,17 @@ export default function AdminTransfersPage() {
               </Table>
             </div>
 
-            {transfers.length > 0 && (
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
-                  Showing {startIndex + 1} to{" "}
-                  {Math.min(endIndex, transfers.length)} of {transfers.length}{" "}
-                  transfers
-                </div>
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        onClick={() =>
-                          setCurrentPage(Math.max(1, currentPage - 1))
-                        }
-                        className={
-                          currentPage === 1
-                            ? "pointer-events-none opacity-50"
-                            : "cursor-pointer"
-                        }
-                      />
-                    </PaginationItem>
-                    <PaginationItem>
-                      <PaginationLink className="cursor-default">
-                        {currentPage} of {totalPages || 1}
-                      </PaginationLink>
-                    </PaginationItem>
-                    <PaginationItem>
-                      <PaginationNext
-                        onClick={() =>
-                          setCurrentPage(
-                            Math.min(totalPages || 1, currentPage + 1)
-                          )
-                        }
-                        className={
-                          currentPage === totalPages || totalPages === 0
-                            ? "pointer-events-none opacity-50"
-                            : "cursor-pointer"
-                        }
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
+            {paginationStatus !== "Exhausted" && (
+              <div className="flex justify-center">
+                <Button
+                  variant="outline"
+                  onClick={() => loadMore(ITEMS_PER_PAGE)}
+                  disabled={paginationStatus === "LoadingMore"}
+                >
+                  {paginationStatus === "LoadingMore"
+                    ? "Loading..."
+                    : "Load more"}
+                </Button>
               </div>
             )}
           </div>

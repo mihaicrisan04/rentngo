@@ -1,5 +1,9 @@
 import { ConvexError, v, type Infer } from "convex/values";
 import {
+  paginationOptsValidator,
+  paginationResultValidator,
+} from "convex/server";
+import {
   action,
   internalMutation,
   mutation,
@@ -57,6 +61,53 @@ const paymentMethodValidator = v.union(
   v.literal("card_on_delivery"),
   v.literal("card_online"),
 );
+
+const transferDocValidator = v.object({
+  _id: v.id("transfers"),
+  _creationTime: v.number(),
+  transferNumber: v.optional(v.number()),
+  userId: v.optional(v.id("users")),
+  vehicleId: v.id("vehicles"),
+  transferType: v.union(v.literal("one_way"), v.literal("round_trip")),
+  pickupLocation: locationValidator,
+  pickupDate: v.number(),
+  pickupTime: v.string(),
+  dropoffLocation: locationValidator,
+  returnDate: v.optional(v.number()),
+  returnTime: v.optional(v.string()),
+  passengers: v.number(),
+  luggageCount: v.optional(v.number()),
+  distanceKm: v.number(),
+  estimatedDurationMinutes: v.number(),
+  distanceSource: v.optional(
+    v.union(v.literal("server_mapbox"), v.literal("route_cache")),
+  ),
+  baseFare: v.number(),
+  distancePrice: v.number(),
+  totalPrice: v.number(),
+  pricePerKm: v.number(),
+  promoCode: v.optional(v.string()),
+  couponId: v.optional(v.id("coupons")),
+  discountAmount: v.optional(v.number()),
+  discountSource: v.optional(
+    v.union(v.literal("coupon"), v.literal("affiliate")),
+  ),
+  affiliateId: v.optional(v.id("affiliates")),
+  customerInfo: customerInfoValidator,
+  paymentMethod: paymentMethodValidator,
+  status: transferStatusValidator,
+});
+
+const transferListItemValidator = transferDocValidator.extend({
+  vehicle: v.union(
+    v.object({
+      make: v.string(),
+      model: v.string(),
+      year: v.optional(v.number()),
+    }),
+    v.null(),
+  ),
+});
 
 const transferBookingValidator = v.object({
   vehicleId: v.id("vehicles"),
@@ -453,6 +504,34 @@ export const getAllTransfers = query({
 
     const transfers = await ctx.db.query("transfers").collect();
     return transfers.sort((a, b) => b.pickupDate - a.pickupDate);
+  },
+});
+
+export const getAllTransfersPaginated = query({
+  args: { paginationOpts: paginationOptsValidator },
+  returns: paginationResultValidator(transferListItemValidator),
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const result = await ctx.db
+      .query("transfers")
+      .withIndex("by_pickup_date")
+      .order("desc")
+      .paginate(args.paginationOpts);
+
+    return {
+      ...result,
+      page: await Promise.all(
+        result.page.map(async (transfer) => {
+          const vehicle = await ctx.db.get(transfer.vehicleId);
+          return {
+            ...transfer,
+            vehicle: vehicle
+              ? { make: vehicle.make, model: vehicle.model, year: vehicle.year }
+              : null,
+          };
+        }),
+      ),
+    };
   },
 });
 
