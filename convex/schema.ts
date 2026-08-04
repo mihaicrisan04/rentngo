@@ -7,6 +7,20 @@ export default defineSchema({
     value: v.number(),
   }).index("by_name", ["name"]),
 
+  // Maintained all-time aggregates, one doc per covered table. Updated in the
+  // same transaction as every insert/status-change/delete on that table.
+  // Seeded by migrations/seedTableStats; dashboard readers fall back to a
+  // scan until the doc exists, so deploy-then-seed ordering is safe.
+  tableStats: defineTable({
+    table: v.union(
+      v.literal("reservations"),
+      v.literal("transfers"),
+      v.literal("vehicles"),
+    ),
+    total: v.number(),
+    byStatus: v.record(v.string(), v.number()),
+  }).index("by_table", ["table"]),
+
   // Users table - stores user profiles
   users: defineTable({
     name: v.string(),
@@ -191,6 +205,7 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_vehicle", ["vehicleId"])
     .index("by_dates", ["startDate", "endDate"])
+    .index("by_end_date", ["endDate"])
     .index("by_pickup_location", ["pickupLocation"])
     .index("by_restitution_location", ["restitutionLocation"])
     .index("by_payment_method", ["paymentMethod"])

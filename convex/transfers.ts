@@ -16,6 +16,12 @@ import { getCurrentUser, getOrCreateCurrentUser, requireAdmin } from "./users";
 import { applyAndRedeemCoupon } from "./coupons";
 import { nextBookingNumber, transferNumberCounter } from "./counters";
 import {
+  getTableStats,
+  recordStatsInsert,
+  recordStatsRemove,
+  recordStatsStatusChange,
+} from "./tableStats";
+import {
   bucketMonthlyStats,
   calculateGrowth,
   getMonthRange,
@@ -354,6 +360,7 @@ async function createTransferHandler(
   };
 
   const transferId = await ctx.db.insert("transfers", newTransferData);
+  await recordStatsInsert(ctx, "transfers", newTransferData.status);
 
   // Link the redemption audit row to the booking it paid for
   if (redeemedCoupon) {
@@ -615,6 +622,12 @@ export const updateTransferStatus = mutation({
     await ctx.db.patch(args.transferId, {
       status: args.newStatus as TransferStatusType,
     });
+    await recordStatsStatusChange(
+      ctx,
+      "transfers",
+      transfer.status,
+      args.newStatus,
+    );
 
     // Void the linked referral conversion on cancel (re-confirm on un-cancel)
     await syncConversionForBooking(ctx, {
@@ -674,6 +687,12 @@ export const updateTransferDetails = mutation({
     }
 
     if (updates.status !== undefined) {
+      await recordStatsStatusChange(
+        ctx,
+        "transfers",
+        transfer.status,
+        updates.status,
+      );
       await syncConversionForBooking(ctx, {
         bookingType: "transfer",
         bookingId: transferId,
@@ -715,6 +734,12 @@ export const cancelTransfer = mutation({
     }
 
     await ctx.db.patch(args.transferId, { status: "cancelled" });
+    await recordStatsStatusChange(
+      ctx,
+      "transfers",
+      transfer.status,
+      "cancelled",
+    );
 
     // Owner decision (RNGO-26): void the referral conversion so the
     // referrer's counter only reflects live bookings
@@ -748,6 +773,7 @@ export const deleteTransferPermanently = mutation({
       bookingIsLive: false,
     });
     await ctx.db.delete(args.transferId);
+    await recordStatsRemove(ctx, "transfers", transfer.status);
 
     return { success: true, message: "Transfer deleted permanently" };
   },
@@ -766,20 +792,43 @@ export const getTransferStats = query({
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
-    // Exact all-time totals and status counts remain Tier B debt until
-    // maintained aggregates replace this scan.
-    const allTransfers = await ctx.db.query("transfers").collect();
-    const totalTransfers = allTransfers.length;
-    const activeTransfers = allTransfers.filter(
-      (transfer) =>
-        transfer.status === "confirmed" && transfer.pickupDate >= args.now,
-    ).length;
-    const pendingConfirmations = allTransfers.filter(
-      (transfer) => transfer.status === "pending",
+    const stats = await getTableStats(ctx, "transfers");
+    let totalTransfers: number;
+    let pendingConfirmations: number;
+    if (stats) {
+      totalTransfers = stats.total;
+      pendingConfirmations = stats.byStatus.pending ?? 0;
+    } else {
+      // Aggregates not seeded yet (migrations/seedTableStats): keep the
+      // exact-but-slow scan until the seed migration has run.
+      const allTransfers = await ctx.db.query("transfers").collect();
+      totalTransfers = allTransfers.length;
+      pendingConfirmations = allTransfers.filter(
+        (transfer) => transfer.status === "pending",
+      ).length;
+    }
+
+    const upcomingTransfers = await ctx.db
+      .query("transfers")
+      .withIndex("by_pickup_date", (q) => q.gte("pickupDate", args.now))
+      .collect();
+    const activeTransfers = upcomingTransfers.filter(
+      (transfer) => transfer.status === "confirmed",
     ).length;
 
+    const oldestMonth = getRecentMonthKeys(args.now, 2)[0];
+    const currentMonth = getRecentMonthKeys(args.now, 1)[0];
+    const recentTransfers = await ctx.db
+      .query("transfers")
+      .withIndex("by_pickup_date", (q) =>
+        q
+          .gte("pickupDate", getMonthRange(oldestMonth).start)
+          .lt("pickupDate", getMonthRange(currentMonth).end),
+      )
+      .collect();
+
     const [previous, current] = bucketMonthlyStats(
-      allTransfers.map((transfer) => ({
+      recentTransfers.map((transfer) => ({
         timestamp: transfer.pickupDate,
         revenue: transfer.totalPrice,
       })),
