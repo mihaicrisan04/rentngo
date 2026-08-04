@@ -1,7 +1,6 @@
 import {
   mutation,
   query,
-  internalQuery,
   internalMutation,
   QueryCtx,
   MutationCtx,
@@ -345,16 +344,3 @@ export const requireAdmin = async (ctx: QueryCtx | MutationCtx): Promise<Doc<"us
   }
   return user;
 };
-
-/**
- * Internal query so actions (which have no ctx.db) can enforce the admin check
- * via ctx.runQuery(internal.users.assertAdmin, {}).
- */
-export const assertAdmin = internalQuery({
-  args: {},
-  returns: v.null(),
-  handler: async (ctx) => {
-    await requireAdmin(ctx);
-    return null;
-  },
-});
