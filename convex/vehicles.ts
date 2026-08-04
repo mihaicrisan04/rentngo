@@ -5,6 +5,12 @@ import {
   paginationResultValidator,
 } from "convex/server";
 import { requireAdmin } from "./users";
+import {
+  getTableStats,
+  recordStatsInsert,
+  recordStatsRemove,
+  recordStatsStatusChange,
+} from "./tableStats";
 
 // Pricing tier validator
 const pricingTierValidator = v.object({
@@ -251,7 +257,7 @@ export const create = mutation({
       }
     }
 
-    return await ctx.db.insert("vehicles", {
+    const vehicleId = await ctx.db.insert("vehicles", {
       ...args,
       isOwner: args.isOwner ?? false, // Default to false if not provided
       images: [], // Initialize empty images array
@@ -260,6 +266,8 @@ export const create = mutation({
       transferSeats: args.transferSeats,
       slug: args.slug,
     });
+    await recordStatsInsert(ctx, "vehicles", args.status);
+    return vehicleId;
   },
 });
 
@@ -332,7 +340,16 @@ export const update = mutation({
       }
     }
 
+    const previous = updates.status === undefined ? null : await ctx.db.get(id);
     await ctx.db.patch(id, updates);
+    if (updates.status !== undefined && previous) {
+      await recordStatsStatusChange(
+        ctx,
+        "vehicles",
+        previous.status,
+        updates.status,
+      );
+    }
     return null;
   },
 });
@@ -359,6 +376,7 @@ export const remove = mutation({
 
     // Delete the vehicle
     await ctx.db.delete(args.id);
+    await recordStatsRemove(ctx, "vehicles", vehicle.status);
     return null;
   },
 });
@@ -819,8 +837,15 @@ export const getFleetStats = query({
   returns: v.object({ totalVehicles: v.number() }),
   handler: async (ctx) => {
     await requireAdmin(ctx);
-    let totalVehicles = 0;
 
+    const stats = await getTableStats(ctx, "vehicles");
+    if (stats) {
+      return { totalVehicles: stats.total };
+    }
+
+    // Aggregates not seeded yet (migrations/seedTableStats): keep the count
+    // scan until the seed migration has run.
+    let totalVehicles = 0;
     for await (const _vehicle of ctx.db.query("vehicles")) {
       void _vehicle;
       totalVehicles += 1;

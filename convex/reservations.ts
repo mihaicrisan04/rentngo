@@ -15,6 +15,12 @@ import {
 import { applyAndRedeemCoupon } from "./coupons";
 import { nextBookingNumber, reservationNumberCounter } from "./counters";
 import {
+  getTableStats,
+  recordStatsInsert,
+  recordStatsRemove,
+  recordStatsStatusChange,
+} from "./tableStats";
+import {
   bucketMonthlyStats,
   calculateGrowth,
   getMonthRange,
@@ -438,6 +444,7 @@ export const createReservation = mutation({
       "reservations",
       newReservationData,
     );
+    await recordStatsInsert(ctx, "reservations", newReservationData.status);
 
     // Link the redemption audit row to the booking it paid for
     if (redeemedCoupon) {
@@ -697,6 +704,12 @@ export const updateReservationStatus = mutation({
     }
 
     await ctx.db.patch(args.reservationId, { status: args.newStatus });
+    await recordStatsStatusChange(
+      ctx,
+      "reservations",
+      reservation.status,
+      args.newStatus,
+    );
 
     // Void the linked referral conversion on cancel (re-confirm on un-cancel)
     await syncConversionForBooking(ctx, {
@@ -811,6 +824,12 @@ export const updateReservationDetails = mutation({
     await ctx.db.patch(reservationId, updatesToApply);
 
     if (updatesToApply.status !== undefined) {
+      await recordStatsStatusChange(
+        ctx,
+        "reservations",
+        reservation.status,
+        updatesToApply.status,
+      );
       await syncConversionForBooking(ctx, {
         bookingType: "reservation",
         bookingId: reservationId,
@@ -857,6 +876,12 @@ export const cancelReservation = mutation({
     await ctx.db.patch(args.reservationId, {
       status: "cancelled" as ReservationStatusType,
     });
+    await recordStatsStatusChange(
+      ctx,
+      "reservations",
+      reservation.status,
+      "cancelled",
+    );
 
     // Owner decision (RNGO-26): a cancelled booking must not keep crediting
     // the referrer — void the conversion and decrement their counter
@@ -896,6 +921,7 @@ export const deleteReservationPermanently = mutation({
       bookingIsLive: false,
     });
     await ctx.db.delete(args.reservationId);
+    await recordStatsRemove(ctx, "reservations", reservation.status);
 
     return { success: true, message: "Reservation permanently deleted." };
   },
@@ -916,25 +942,51 @@ export const getReservationStats = query({
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
-    // Exact all-time totals and status counts remain Tier B debt until
-    // maintained aggregates replace this scan.
-    const allReservations = await ctx.db.query("reservations").collect();
-    const totalReservations = allReservations.length;
-    const confirmedReservations = allReservations.filter(
-      (reservation) => reservation.status === "confirmed",
-    ).length;
-    const activeReservations = allReservations.filter(
+    const stats = await getTableStats(ctx, "reservations");
+    let totalReservations: number;
+    let confirmedReservations: number;
+    let pendingConfirmations: number;
+    if (stats) {
+      totalReservations = stats.total;
+      confirmedReservations = stats.byStatus.confirmed ?? 0;
+      pendingConfirmations = stats.byStatus.pending ?? 0;
+    } else {
+      // Aggregates not seeded yet (migrations/seedTableStats): keep the
+      // exact-but-slow scan until the seed migration has run.
+      const allReservations = await ctx.db.query("reservations").collect();
+      totalReservations = allReservations.length;
+      confirmedReservations = allReservations.filter(
+        (reservation) => reservation.status === "confirmed",
+      ).length;
+      pendingConfirmations = allReservations.filter(
+        (reservation) => reservation.status === "pending",
+      ).length;
+    }
+
+    // Every reservation active now still has endDate >= now, so this range
+    // only reads ongoing + future bookings instead of the whole table.
+    const notYetEnded = await ctx.db
+      .query("reservations")
+      .withIndex("by_end_date", (q) => q.gte("endDate", args.now))
+      .collect();
+    const activeReservations = notYetEnded.filter(
       (reservation) =>
-        reservation.status === "confirmed" &&
-        reservation.startDate <= args.now &&
-        reservation.endDate >= args.now,
-    ).length;
-    const pendingConfirmations = allReservations.filter(
-      (reservation) => reservation.status === "pending",
+        reservation.status === "confirmed" && reservation.startDate <= args.now,
     ).length;
 
+    const oldestMonth = getRecentMonthKeys(args.now, 2)[0];
+    const currentMonth = getRecentMonthKeys(args.now, 1)[0];
+    const recentReservations = await ctx.db
+      .query("reservations")
+      .withIndex("by_creation_time", (q) =>
+        q
+          .gte("_creationTime", getMonthRange(oldestMonth).start)
+          .lt("_creationTime", getMonthRange(currentMonth).end),
+      )
+      .collect();
+
     const [previous, current] = bucketMonthlyStats(
-      allReservations.map((reservation) => ({
+      recentReservations.map((reservation) => ({
         timestamp: reservation._creationTime,
         revenue:
           reservation.status === "confirmed" ||
