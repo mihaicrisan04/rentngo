@@ -91,6 +91,14 @@ run = "tsgo --noEmit --tsBuildInfoFile .tsgo-cache/tsconfig.tsbuildinfo"
 description = "Deploy Convex backend"
 run = "convex deploy"
 
+[tasks."convex:deploy-dev"]
+description = "Deploy Convex backend to the develop cloud deployment (needs .env.dev)"
+run = 'test -f .env.dev || { echo "missing .env.dev — copy .env.dev.example and fill in the keys"; exit 1; }; set -a; . ./.env.dev; set +a; convex deploy -y'
+
+[tasks."convex:run-dev"]
+description = "Run a Convex function on the develop cloud deployment (needs .env.dev)"
+run = 'test -f .env.dev || { echo "missing .env.dev — copy .env.dev.example and fill in the keys"; exit 1; }; set -a; . ./.env.dev; set +a; convex run'
+
 [tasks."convex:dashboard"]
 description = "Open Convex dashboard"
 run = "convex dashboard"
