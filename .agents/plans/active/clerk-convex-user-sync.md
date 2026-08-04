@@ -15,7 +15,7 @@ Failure modes of the current design:
 1. **Race + broken retry** — `hooks/use-ensure-user.ts` gates on Clerk's `isLoaded`, not on Convex auth (`useConvexAuth().isAuthenticated`). The mutation can fire before the Convex JWT handshake completes → `ctx.auth.getUserIdentity()` is null → throws. The catch resets `hasCalledRef` but nothing re-triggers the effect (deps unchanged), so the retry never happens. Error is only `console.error`.
 2. **Requires a page visit** — users created in the Clerk dashboard, or who sign up and bounce, never get a Convex row.
 3. **No propagation** — name/email changes and deletions in Clerk never reach Convex (`ensureUser` patches only on next visit).
-4. **Dev env config drift** — `convex/auth.config.ts` depends on `NEXT_PUBLIC_CLERK_FRONTEND_API_URL` + a Clerk JWT template named `convex` (with email claim) per environment; dev auto-deploy has been broken since Jun 30 so the dev deployment may also run stale code.
+4. **Dev env config drift** — `convex/auth.config.ts` depends on `NEXT_PUBLIC_CLERK_FRONTEND_API_URL` + a Clerk JWT template named `convex` (with email claim) per environment; dev auto-deploy has been broken since Jun 30 so the dev deployment may also run stale code. (Update 2026-08-04: auto-deploy fixed — GitHub app re-linked, `vercel.json` now deploys Convex before the Next build; note this means develop → main merges auto-deploy prod, so register the prod webhook + secret *before* that merge.)
 
 ## Fix — target architecture
 
