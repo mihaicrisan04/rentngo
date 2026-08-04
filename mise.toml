@@ -93,11 +93,11 @@ run = "convex deploy"
 
 [tasks."convex:deploy-dev"]
 description = "Deploy Convex backend to the develop cloud deployment (needs .env.dev)"
-run = 'test -f .env.dev || { echo "missing .env.dev — copy .env.dev.example and fill in the keys"; exit 1; }; set -a; . ./.env.dev; set +a; convex deploy -y'
+run = 'test -f .env.dev || { echo "missing .env.dev — copy .env.dev.example and fill in the keys"; exit 1; }; convex deploy -y --env-file .env.dev'
 
 [tasks."convex:run-dev"]
-description = "Run a Convex function on the develop cloud deployment (needs .env.dev)"
-run = 'test -f .env.dev || { echo "missing .env.dev — copy .env.dev.example and fill in the keys"; exit 1; }; set -a; . ./.env.dev; set +a; convex run'
+description = "Run a Convex function on the develop cloud deployment"
+run = "convex run --deployment fortunate-retriever-189"
 
 [tasks."convex:dashboard"]
 description = "Open Convex dashboard"
