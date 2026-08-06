@@ -1,8 +1,8 @@
 import { v } from "convex/values";
 
 // Shared enum validators — the single source of truth for the literal sets
-// used by convex/schema.ts and the function modules. Keep these in sync with
-// nothing: everything else imports from here.
+// used by convex/schema.ts and the function modules; everything else imports
+// from here.
 
 export const vehicleTypeValidator = v.union(
   v.literal("sedan"),
