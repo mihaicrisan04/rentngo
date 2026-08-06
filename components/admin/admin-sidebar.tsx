@@ -98,7 +98,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                         width={24}
                         height={24}
                         unoptimized
-                        className="hidden h-6 w-6 group-data-[collapsible=icon]:block"
+                        className="hidden h-6 w-6 rounded-md group-data-[collapsible=icon]:block"
                     />
                 </div>
             </SidebarMenuItem>
