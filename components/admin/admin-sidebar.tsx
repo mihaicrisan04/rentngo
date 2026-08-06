@@ -110,7 +110,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
       <SidebarFooter>
         <NavUser />
       </SidebarFooter>
-      <SidebarRail className="after:inset-y-auto after:top-1/2 after:h-2/5 after:-translate-y-1/2 after:rounded-full hover:after:bg-transparent hover:after:bg-gradient-to-b hover:after:from-transparent hover:after:via-primary/40 hover:after:to-transparent" />
+      <SidebarRail className="after:inset-y-auto after:top-1/2 after:h-4/5 after:-translate-y-1/2 after:rounded-full hover:after:bg-transparent hover:after:bg-gradient-to-b hover:after:from-transparent hover:after:via-sidebar-border hover:after:to-transparent" />
     </Sidebar>
   )
 }
