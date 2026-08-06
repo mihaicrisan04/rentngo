@@ -3,7 +3,8 @@
 import { usePaginatedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/shared/status-badge";
+import { formatDate, formatPrice } from "@/lib/format";
 import {
   Table,
   TableBody,
@@ -19,7 +20,6 @@ const ITEMS_PER_PAGE = 10;
 
 export function UserReservationsTable() {
   const t = useTranslations("profile");
-  const tCommon = useTranslations("common");
 
   const {
     results: reservations,
@@ -31,43 +31,6 @@ export function UserReservationsTable() {
     { initialNumItems: ITEMS_PER_PAGE },
   );
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      pending: {
-        color: "bg-yellow-100 text-yellow-800 border-yellow-200",
-        label: tCommon("status.pending"),
-      },
-      confirmed: {
-        color: "bg-green-100 text-green-800 border-green-200",
-        label: tCommon("status.confirmed"),
-      },
-      cancelled: {
-        color: "bg-red-100 text-red-800 border-red-200",
-        label: tCommon("status.cancelled"),
-      },
-      completed: {
-        color: "bg-blue-100 text-blue-800 border-blue-200",
-        label: tCommon("status.completed"),
-      },
-    };
-
-    const config =
-      statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
-
-    return (
-      <Badge variant="secondary" className={config.color}>
-        {config.label}
-      </Badge>
-    );
-  };
-
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString();
-  };
-
-  const formatPrice = (price: number) => {
-    return `${price.toFixed(2)} EUR`;
-  };
 
   if (paginationStatus === "LoadingFirstPage") {
     return (
@@ -170,7 +133,7 @@ export function UserReservationsTable() {
                     </div>
                   )}
                 </TableCell>
-                <TableCell>{getStatusBadge(reservation.status)}</TableCell>
+                <TableCell><StatusBadge status={reservation.status} /></TableCell>
               </TableRow>
             ))}
           </TableBody>

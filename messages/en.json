@@ -343,17 +343,7 @@
     "transmission": "Transmission:",
     "fuel": "Fuel:",
     "browseCars": "Browse Cars",
-    "goBack": "Go Back",
-    "paymentMethods": {
-      "cashOnDelivery": "Cash on Delivery",
-      "cardOnDelivery": "Card Payment on Delivery",
-      "cardOnline": "Card Payment Online"
-    },
-    "status": {
-      "pending": "Pending",
-      "confirmed": "Confirmed",
-      "cancelled": "Cancelled"
-    }
+    "goBack": "Go Back"
   },
   "transferPage": {
     "title": "Transfer Services",
@@ -532,7 +522,13 @@
       "confirmed": "Confirmed",
       "pending": "Pending",
       "cancelled": "Cancelled",
-      "completed": "Completed"
+      "completed": "Completed",
+      "available": "Available",
+      "rented": "Rented",
+      "maintenance": "Maintenance",
+      "currentSeason": "Current Season",
+      "active": "Active",
+      "inactive": "Inactive"
     },
     "coupon": {
       "title": "Coupon Code",

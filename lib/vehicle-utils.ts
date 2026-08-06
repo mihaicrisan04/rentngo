@@ -74,11 +74,4 @@ export function generateVehicleSlug(make: string, model: string, year?: number):
     .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
 }
 
-/**
- * Validate that a slug follows the correct format
- * Valid slugs: lowercase alphanumeric with hyphens, no consecutive hyphens
- */
-export function validateVehicleSlug(slug: string): boolean {
-  const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-  return slugRegex.test(slug);
-}
+export { validateSlug as validateVehicleSlug } from "./slug";

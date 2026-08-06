@@ -343,17 +343,7 @@
     "transmission": "Transmisie:",
     "fuel": "Combustibil:",
     "browseCars": "Răsfoiește Mașinile",
-    "goBack": "Înapoi",
-    "paymentMethods": {
-      "cashOnDelivery": "Plata Cash la Livrare",
-      "cardOnDelivery": "Plata cu Cardul la Livrare",
-      "cardOnline": "Plata cu Cardul Online"
-    },
-    "status": {
-      "pending": "În așteptare",
-      "confirmed": "Confirmat",
-      "cancelled": "Anulat"
-    }
+    "goBack": "Înapoi"
   },
   "transferPage": {
     "title": "Servicii Transfer",
@@ -532,7 +522,13 @@
       "confirmed": "Confirmată",
       "pending": "În Așteptare",
       "cancelled": "Anulată",
-      "completed": "Finalizată"
+      "completed": "Finalizată",
+      "available": "Disponibilă",
+      "rented": "Închiriată",
+      "maintenance": "În Mentenanță",
+      "currentSeason": "Sezon Curent",
+      "active": "Activ",
+      "inactive": "Inactiv"
     },
     "coupon": {
       "title": "Cod de reducere",
