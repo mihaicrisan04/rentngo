@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import { buildMetadata, jsonLdScriptContent } from "@/lib/metadata";
+import { buildOrganizationSchema } from "@/lib/structured-data";
 
 interface AboutLayoutProps {
   children: React.ReactNode;
@@ -29,50 +30,7 @@ export async function generateMetadata({
   });
 }
 
-const organizationSchema = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "Rent'n Go",
-  alternateName: "Rent'n Go Cluj-Napoca",
-  url: "https://rngo.ro",
-  logo: "https://rngo.ro/logo.png",
-  contactPoint: {
-    "@type": "ContactPoint",
-    telephone: "+40-773-932-961",
-    contactType: "customer service",
-    areaServed: "RO",
-    availableLanguage: ["Romanian", "English"],
-  },
-  address: {
-    "@type": "PostalAddress",
-    streetAddress:
-      'Cluj "Avram Iancu" International Airport, Strada Traian Vuia 149-151',
-    addressLocality: "Cluj-Napoca",
-    postalCode: "400397",
-    addressCountry: "RO",
-  },
-  geo: {
-    "@type": "GeoCoordinates",
-    latitude: 46.7712,
-    longitude: 23.6236,
-  },
-  sameAs: [
-    "https://www.facebook.com/share/1Ad82uMtP3/?mibextid=wwXIfr",
-    "https://www.instagram.com/rentn_go.ro",
-    "https://www.tiktok.com/@rentn.go",
-  ],
-  serviceArea: {
-    "@type": "GeoCircle",
-    geoMidpoint: {
-      "@type": "GeoCoordinates",
-      latitude: 46.7712,
-      longitude: 23.6236,
-    },
-    geoRadius: "50",
-  },
-  description:
-    "Rent'n Go ofera servicii profesionale cu masini de inchiriat Cluj-Napoca. Flota moderna de vehicule si preturi competitive. Experti in inchiriere auto Cluj cu servicii de calitate.",
-};
+const organizationSchema = buildOrganizationSchema();
 
 export default function AboutLayout({ children }: AboutLayoutProps) {
   return (

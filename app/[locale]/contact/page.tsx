@@ -21,6 +21,7 @@ import {
 import { SocialIcon } from "react-social-icons";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { COMPANY } from "@/lib/company";
 
 const ContactPage = () => {
   const t = useTranslations("contactPage");
@@ -31,19 +32,19 @@ const ContactPage = () => {
   };
 
   const handleWhatsAppClick = () => {
-    const whatsappUrl = `https://wa.me/40773932961?text=${encodeURIComponent(t("whatsappMessage"))}`;
+    const whatsappUrl = `https://wa.me/${COMPANY.phone.tel.replace("+", "")}?text=${encodeURIComponent(t("whatsappMessage"))}`;
     window.open(whatsappUrl, "_blank");
   };
 
   const handlePhoneClick = () => {
-    const phoneNumber = "+40773932961";
+    const phoneNumber = COMPANY.phone.tel;
     navigator.clipboard.writeText(phoneNumber).then(() => {
       toast.success(t("phoneCopied"));
     });
   };
 
   const handleEmailClick = () => {
-    window.location.href = "mailto:office@rngo.ro";
+    window.location.href = `mailto:${COMPANY.email}`;
   };
 
   return (

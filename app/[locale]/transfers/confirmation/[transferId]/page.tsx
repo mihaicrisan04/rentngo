@@ -495,7 +495,7 @@ function TransferConfirmationInner() {
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-muted-foreground" />
-                <span>{tConfirmation("customerSupport")}: +40 773 932 961</span>
+                <span>{tConfirmation("customerSupport")}: {COMPANY.phone.display}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-muted-foreground" />
