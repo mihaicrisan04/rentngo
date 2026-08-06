@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { computeReservationPricing } from "./reservation";
+import {
+  calculateVehiclePricingWithSeason,
+  computeReservationPricing,
+} from "./reservation";
 import type { VehiclePricingData } from "./types";
 
 // Fixture with distinct base (50) and duration (40/30) tiers so the tests
@@ -190,5 +193,78 @@ describe("computeReservationPricing — full booking scenarios", () => {
     });
     expect(breakdown.additionalCharges).toEqual([]);
     expect(breakdown.totalPrice).toBe(100);
+  });
+});
+
+describe("calculateVehiclePricingWithSeason — multiplier 1.0 equals plain tiered pricing", () => {
+  // The former non-seasonal calculateVehiclePricing was collapsed into this
+  // function; a 1.0 multiplier must reproduce it exactly. The daily rate is
+  // rounded PER DAY (Math.round(basePricePerDay * multiplier)), never on the
+  // total, so at 1.0 the rounding is a no-op.
+  it("returns the plain duration-tier price at multiplier 1.0", () => {
+    const result = calculateVehiclePricingWithSeason(
+      vehicle,
+      1.0,
+      new Date(2026, 6, 10),
+      new Date(2026, 6, 16),
+      undefined,
+      undefined,
+      "10:00",
+      "10:00",
+    );
+    // 6 days × duration-tier 40/day
+    expect(result.days).toBe(6);
+    expect(result.basePrice).toBe(240);
+    expect(result.totalPrice).toBe(240);
+    expect(result.basePriceBeforeSeason).toBe(240);
+    expect(result.seasonalAdjustment).toBe(0);
+    expect(result.seasonalMultiplier).toBe(1.0);
+  });
+
+  it("adds location fees unchanged at multiplier 1.0", () => {
+    const result = calculateVehiclePricingWithSeason(
+      vehicle,
+      1.0,
+      new Date(2026, 6, 10),
+      new Date(2026, 6, 12),
+      "Cluj-Napoca",
+      "Aeroport Cluj-Napoca",
+      "10:00",
+      "10:00",
+    );
+    // 2 days × base-tier 50/day + 10 delivery fee
+    expect(result.days).toBe(2);
+    expect(result.basePrice).toBe(100);
+    expect(result.deliveryFee).toBe(10);
+    expect(result.returnFee).toBe(0);
+    expect(result.totalPrice).toBe(110);
+    expect(result.seasonalAdjustment).toBe(0);
+  });
+
+  it("returns the null shape when dates are missing (parity with the old helper)", () => {
+    const result = calculateVehiclePricingWithSeason(vehicle, 1.0);
+    expect(result.basePrice).toBeNull();
+    expect(result.totalPrice).toBeNull();
+    expect(result.days).toBeNull();
+    expect(result.totalLocationFees).toBe(0);
+  });
+
+  it("rounds the seasonal rate per day, not per total", () => {
+    // 3 days at base-tier 50/day × 1.25 = 62.5 → rounds to 63/day → 189;
+    // per-total rounding (Math.round(150 × 1.25) = 188) would differ
+    const result = calculateVehiclePricingWithSeason(
+      vehicle,
+      1.25,
+      new Date(2026, 6, 10),
+      new Date(2026, 6, 13),
+      undefined,
+      undefined,
+      "10:00",
+      "10:00",
+    );
+    expect(result.days).toBe(3);
+    expect(result.basePrice).toBe(189);
+    expect(result.basePriceBeforeSeason).toBe(150);
+    expect(result.seasonalAdjustment).toBe(39);
   });
 });

@@ -3,7 +3,6 @@
 // existing imports keep working.
 export {
   calculateRentalDays,
-  calculateVehiclePricing,
   calculateVehiclePricingWithSeason,
   getPriceForDurationWithSeason,
   calculateIncludedKilometers,

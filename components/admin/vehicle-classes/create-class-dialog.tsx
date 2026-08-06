@@ -49,8 +49,8 @@ const classSchema = z.object({
     .max(200, "Description must be less than 200 characters")
     .optional()
     .or(z.literal("")),
-  additional50kmPrice: z.coerce
-    .number()
+  additional50kmPrice: z
+    .number({ error: "Price must be positive" })
     .min(0, "Price must be positive")
     .max(100, "Price must be less than 100 EUR"),
 });
@@ -72,8 +72,7 @@ export function CreateClassDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<ClassFormData>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(classSchema) as any,
+    resolver: zodResolver(classSchema),
     defaultValues: {
       name: "",
       displayName: "",

@@ -5,6 +5,8 @@ import { BlogListClient } from "@/components/features/blog/blog-list-client";
 import { getTranslations } from "next-intl/server";
 import { buildMetadata } from "@/lib/metadata";
 import { cacheLife } from "next/cache";
+import { notFound } from "next/navigation";
+import { isLocale } from "@/i18n";
 
 interface BlogPageProps {
   params: Promise<{ locale: string }>;
@@ -30,11 +32,11 @@ export default async function BlogPage({ params }: BlogPageProps) {
   "use cache";
   cacheLife("hours");
   const { locale } = await params;
-  const typedLocale = locale as "ro" | "en";
+  if (!isLocale(locale)) notFound();
 
   const [featuredBlog, allBlogs] = await Promise.all([
-    fetchStaticQuery(api.blogs.getFeatured, { locale: typedLocale }),
-    fetchStaticQuery(api.blogs.getAll, { locale: typedLocale }),
+    fetchStaticQuery(api.blogs.getFeatured, { locale }),
+    fetchStaticQuery(api.blogs.getAll, { locale }),
   ]);
 
   // Filter out the featured blog from the list so it doesn't appear twice

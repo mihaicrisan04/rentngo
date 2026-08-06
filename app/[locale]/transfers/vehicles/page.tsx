@@ -46,7 +46,7 @@ export default function TransferVehiclesPage() {
     setSearchData(stored);
 
     if (stored.selectedVehicleId) {
-      setSelectedVehicleId(stored.selectedVehicleId as Id<"vehicles">);
+      setSelectedVehicleId(stored.selectedVehicleId);
     }
 
     setIsHydrated(true);

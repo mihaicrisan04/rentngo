@@ -10,6 +10,7 @@ import {
 import { notFound } from "next/navigation";
 import { buildMetadata } from "@/lib/metadata";
 import { cacheLife } from "next/cache";
+import { isLocale } from "@/i18n";
 
 interface BlogDetailPageProps {
   params: Promise<{ locale: string; slug: string }>;
@@ -21,9 +22,10 @@ export async function generateMetadata({
   "use cache";
   cacheLife("hours");
   const { locale, slug } = await params;
+  if (!isLocale(locale)) notFound();
   const blog = await fetchStaticQuery(api.blogs.getBySlug, {
     slug,
-    locale: locale as "ro" | "en",
+    locale,
   });
 
   if (!blog) {
@@ -77,9 +79,10 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
   "use cache";
   cacheLife("hours");
   const { locale, slug } = await params;
+  if (!isLocale(locale)) notFound();
   const blog = await fetchStaticQuery(api.blogs.getBySlug, {
     slug,
-    locale: locale as "ro" | "en",
+    locale,
   });
 
   if (!blog) {

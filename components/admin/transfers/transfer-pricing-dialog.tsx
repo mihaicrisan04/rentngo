@@ -40,9 +40,13 @@ import { toast } from "sonner";
 import { Plus, Trash2, Edit2, X, Check, RefreshCw } from "lucide-react";
 
 const tierSchema = z.object({
-  minExtraKm: z.coerce.number().min(0, "Min KM must be 0 or greater"),
-  maxExtraKm: z.coerce.number().optional(),
-  pricePerKm: z.coerce.number().min(0.01, "Price must be greater than 0"),
+  minExtraKm: z
+    .number({ error: "Min KM must be 0 or greater" })
+    .min(0, "Min KM must be 0 or greater"),
+  maxExtraKm: z.number().optional(),
+  pricePerKm: z
+    .number({ error: "Price must be greater than 0" })
+    .min(0.01, "Price must be greater than 0"),
 });
 
 type TierFormData = z.output<typeof tierSchema>;
@@ -67,8 +71,7 @@ export function TransferPricingDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<TierFormData>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(tierSchema) as any,
+    resolver: zodResolver(tierSchema),
     defaultValues: {
       minExtraKm: 0,
       maxExtraKm: undefined,
@@ -77,8 +80,7 @@ export function TransferPricingDialog({
   });
 
   const editForm = useForm<TierFormData>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(tierSchema) as any,
+    resolver: zodResolver(tierSchema),
   });
 
   const handleAdd = async (values: TierFormData) => {
@@ -211,6 +213,7 @@ export function TransferPricingDialog({
                               min="0"
                               step="1"
                               {...field}
+                              onChange={(e) => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))}
                               disabled={isSubmitting}
                             />
                           </FormControl>
@@ -252,6 +255,7 @@ export function TransferPricingDialog({
                               min="0.01"
                               step="0.01"
                               {...field}
+                              onChange={(e) => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))}
                               disabled={isSubmitting}
                             />
                           </FormControl>
@@ -331,6 +335,7 @@ export function TransferPricingDialog({
                                           min="0"
                                           step="1"
                                           {...field}
+                                          onChange={(e) => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))}
                                           disabled={isSubmitting}
                                         />
                                       </FormControl>
@@ -370,6 +375,7 @@ export function TransferPricingDialog({
                                           min="0.01"
                                           step="0.01"
                                           {...field}
+                                          onChange={(e) => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))}
                                           disabled={isSubmitting}
                                         />
                                       </FormControl>

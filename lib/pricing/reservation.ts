@@ -195,51 +195,10 @@ export interface PriceDetails {
 }
 
 /**
- * Calculate pricing details for a vehicle rental using tiered pricing
- */
-export function calculateVehiclePricing(
-  vehicle: VehiclePricingData,
-  pickup?: Date | null,
-  restitution?: Date | null,
-  deliveryLocation?: string,
-  restitutionLocation?: string,
-  pickupTime?: string | null,
-  restitutionTime?: string | null,
-): PriceDetails {
-  if (pickup && restitution && pickupTime && restitutionTime && restitution >= pickup) {
-    const calculatedDays = calculateRentalDays(pickup, restitution, pickupTime, restitutionTime);
-
-    // Get the appropriate price per day based on rental duration using pricing tiers
-    const pricePerDay = getPriceForDuration(vehicle, calculatedDays);
-    const basePrice = calculatedDays * pricePerDay;
-
-    // Add location fees
-    const deliveryFee = deliveryLocation ? getLocationPrice(deliveryLocation) : 0;
-    const returnFee = restitutionLocation ? getLocationPrice(restitutionLocation) : 0;
-    const totalLocationFees = deliveryFee + returnFee;
-
-    return {
-      basePrice,
-      totalPrice: basePrice + totalLocationFees,
-      days: calculatedDays,
-      deliveryFee,
-      returnFee,
-      totalLocationFees,
-    };
-  }
-
-  return {
-    basePrice: null,
-    totalPrice: null,
-    days: null,
-    deliveryFee: 0,
-    returnFee: 0,
-    totalLocationFees: 0,
-  };
-}
-
-/**
- * Calculate pricing details for a vehicle rental with seasonal adjustments
+ * Calculate pricing details for a vehicle rental with seasonal adjustments.
+ * Pass a multiplier of 1.0 for non-seasonal pricing: the daily rate is
+ * rounded per day (`Math.round(basePricePerDay * multiplier)`), so 1.0
+ * yields exactly the plain tiered price.
  */
 export function calculateVehiclePricingWithSeason(
   vehicle: VehiclePricingData,

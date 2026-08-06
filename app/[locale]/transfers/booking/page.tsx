@@ -6,7 +6,6 @@ import { useTranslations, useLocale } from "next-intl";
 import { useAction, useQuery } from "convex/react";
 import { useUser } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
 import {
   ArrowLeft,
   Loader2,
@@ -85,7 +84,7 @@ export default function TransferBookingPage() {
   const currentUser = useQuery(api.users.get);
   const bookTransfer = useAction(api.transfers.bookTransfer);
 
-  const vehicleId = searchData?.selectedVehicleId as Id<"vehicles"> | undefined;
+  const vehicleId = searchData?.selectedVehicleId;
   const vehicle = useQuery(
     api.vehicles.getById,
     vehicleId ? { id: vehicleId } : "skip",
