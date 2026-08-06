@@ -28,6 +28,9 @@ import {
   Clock,
   TrendingUp,
   Settings,
+  BarChart3,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 const TransferPricingDialog = dynamic(
@@ -53,6 +56,7 @@ const ITEMS_PER_PAGE = 10;
 
 export default function AdminTransfersPage() {
   const [showPricingDialog, setShowPricingDialog] = useState(false);
+  const [showCharts, setShowCharts] = useState(false);
   const now = usePeriodicNow();
   const monthNow =
     now === null
@@ -106,18 +110,29 @@ export default function AdminTransfersPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex h-full min-h-0 flex-1 flex-col gap-6">
+      <div className="flex shrink-0 items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Transfers Management</h1>
           <p className="text-muted-foreground">
             Manage VIP transfers and track performance metrics
           </p>
         </div>
-        <Button variant="outline" onClick={() => setShowPricingDialog(true)}>
-          <Settings className="h-4 w-4 mr-2" />
-          Pricing Tiers
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowCharts((v) => !v)}>
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Analytics
+            {showCharts ? (
+              <ChevronUp className="h-4 w-4 ml-2" />
+            ) : (
+              <ChevronDown className="h-4 w-4 ml-2" />
+            )}
+          </Button>
+          <Button variant="outline" onClick={() => setShowPricingDialog(true)}>
+            <Settings className="h-4 w-4 mr-2" />
+            Pricing Tiers
+          </Button>
+        </div>
       </div>
 
       <TransferPricingDialog
@@ -125,7 +140,7 @@ export default function AdminTransfersPage() {
         onOpenChange={setShowPricingDialog}
       />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid shrink-0 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Transfers"
           icon={Calendar}
@@ -152,57 +167,65 @@ export default function AdminTransfersPage() {
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <ChartCard
-          title="Monthly Transfers"
-          icon={TrendingUp}
-          config={chartConfig}
-        >
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={formattedMonthlyData}>
-              <XAxis dataKey="month" />
-              <YAxis />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar
-                dataKey="transfers"
-                fill="var(--color-transfers)"
-                radius={[2, 2, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
+      {/* Charts (collapsed by default so the table gets the vertical space) */}
+      {showCharts && (
+        <div className="grid shrink-0 gap-4 md:grid-cols-2">
+          <ChartCard
+            title="Monthly Transfers"
+            icon={TrendingUp}
+            config={chartConfig}
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={formattedMonthlyData}>
+                <XAxis dataKey="month" />
+                <YAxis />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar
+                  dataKey="transfers"
+                  fill="var(--color-transfers)"
+                  radius={[2, 2, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
 
-        <ChartCard title="Revenue Trend" icon={DollarSign} config={chartConfig}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={formattedMonthlyData}>
-              <XAxis dataKey="month" />
-              <YAxis />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Line
-                type="monotone"
-                dataKey="revenue"
-                stroke="var(--color-transfers)"
-                strokeWidth={2}
-                dot={{
-                  fill: "var(--color-transfers)",
-                  strokeWidth: 2,
-                  r: 4,
-                }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </div>
+          <ChartCard
+            title="Revenue Trend"
+            icon={DollarSign}
+            config={chartConfig}
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={formattedMonthlyData}>
+                <XAxis dataKey="month" />
+                <YAxis />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="var(--color-transfers)"
+                  strokeWidth={2}
+                  dot={{
+                    fill: "var(--color-transfers)",
+                    strokeWidth: 2,
+                    r: 4,
+                  }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        </div>
+      )}
 
-      <Card>
-        <CardHeader>
+      <Card className="min-h-[24rem] flex-1">
+        <CardHeader className="shrink-0">
           <CardTitle>All Transfers</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex min-h-0 flex-1 flex-col">
           <TransfersTable
             transfers={transfers}
             paginationStatus={paginationStatus}
             loadMore={loadMore}
+            fullHeight
           />
         </CardContent>
       </Card>

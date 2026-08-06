@@ -8,6 +8,8 @@ import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { formatDate, formatPrice } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { getTableLayout } from "@/components/admin/shared/table-layout";
 import {
   Table,
   TableBody,
@@ -48,7 +50,14 @@ const ReservationEmailDialog = dynamic(
 
 const ITEMS_PER_PAGE = 10;
 
-export function ReservationsTable() {
+interface ReservationsTableProps {
+  fullHeight?: boolean;
+}
+
+export function ReservationsTable({
+  fullHeight = false,
+}: ReservationsTableProps) {
+  const layout = getTableLayout(fullHeight);
   const [editingReservation, setEditingReservation] =
     useState<Id<"reservations"> | null>(null);
   const [emailDialogReservation, setEmailDialogReservation] =
@@ -123,8 +132,8 @@ export function ReservationsTable() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-md border">
+    <div className={layout.root}>
+      <div className={cn("rounded-md border", layout.scrollArea)}>
         <Table containerClassName="overflow-x-visible">
           <TableHeader sticky>
             <TableRow>
@@ -320,7 +329,7 @@ export function ReservationsTable() {
       </div>
 
       {paginationStatus !== "Exhausted" && (
-        <div className="flex justify-center">
+        <div className={cn("flex justify-center", layout.footer)}>
           <Button
             variant="outline"
             onClick={() => loadMore(ITEMS_PER_PAGE)}
