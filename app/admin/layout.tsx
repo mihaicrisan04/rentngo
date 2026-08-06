@@ -30,9 +30,14 @@ export default function AdminRootLayout({
   const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
 
   return (
-    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
+    <html
+      lang="en"
+      suppressHydrationWarning
+      data-scroll-behavior="smooth"
+      className="overflow-hidden overscroll-none"
+    >
       {gtmId && <GoogleTagManager gtmId={gtmId} />}
-      <body className={fontClassNames}>
+      <body className={`${fontClassNames} overflow-hidden overscroll-none`}>
         <Providers>
           {/* Admin UI is English-only; pin next-intl to "en" so shared
               components like StatusBadge can resolve translations. */}
