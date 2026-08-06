@@ -4,6 +4,8 @@ import { CarDetailClient } from "./car-detail-client";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { buildMetadata, jsonLdScriptContent } from "@/lib/metadata";
+import { COMPANY } from "@/lib/company";
+import { buildAutoRentalSellerSchema } from "@/lib/structured-data";
 import { cacheLife } from "next/cache";
 
 interface PageProps {
@@ -68,20 +70,8 @@ function VehicleStructuredData({
       // eslint-disable-next-line react-hooks/purity -- cache-fill-time date is intentional: the JSON-LD offer needs a far-future validity date, refreshed by the page's hourly cacheLife
       priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
       availability: "https://schema.org/InStock",
-      url: `https://rngo.ro/${locale}/cars/${urlSlug}`,
-      seller: {
-        "@type": "AutoRental",
-        name: "Rent'n Go",
-        url: "https://rngo.ro",
-        telephone: "+40-773-932-961",
-        address: {
-          "@type": "PostalAddress",
-          streetAddress: 'Cluj "Avram Iancu" International Airport, Strada Traian Vuia 149-151',
-          addressLocality: "Cluj-Napoca",
-          postalCode: "400397",
-          addressCountry: "RO",
-        },
-      },
+      url: `${COMPANY.baseUrl}/${locale}/cars/${urlSlug}`,
+      seller: buildAutoRentalSellerSchema(),
       itemCondition: "https://schema.org/UsedCondition",
       priceSpecification: {
         "@type": "UnitPriceSpecification",
@@ -128,19 +118,19 @@ function BreadcrumbStructuredData({
         "@type": "ListItem",
         position: 1,
         name: isRomanian ? "Acasă" : "Home",
-        item: `https://rngo.ro/${locale}`,
+        item: `${COMPANY.baseUrl}/${locale}`,
       },
       {
         "@type": "ListItem",
         position: 2,
         name: isRomanian ? "Mașini" : "Cars",
-        item: `https://rngo.ro/${locale}/cars`,
+        item: `${COMPANY.baseUrl}/${locale}/cars`,
       },
       {
         "@type": "ListItem",
         position: 3,
         name: vehicleName,
-        item: `https://rngo.ro/${locale}/cars/${slug}`,
+        item: `${COMPANY.baseUrl}/${locale}/cars/${slug}`,
       },
     ],
   };
@@ -174,7 +164,7 @@ export async function generateMetadata({
     const fuelType = vehicle.fuelType || "Petrol";
     const transmission = vehicle.transmission || "Manual";
 
-    let imageUrl = "https://rngo.ro/logo.png";
+    let imageUrl: string = COMPANY.logoUrl;
     if (vehicle.mainImageId) {
       const fetchedImageUrl = await fetchStaticQuery(api.vehicles.getImageUrl, {
         imageId: vehicle.mainImageId,
@@ -272,7 +262,7 @@ export default async function CarDetailPage({ params }: PageProps) {
           features: vehicle.features,
           pricingTiers: vehicle.pricingTiers,
         }}
-        imageUrl={mainImageUrl || "https://rngo.ro/logo.png"}
+        imageUrl={mainImageUrl || COMPANY.logoUrl}
         locale={locale}
       />
       <BreadcrumbStructuredData

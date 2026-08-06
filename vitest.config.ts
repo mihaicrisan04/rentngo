@@ -1,15 +1,17 @@
-import path from "node:path";
 import { defineConfig } from "vitest/config";
 
-// Unit tests for backend helpers and pure library code; no React/jsdom.
+// Unit tests for backend helpers, pure library code, and server-rendered
+// component smoke tests (react-dom/server; no jsdom).
 export default defineConfig({
   resolve: {
-    alias: {
-      "@": path.resolve(__dirname),
-    },
+    alias: { "@": import.meta.dirname },
   },
   test: {
-    include: ["lib/**/*.test.ts", "convex/**/*.test.ts"],
+    include: [
+      "lib/**/*.test.ts",
+      "convex/**/*.test.ts",
+      "components/**/*.test.tsx",
+    ],
     environment: "node",
   },
 });

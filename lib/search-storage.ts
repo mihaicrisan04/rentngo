@@ -53,6 +53,27 @@ export const applySearchUpdates = (
   return next;
 };
 
+const defaults = (): SearchData => ({
+  deliveryLocation: DEFAULT_SEARCH_LOCATION,
+  restitutionLocation: DEFAULT_SEARCH_LOCATION,
+  pickupTime: DEFAULT_SEARCH_TIME,
+  returnTime: DEFAULT_SEARCH_TIME,
+});
+
+const storage = createLocalStorage<SearchData>({
+  key: SEARCH_STORAGE_KEY,
+  label: "search",
+  dateFields: ["pickupDate", "returnDate"],
+  fallback: defaults,
+  applyDefaults: (parsed) => ({
+    ...parsed,
+    deliveryLocation: getDefaultLocationIfEmpty(parsed.deliveryLocation),
+    restitutionLocation: getDefaultLocationIfEmpty(parsed.restitutionLocation),
+    pickupTime: parsed.pickupTime ?? DEFAULT_SEARCH_TIME,
+    returnTime: parsed.returnTime ?? DEFAULT_SEARCH_TIME,
+  }),
+});
+
 export const searchStorage = {
   ...storage,
   getDefaultLocation: () => DEFAULT_SEARCH_LOCATION,

@@ -34,3 +34,12 @@ export const PAYMENT_METHODS: PaymentMethodConfig[] = [
     disabled: true,
   },
 ];
+
+/**
+ * Key under `reservationPage.payment.methods` for a stored payment method,
+ * or null for unknown values.
+ */
+export function paymentMethodLabelKey(method: string): string | null {
+  const config = PAYMENT_METHODS.find((m) => m.id === method);
+  return config ? `${config.translationKey}.label` : null;
+}

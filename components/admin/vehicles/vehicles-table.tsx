@@ -8,7 +8,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { Vehicle } from "@/types/vehicle";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/shared/status-badge";
 import {
   Table,
   TableBody,
@@ -80,22 +80,6 @@ export function VehiclesTable() {
         console.error("Delete error:", error);
       }
     }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      available: { color: "bg-green-100 text-green-800", label: "Available" },
-      rented: { color: "bg-blue-100 text-blue-800", label: "Rented" },
-      maintenance: { color: "bg-orange-100 text-orange-800", label: "Maintenance" },
-    };
-    
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.available;
-    
-    return (
-      <Badge variant="secondary" className={config.color}>
-        {config.label}
-      </Badge>
-    );
   };
 
   const VehicleImage = ({ vehicle }: { vehicle: Vehicle }) => {
@@ -223,7 +207,7 @@ export function VehiclesTable() {
                       </div>
                     )}
                   </TableCell>
-                  <TableCell>{getStatusBadge(vehicle.status)}</TableCell>
+                  <TableCell><StatusBadge status={vehicle.status} fallback="available" /></TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

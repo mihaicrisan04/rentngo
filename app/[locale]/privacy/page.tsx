@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
+import { COMPANY } from "@/lib/company";
 import { Metadata } from "next";
 import { buildMetadata } from "@/lib/metadata";
 
@@ -70,9 +71,9 @@ export default function PrivacyPolicyPage() {
             </p>
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li>
-                adresa de e-mail: <Link href="mailto:office@rngo.ro" className="text-primary hover:underline">office@rngo.ro</Link>
+                adresa de e-mail: <Link href={`mailto:${COMPANY.email}`} className="text-primary hover:underline">{COMPANY.email}</Link>
               </li>
-              <li>telefon: +40773932961</li>
+              <li>telefon: {COMPANY.phone.tel}</li>
             </ul>
           </CardContent>
         </Card>

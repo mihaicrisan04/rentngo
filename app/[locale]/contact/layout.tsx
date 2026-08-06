@@ -1,5 +1,7 @@
 import { Metadata } from "next";
 import { buildMetadata, jsonLdScriptContent } from "@/lib/metadata";
+import { buildContactPageSchema } from "@/lib/structured-data";
+import { COMPANY } from "@/lib/company";
 
 interface ContactLayoutProps {
   children: React.ReactNode;
@@ -19,8 +21,8 @@ export async function generateMetadata({
       en: "Contact Rent'n Go - Car Rentals Cluj-Napoca",
     },
     description: {
-      ro: "Contactează Rent'n Go pentru masini de inchiriat Cluj-Napoca. Telefon: +40 773 932 961. Email: office@rngo.ro. Servicii profesionale de închiriere auto în Cluj.",
-      en: "Contact Rent'n Go for car rentals in Cluj-Napoca. Phone: +40 773 932 961. Email: office@rngo.ro. Professional car rental services in Cluj.",
+      ro: `Contactează Rent'n Go pentru masini de inchiriat Cluj-Napoca. Telefon: ${COMPANY.phone.display}. Email: ${COMPANY.email}. Servicii profesionale de închiriere auto în Cluj.`,
+      en: `Contact Rent'n Go for car rentals in Cluj-Napoca. Phone: ${COMPANY.phone.display}. Email: ${COMPANY.email}. Professional car rental services in Cluj.`,
     },
     keywords: {
       ro: "contact rent n go, masini de inchiriat cluj-napoca, telefon închiriere auto cluj, car rentals cluj contact",
@@ -29,40 +31,7 @@ export async function generateMetadata({
   });
 }
 
-const contactSchema = {
-  "@context": "https://schema.org",
-  "@type": "ContactPage",
-  mainEntity: {
-    "@type": "Organization",
-    name: "Rent'n Go",
-    telephone: "+40-773-932-961",
-    email: "office@rngo.ro",
-    address: {
-      "@type": "PostalAddress",
-      streetAddress:
-        'Cluj "Avram Iancu" International Airport, Strada Traian Vuia 149-151',
-      addressLocality: "Cluj-Napoca",
-      postalCode: "400397",
-      addressCountry: "RO",
-    },
-    openingHours: ["Mo-Su 00:00-23:59"],
-    contactPoint: [
-      {
-        "@type": "ContactPoint",
-        telephone: "+40-773-932-961",
-        contactType: "customer service",
-        availableLanguage: ["Romanian", "English"],
-        areaServed: "Cluj-Napoca",
-      },
-      {
-        "@type": "ContactPoint",
-        email: "office@rngo.ro",
-        contactType: "customer service",
-        availableLanguage: ["Romanian", "English"],
-      },
-    ],
-  },
-};
+const contactSchema = buildContactPageSchema();
 
 export default function ContactLayout({ children }: ContactLayoutProps) {
   return (
