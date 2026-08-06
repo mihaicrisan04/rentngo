@@ -9,9 +9,10 @@ import { Id } from "../../../../convex/_generated/dataModel";
 import Image from "next/image";
 import Link from "next/link";
 import { COMPANY } from "@/lib/company";
+import { StatusBadge } from "@/components/shared/status-badge";
+import { paymentMethodLabelKey } from "@/lib/checkout-payment-methods";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   CheckCircle,
@@ -39,6 +40,7 @@ function ReservationConfirmationContent() {
   const reservationId = searchParams.get("reservationId");
   const t = useTranslations("confirmationPage");
   const tCharges = useTranslations("reservationCharges");
+  const tPaymentMethods = useTranslations("reservationPage.payment.methods");
   const locale = useLocale();
 
   // Get reservation details
@@ -166,39 +168,9 @@ function ReservationConfirmationContent() {
       ? tCharges(charge.code, charge.params ?? {})
       : (charge.description ?? "");
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "confirmed":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "pending":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "cancelled":
-        return "bg-red-100 text-red-800 border-red-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    const key = `status.${status}` as "status.pending" | "status.confirmed" | "status.cancelled";
-    try {
-      return t(key);
-    } catch {
-      return status.charAt(0).toUpperCase() + status.slice(1);
-    }
-  };
-
   const getPaymentMethodLabel = (method: string) => {
-    switch (method) {
-      case "cash_on_delivery":
-        return t("paymentMethods.cashOnDelivery");
-      case "card_on_delivery":
-        return t("paymentMethods.cardOnDelivery");
-      case "card_online":
-        return t("paymentMethods.cardOnline");
-      default:
-        return method;
-    }
+    const key = paymentMethodLabelKey(method);
+    return key ? tPaymentMethods(key) : method;
   };
 
   return (
@@ -229,9 +201,7 @@ function ReservationConfirmationContent() {
                   #{reservation.reservationNumber}
                 </p>
               </div>
-              <Badge className={`w-fit ${getStatusColor(reservation.status)}`}>
-                {getStatusLabel(reservation.status)}
-              </Badge>
+              <StatusBadge status={reservation.status} className="w-fit" />
             </div>
           </CardContent>
         </Card>

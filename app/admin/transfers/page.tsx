@@ -9,6 +9,8 @@ import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/shared/status-badge";
+import { formatDate, formatPrice } from "@/lib/format";
 import {
   Table,
   TableBody,
@@ -55,7 +57,6 @@ import {
   Settings,
 } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
 
 const TransferPricingDialog = dynamic(
   () =>
@@ -156,44 +157,6 @@ export default function AdminTransfersPage() {
         console.error("Delete error:", error);
       }
     }
-  };
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      pending: {
-        color: "bg-yellow-100 text-yellow-800 border-yellow-200",
-        label: "Pending",
-      },
-      confirmed: {
-        color: "bg-green-100 text-green-800 border-green-200",
-        label: "Confirmed",
-      },
-      cancelled: {
-        color: "bg-red-100 text-red-800 border-red-200",
-        label: "Cancelled",
-      },
-      completed: {
-        color: "bg-blue-100 text-blue-800 border-blue-200",
-        label: "Completed",
-      },
-    };
-
-    const config =
-      statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
-
-    return (
-      <Badge variant="secondary" className={config.color}>
-        {config.label}
-      </Badge>
-    );
-  };
-
-  const formatDate = (timestamp: number) => {
-    return format(new Date(timestamp), "MMM d, yyyy");
-  };
-
-  const formatPrice = (price: number) => {
-    return `€${price.toFixed(2)}`;
   };
 
   if (
@@ -529,7 +492,7 @@ export default function AdminTransfersPage() {
                             {transfer.paymentMethod.replace(/_/g, " ")}
                           </div>
                         </TableCell>
-                        <TableCell>{getStatusBadge(transfer.status)}</TableCell>
+                        <TableCell><StatusBadge status={transfer.status} /></TableCell>
                         <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
