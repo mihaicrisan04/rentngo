@@ -124,9 +124,9 @@ export function ReservationsTable() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border overflow-x-auto">
-        <Table>
-          <TableHeader>
+      <div className="rounded-md border">
+        <Table containerClassName="overflow-x-visible">
+          <TableHeader sticky>
             <TableRow>
               <TableHead>Customer</TableHead>
               <TableHead>Vehicle</TableHead>

@@ -53,8 +53,8 @@ export function AffiliatesTable() {
 
   return (
     <>
-      <Table>
-        <TableHeader>
+      <Table containerClassName="overflow-x-visible">
+        <TableHeader sticky>
           <TableRow>
             <TableHead>Slug</TableHead>
             <TableHead>User</TableHead>

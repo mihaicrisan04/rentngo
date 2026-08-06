@@ -73,8 +73,8 @@ export function BlogTable({ blogs, onEdit, locale }: BlogTableProps) {
   return (
     <>
       <div className="rounded-md border">
-        <Table>
-          <TableHeader>
+        <Table containerClassName="overflow-x-visible">
+          <TableHeader sticky>
             <TableRow>
               <TableHead className="w-10"></TableHead>
               <TableHead>Title</TableHead>
