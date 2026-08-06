@@ -1,4 +1,5 @@
 import "../globals.css";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/react";
@@ -32,12 +33,20 @@ export default function AdminRootLayout({
       {gtmId && <GoogleTagManager gtmId={gtmId} />}
       <body className={fontClassNames}>
         <Providers>
-          <AdminShell>{children}</AdminShell>
+          {/* AdminShell reads usePathname; the boundary keeps dynamic admin
+              routes (e.g. /admin/vehicles/classes/[classId]) prerenderable
+              under `cacheComponents`. */}
+          <Suspense fallback={null}>
+            <AdminShell>{children}</AdminShell>
+          </Suspense>
         </Providers>
+        {/* Same Suspense requirement as the public layout: Analytics reads
+            the URL internally. */}
+        <Suspense fallback={null}>
+          <Analytics />
+        </Suspense>
+        <SpeedInsights />
       </body>
-
-      <Analytics />
-      <SpeedInsights />
     </html>
   );
 }

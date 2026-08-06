@@ -63,7 +63,13 @@ export function MapboxLocationSearch({
     [],
   );
   const [loading, setLoading] = React.useState(false);
-  const sessionTokenRef = React.useRef<string>(crypto.randomUUID());
+  // Generated lazily (never during render): a render-time UUID would be baked
+  // into the prerendered shell under `cacheComponents`.
+  const sessionTokenRef = React.useRef<string | null>(null);
+  const getSessionToken = React.useCallback(
+    () => (sessionTokenRef.current ??= crypto.randomUUID()),
+    [],
+  );
 
   const accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
 
@@ -85,7 +91,7 @@ export function MapboxLocationSearch({
       try {
         const results = await suggestLocations(
           searchValue,
-          sessionTokenRef.current,
+          getSessionToken(),
           locale,
         );
         if (!cancelled) {
@@ -107,14 +113,14 @@ export function MapboxLocationSearch({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [locale, searchValue]);
+  }, [locale, searchValue, getSessionToken]);
 
   const handleSelect = React.useCallback(
     async (suggestion: LocationSuggestion) => {
       try {
         const location = await retrieveLocation(
           suggestion.mapbox_id,
-          sessionTokenRef.current,
+          getSessionToken(),
           locale,
         );
         const address =
@@ -140,7 +146,7 @@ export function MapboxLocationSearch({
       setSearchValue("");
       setSuggestions([]);
     },
-    [locale, onSelect, t],
+    [locale, onSelect, t, getSessionToken],
   );
 
   const handleClear = React.useCallback(() => {

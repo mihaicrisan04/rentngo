@@ -4,10 +4,7 @@ import { CarDetailClient } from "./car-detail-client";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { buildMetadata, jsonLdScriptContent } from "@/lib/metadata";
-
-// Statically prerendered via generateStaticParams; re-generated in the
-// background so vehicle changes show up without a redeploy.
-export const revalidate = 3600;
+import { cacheLife } from "next/cache";
 
 interface PageProps {
   params: Promise<{ slug: string; locale: string }>;
@@ -158,6 +155,8 @@ function BreadcrumbStructuredData({
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
+  "use cache";
+  cacheLife("hours");
   const { slug, locale } = await params;
 
   try {
@@ -217,7 +216,11 @@ export async function generateStaticParams() {
   ]);
 }
 
+// Cached per slug+locale; re-generated in the background so vehicle changes
+// show up without a redeploy.
 export default async function CarDetailPage({ params }: PageProps) {
+  "use cache";
+  cacheLife("hours");
   const { slug, locale } = await params;
 
   const vehicle = await fetchStaticQuery(api.vehicles.getBySlug, { slug });

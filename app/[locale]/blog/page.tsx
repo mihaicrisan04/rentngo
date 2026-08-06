@@ -4,10 +4,7 @@ import { api } from "@/convex/_generated/api";
 import { BlogListClient } from "@/components/features/blog/blog-list-client";
 import { getTranslations } from "next-intl/server";
 import { buildMetadata } from "@/lib/metadata";
-
-// Statically prerendered per locale; re-generated in the background so new
-// posts show up without a redeploy.
-export const revalidate = 3600;
+import { cacheLife } from "next/cache";
 
 interface BlogPageProps {
   params: Promise<{ locale: string }>;
@@ -27,7 +24,11 @@ export async function generateMetadata({
   });
 }
 
+// Cached per locale; re-generated in the background so new posts show up
+// without a redeploy.
 export default async function BlogPage({ params }: BlogPageProps) {
+  "use cache";
+  cacheLife("hours");
   const { locale } = await params;
   const typedLocale = locale as "ro" | "en";
 

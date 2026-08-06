@@ -9,8 +9,8 @@ import type {
  * Like `fetchQuery` from `convex/nextjs`, but without the hardcoded
  * `cache: "no-store"` fetch option that helper always sets. An explicit
  * no-store fetch opts the whole route into dynamic rendering, which would
- * defeat static prerendering of the public pages. Freshness is handled by
- * route-level `export const revalidate` (ISR) instead, and Next never caches
+ * defeat prerendering of the public pages. Freshness is handled by the
+ * calling page's `"use cache"` + `cacheLife()` instead, and Next never caches
  * POST fetches, so no extra staleness is introduced for dynamic renders.
  *
  * Use this for public, unauthenticated queries on statically rendered pages.

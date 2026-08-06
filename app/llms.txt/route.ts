@@ -12,9 +12,6 @@ import { COMPANY } from "@/lib/company";
  * /robots.txt and /sitemap.xml).
  */
 
-// Regenerate at most once per hour.
-export const revalidate = 3600;
-
 const TRANSMISSION_LABELS: Record<string, string> = {
   automatic: "automatic",
   manual: "manual",

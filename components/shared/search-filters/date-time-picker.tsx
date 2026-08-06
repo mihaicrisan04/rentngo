@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { searchStorage } from "@/lib/search-storage";
+import { useToday } from "@/hooks/use-today";
 import { useTranslations } from "next-intl";
 
 const generateTimeSlots = () => {
@@ -68,6 +69,7 @@ export function DateTimePicker({
   onDateSelected,
 }: DateTimePickerProps) {
   const t = useTranslations("search");
+  const today = useToday();
   const [internalCalendarOpen, setInternalCalendarOpen] = React.useState(false);
 
   // Use controlled or internal state
@@ -219,8 +221,10 @@ export function DateTimePicker({
               onSelect={handleDateChange}
               captionLayout="dropdown"
               disabled={disabledMatcher}
-              startMonth={minDate ?? new Date(new Date().getFullYear(), 0)}
-              endMonth={new Date(new Date().getFullYear() + 20, 11)}
+              startMonth={
+                minDate ?? (today && new Date(today.getFullYear(), 0))
+              }
+              endMonth={today && new Date(today.getFullYear() + 20, 11)}
               autoFocus
             />
           </PopoverContent>

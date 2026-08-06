@@ -9,10 +9,7 @@ import {
 } from "@/components/features/blog/blog-structured-data";
 import { notFound } from "next/navigation";
 import { buildMetadata } from "@/lib/metadata";
-
-// Statically prerendered via generateStaticParams; re-generated in the
-// background so post edits show up without a redeploy.
-export const revalidate = 3600;
+import { cacheLife } from "next/cache";
 
 interface BlogDetailPageProps {
   params: Promise<{ locale: string; slug: string }>;
@@ -21,6 +18,8 @@ interface BlogDetailPageProps {
 export async function generateMetadata({
   params,
 }: BlogDetailPageProps): Promise<Metadata> {
+  "use cache";
+  cacheLife("hours");
   const { locale, slug } = await params;
   const blog = await fetchStaticQuery(api.blogs.getBySlug, {
     slug,
@@ -72,7 +71,11 @@ export async function generateStaticParams() {
   ];
 }
 
+// Cached per slug+locale; re-generated in the background so post edits show
+// up without a redeploy.
 export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
+  "use cache";
+  cacheLife("hours");
   const { locale, slug } = await params;
   const blog = await fetchStaticQuery(api.blogs.getBySlug, {
     slug,
