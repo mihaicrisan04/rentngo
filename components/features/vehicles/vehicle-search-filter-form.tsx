@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useToday } from "@/hooks/use-today";
 import { Search } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -25,8 +26,7 @@ export function VehicleSearchFilterForm({
   searchState,
   updateSearchField,
 }: VehicleSearchFilterFormProps) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = useToday();
 
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -97,7 +97,7 @@ export function VehicleSearchFilterForm({
                 timeState={pickupTime}
                 setTimeState={setPickupTime}
                 minDate={today}
-                disabledDateRanges={(date: Date) => date < today}
+                disabledDateRanges={(date: Date) => (today ? date < today : false)}
                 popoverAlign="start"
                 contentAlign="start"
                 isLoading={isLoading}
@@ -141,7 +141,10 @@ export function VehicleSearchFilterForm({
                 timeState={returnTime}
                 setTimeState={setReturnTime}
                 minDate={pickupDateState || today}
-                disabledDateRanges={(date: Date) => date < (pickupDateState || today)}
+                disabledDateRanges={(date: Date) => {
+                  const min = pickupDateState || today;
+                  return min ? date < min : false;
+                }}
                 popoverAlign="start"
                 contentAlign="start"
                 isLoading={isLoading}

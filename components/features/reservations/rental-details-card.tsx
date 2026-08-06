@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useToday } from "@/hooks/use-today";
 import { useTranslations } from "next-intl";
 import { AlertCircle, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -59,8 +60,7 @@ export const RentalDetailsCard = React.memo(function RentalDetailsCard({
 }: RentalDetailsCardProps) {
   const t = useTranslations("reservationPage");
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = useToday();
 
   return (
     <Card className="mb-8">

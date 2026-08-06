@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useToday } from "@/hooks/use-today";
 import { useRouter } from "next/navigation";
 import { Search, Users, ArrowRight, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -38,8 +39,7 @@ export function TransferSearchForm({
   const router = useRouter();
   const t = useTranslations("transferPage");
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = useToday();
 
   const [pickupLocation, setPickupLocation] =
     React.useState<LocationData | null>(initialData?.pickupLocation || null);
@@ -321,7 +321,7 @@ export function TransferSearchForm({
                 timeState={pickupTime}
                 setTimeState={setPickupTime}
                 minDate={today}
-                disabledDateRanges={(date: Date) => date < today}
+                disabledDateRanges={(date: Date) => (today ? date < today : false)}
                 popoverAlign="start"
                 contentAlign="start"
                 isLoading={isLoading}
@@ -361,8 +361,10 @@ export function TransferSearchForm({
                   timeState={returnTime}
                   setTimeState={setReturnTime}
                   minDate={pickupDate || today}
-                  disabledDateRanges={(date: Date) =>
-                    date < (pickupDate || today)
+                  disabledDateRanges={(date: Date) => {
+                  const min = pickupDate || today;
+                  return min ? date < min : false;
+                }
                   }
                   popoverAlign="end"
                   contentAlign="start"
