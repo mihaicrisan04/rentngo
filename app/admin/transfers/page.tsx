@@ -106,8 +106,8 @@ export default function AdminTransfersPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex h-full min-h-0 flex-1 flex-col gap-6">
+      <div className="flex shrink-0 items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Transfers Management</h1>
           <p className="text-muted-foreground">
@@ -125,7 +125,7 @@ export default function AdminTransfersPage() {
         onOpenChange={setShowPricingDialog}
       />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid shrink-0 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Transfers"
           icon={Calendar}
@@ -152,7 +152,7 @@ export default function AdminTransfersPage() {
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid shrink-0 gap-4 md:grid-cols-2">
         <ChartCard
           title="Monthly Transfers"
           icon={TrendingUp}
@@ -194,15 +194,16 @@ export default function AdminTransfersPage() {
         </ChartCard>
       </div>
 
-      <Card>
-        <CardHeader>
+      <Card className="min-h-[24rem] flex-1">
+        <CardHeader className="shrink-0">
           <CardTitle>All Transfers</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex min-h-0 flex-1 flex-col">
           <TransfersTable
             transfers={transfers}
             paginationStatus={paginationStatus}
             loadMore={loadMore}
+            fullHeight
           />
         </CardContent>
       </Card>

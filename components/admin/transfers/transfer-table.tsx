@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { formatDate, formatPrice } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { getTableLayout } from "@/components/admin/shared/table-layout";
 import {
   Table,
   TableBody,
@@ -43,13 +45,16 @@ interface TransfersTableProps {
   transfers: TransfersPagination["results"];
   paginationStatus: TransfersPagination["status"];
   loadMore: TransfersPagination["loadMore"];
+  fullHeight?: boolean;
 }
 
 export function TransfersTable({
   transfers,
   paginationStatus,
   loadMore,
+  fullHeight = false,
 }: TransfersTableProps) {
+  const layout = getTableLayout(fullHeight);
   const updateStatus = useMutation(api.transfers.updateTransferStatus);
   const deleteTransfer = useMutation(api.transfers.deleteTransferPermanently);
 
@@ -98,8 +103,8 @@ export function TransfersTable({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-md border">
+    <div className={layout.root}>
+      <div className={cn("rounded-md border", layout.scrollArea)}>
         <Table containerClassName="overflow-x-visible">
           <TableHeader sticky>
             <TableRow>
@@ -290,7 +295,7 @@ export function TransfersTable({
       </div>
 
       {paginationStatus !== "Exhausted" && (
-        <div className="flex justify-center">
+        <div className={cn("flex justify-center", layout.footer)}>
           <Button
             variant="outline"
             onClick={() => loadMore(ITEMS_PER_PAGE)}

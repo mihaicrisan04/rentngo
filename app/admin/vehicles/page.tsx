@@ -18,8 +18,8 @@ export default function VehiclesPage() {
   const router = useRouter();
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex h-full min-h-0 flex-1 flex-col gap-6">
+      <div className="flex shrink-0 items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Vehicle Management</h1>
           <p className="text-muted-foreground">Manage your fleet of vehicles</p>
@@ -42,9 +42,13 @@ export default function VehiclesPage() {
         </div>
       </div>
 
-      <FeaturedCarsManagement />
+      <div className="shrink-0">
+        <FeaturedCarsManagement />
+      </div>
 
-      <VehiclesTable />
+      <div className="flex min-h-[24rem] flex-1 flex-col">
+        <VehiclesTable fullHeight />
+      </div>
 
       <CreateVehicleDialog
         open={createDialogOpen}

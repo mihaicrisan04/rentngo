@@ -9,6 +9,8 @@ import { Vehicle } from "@/types/vehicle";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { cn } from "@/lib/utils";
+import { getTableLayout } from "@/components/admin/shared/table-layout";
 import {
   Table,
   TableBody,
@@ -34,7 +36,12 @@ const EditVehicleDialog = dynamic(
 
 const ITEMS_PER_PAGE = 10;
 
-export function VehiclesTable() {
+interface VehiclesTableProps {
+  fullHeight?: boolean;
+}
+
+export function VehiclesTable({ fullHeight = false }: VehiclesTableProps) {
+  const layout = getTableLayout(fullHeight);
   const [currentPage, setCurrentPage] = useState(1);
   const [editingVehicle, setEditingVehicle] = useState<Id<"vehicles"> | null>(null);
 
@@ -117,8 +124,8 @@ export function VehiclesTable() {
   const totalPages = Math.ceil(vehicles.length / ITEMS_PER_PAGE) || 1;
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-md border">
+    <div className={layout.root}>
+      <div className={cn("rounded-md border", layout.scrollArea)}>
         <Table containerClassName="overflow-x-visible">
           <TableHeader sticky>
             <TableRow>
@@ -241,7 +248,7 @@ export function VehiclesTable() {
       </div>
 
       {vehicles.length > 0 && (
-        <div className="flex items-center justify-between">
+        <div className={cn("flex items-center justify-between", layout.footer)}>
           <div className="text-sm text-muted-foreground">
             Showing {startIndex + 1} to {Math.min(endIndex, vehicles.length)} of {vehicles.length} vehicles
           </div>
