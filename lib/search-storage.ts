@@ -38,6 +38,21 @@ const storage = createLocalStorage<SearchData>({
   }),
 });
 
+export const applySearchUpdates = (
+  prev: SearchData,
+  updates: Partial<SearchData>
+): SearchData => {
+  const next = { ...prev, ...updates };
+  if (
+    next.pickupDate &&
+    next.returnDate &&
+    next.returnDate.getTime() < next.pickupDate.getTime()
+  ) {
+    next.returnDate = next.pickupDate;
+  }
+  return next;
+};
+
 export const searchStorage = {
   ...storage,
   getDefaultLocation: () => DEFAULT_SEARCH_LOCATION,

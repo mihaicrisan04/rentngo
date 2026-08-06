@@ -23,8 +23,7 @@ import {
 import { RentalDetails } from "@/components/shared/navigation/rental-details";
 import { useTranslations } from "next-intl";
 import { Vehicle } from "@/types/vehicle";
-import React, { useCallback } from "react";
-import { SearchData } from "@/lib/search-storage";
+import React from "react";
 import { useVehicleSearch } from "@/hooks/use-vehicle-search";
 import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
 
@@ -42,7 +41,9 @@ export function CarDetailClient({
   const t = useTranslations("carDetailPage");
   const tCommon = useTranslations("common");
 
-  const { searchState: rentalState, updateSearchField } = useVehicleSearch();
+  const { searchState: rentalState, updateSearchFields } = useVehicleSearch({
+    persist: "onUpdate",
+  });
 
   const { multiplier: currentMultiplier } = useDateBasedSeasonalPricing(
     rentalState.pickupDate,
@@ -60,17 +61,6 @@ export function CarDetailClient({
     rentalState.returnTime
   );
 
-  const updateRentalDetails = useCallback(
-    (updates: Partial<SearchData>) => {
-      for (const [field, value] of Object.entries(updates) as [
-        keyof SearchData,
-        SearchData[keyof SearchData],
-      ][]) {
-        updateSearchField(field, value);
-      }
-    },
-    [updateSearchField]
-  );
 
   const currency = "EUR";
   // Carry the vehicle in the href so new-tab/cmd-click works; the reservation
@@ -145,7 +135,7 @@ export function CarDetailClient({
               restitutionLocation={rentalState.restitutionLocation}
               returnDate={rentalState.returnDate}
               returnTime={rentalState.returnTime}
-              onUpdateDetails={updateRentalDetails}
+              onUpdateDetails={updateSearchFields}
             />
 
             <VehiclePricingCard
