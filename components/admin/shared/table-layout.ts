@@ -11,7 +11,7 @@ export const tableLayout = {
   },
   fullHeight: {
     root: "flex min-h-0 flex-1 flex-col gap-4",
-    scrollArea: "min-h-0 flex-1 overflow-auto",
+    scrollArea: "min-h-0 flex-1 overflow-auto overscroll-contain",
     footer: "shrink-0",
   },
 } as const;
