@@ -8,13 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { BlogTable } from "@/components/admin/blog/blog-table";
 import { BlogAdminListItem } from "@/types/blog";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 const CreateBlogDialog = dynamic(
   () => import("@/components/admin/blog/create-blog-dialog").then(m => m.CreateBlogDialog),
@@ -44,37 +37,30 @@ export default function AdminBlogsPage() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-7xl">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-2xl">Blog Management</CardTitle>
-              <CardDescription>Create and manage blog posts</CardDescription>
-            </div>
-            <Button onClick={() => setCreateDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Blog Post
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {!blogs ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="text-muted-foreground">Loading blogs...</div>
-              </div>
-            </div>
-          ) : (
-            <BlogTable
-              blogs={blogs}
-              onEdit={handleEdit}
-              locale="en"
-              onCreate={() => setCreateDialogOpen(true)}
-            />
-          )}
-        </CardContent>
-      </Card>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Blog Management</h1>
+          <p className="text-muted-foreground">Create and manage blog posts</p>
+        </div>
+        <Button onClick={() => setCreateDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Create Blog Post
+        </Button>
+      </div>
+
+      {!blogs ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-muted-foreground">Loading blogs...</div>
+        </div>
+      ) : (
+        <BlogTable
+          blogs={blogs}
+          onEdit={handleEdit}
+          locale="en"
+          onCreate={() => setCreateDialogOpen(true)}
+        />
+      )}
 
       <CreateBlogDialog
         open={createDialogOpen}

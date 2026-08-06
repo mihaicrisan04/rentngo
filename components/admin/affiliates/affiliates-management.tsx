@@ -3,13 +3,6 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Plus } from "lucide-react";
 import { AffiliateSettingsCard } from "@/components/admin/affiliates/affiliate-settings-card";
 import { AffiliatesTable } from "@/components/admin/affiliates/affiliates-table";
@@ -45,18 +38,13 @@ export function AffiliatesManagement() {
 
       <AffiliateSettingsCard />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Affiliates</CardTitle>
-          <CardDescription>
-            Confirmed conversions count live bookings only — cancellations are
-            voided automatically
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <AffiliatesTable onCreate={() => setShowCreateDialog(true)} />
-        </CardContent>
-      </Card>
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Confirmed conversions count live bookings only — cancellations are
+          voided automatically
+        </p>
+        <AffiliatesTable onCreate={() => setShowCreateDialog(true)} />
+      </div>
 
       <CreateAffiliateDialog
         open={showCreateDialog}

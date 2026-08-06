@@ -7,7 +7,6 @@ import { api } from "@/convex/_generated/api";
 import { usePeriodicNow } from "@/hooks/use-periodic-now";
 import { useBooleanQueryParam } from "@/hooks/use-query-param";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard, formatGrowth } from "@/components/admin/shared/stat-card";
 import { ChartCard } from "@/components/admin/shared/chart-card";
 import { DashboardSkeleton } from "@/components/admin/shared/dashboard-skeleton";
@@ -217,19 +216,14 @@ export default function AdminTransfersPage() {
         </div>
       )}
 
-      <Card className="min-h-[24rem] flex-1">
-        <CardHeader className="shrink-0">
-          <CardTitle>All Transfers</CardTitle>
-        </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col">
-          <TransfersTable
-            transfers={transfers}
-            paginationStatus={paginationStatus}
-            loadMore={loadMore}
-            fullHeight
-          />
-        </CardContent>
-      </Card>
+      <div className="flex min-h-[24rem] flex-1 flex-col">
+        <TransfersTable
+          transfers={transfers}
+          paginationStatus={paginationStatus}
+          loadMore={loadMore}
+          fullHeight
+        />
+      </div>
     </div>
   );
 }

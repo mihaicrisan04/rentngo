@@ -3,7 +3,6 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus } from "lucide-react";
 import { CurrentSeasonSelector } from "@/components/admin/seasons/current-season-selector";
 import { SeasonsTable } from "@/components/admin/seasons/seasons-table";
@@ -37,18 +36,7 @@ export function SeasonsManagement() {
         <CurrentSeasonSelector />
       </div>
 
-      {/* All Seasons Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Seasons</CardTitle>
-          <CardDescription>
-            Manage your seasonal pricing configurations
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <SeasonsTable onCreate={() => setShowCreateDialog(true)} />
-        </CardContent>
-      </Card>
+      <SeasonsTable onCreate={() => setShowCreateDialog(true)} />
 
       {/* Create Season Dialog */}
       <CreateSeasonDialog
