@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import dynamic from "next/dynamic";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -15,22 +15,13 @@ const CreateClassDialog = dynamic(
   () => import("@/components/admin/vehicle-classes/create-class-dialog").then(m => m.CreateClassDialog),
   { ssr: false }
 );
+import { DndContext } from "@dnd-kit/core";
 import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { useSortableReorder } from "@/hooks/use-sortable-reorder";
 import { CSS } from "@dnd-kit/utilities";
 
 interface SortableClassCardProps {
@@ -87,16 +78,6 @@ function SortableClassCard({
 export default function ClassOrderingPage() {
   const router = useRouter();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [items, setItems] = useState<
-    Array<{
-      _id: Id<"vehicleClasses">;
-      name: string;
-      displayName?: string;
-      description?: string;
-      sortIndex: number;
-      isActive: boolean;
-    }>
-  >([]);
 
   // Fetch all vehicle classes
   const classes = useQuery(api.vehicleClasses.list, { activeOnly: false });
@@ -107,54 +88,25 @@ export default function ClassOrderingPage() {
   // Mutation to reorder classes
   const reorderClasses = useMutation(api.vehicleClasses.reorder);
 
-  // Update local state when data loads
-  useEffect(() => {
-    if (classes) {
-      setItems([...classes]);
-    }
-  }, [classes]);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
-
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (!over || active.id === over.id) {
-      return;
-    }
-
-    const oldIndex = items.findIndex((item) => item._id === active.id);
-    const newIndex = items.findIndex((item) => item._id === over.id);
-
-    const newItems = arrayMove(items, oldIndex, newIndex);
-    setItems(newItems);
-
-    // Update sort indices
-    const updates = newItems.map((item, index) => ({
-      id: item._id,
-      sortIndex: index,
-    }));
-
-    try {
+  const {
+    items,
+    sensors,
+    collisionDetection,
+    handleDragStart,
+    handleDragCancel,
+    handleDragEnd,
+  } = useSortableReorder({
+    source: classes,
+    persistOrder: async (newItems) => {
+      const updates = newItems.map((item, index) => ({
+        id: item._id,
+        sortIndex: index,
+      }));
       await reorderClasses({ updates });
-      toast.success("Class order updated");
-    } catch {
-      toast.error("Failed to update class order");
-      // Revert on error
-      if (classes) {
-        setItems([...classes]);
-      }
-    }
-  };
+    },
+    successMessage: "Class order updated",
+    errorMessage: "Failed to update class order",
+  });
 
   const getVehicleDataForClass = (classId: Id<"vehicleClasses">) => {
     if (!allVehicles) return { count: 0, preview: [] };
@@ -217,7 +169,9 @@ export default function ClassOrderingPage() {
         /* Sortable List */
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCenter}
+          collisionDetection={collisionDetection}
+          onDragStart={handleDragStart}
+          onDragCancel={handleDragCancel}
           onDragEnd={handleDragEnd}
         >
           <SortableContext
