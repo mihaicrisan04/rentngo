@@ -23,15 +23,10 @@ import {
 import { RentalDetails } from "@/components/shared/navigation/rental-details";
 import { useTranslations } from "next-intl";
 import { Vehicle } from "@/types/vehicle";
-import React, { useState, useEffect, useCallback } from "react";
-import { searchStorage, SearchData } from "@/lib/search-storage";
+import React, { useCallback } from "react";
+import { SearchData } from "@/lib/search-storage";
+import { useVehicleSearch } from "@/hooks/use-vehicle-search";
 import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
-
-
-
-interface RentalState extends SearchData {
-  isHydrated: boolean;
-}
 
 interface CarDetailClientProps {
   vehicle: Vehicle;
@@ -47,29 +42,12 @@ export function CarDetailClient({
   const t = useTranslations("carDetailPage");
   const tCommon = useTranslations("common");
 
-  const [rentalState, setRentalState] = useState<RentalState>({
-    deliveryLocation: searchStorage.getDefaultLocation(),
-    pickupDate: undefined,
-    pickupTime: null,
-    restitutionLocation: searchStorage.getDefaultLocation(),
-    returnDate: undefined,
-    returnTime: null,
-    isHydrated: false,
-  });
+  const { searchState: rentalState, updateSearchField } = useVehicleSearch();
 
   const { multiplier: currentMultiplier } = useDateBasedSeasonalPricing(
     rentalState.pickupDate,
     rentalState.returnDate
   );
-
-  useEffect(() => {
-    const storedData = searchStorage.load();
-    setRentalState((prev) => ({
-      ...prev,
-      ...storedData,
-      isHydrated: true,
-    }));
-  }, []);
 
   const priceDetails = calculateVehiclePricingWithSeason(
     vehicle,
@@ -82,17 +60,17 @@ export function CarDetailClient({
     rentalState.returnTime
   );
 
-  const updateRentalDetails = useCallback((updates: Partial<SearchData>) => {
-    setRentalState((prev) => {
-      const newState = { ...prev, ...updates };
-
-      if (prev.isHydrated) {
-        searchStorage.save(updates);
+  const updateRentalDetails = useCallback(
+    (updates: Partial<SearchData>) => {
+      for (const [field, value] of Object.entries(updates) as [
+        keyof SearchData,
+        SearchData[keyof SearchData],
+      ][]) {
+        updateSearchField(field, value);
       }
-
-      return newState;
-    });
-  }, []);
+    },
+    [updateSearchField]
+  );
 
   const currency = "EUR";
   // Carry the vehicle in the href so new-tab/cmd-click works; the reservation
