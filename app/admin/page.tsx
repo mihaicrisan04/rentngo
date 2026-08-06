@@ -19,6 +19,7 @@ import {
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { usePeriodicNow } from "@/hooks/use-periodic-now";
+import { NeedsAttentionRow } from "@/components/admin/overview/needs-attention-row";
 
 const chartConfig = {
   revenue: {
@@ -152,6 +153,8 @@ export default function AdminOverviewPage() {
           </CardContent>
         </Card>
       </div>
+
+      <NeedsAttentionRow now={now} />
 
       {/* Charts Section */}
       <div className="grid gap-4 md:grid-cols-2">

@@ -178,6 +178,7 @@ export default defineSchema({
     .index("by_pickup_location", ["pickupLocation"])
     .index("by_restitution_location", ["restitutionLocation"])
     .index("by_payment_method", ["paymentMethod"])
+    .index("by_status", ["status"])
     .index("by_number", ["reservationNumber"]),
 
   // Transfers table - stores VIP transfer bookings
