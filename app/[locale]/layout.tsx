@@ -1,4 +1,5 @@
 import "../globals.css";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getMessages, setRequestLocale } from "next-intl/server";
@@ -128,10 +129,14 @@ export default async function LocaleLayout({
             <ReferralCapture />
           </LocaleProviders>
         </Providers>
+        {/* Analytics reads the URL via useParams/usePathname internally;
+            without a Suspense boundary that blocks shell prerendering under
+            `cacheComponents` on every route. */}
+        <Suspense fallback={null}>
+          <Analytics />
+        </Suspense>
+        <SpeedInsights />
       </body>
-
-      <Analytics />
-      <SpeedInsights />
     </html>
   );
 }

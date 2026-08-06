@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useToday } from "@/hooks/use-today";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "lucide-react";
 import { LocationPicker } from "@/components/shared/search-filters/location-picker";
@@ -66,8 +67,7 @@ export function RentalDetails({
     setLocalReturnTime(returnTime || "");
   }, [returnTime]);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = useToday();
 
   // Update parent when local state changes
   const handleUpdate = React.useCallback((field: string, value: string | Date | undefined) => {

@@ -4,10 +4,7 @@ import { CarDetailClient } from "./car-detail-client";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { buildMetadata, jsonLdScriptContent } from "@/lib/metadata";
-
-// Statically prerendered via generateStaticParams; re-generated in the
-// background so vehicle changes show up without a redeploy.
-export const revalidate = 3600;
+import { cacheLife } from "next/cache";
 
 interface PageProps {
   params: Promise<{ slug: string; locale: string }>;
@@ -68,6 +65,7 @@ function VehicleStructuredData({
       "@type": "Offer",
       priceCurrency: "EUR",
       price: pricePerDay,
+      // eslint-disable-next-line react-hooks/purity -- cache-fill-time date is intentional: the JSON-LD offer needs a far-future validity date, refreshed by the page's hourly cacheLife
       priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
       availability: "https://schema.org/InStock",
       url: `https://rngo.ro/${locale}/cars/${urlSlug}`,
@@ -158,6 +156,8 @@ function BreadcrumbStructuredData({
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
+  "use cache";
+  cacheLife("hours");
   const { slug, locale } = await params;
 
   try {
@@ -217,7 +217,11 @@ export async function generateStaticParams() {
   ]);
 }
 
+// Cached per slug+locale; re-generated in the background so vehicle changes
+// show up without a redeploy.
 export default async function CarDetailPage({ params }: PageProps) {
+  "use cache";
+  cacheLife("hours");
   const { slug, locale } = await params;
 
   const vehicle = await fetchStaticQuery(api.vehicles.getBySlug, { slug });

@@ -32,7 +32,7 @@ import {
 import Link from "next/link";
 import { TransferRouteMap } from "@/components/features/transfers/transfer-route-map";
 
-export default function TransferConfirmationPage() {
+function TransferConfirmationInner() {
   const params = useParams();
   const router = useRouter();
   const t = useTranslations("transferPage");
@@ -518,5 +518,15 @@ export default function TransferConfirmationPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// useParams (the transfer id) is request data on this dynamic route; the
+// boundary lets the shell prerender under `cacheComponents`.
+export default function TransferConfirmationPage() {
+  return (
+    <React.Suspense fallback={null}>
+      <TransferConfirmationInner />
+    </React.Suspense>
   );
 }

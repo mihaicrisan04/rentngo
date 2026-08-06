@@ -4,10 +4,7 @@ import { HomePageClient } from "./home-page-client";
 import { Metadata } from "next";
 import { buildMetadata, jsonLdScriptContent } from "@/lib/metadata";
 import { getTranslations } from "next-intl/server";
-
-// Statically prerendered per locale; re-generated in the background so
-// featured-car changes show up without a redeploy.
-export const revalidate = 3600;
+import { cacheLife } from "next/cache";
 
 interface HomePageProps {
   params: Promise<{ locale: string }>;
@@ -105,7 +102,11 @@ function CarRentalSchema({ locale }: { locale: string }) {
   );
 }
 
+// Cached per locale; re-generated in the background so featured-car changes
+// show up without a redeploy.
 export default async function HomePage({ params }: HomePageProps) {
+  "use cache";
+  cacheLife("hours");
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "homepage" });
   const featuredVehicles = await fetchStaticQuery(api.featuredCars.getFeaturedVehicles);

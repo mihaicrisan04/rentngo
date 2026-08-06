@@ -19,9 +19,6 @@ export function useVehicleSearch(): UseVehicleSearchReturn {
     isHydrated: false,
   });
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
   // Load initial state from localStorage after hydration
   useEffect(() => {
     const storedData = searchStorage.load();

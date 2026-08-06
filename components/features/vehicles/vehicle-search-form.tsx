@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useToday } from "@/hooks/use-today";
 import { Card, CardContent } from "@/components/ui/card";
 import { LocationPicker } from "@/components/shared/search-filters/location-picker";
 import { DateTimePicker } from "@/components/shared/search-filters/date-time-picker";
@@ -19,8 +20,7 @@ export function VehicleSearchForm({
   isLoading = false,
 }: VehicleSearchFormProps) {
   const t = useTranslations('vehicleSearchForm');
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = useToday();
 
   // Calendar open states for sequential flow
   const [pickupCalendarOpen, setPickupCalendarOpen] = React.useState(false);
@@ -49,7 +49,7 @@ export function VehicleSearchForm({
               <DateTimePicker
                 id="pickupDate"
                 label={t('pickupDateTime')}
-                disabledDateRanges={(date: Date) => date < today}
+                disabledDateRanges={(date: Date) => (today ? date < today : false)}
                 dateState={searchState.pickupDate}
                 setDateState={(date) => updateSearchField('pickupDate', date)}
                 timeState={searchState.pickupTime || null}
@@ -87,7 +87,10 @@ export function VehicleSearchForm({
                 timeState={searchState.returnTime || null}
                 setTimeState={(time) => updateSearchField('returnTime', time)}
                 minDate={searchState.pickupDate || today}
-                disabledDateRanges={(date: Date) => date < (searchState.pickupDate || today)}
+                disabledDateRanges={(date: Date) => {
+                  const min = searchState.pickupDate || today;
+                  return min ? date < min : false;
+                }}
                 isLoading={isLoading || !searchState.pickupDate}
                 pickupDate={searchState.pickupDate}
                 pickupTime={searchState.pickupTime || null}
