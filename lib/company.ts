@@ -7,6 +7,10 @@
  * confirmation pages, translation JSONs, convex/emails.ts) — migrating those
  * copies onto this module is tracked as RNGO-20. New code MUST import from
  * here instead of adding another copy.
+ *
+ * Exception: contact values embedded in `messages/en.json` / `messages/ro.json`
+ * translation strings cannot import this module and stay manually synced —
+ * update them together with any change here.
  */
 export const COMPANY = {
   name: "Rent'n Go",

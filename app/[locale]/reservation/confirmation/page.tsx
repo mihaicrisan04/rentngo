@@ -8,6 +8,7 @@ import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import Image from "next/image";
 import Link from "next/link";
+import { COMPANY } from "@/lib/company";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -583,7 +584,7 @@ function ReservationConfirmationContent() {
                   <div>
                     <p className="font-medium">{t("customerSupport")}</p>
                     <p className="text-sm text-muted-foreground">
-                      +40 773 932 961
+                      {COMPANY.phone.display}
                     </p>
                   </div>
                 </div>
@@ -592,7 +593,7 @@ function ReservationConfirmationContent() {
                   <div>
                     <p className="font-medium">{t("emailSupport")}</p>
                     <p className="text-sm text-muted-foreground">
-                      office@rngo.ro
+                      {COMPANY.email}
                     </p>
                   </div>
                 </div>
