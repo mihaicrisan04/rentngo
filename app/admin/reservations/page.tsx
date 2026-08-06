@@ -4,11 +4,7 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
+import { ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import {
   Plus,
   Calendar,
@@ -18,6 +14,9 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { ReservationsTable } from "@/components/admin/reservations/reservation-table";
+import { StatCard, formatGrowth } from "@/components/admin/shared/stat-card";
+import { ChartCard } from "@/components/admin/shared/chart-card";
+import { DashboardSkeleton } from "@/components/admin/shared/dashboard-skeleton";
 import {
   BarChart,
   Bar,
@@ -29,7 +28,6 @@ import {
 } from "recharts";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Skeleton } from "@/components/ui/skeleton";
 import { usePeriodicNow } from "@/hooks/use-periodic-now";
 
 const CreateReservationDialog = dynamic(
@@ -96,51 +94,7 @@ export default function ReservationsPage() {
           </Button>
         </div>
 
-        {/* Loading Statistics Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-4 w-4" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-16 mb-2" />
-                <Skeleton className="h-3 w-24" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Loading Charts */}
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-48" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-[200px] w-full" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-32" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-[200px] w-full" />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Loading Table */}
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-32" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-64 w-full" />
-          </CardContent>
-        </Card>
+        <DashboardSkeleton />
       </div>
     );
   }
@@ -165,126 +119,73 @@ export default function ReservationsPage() {
 
       {/* Statistics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Reservations this month
-            </CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalReservations}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.reservationGrowth >= 0 ? "+" : ""}
-              {stats.reservationGrowth}% from last month
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Active Reservations this month
-            </CardTitle>
-            <Car className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.activeReservations}</div>
-            <p className="text-xs text-muted-foreground">Currently ongoing</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Monthly Revenue
-            </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              €{stats.currentMonthRevenue.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {stats.revenueGrowth >= 0 ? "+" : ""}
-              {stats.revenueGrowth}% from last month
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Pending Confirmations
-            </CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats.pendingConfirmations}
-            </div>
-            <p className="text-xs text-muted-foreground">Awaiting approval</p>
-          </CardContent>
-        </Card>
+        <StatCard
+          title="Total Reservations this month"
+          icon={Calendar}
+          value={stats.totalReservations}
+          subtext={formatGrowth(stats.reservationGrowth)}
+        />
+        <StatCard
+          title="Active Reservations this month"
+          icon={Car}
+          value={stats.activeReservations}
+          subtext="Currently ongoing"
+        />
+        <StatCard
+          title="Monthly Revenue"
+          icon={DollarSign}
+          value={`€${stats.currentMonthRevenue.toLocaleString()}`}
+          subtext={formatGrowth(stats.revenueGrowth)}
+        />
+        <StatCard
+          title="Pending Confirmations"
+          icon={Clock}
+          value={stats.pendingConfirmations}
+          subtext="Awaiting approval"
+        />
       </div>
 
       {/* Charts */}
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Monthly Reservations
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={formattedMonthlyData}>
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar
-                    dataKey="reservations"
-                    fill="var(--color-reservations)"
-                    radius={[2, 2, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </CardContent>
-        </Card>
+        <ChartCard
+          title="Monthly Reservations"
+          icon={TrendingUp}
+          config={chartConfig}
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={formattedMonthlyData}>
+              <XAxis dataKey="month" />
+              <YAxis />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar
+                dataKey="reservations"
+                fill="var(--color-reservations)"
+                radius={[2, 2, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              Revenue Trend
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={formattedMonthlyData}>
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Line
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke="var(--color-reservations)"
-                    strokeWidth={2}
-                    dot={{
-                      fill: "var(--color-reservations)",
-                      strokeWidth: 2,
-                      r: 4,
-                    }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </CardContent>
-        </Card>
+        <ChartCard title="Revenue Trend" icon={DollarSign} config={chartConfig}>
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={formattedMonthlyData}>
+              <XAxis dataKey="month" />
+              <YAxis />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Line
+                type="monotone"
+                dataKey="revenue"
+                stroke="var(--color-reservations)"
+                strokeWidth={2}
+                dot={{
+                  fill: "var(--color-reservations)",
+                  strokeWidth: 2,
+                  r: 4,
+                }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
       </div>
 
       {/* Reservations Table */}
