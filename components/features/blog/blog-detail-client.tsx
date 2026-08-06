@@ -10,11 +10,12 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import { Blog } from "@/types/blog";
+import type { Locale } from "@/i18n";
 
 interface BlogDetailClientProps {
   blog: Blog;
   coverImageUrl: string | null;
-  locale: string;
+  locale: Locale;
   slug: string;
   children: React.ReactNode;
 }
@@ -32,7 +33,7 @@ export function BlogDetailClient({
 
   useEffect(() => {
     if (!viewTracked.current) {
-      incrementViews({ slug, locale: locale as "ro" | "en" });
+      incrementViews({ slug, locale });
       viewTracked.current = true;
     }
   }, [slug, locale, incrementViews]);

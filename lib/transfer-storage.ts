@@ -1,3 +1,4 @@
+import type { Id } from "@/convex/_generated/dataModel";
 import { createLocalStorage } from "@/lib/create-local-storage";
 
 export interface LocationData {
@@ -27,7 +28,7 @@ export interface TransferSearchData {
    * therefore a wrong fare) associated with the new pair.
    */
   routeInfoKey?: string;
-  selectedVehicleId?: string;
+  selectedVehicleId?: Id<"vehicles">;
 }
 
 const TRANSFER_STORAGE_KEY = "transferSearchData";

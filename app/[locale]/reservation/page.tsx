@@ -45,11 +45,13 @@ function ReservationPageContent() {
   // means a later ro↔en locale switch — which drops query params — reads the
   // selection back from storage instead of losing it. Session (not local)
   // storage keeps each tab's pick isolated.
-  const [vehicleId, setVehicleId] = React.useState<string | null>(null);
+  const [vehicleId, setVehicleId] = React.useState<Id<"vehicles"> | null>(
+    null,
+  );
   const [vehicleIdReady, setVehicleIdReady] = React.useState(false);
 
   React.useEffect(() => {
-    const fromUrl = searchParams.get("vehicleId");
+    const fromUrl = searchParams.get("vehicleId") as Id<"vehicles"> | null;
     if (fromUrl) {
       reservationVehicle.set(fromUrl);
       setVehicleId(fromUrl);
@@ -117,7 +119,7 @@ function ReservationPageContent() {
 
   const vehicle = useQuery(
     api.vehicles.getById,
-    vehicleId ? { id: vehicleId as Id<"vehicles"> } : "skip",
+    vehicleId ? { id: vehicleId } : "skip",
   );
 
   const vehicleClass = useQuery(
@@ -201,7 +203,7 @@ function ReservationPageContent() {
       // Get the Convex user ID (not the Clerk user ID)
       const created = await createReservationMutation({
         userId: currentUser ? currentUser._id : undefined,
-        vehicleId: vehicleId as Id<"vehicles">,
+        vehicleId,
         startDate: pickupDate.getTime(),
         endDate: returnDate.getTime(),
         pickupTime: pickupTime || "00:00",

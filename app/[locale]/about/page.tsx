@@ -18,44 +18,8 @@ import {
   Star,
   ArrowRight,
 } from "lucide-react";
-import { Variants } from "motion/react";
 import { useLocale, useTranslations } from "next-intl";
-
-const sectionAnimationVariants: {
-  container: Variants;
-  item: Variants;
-} = {
-  container: {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.1,
-      },
-    },
-  },
-  item: {
-    hidden: {
-      opacity: 0,
-      scale: 0.95,
-      filter: "blur(4px)",
-      y: 20,
-    },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      filter: "blur(0px)",
-      y: 0,
-      transition: {
-        type: "spring",
-        stiffness: 100,
-        damping: 15,
-        duration: 0.6,
-      },
-    },
-  },
-};
+import { contactAnimationVariants as sectionAnimationVariants } from "@/lib/animations";
 
 const AboutPage = () => {
   const t = useTranslations("aboutPage");

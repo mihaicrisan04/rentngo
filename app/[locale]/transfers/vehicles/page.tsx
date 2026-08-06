@@ -41,7 +41,7 @@ export default function TransferVehiclesPage() {
 
   React.useEffect(() => {
     if (searchData?.selectedVehicleId) {
-      setSelectedVehicleId(searchData.selectedVehicleId as Id<"vehicles">);
+      setSelectedVehicleId(searchData.selectedVehicleId);
     }
   }, [searchData]);
 

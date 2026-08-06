@@ -43,7 +43,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
 import {
   getPriceForDurationWithSeason,
-  calculateVehiclePricing,
+  calculateVehiclePricingWithSeason,
 } from "@/lib/vehicle-utils";
 import { Trash2, Plus } from "lucide-react";
 
@@ -271,8 +271,9 @@ export function EditReservationDialog({
     const pickup = new Date(startDate);
     const restitution = new Date(endDate);
 
-    const priceDetails = calculateVehiclePricing(
+    const priceDetails = calculateVehiclePricingWithSeason(
       selectedVehicle,
+      1.0,
       pickup,
       restitution,
       undefined, // deliveryLocation not used here
@@ -311,8 +312,9 @@ export function EditReservationDialog({
     const pickup = new Date(startDate);
     const restitution = new Date(endDate);
 
-    const priceDetails = calculateVehiclePricing(
+    const priceDetails = calculateVehiclePricingWithSeason(
       selectedVehicle,
+      1.0,
       pickup,
       restitution,
       undefined,
@@ -380,8 +382,9 @@ export function EditReservationDialog({
         const pickup = new Date(startDate);
         const restitution = new Date(endDate);
 
-        const priceDetails = calculateVehiclePricing(
+        const priceDetails = calculateVehiclePricingWithSeason(
           selectedVehicle,
+          1.0,
           pickup,
           restitution,
           undefined,
@@ -607,8 +610,9 @@ export function EditReservationDialog({
                           const pickup = new Date(startDate);
                           const restitution = new Date(endDate);
 
-                          const priceDetails = calculateVehiclePricing(
+                          const priceDetails = calculateVehiclePricingWithSeason(
                             selectedVehicle,
+                            1.0,
                             pickup,
                             restitution,
                             undefined,
@@ -1153,8 +1157,9 @@ export function EditReservationDialog({
                       const pickup = new Date(startDate);
                       const restitution = new Date(endDate);
 
-                      const priceDetails = calculateVehiclePricing(
+                      const priceDetails = calculateVehiclePricingWithSeason(
                         selectedVehicle,
+                        1.0,
                         pickup,
                         restitution,
                         undefined,

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { BlogListItem } from "@/types/blog";
+import type { Locale } from "@/i18n";
 import Link from "next/link";
 
 const POSTS_PER_PAGE = 30;
@@ -15,7 +16,7 @@ const POSTS_PER_PAGE = 30;
 interface BlogListClientProps {
   featuredBlog: BlogListItem | null;
   initialBlogs: BlogListItem[];
-  locale: string;
+  locale: Locale;
 }
 
 export function BlogListClient({
@@ -27,12 +28,8 @@ export function BlogListClient({
   const [visibleCount, setVisibleCount] = useState(POSTS_PER_PAGE);
 
   // Live queries — SSR data used as initial, then live updates take over
-  const liveFeatured = useQuery(api.blogs.getFeatured, {
-    locale: locale as "ro" | "en",
-  });
-  const liveAll = useQuery(api.blogs.getAll, {
-    locale: locale as "ro" | "en",
-  });
+  const liveFeatured = useQuery(api.blogs.getFeatured, { locale });
+  const liveAll = useQuery(api.blogs.getAll, { locale });
 
   const featuredBlog =
     liveFeatured !== undefined ? liveFeatured : initialFeatured;
