@@ -4,11 +4,18 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+const denseClasses =
+  "[&_th]:h-8 [&_th]:py-1 [&_td]:py-1.5 [&_td]:leading-tight"
+
 function Table({
   className,
   containerClassName,
+  dense = false,
   ...props
-}: React.ComponentProps<"table"> & { containerClassName?: string }) {
+}: React.ComponentProps<"table"> & {
+  containerClassName?: string
+  dense?: boolean
+}) {
   return (
     <div
       data-slot="table-container"
@@ -16,7 +23,11 @@ function Table({
     >
       <table
         data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
+        className={cn(
+          "w-full caption-bottom text-sm",
+          dense && denseClasses,
+          className
+        )}
         {...props}
       />
     </div>
