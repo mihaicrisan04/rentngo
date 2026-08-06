@@ -30,6 +30,9 @@ import {
   Luggage,
 } from "lucide-react";
 import Link from "next/link";
+import { COMPANY } from "@/lib/company";
+import { StatusBadge } from "@/components/shared/status-badge";
+import { paymentMethodLabelKey } from "@/lib/checkout-payment-methods";
 import { TransferRouteMap } from "@/components/features/transfers/transfer-route-map";
 
 function TransferConfirmationInner() {
@@ -37,7 +40,7 @@ function TransferConfirmationInner() {
   const router = useRouter();
   const t = useTranslations("transferPage");
   const tConfirmation = useTranslations("confirmationPage");
-  const tCommon = useTranslations("common");
+  const tPaymentMethods = useTranslations("reservationPage.payment.methods");
   const locale = useLocale();
 
   const transferId = params.transferId as Id<"transfers">;
@@ -51,47 +54,9 @@ function TransferConfirmationInner() {
     transfer?.vehicleId ? { id: transfer.vehicleId } : "skip",
   );
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      pending: {
-        variant: "secondary" as const,
-        className: "bg-yellow-100 text-yellow-800 border-yellow-200",
-        label: tCommon("status.pending"),
-      },
-      confirmed: {
-        variant: "default" as const,
-        className: "bg-green-100 text-green-800 border-green-200",
-        label: tCommon("status.confirmed"),
-      },
-      cancelled: {
-        variant: "destructive" as const,
-        className: "bg-red-100 text-red-800 border-red-200",
-        label: tCommon("status.cancelled"),
-      },
-      completed: {
-        variant: "secondary" as const,
-        className: "bg-blue-100 text-blue-800 border-blue-200",
-        label: tCommon("status.completed"),
-      },
-    };
-
-    const config =
-      statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
-
-    return (
-      <Badge variant={config.variant} className={config.className}>
-        {config.label}
-      </Badge>
-    );
-  };
-
   const getPaymentMethodLabel = (method: string) => {
-    const labels: Record<string, string> = {
-      cash_on_delivery: tConfirmation("paymentMethods.cashOnDelivery"),
-      card_on_delivery: tConfirmation("paymentMethods.cardOnDelivery"),
-      card_online: tConfirmation("paymentMethods.cardOnline"),
-    };
-    return labels[method] || method;
+    const key = paymentMethodLabelKey(method);
+    return key ? tPaymentMethods(key) : method;
   };
 
   if (transfer === undefined) {
@@ -154,7 +119,7 @@ function TransferConfirmationInner() {
           <Badge variant="outline" className="text-lg px-4 py-1.5 rounded-xl">
             {t("confirmation.transferNumber")} {transfer.transferNumber}
           </Badge>
-          {getStatusBadge(transfer.status)}
+          <StatusBadge status={transfer.status} />
         </div>
       </div>
 
@@ -494,11 +459,11 @@ function TransferConfirmationInner() {
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex items-center gap-2">
                 <Phone className="h-4 w-4 text-muted-foreground" />
-                <span>{tConfirmation("customerSupport")}: +40 773 932 961</span>
+                <span>{tConfirmation("customerSupport")}: {COMPANY.phone.display}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-muted-foreground" />
-                <span>{tConfirmation("emailSupport")}: contact@rngo.ro</span>
+                <span>{tConfirmation("emailSupport")}: {COMPANY.email}</span>
               </div>
             </div>
           </CardContent>

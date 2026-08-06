@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { VehicleFilters } from "@/components/features/vehicles/vehicle-filters";
 import { VehicleSearchForm } from "@/components/features/vehicles/vehicle-search-form";
 import { VehicleListDisplayWithPreloadedImages } from "@/components/features/vehicles/vehicle-list-display-with-preloaded-images";
 import { useVehicleSearch } from "@/hooks/use-vehicle-search";
+import { useVehicleFilters } from "@/hooks/use-vehicle-filters";
 import { Vehicle } from "@/types/vehicle";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -22,30 +23,12 @@ interface CarsPageClientProps {
 export function CarsPageClient({ initialVehicles }: CarsPageClientProps) {
   const [isMounted, setIsMounted] = useState(false);
   const { searchState, updateSearchField } = useVehicleSearch();
-  const [displayedVehicles, setDisplayedVehicles] =
-    useState<VehicleWithImageUrl[]>(initialVehicles);
+  const { filteredVehicles, ...filters } = useVehicleFilters(initialVehicles);
+  const displayedVehicles = filteredVehicles ?? initialVehicles;
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
-  const handleFilterChange = useCallback((filteredVehicles: Vehicle[] | null) => {
-    if (filteredVehicles === null) {
-      setDisplayedVehicles(initialVehicles);
-    } else {
-      const filteredWithImages = filteredVehicles.map((vehicle) => {
-        const original = initialVehicles.find((v) => v._id === vehicle._id);
-        return {
-          ...vehicle,
-          imageUrl: original?.imageUrl ?? null,
-          className: original?.className,
-          classDisplayName: original?.classDisplayName,
-          classSortIndexFromClass: original?.classSortIndexFromClass,
-        } as VehicleWithImageUrl;
-      });
-      setDisplayedVehicles(filteredWithImages);
-    }
-  }, [initialVehicles]);
 
   return (
     <div className="py-8 px-4 md:px-6 flex flex-col gap-6">
@@ -77,10 +60,7 @@ export function CarsPageClient({ initialVehicles }: CarsPageClientProps) {
           </div>
         )}
 
-        <VehicleFilters
-          allVehicles={initialVehicles}
-          onFilterChange={handleFilterChange}
-        />
+        <VehicleFilters allVehicles={initialVehicles} {...filters} />
 
         <VehicleListDisplayWithPreloadedImages
           vehicles={displayedVehicles}

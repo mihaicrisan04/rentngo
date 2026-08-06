@@ -78,10 +78,7 @@ export function formatRelativeTime(
   }
 }
 
-export function validateSlug(slug: string): boolean {
-  const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-  return slugRegex.test(slug);
-}
+export { validateSlug } from "./slug";
 
 export function sanitizeContent(content: string): string {
   return content.trim();

@@ -1,6 +1,7 @@
 import { Resend } from 'resend';
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { COMPANY } from '@/lib/company';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -157,7 +158,7 @@ export async function POST(request: Request) {
                     <div class="footer">
                         <p>Thank you for choosing Rent'n Go!</p>
                         <div class="contact-info">
-                            <p>Questions? Contact us at office@rngo.ro or visit our website</p>
+                            <p>Questions? Contact us at ${COMPANY.email} or visit our website</p>
                             <p>Rent'n Go - Your trusted car rental partner</p>
                         </div>
                     </div>
@@ -171,7 +172,7 @@ export async function POST(request: Request) {
             to: to,
             subject: subject,
             html: htmlContent,
-            replyTo: 'office@rngo.ro',
+            replyTo: COMPANY.email,
         });
 
         if (error) {
