@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { SignInButton, Show } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LanguageSelector } from "@/components/shared/navigation/language-selector";
 import { useLocale, useTranslations } from "next-intl";
 import { UserButton } from "@/components/shared/auth/user-button";
@@ -29,6 +29,7 @@ export function Header({ logo }: HeaderProps) {
   const scrolled = useScroll(10);
   const locale = useLocale();
   const pathname = usePathname();
+  const router = useRouter();
   const t = useTranslations("common");
   const tNav = useTranslations("navigation");
 
@@ -238,7 +239,7 @@ export function Header({ logo }: HeaderProps) {
                   className="flex items-center gap-4 px-4 py-3.5 rounded-2xl bg-muted/50 cursor-pointer active:bg-muted"
                   onClick={() => {
                     handleLinkClick();
-                    window.location.href = "/profile";
+                    router.push(`/${locale}/profile`);
                   }}
                 >
                   <div className="[&_button]:h-10 [&_button]:w-10 [&_button]:rounded-xl [&_img]:h-10 [&_img]:w-10">

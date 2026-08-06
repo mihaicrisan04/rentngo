@@ -30,6 +30,7 @@ import {
   Luggage,
 } from "lucide-react";
 import Link from "next/link";
+import { COMPANY } from "@/lib/company";
 import { TransferRouteMap } from "@/components/features/transfers/transfer-route-map";
 
 function TransferConfirmationInner() {
@@ -498,7 +499,7 @@ function TransferConfirmationInner() {
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-muted-foreground" />
-                <span>{tConfirmation("emailSupport")}: contact@rngo.ro</span>
+                <span>{tConfirmation("emailSupport")}: {COMPANY.email}</span>
               </div>
             </div>
           </CardContent>
