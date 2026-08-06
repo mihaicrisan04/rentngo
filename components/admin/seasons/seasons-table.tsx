@@ -6,7 +6,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/shared/status-badge";
 import {
   Table,
   TableBody,
@@ -92,28 +92,9 @@ export function SeasonsTable() {
     }
   };
 
-  const getStatusBadge = (season: any) => {
-    const isCurrentSeason = currentSeason?.seasonId === season._id;
-    
-    if (isCurrentSeason) {
-      return (
-        <Badge className="bg-green-100 text-green-800">
-          Current Season
-        </Badge>
-      );
-    } else if (season.isActive) {
-      return (
-        <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-          Active
-        </Badge>
-      );
-    } else {
-      return (
-        <Badge variant="secondary" className="bg-gray-100 text-gray-800">
-          Inactive
-        </Badge>
-      );
-    }
+  const seasonStatus = (season: any) => {
+    if (currentSeason?.seasonId === season._id) return "currentSeason";
+    return season.isActive ? "active" : "inactive";
   };
 
   const formatPeriods = (periods: any[]) => {
@@ -180,7 +161,7 @@ export function SeasonsTable() {
                       {formatPeriods(season.periods)}
                     </div>
                   </TableCell>
-                  <TableCell>{getStatusBadge(season)}</TableCell>
+                  <TableCell><StatusBadge status={seasonStatus(season)} /></TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

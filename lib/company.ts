@@ -8,10 +8,9 @@
  * copies onto this module is tracked as RNGO-20. New code MUST import from
  * here instead of adding another copy.
  *
- * NOTE (email drift, flagged in AUDIT.md): the transfer confirmation page
- * shows `contact@rngo.ro` while everything else uses `office@rngo.ro`. This
- * module standardizes on `office@rngo.ro`; confirm with the client as part
- * of the RNGO-20 migration.
+ * Exception: contact values embedded in `messages/en.json` / `messages/ro.json`
+ * translation strings cannot import this module and stay manually synced —
+ * update them together with any change here.
  */
 export const COMPANY = {
   name: "Rent'n Go",

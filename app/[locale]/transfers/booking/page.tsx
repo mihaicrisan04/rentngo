@@ -21,7 +21,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { transferStorage, TransferSearchData } from "@/lib/transfer-storage";
+import { transferStorage } from "@/lib/transfer-storage";
+import {
+  useTransferSearch,
+  hasTransferSearchDetails,
+} from "@/hooks/use-transfer-search";
 import { TransferSummaryCard } from "@/components/features/transfers/transfer-summary-card";
 import { CheckoutPaymentMethods } from "@/components/features/checkout/checkout-payment-methods";
 import { TermsAcceptance } from "@/components/features/checkout/terms-acceptance";
@@ -59,10 +63,7 @@ export default function TransferBookingPage() {
   const tCoupon = useTranslations("common.coupon");
   const locale = useLocale();
 
-  const [searchData, setSearchData] = React.useState<TransferSearchData | null>(
-    null,
-  );
-  const [isHydrated, setIsHydrated] = React.useState(false);
+  const { searchData, isHydrated } = useTransferSearch();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const [personalInfo, setPersonalInfo] = React.useState<PersonalInfo>({
@@ -111,12 +112,6 @@ export default function TransferBookingPage() {
     subtotal: pricing?.totalPrice ?? null,
     email: personalInfo.email,
   });
-
-  React.useEffect(() => {
-    const stored = transferStorage.load();
-    setSearchData(stored);
-    setIsHydrated(true);
-  }, []);
 
   React.useEffect(() => {
     if (user && currentUser && isHydrated) {
@@ -276,13 +271,7 @@ export default function TransferBookingPage() {
     );
   }
 
-  if (
-    !searchData?.pickupLocation ||
-    !searchData?.dropoffLocation ||
-    !searchData?.pickupDate ||
-    !searchData?.pickupTime ||
-    !searchData?.selectedVehicleId
-  ) {
+  if (!hasTransferSearchDetails(searchData) || !searchData.selectedVehicleId) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col items-center justify-center min-h-[400px] text-center">

@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
+import { COMPANY } from "@/lib/company";
 import { Metadata } from "next";
 import { buildMetadata } from "@/lib/metadata";
 
@@ -451,8 +452,8 @@ export default function TermsAndConditionsPage() {
           </CardHeader>
           <CardContent className="space-y-2">
             <p><strong>Rent&apos;n Go Prodexa S.R.L.</strong></p>
-            <p>Email: <Link href="mailto:office@rngo.ro" className="text-primary hover:underline">office@rngo.ro</Link></p>
-            <p>Telefon: +40773932961</p>
+            <p>Email: <Link href={`mailto:${COMPANY.email}`} className="text-primary hover:underline">{COMPANY.email}</Link></p>
+            <p>Telefon: {COMPANY.phone.tel}</p>
             <p>Adresă: Cluj "Avram Iancu" International Airport, Strada Traian Vuia 149-151, Cluj-Napoca, România</p>
           </CardContent>
         </Card>

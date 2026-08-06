@@ -5,7 +5,8 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { GoogleTagManager } from "@next/third-parties/google";
 import { fontClassNames } from "../fonts";
-import { Providers } from "../providers";
+import { Providers, LocaleProviders } from "../providers";
+import enMessages from "@/messages/en.json";
 import { AdminShell } from "./admin-shell";
 
 export const metadata: Metadata = {
@@ -33,12 +34,16 @@ export default function AdminRootLayout({
       {gtmId && <GoogleTagManager gtmId={gtmId} />}
       <body className={fontClassNames}>
         <Providers>
-          {/* AdminShell reads usePathname; the boundary keeps dynamic admin
+          {/* Admin UI is English-only; pin next-intl to "en" so shared
+              components like StatusBadge can resolve translations. */}
+          <LocaleProviders locale="en" messages={enMessages}>
+            {/* AdminShell reads usePathname; the boundary keeps dynamic admin
               routes (e.g. /admin/vehicles/classes/[classId]) prerenderable
               under `cacheComponents`. */}
-          <Suspense fallback={null}>
-            <AdminShell>{children}</AdminShell>
-          </Suspense>
+            <Suspense fallback={null}>
+              <AdminShell>{children}</AdminShell>
+            </Suspense>
+          </LocaleProviders>
         </Providers>
         {/* Same Suspense requirement as the public layout: Analytics reads
             the URL internally. */}

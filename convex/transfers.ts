@@ -42,13 +42,15 @@ import {
   type AppliedDiscount,
 } from "../lib/pricing";
 import { resolveRouteDistance } from "./routing";
-
-const transferStatusValidator = v.union(
-  v.literal("pending"),
-  v.literal("confirmed"),
-  v.literal("cancelled"),
-  v.literal("completed"),
-);
+import {
+  bookingStatusValidator as transferStatusValidator,
+  fuelTypeValidator,
+  paymentMethodValidator,
+  transmissionValidator,
+  vehicleStatusValidator,
+  vehicleTypeValidator,
+} from "./validators";
+import { stripUndefined } from "./lib/patch";
 
 type TransferStatusType = "pending" | "confirmed" | "cancelled" | "completed";
 
@@ -67,12 +69,6 @@ const customerInfoValidator = v.object({
   message: v.optional(v.string()),
   flightNumber: v.optional(v.string()),
 });
-
-const paymentMethodValidator = v.union(
-  v.literal("cash_on_delivery"),
-  v.literal("card_on_delivery"),
-  v.literal("card_online"),
-);
 
 const transferDocValidator = v.object({
   _id: v.id("transfers"),
@@ -127,30 +123,12 @@ const vehicleDocValidator = v.object({
   make: v.string(),
   model: v.string(),
   year: v.optional(v.number()),
-  type: v.optional(
-    v.union(
-      v.literal("sedan"),
-      v.literal("suv"),
-      v.literal("hatchback"),
-      v.literal("sports"),
-      v.literal("truck"),
-      v.literal("van"),
-    ),
-  ),
+  type: v.optional(vehicleTypeValidator),
   classId: v.optional(v.id("vehicleClasses")),
   classSortIndex: v.optional(v.number()),
   seats: v.optional(v.number()),
-  transmission: v.optional(
-    v.union(v.literal("automatic"), v.literal("manual")),
-  ),
-  fuelType: v.optional(
-    v.union(
-      v.literal("diesel"),
-      v.literal("electric"),
-      v.literal("hybrid"),
-      v.literal("benzina"),
-    ),
-  ),
+  transmission: v.optional(transmissionValidator),
+  fuelType: v.optional(fuelTypeValidator),
   engineCapacity: v.optional(v.number()),
   engineType: v.optional(v.string()),
   pricingTiers: v.optional(
@@ -166,11 +144,7 @@ const vehicleDocValidator = v.object({
   isOwner: v.optional(v.boolean()),
   location: v.optional(v.string()),
   features: v.optional(v.array(v.string())),
-  status: v.union(
-    v.literal("available"),
-    v.literal("rented"),
-    v.literal("maintenance"),
-  ),
+  status: vehicleStatusValidator,
   images: v.optional(v.array(v.id("_storage"))),
   mainImageId: v.optional(v.id("_storage")),
   isTransferVehicle: v.optional(v.boolean()),
@@ -675,12 +649,7 @@ export const updateTransferDetails = mutation({
       throw new Error("Transfer not found");
     }
 
-    const updatesToApply: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(updates)) {
-      if (value !== undefined) {
-        updatesToApply[key] = value;
-      }
-    }
+    const updatesToApply = stripUndefined(updates);
 
     if (Object.keys(updatesToApply).length > 0) {
       await ctx.db.patch(transferId, updatesToApply);

@@ -9,10 +9,11 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { TransferVehicleList } from "@/components/features/transfers/transfer-vehicle-list";
 import { TransferRouteMap } from "@/components/features/transfers/transfer-route-map";
 import { TransferBookingFloatingCard } from "@/components/features/transfers/transfer-booking-sidebar";
+import { transferStorage } from "@/lib/transfer-storage";
 import {
-  transferStorage,
-  type TransferSearchData,
-} from "@/lib/transfer-storage";
+  useTransferSearch,
+  hasTransferSearchDetails,
+} from "@/hooks/use-transfer-search";
 import { formatDistance, formatDuration } from "@/lib/mapbox";
 import type { TransferVehicle } from "@/components/features/transfers/transfer-vehicle-card";
 
@@ -21,12 +22,9 @@ export default function TransferVehiclesPage() {
   const t = useTranslations("transferPage");
   const tCommon = useTranslations("common");
 
-  const [searchData, setSearchData] = React.useState<TransferSearchData | null>(
-    null,
-  );
+  const { searchData, isHydrated } = useTransferSearch();
   const [selectedVehicleId, setSelectedVehicleId] =
     React.useState<Id<"vehicles"> | null>(null);
-  const [isHydrated, setIsHydrated] = React.useState(false);
   const [vehicles, setVehicles] = React.useState<TransferVehicle[]>([]);
 
   const selectedVehicle = React.useMemo(
@@ -42,15 +40,10 @@ export default function TransferVehiclesPage() {
   );
 
   React.useEffect(() => {
-    const stored = transferStorage.load();
-    setSearchData(stored);
-
-    if (stored.selectedVehicleId) {
-      setSelectedVehicleId(stored.selectedVehicleId);
+    if (searchData?.selectedVehicleId) {
+      setSelectedVehicleId(searchData.selectedVehicleId);
     }
-
-    setIsHydrated(true);
-  }, []);
+  }, [searchData]);
 
   React.useEffect(() => {
     if (isHydrated && selectedVehicleId) {
@@ -84,12 +77,7 @@ export default function TransferVehiclesPage() {
     );
   }
 
-  if (
-    !searchData?.pickupLocation ||
-    !searchData?.dropoffLocation ||
-    !searchData?.pickupDate ||
-    !searchData?.pickupTime
-  ) {
+  if (!hasTransferSearchDetails(searchData)) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col items-center justify-center min-h-[400px] text-center">

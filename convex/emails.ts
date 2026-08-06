@@ -14,15 +14,17 @@ import { UserReservationEmail } from "./emails/templates/UserReservationEmail";
 import { UserTransferEmail } from "./emails/templates/UserTransferEmail";
 import { AdminTransferEmail } from "./emails/templates/AdminTransferEmail";
 import { ReservationEmailData, TransferEmailData } from "./emails/types";
+import { additionalChargeCodeValidator } from "./validators";
+import { COMPANY } from "../lib/company";
 
 // Initialize Resend component (testMode: false for production)
 export const resend = new Resend(components.resend, { testMode: false });
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "office@rngo.ro";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || COMPANY.email;
 // EMAIL_FROM / EMAIL_SUBJECT_PREFIX are set per Convex deployment so the
 // develop environment sends visibly distinct emails (e.g. "Rent'n Go [DEV]"
 // with "[DEV] " subjects) from the same verified sender domain.
-const FROM_EMAIL = process.env.EMAIL_FROM || "Rent'n Go <noreply@rngo.ro>";
+const FROM_EMAIL = process.env.EMAIL_FROM || `${COMPANY.name} <noreply@rngo.ro>`;
 const SUBJECT_PREFIX = process.env.EMAIL_SUBJECT_PREFIX || "";
 
 // Validators for email data
@@ -70,16 +72,7 @@ const pricingDetailsValidator = v.object({
     v.array(
       v.object({
         description: v.optional(v.string()),
-        code: v.optional(
-          v.union(
-            v.literal("pickupLocationFee"),
-            v.literal("returnLocationFee"),
-            v.literal("snowChains"),
-            v.literal("childSeat1to4"),
-            v.literal("childSeat5to12"),
-            v.literal("extraKm"),
-          ),
-        ),
+        code: v.optional(additionalChargeCodeValidator),
         params: v.optional(
           v.record(v.string(), v.union(v.string(), v.number())),
         ),
@@ -139,7 +132,7 @@ export const sendReservationConfirmationEmail = internalAction({
         to: [args.customerInfo.email],
         subject: `${SUBJECT_PREFIX}Request submitted #${args.reservationNumber}`,
         html: userHtml,
-        replyTo: ["office@rngo.ro"],
+        replyTo: [COMPANY.email],
       });
 
       console.log(
@@ -251,7 +244,7 @@ export const sendTransferConfirmationEmail = internalAction({
             ? `${SUBJECT_PREFIX}Cerere trimisă #${args.transferNumber}`
             : `${SUBJECT_PREFIX}Request submitted #${args.transferNumber}`,
         html: userHtml,
-        replyTo: ["office@rngo.ro"],
+        replyTo: [COMPANY.email],
       });
 
       console.log(

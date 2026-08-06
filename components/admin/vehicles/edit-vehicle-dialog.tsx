@@ -97,7 +97,7 @@ const vehicleSchema = z.object({
   transmission: z.enum(["automatic", "manual"], {
     error: "Transmission type is required",
   }),
-  fuelType: z.enum(["petrol", "diesel", "electric", "hybrid", "benzina"], {
+  fuelType: z.enum(["diesel", "electric", "hybrid", "benzina"], {
     error: "Fuel type is required",
   }),
   engineCapacity: z
@@ -253,7 +253,7 @@ export function EditVehicleDialog({
       classId: "",
       seats: "5",
       transmission: "automatic",
-      fuelType: "petrol",
+      fuelType: "benzina",
       engineCapacity: "",
       engineType: "",
       // pricePerDay removed - using pricingTiers only
@@ -278,7 +278,7 @@ export function EditVehicleDialog({
         classId: (vehicle.classId as string) || "",
         seats: (vehicle.seats || 5).toString(),
         transmission: (vehicle.transmission as TransmissionType) || "automatic",
-        fuelType: (vehicle.fuelType as FuelType) || "petrol",
+        fuelType: (vehicle.fuelType as FuelType) || "benzina",
         engineCapacity: (vehicle.engineCapacity || 0).toString(),
         engineType: vehicle.engineType || "",
         // pricePerDay removed - using pricingTiers only

@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { Doc } from "./_generated/dataModel";
 import { requireAdmin } from "./users";
+import { stripUndefined } from "./lib/patch";
 
 // Query: Get all vehicle classes
 export const list = query({
@@ -190,17 +190,8 @@ export const update = mutation({
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
-    const {
-      id,
-      name,
-      displayName,
-      description,
-      sortIndex,
-      isActive,
-      additional50kmPrice,
-      transferBaseFare,
-      transferMultiplier,
-    } = args;
+    const { id, ...updates } = args;
+    const { name } = updates;
 
     // Check if the class exists
     const existingClass = await ctx.db.get(id);
@@ -222,21 +213,7 @@ export const update = mutation({
       }
     }
 
-    // Update the class
-    const updateData: Partial<Doc<"vehicleClasses">> = {};
-    if (name !== undefined) updateData.name = name;
-    if (displayName !== undefined) updateData.displayName = displayName;
-    if (description !== undefined) updateData.description = description;
-    if (sortIndex !== undefined) updateData.sortIndex = sortIndex;
-    if (isActive !== undefined) updateData.isActive = isActive;
-    if (additional50kmPrice !== undefined)
-      updateData.additional50kmPrice = additional50kmPrice;
-    if (transferBaseFare !== undefined)
-      updateData.transferBaseFare = transferBaseFare;
-    if (transferMultiplier !== undefined)
-      updateData.transferMultiplier = transferMultiplier;
-
-    await ctx.db.patch(id, updateData);
+    await ctx.db.patch(id, stripUndefined(updates));
 
     // Return the updated class
     const updatedClass = await ctx.db.get(id);

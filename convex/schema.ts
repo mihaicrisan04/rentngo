@@ -1,5 +1,14 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import {
+  additionalChargeCodeValidator,
+  bookingStatusValidator,
+  fuelTypeValidator,
+  paymentMethodValidator,
+  transmissionValidator,
+  vehicleStatusValidator,
+  vehicleTypeValidator,
+} from "./validators";
 
 export default defineSchema({
   counters: defineTable({
@@ -49,30 +58,12 @@ export default defineSchema({
     make: v.string(),
     model: v.string(),
     year: v.optional(v.number()),
-    type: v.optional(
-      v.union(
-        v.literal("sedan"),
-        v.literal("suv"),
-        v.literal("hatchback"),
-        v.literal("sports"),
-        v.literal("truck"),
-        v.literal("van"),
-      ),
-    ),
+    type: v.optional(vehicleTypeValidator),
     classId: v.optional(v.id("vehicleClasses")), // Reference to vehicle class
     classSortIndex: v.optional(v.number()), // For custom sorting within a class (future feature)
     seats: v.optional(v.number()),
-    transmission: v.optional(
-      v.union(v.literal("automatic"), v.literal("manual")),
-    ),
-    fuelType: v.optional(
-      v.union(
-        v.literal("diesel"),
-        v.literal("electric"),
-        v.literal("hybrid"),
-        v.literal("benzina"),
-      ),
-    ),
+    transmission: v.optional(transmissionValidator),
+    fuelType: v.optional(fuelTypeValidator),
     engineCapacity: v.optional(v.number()),
     engineType: v.optional(v.string()),
     pricingTiers: v.optional(
@@ -88,11 +79,7 @@ export default defineSchema({
     isOwner: v.optional(v.boolean()), // Whether the car is owned by the company (true) or partnership (false)
     location: v.optional(v.string()),
     features: v.optional(v.array(v.string())),
-    status: v.union(
-      v.literal("available"),
-      v.literal("rented"),
-      v.literal("maintenance"),
-    ),
+    status: vehicleStatusValidator,
     images: v.optional(v.array(v.id("_storage"))),
     mainImageId: v.optional(v.id("_storage")),
     // Transfer-related fields
@@ -120,17 +107,8 @@ export default defineSchema({
     restitutionTime: v.string(), // Time in "HH:MM" format (e.g., "16:00")
     pickupLocation: v.string(), // Name of pickup location
     restitutionLocation: v.string(), // Name of return location
-    paymentMethod: v.union(
-      v.literal("cash_on_delivery"),
-      v.literal("card_on_delivery"),
-      v.literal("card_online"),
-    ),
-    status: v.union(
-      v.literal("pending"),
-      v.literal("confirmed"),
-      v.literal("cancelled"),
-      v.literal("completed"),
-    ),
+    paymentMethod: paymentMethodValidator,
+    status: bookingStatusValidator,
     totalPrice: v.number(),
     // Customer information (for non-authenticated or guest bookings)
     customerInfo: v.object({
@@ -165,16 +143,7 @@ export default defineSchema({
       v.array(
         v.object({
           description: v.optional(v.string()),
-          code: v.optional(
-            v.union(
-              v.literal("pickupLocationFee"),
-              v.literal("returnLocationFee"),
-              v.literal("snowChains"),
-              v.literal("childSeat1to4"),
-              v.literal("childSeat5to12"),
-              v.literal("extraKm"),
-            ),
-          ),
+          code: v.optional(additionalChargeCodeValidator),
           params: v.optional(
             v.record(v.string(), v.union(v.string(), v.number())),
           ),
@@ -278,19 +247,10 @@ export default defineSchema({
     }),
 
     // Payment
-    paymentMethod: v.union(
-      v.literal("cash_on_delivery"),
-      v.literal("card_on_delivery"),
-      v.literal("card_online"),
-    ),
+    paymentMethod: paymentMethodValidator,
 
     // Status
-    status: v.union(
-      v.literal("pending"),
-      v.literal("confirmed"),
-      v.literal("cancelled"),
-      v.literal("completed"),
-    ),
+    status: bookingStatusValidator,
   })
     .index("by_user", ["userId"])
     .index("by_vehicle", ["vehicleId"])

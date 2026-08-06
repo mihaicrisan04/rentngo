@@ -38,6 +38,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { DEFAULT_PICKUP_TIME } from "@/lib/pricing/constants";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
 import {
@@ -167,8 +168,8 @@ export function EditReservationDialog({
       vehicleId: "",
       startDate: "",
       endDate: "",
-      pickupTime: "10:00",
-      restitutionTime: "10:00",
+      pickupTime: DEFAULT_PICKUP_TIME,
+      restitutionTime: DEFAULT_PICKUP_TIME,
       pickupLocation: "",
       restitutionLocation: "",
       paymentMethod: "cash_on_delivery",
