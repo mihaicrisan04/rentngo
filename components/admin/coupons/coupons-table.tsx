@@ -17,7 +17,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Edit, Trash2, MoreHorizontal, Power } from "lucide-react";
+import { Edit, Trash2, MoreHorizontal, Power, TicketPercent } from "lucide-react";
+import { EmptyState } from "@/components/admin/shared/empty-state";
+import { toastWithUndo } from "@/components/admin/shared/undo-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,20 +56,39 @@ const statusBadgeClasses: Record<ReturnType<typeof couponStatus>, string> = {
   exhausted: "bg-red-100 text-red-800",
 };
 
-export function CouponsTable() {
+interface CouponsTableProps {
+  onCreate?: () => void;
+}
+
+export function CouponsTable({ onCreate }: CouponsTableProps) {
   const now = usePeriodicNow();
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
 
   const coupons = useQuery(api.coupons.list);
-  const updateCoupon = useMutation(api.coupons.update);
+  const updateCoupon = useMutation(api.coupons.update).withOptimisticUpdate(
+    (localStore, { id, isActive }) => {
+      const current = localStore.getQuery(api.coupons.list, {});
+      if (current === undefined || isActive === undefined) return;
+      localStore.setQuery(
+        api.coupons.list,
+        {},
+        current.map((coupon) =>
+          coupon._id === id ? { ...coupon, isActive } : coupon,
+        ),
+      );
+    },
+  );
   const removeCoupon = useMutation(api.coupons.remove);
 
   const handleToggleActive = async (coupon: Coupon) => {
+    const isActive = !coupon.isActive;
     try {
-      await updateCoupon({ id: coupon._id, isActive: !coupon.isActive });
-      toast.success(coupon.isActive ? "Coupon deactivated" : "Coupon activated", {
-        description: `${coupon.code} is now ${coupon.isActive ? "inactive" : "active"}.`,
-        position: "bottom-right",
+      await updateCoupon({ id: coupon._id, isActive });
+      toastWithUndo({
+        message: isActive ? "Coupon activated" : "Coupon deactivated",
+        description: `${coupon.code} is now ${isActive ? "active" : "inactive"}.`,
+        onUndo: () =>
+          updateCoupon({ id: coupon._id, isActive: coupon.isActive }),
       });
     } catch (error) {
       toast.error("Failed to update coupon", {
@@ -118,8 +139,13 @@ export function CouponsTable() {
           <TableBody>
             {coupons.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                  No coupons found. Create your first coupon to get started.
+                <TableCell colSpan={9}>
+                  <EmptyState
+                    icon={TicketPercent}
+                    message="No coupons yet"
+                    actionLabel={onCreate ? "Create coupon" : undefined}
+                    onAction={onCreate}
+                  />
                 </TableCell>
               </TableRow>
             ) : (

@@ -15,17 +15,35 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { List, Pencil } from "lucide-react";
+import { List, Pencil, Users } from "lucide-react";
+import { EmptyState } from "@/components/admin/shared/empty-state";
+import { toastWithUndo } from "@/components/admin/shared/undo-toast";
 import { formatRelativeTime } from "@/lib/format";
 import { usePeriodicNow } from "@/hooks/use-periodic-now";
 import { toast } from "sonner";
 import { EditAffiliateDialog } from "@/components/admin/affiliates/edit-affiliate-dialog";
 import { AffiliateConversionsDialog } from "@/components/admin/affiliates/affiliate-conversions-dialog";
 
-export function AffiliatesTable() {
+interface AffiliatesTableProps {
+  onCreate?: () => void;
+}
+
+export function AffiliatesTable({ onCreate }: AffiliatesTableProps) {
   const now = usePeriodicNow();
   const affiliates = useQuery(api.affiliates.listAffiliates);
-  const updateAffiliate = useMutation(api.affiliates.updateAffiliate);
+  const updateAffiliate = useMutation(
+    api.affiliates.updateAffiliate,
+  ).withOptimisticUpdate((localStore, { id, isActive }) => {
+    const current = localStore.getQuery(api.affiliates.listAffiliates, {});
+    if (current === undefined || isActive === undefined) return;
+    localStore.setQuery(
+      api.affiliates.listAffiliates,
+      {},
+      current.map((affiliate) =>
+        affiliate._id === id ? { ...affiliate, isActive } : affiliate,
+      ),
+    );
+  });
   const [editing, setEditing] = React.useState<Id<"affiliates"> | null>(null);
   const [viewingConversions, setViewingConversions] =
     React.useState<Id<"affiliates"> | null>(null);
@@ -35,15 +53,27 @@ export function AffiliatesTable() {
   }
   if (affiliates.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
-        No affiliates yet. Add one to hand out a referral link.
-      </p>
+      <EmptyState
+        icon={Users}
+        message="No affiliates yet. Add one to hand out a referral link."
+        actionLabel={onCreate ? "Add affiliate" : undefined}
+        onAction={onCreate}
+      />
     );
   }
 
-  const toggleActive = async (id: Id<"affiliates">, isActive: boolean) => {
+  const toggleActive = async (
+    id: Id<"affiliates">,
+    slug: string,
+    isActive: boolean,
+  ) => {
     try {
       await updateAffiliate({ id, isActive });
+      toastWithUndo({
+        message: isActive ? "Affiliate activated" : "Affiliate deactivated",
+        description: `/r/${slug} is now ${isActive ? "active" : "inactive"}.`,
+        onUndo: () => updateAffiliate({ id, isActive: !isActive }),
+      });
     } catch (error) {
       console.error("Error toggling affiliate:", error);
       toast.error("Failed to update affiliate", { position: "bottom-left" });
@@ -114,7 +144,7 @@ export function AffiliatesTable() {
                 <Switch
                   checked={affiliate.isActive}
                   onCheckedChange={(checked) =>
-                    toggleActive(affiliate._id, checked)
+                    toggleActive(affiliate._id, affiliate.slug, checked)
                   }
                   aria-label={`Toggle ${affiliate.slug}`}
                 />

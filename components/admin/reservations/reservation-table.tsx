@@ -30,7 +30,10 @@ import {
   Mail,
   CheckCircle,
   XCircle,
+  CalendarX,
 } from "lucide-react";
+import { EmptyState } from "@/components/admin/shared/empty-state";
+import { toastWithUndo } from "@/components/admin/shared/undo-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,12 +58,16 @@ const ReservationEmailDialog = dynamic(
 
 const ITEMS_PER_PAGE = 10;
 
+type ReservationStatus = "pending" | "confirmed" | "cancelled" | "completed";
+
 interface ReservationsTableProps {
   fullHeight?: boolean;
+  onCreate?: () => void;
 }
 
 export function ReservationsTable({
   fullHeight = false,
+  onCreate,
 }: ReservationsTableProps) {
   const layout = getTableLayout(fullHeight);
   const now = usePeriodicNow();
@@ -81,7 +88,23 @@ export function ReservationsTable({
   const deleteReservation = useMutation(
     api.reservations.deleteReservationPermanently,
   );
-  const updateStatus = useMutation(api.reservations.updateReservationStatus);
+  const updateStatus = useMutation(
+    api.reservations.updateReservationStatus,
+  ).withOptimisticUpdate((localStore, { reservationId, newStatus }) => {
+    for (const { args, value } of localStore.getAllQueries(
+      api.reservations.getAllReservationsPaginated,
+    )) {
+      if (value === undefined) continue;
+      localStore.setQuery(api.reservations.getAllReservationsPaginated, args, {
+        ...value,
+        page: value.page.map((reservation) =>
+          reservation._id === reservationId
+            ? { ...reservation, status: newStatus }
+            : reservation,
+        ),
+      });
+    }
+  });
 
   const handleEdit = (reservationId: Id<"reservations">) => {
     setEditingReservation(reservationId);
@@ -114,13 +137,16 @@ export function ReservationsTable({
 
   const handleStatusUpdate = async (
     reservationId: Id<"reservations">,
-    newStatus: "pending" | "confirmed" | "cancelled" | "completed",
+    newStatus: ReservationStatus,
+    previousStatus: ReservationStatus,
   ) => {
     try {
       await updateStatus({ reservationId, newStatus });
-      toast.success("Reservation status updated", {
+      toastWithUndo({
+        message: "Reservation status updated",
         description: `Status changed to ${newStatus}`,
-        position: "bottom-right",
+        onUndo: () =>
+          updateStatus({ reservationId, newStatus: previousStatus }),
       });
     } catch (error) {
       toast.error("Failed to update status", {
@@ -158,11 +184,13 @@ export function ReservationsTable({
           <TableBody>
             {reservations.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={10}
-                  className="text-center py-8 text-muted-foreground"
-                >
-                  No reservations found.
+                <TableCell colSpan={10}>
+                  <EmptyState
+                    icon={CalendarX}
+                    message="No reservations yet"
+                    actionLabel={onCreate ? "Add reservation" : undefined}
+                    onAction={onCreate}
+                  />
                 </TableCell>
               </TableRow>
             ) : (
@@ -295,7 +323,11 @@ export function ReservationsTable({
                         {reservation.status === "pending" && (
                           <DropdownMenuItem
                             onClick={() =>
-                              handleStatusUpdate(reservation._id, "confirmed")
+                              handleStatusUpdate(
+                                reservation._id,
+                                "confirmed",
+                                reservation.status,
+                              )
                             }
                             className="cursor-pointer"
                           >
@@ -307,7 +339,11 @@ export function ReservationsTable({
                           reservation.status === "confirmed") && (
                           <DropdownMenuItem
                             onClick={() =>
-                              handleStatusUpdate(reservation._id, "cancelled")
+                              handleStatusUpdate(
+                                reservation._id,
+                                "cancelled",
+                                reservation.status,
+                              )
                             }
                             className="cursor-pointer text-red-600 hover:text-red-700"
                           >

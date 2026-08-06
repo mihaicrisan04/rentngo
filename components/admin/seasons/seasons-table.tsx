@@ -15,7 +15,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Edit, Trash2, MoreHorizontal, Play, Square } from "lucide-react";
+import {
+  Edit,
+  Trash2,
+  MoreHorizontal,
+  Play,
+  Square,
+  CalendarRange,
+} from "lucide-react";
+import { EmptyState } from "@/components/admin/shared/empty-state";
+import { toastWithUndo } from "@/components/admin/shared/undo-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +38,11 @@ const EditSeasonDialog = dynamic(
   { ssr: false }
 );
 
-export function SeasonsTable() {
+interface SeasonsTableProps {
+  onCreate?: () => void;
+}
+
+export function SeasonsTable({ onCreate }: SeasonsTableProps) {
   const [editingSeason, setEditingSeason] = useState<Id<"seasons"> | null>(null);
   
   const seasons = useQuery(api.seasons.getAll);
@@ -61,11 +74,16 @@ export function SeasonsTable() {
   };
 
   const handleSetCurrent = async (seasonId: Id<"seasons">, seasonName: string) => {
+    const previousSeasonId = currentSeason?.seasonId;
     try {
       await setCurrent({ seasonId, setBy: "Admin" });
-      toast.success("Current season updated", {
+      toastWithUndo({
+        message: "Current season updated",
         description: `${seasonName} is now the active season.`,
-        position: "bottom-right",
+        onUndo: () =>
+          previousSeasonId
+            ? setCurrent({ seasonId: previousSeasonId, setBy: "Admin" })
+            : clearCurrent(),
       });
     } catch (error: any) {
       toast.error("Failed to set current season", {
@@ -77,11 +95,16 @@ export function SeasonsTable() {
   };
 
   const handleClearCurrent = async () => {
+    const previousSeasonId = currentSeason?.seasonId;
     try {
       await clearCurrent();
-      toast.success("Season cleared", {
+      toastWithUndo({
+        message: "Season cleared",
         description: "Reverted to base pricing (no season active).",
-        position: "bottom-right",
+        onUndo: () =>
+          previousSeasonId
+            ? setCurrent({ seasonId: previousSeasonId, setBy: "Admin" })
+            : Promise.resolve(),
       });
     } catch (error: any) {
       toast.error("Failed to clear current season", {
@@ -133,8 +156,13 @@ export function SeasonsTable() {
           <TableBody>
             {seasons.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  No seasons found. Create your first season to get started.
+                <TableCell colSpan={6}>
+                  <EmptyState
+                    icon={CalendarRange}
+                    message="No seasons yet"
+                    actionLabel={onCreate ? "Create season" : undefined}
+                    onAction={onCreate}
+                  />
                 </TableCell>
               </TableRow>
             ) : (
