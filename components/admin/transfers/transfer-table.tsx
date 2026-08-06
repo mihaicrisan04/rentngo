@@ -100,8 +100,8 @@ export function TransfersTable({
   return (
     <div className="space-y-4">
       <div className="rounded-md border">
-        <Table>
-          <TableHeader>
+        <Table containerClassName="overflow-x-visible">
+          <TableHeader sticky>
             <TableRow>
               <TableHead>#</TableHead>
               <TableHead>Customer</TableHead>

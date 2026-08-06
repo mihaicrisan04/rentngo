@@ -119,8 +119,8 @@ export function SeasonsTable() {
   return (
     <div className="space-y-4">
       <div className="rounded-md border">
-        <Table>
-          <TableHeader>
+        <Table containerClassName="overflow-x-visible">
+          <TableHeader sticky>
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Description</TableHead>

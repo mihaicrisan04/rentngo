@@ -119,8 +119,8 @@ export function VehiclesTable() {
   return (
     <div className="space-y-4">
       <div className="rounded-md border">
-        <Table>
-          <TableHeader>
+        <Table containerClassName="overflow-x-visible">
+          <TableHeader sticky>
             <TableRow>
               <TableHead className="w-20">Image</TableHead>
               <TableHead>Vehicle</TableHead>
