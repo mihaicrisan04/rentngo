@@ -197,8 +197,8 @@ export interface PriceDetails {
 /**
  * Calculate pricing details for a vehicle rental with seasonal adjustments.
  * Pass a multiplier of 1.0 for non-seasonal pricing: the daily rate is
- * rounded per day (`Math.round(basePricePerDay * multiplier)`), so 1.0
- * yields exactly the plain tiered price.
+ * used as-is (no rounding), yielding exactly the plain tiered price.
+ * Other multipliers round the adjusted daily rate.
  */
 export function calculateVehiclePricingWithSeason(
   vehicle: VehiclePricingData,
@@ -216,8 +216,10 @@ export function calculateVehiclePricingWithSeason(
     // Get the base price per day from pricing tiers
     const basePricePerDay = getPriceForDuration(vehicle, calculatedDays);
 
-    // Apply seasonal multiplier to the price per day and round it
-    const seasonalPricePerDay = Math.round(basePricePerDay * seasonalMultiplier);
+    // Apply seasonal multiplier to the price per day and round it; a
+    // multiplier of 1 keeps the exact (possibly fractional) daily rate
+    const seasonalPricePerDay =
+      seasonalMultiplier === 1 ? basePricePerDay : Math.round(basePricePerDay * seasonalMultiplier);
 
     // Calculate base price using the rounded seasonal price per day
     const basePriceBeforeSeason = calculatedDays * basePricePerDay;

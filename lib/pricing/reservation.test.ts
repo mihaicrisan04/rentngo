@@ -198,9 +198,8 @@ describe("computeReservationPricing — full booking scenarios", () => {
 
 describe("calculateVehiclePricingWithSeason — multiplier 1.0 equals plain tiered pricing", () => {
   // The former non-seasonal calculateVehiclePricing was collapsed into this
-  // function; a 1.0 multiplier must reproduce it exactly. The daily rate is
-  // rounded PER DAY (Math.round(basePricePerDay * multiplier)), never on the
-  // total, so at 1.0 the rounding is a no-op.
+  // function; a 1.0 multiplier must reproduce it exactly: it skips the
+  // per-day seasonal rounding, so even fractional tier rates stay exact.
   it("returns the plain duration-tier price at multiplier 1.0", () => {
     const result = calculateVehiclePricingWithSeason(
       vehicle,
@@ -247,6 +246,28 @@ describe("calculateVehiclePricingWithSeason — multiplier 1.0 equals plain tier
     expect(result.totalPrice).toBeNull();
     expect(result.days).toBeNull();
     expect(result.totalLocationFees).toBe(0);
+  });
+
+  it("keeps fractional daily rates exact at multiplier 1.0", () => {
+    const fractionalVehicle: VehiclePricingData = {
+      pricingTiers: [{ minDays: 1, maxDays: 30, pricePerDay: 49.5 }],
+      warranty: 600,
+    };
+    const result = calculateVehiclePricingWithSeason(
+      fractionalVehicle,
+      1.0,
+      new Date(2026, 6, 10),
+      new Date(2026, 6, 13),
+      undefined,
+      undefined,
+      "10:00",
+      "10:00",
+    );
+    // 3 days × 49.5 = 148.5, not 3 × Math.round(49.5) = 150
+    expect(result.days).toBe(3);
+    expect(result.basePrice).toBe(148.5);
+    expect(result.totalPrice).toBe(148.5);
+    expect(result.seasonalAdjustment).toBe(0);
   });
 
   it("rounds the seasonal rate per day, not per total", () => {
