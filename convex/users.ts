@@ -8,6 +8,7 @@ import {
 import { v } from "convex/values";
 import { Doc } from "./_generated/dataModel";
 import type { UserJSON } from "@clerk/nextjs/server";
+import { stripUndefined } from "./lib/patch";
 
 // Validator for the User document structure, including system fields
 const UserDocValidator = v.object({
@@ -212,23 +213,7 @@ export const update = mutation({
       throw new Error("User profile not found. Cannot update.");
     }
 
-    const patchData: Partial<Doc<"users">> = {};
-
-    if (args.name !== undefined) {
-      patchData.name = args.name;
-    }
-    if (args.firstName !== undefined) {
-      patchData.firstName = args.firstName;
-    }
-    if (args.lastName !== undefined) {
-      patchData.lastName = args.lastName;
-    }
-    if (args.phone !== undefined) {
-      patchData.phone = args.phone;
-    }
-    if (args.preferences !== undefined) {
-      patchData.preferences = args.preferences;
-    }
+    const patchData = stripUndefined(args);
 
     if (Object.keys(patchData).length > 0) {
       await ctx.db.patch(user._id, patchData);

@@ -16,7 +16,7 @@ export interface VehicleInfo {
   type?: "sedan" | "suv" | "hatchback" | "sports" | "truck" | "van";
   seats?: number;
   transmission?: "automatic" | "manual";
-  fuelType?: "petrol" | "diesel" | "electric" | "hybrid" | "benzina";
+  fuelType?: "diesel" | "electric" | "hybrid" | "benzina";
   features?: string[];
 }
 
@@ -81,7 +81,7 @@ export interface TransferVehicleInfo {
   type?: "sedan" | "suv" | "hatchback" | "sports" | "truck" | "van";
   seats?: number;
   transmission?: "automatic" | "manual";
-  fuelType?: "petrol" | "diesel" | "electric" | "hybrid" | "benzina";
+  fuelType?: "diesel" | "electric" | "hybrid" | "benzina";
 }
 
 export interface TransferPricingDetails {

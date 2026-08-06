@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { query, mutation, internalQuery } from "./_generated/server";
 import { requireAdmin } from "./users";
+import { stripUndefined } from "./lib/patch";
 
 // Get all seasons
 export const getAll = query({
@@ -192,12 +193,7 @@ export const update = mutation({
 
     const { id, ...updates } = args;
 
-    // Filter out undefined values
-    const cleanUpdates = Object.fromEntries(
-      Object.entries(updates).filter(([value]) => value !== undefined),
-    );
-
-    await ctx.db.patch(id, cleanUpdates);
+    await ctx.db.patch(id, stripUndefined(updates));
     return null;
   },
 });

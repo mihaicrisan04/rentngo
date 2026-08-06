@@ -49,6 +49,31 @@ async function findBlogBySlug(
   );
 }
 
+// Locale projection shared by every public read: picks the localized field
+// with legacy (pre-bilingual) fallback.
+function localizeBlog(blog: Doc<"blogs">, locale: "ro" | "en") {
+  return {
+    _id: blog._id,
+    _creationTime: blog._creationTime,
+    title:
+      (locale === "ro" ? blog.title_ro : blog.title_en) ?? blog.title ?? "",
+    slug: resolveSlug(blog, locale),
+    author: blog.author,
+    description:
+      (locale === "ro" ? blog.description_ro : blog.description_en) ??
+      blog.description ??
+      "",
+    coverImage: blog.coverImage,
+    tags: blog.tags,
+    publishedAt: blog.publishedAt,
+    status: blog.status,
+    readingTime:
+      (locale === "ro" ? blog.readingTime_ro : blog.readingTime_en) ??
+      blog.readingTime,
+    views: blog.views,
+  };
+}
+
 const blogSummaryValidator = v.object({
   _id: v.id("blogs"),
   _creationTime: v.number(),
@@ -75,26 +100,7 @@ export const getAll = query({
       .order("desc")
       .collect();
 
-    return blogs.map((blog) => ({
-      _id: blog._id,
-      _creationTime: blog._creationTime,
-      title:
-        (locale === "ro" ? blog.title_ro : blog.title_en) ?? blog.title ?? "",
-      slug: resolveSlug(blog, locale),
-      author: blog.author,
-      description:
-        (locale === "ro" ? blog.description_ro : blog.description_en) ??
-        blog.description ??
-        "",
-      coverImage: blog.coverImage,
-      tags: blog.tags,
-      publishedAt: blog.publishedAt,
-      status: blog.status,
-      readingTime:
-        (locale === "ro" ? blog.readingTime_ro : blog.readingTime_en) ??
-        blog.readingTime,
-      views: blog.views,
-    }));
+    return blogs.map((blog) => localizeBlog(blog, locale));
   },
 });
 
@@ -112,26 +118,7 @@ export const getFeatured = query({
 
     if (!blog) return null;
 
-    return {
-      _id: blog._id,
-      _creationTime: blog._creationTime,
-      title:
-        (locale === "ro" ? blog.title_ro : blog.title_en) ?? blog.title ?? "",
-      slug: resolveSlug(blog, locale),
-      author: blog.author,
-      description:
-        (locale === "ro" ? blog.description_ro : blog.description_en) ??
-        blog.description ??
-        "",
-      coverImage: blog.coverImage,
-      tags: blog.tags,
-      publishedAt: blog.publishedAt,
-      status: blog.status,
-      readingTime:
-        (locale === "ro" ? blog.readingTime_ro : blog.readingTime_en) ??
-        blog.readingTime,
-      views: blog.views,
-    };
+    return localizeBlog(blog, locale);
   },
 });
 
@@ -150,26 +137,7 @@ export const getPublished = query({
 
     return {
       ...result,
-      page: result.page.map((blog) => ({
-        _id: blog._id,
-        _creationTime: blog._creationTime,
-        title:
-          (locale === "ro" ? blog.title_ro : blog.title_en) ?? blog.title ?? "",
-        slug: resolveSlug(blog, locale),
-        author: blog.author,
-        description:
-          (locale === "ro" ? blog.description_ro : blog.description_en) ??
-          blog.description ??
-          "",
-        coverImage: blog.coverImage,
-        tags: blog.tags,
-        publishedAt: blog.publishedAt,
-        status: blog.status,
-        readingTime:
-          (locale === "ro" ? blog.readingTime_ro : blog.readingTime_en) ??
-          blog.readingTime,
-        views: blog.views,
-      })),
+      page: result.page.map((blog) => localizeBlog(blog, locale)),
     };
   },
 });
@@ -289,30 +257,13 @@ export const getBySlug = query({
     const otherLocale = locale === "ro" ? "en" : "ro";
 
     return {
-      _id: blog._id,
-      _creationTime: blog._creationTime,
-      title:
-        (locale === "ro" ? blog.title_ro : blog.title_en) ?? blog.title ?? "",
-      slug: resolveSlug(blog, locale),
+      ...localizeBlog(blog, locale),
       alternateSlug: resolveSlug(blog, otherLocale),
-      author: blog.author,
-      description:
-        (locale === "ro" ? blog.description_ro : blog.description_en) ??
-        blog.description ??
-        "",
       content:
         (locale === "ro" ? blog.content_ro : blog.content_en) ??
         blog.content ??
         "",
-      coverImage: blog.coverImage,
       images: blog.images,
-      tags: blog.tags,
-      publishedAt: blog.publishedAt,
-      status: blog.status,
-      readingTime:
-        (locale === "ro" ? blog.readingTime_ro : blog.readingTime_en) ??
-        blog.readingTime,
-      views: blog.views,
     };
   },
 });
