@@ -46,7 +46,7 @@ export function SeasonsManagement() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <SeasonsTable />
+          <SeasonsTable onCreate={() => setShowCreateDialog(true)} />
         </CardContent>
       </Card>
 
