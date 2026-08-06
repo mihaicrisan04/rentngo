@@ -20,36 +20,46 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import React from "react";
 
+const CLASS_DETAIL_ROUTE = ["admin", "vehicles", "classes"] as const;
+
+function matchClassDetailSegment(pathSegments: string[]) {
+  const matchesPrefix =
+    pathSegments.length > CLASS_DETAIL_ROUTE.length &&
+    CLASS_DETAIL_ROUTE.every((segment, index) => pathSegments[index] === segment);
+  if (!matchesPrefix) return null;
+  return {
+    index: CLASS_DETAIL_ROUTE.length,
+    id: pathSegments[CLASS_DETAIL_ROUTE.length] as Id<"vehicleClasses">,
+  };
+}
+
+function toTitleLabel(segment: string) {
+  return segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, " ");
+}
+
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const pathSegments = pathname.split("/").filter(Boolean);
 
-  // Check if we're in classes routes
-  const isClassesRoute = pathSegments.includes("classes");
-  const classIdSegment =
-    isClassesRoute && pathSegments.length > 3 ? pathSegments[3] : null;
+  const classDetail = matchClassDetailSegment(pathSegments);
 
   // Fetch class name if we're on a class detail page
   const vehicleClass = useQuery(
     api.vehicleClasses.getById,
-    classIdSegment ? { id: classIdSegment as Id<"vehicleClasses"> } : "skip",
+    classDetail ? { id: classDetail.id } : "skip",
   );
 
   const breadcrumbItems = pathSegments.map((item, index, array) => {
     const href = "/" + array.slice(0, index + 1).join("/");
 
-    // Special handling for class ID in classes route
-    if (isClassesRoute && index === 3 && vehicleClass) {
+    if (classDetail && index === classDetail.index && vehicleClass) {
       return {
         href,
         label: vehicleClass.displayName || vehicleClass.name,
       };
     }
 
-    return {
-      href,
-      label: item.charAt(0).toUpperCase() + item.slice(1).replace(/-/g, " "),
-    };
+    return { href, label: toTitleLabel(item) };
   });
 
   return (
