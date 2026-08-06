@@ -15,6 +15,7 @@ Before using a plan, load the `working-with-plans` skill and verify its issue in
 | `active/audit-misc-bugs.md`          | Unlinked          | Treat as a finding inventory, not an executable batch                                                  |
 | `active/feature-calendar.md`         | Unlinked          | Blocked on product clarification in the repository snapshot                                            |
 | `active/feature-copy-update.md`      | Unlinked          | Blocked on approved client copy in the repository snapshot                                             |
+| `archive/feature-admin-viewport-shell.md` | RNGO-36      | Shipped 2026-08-06 (PRs #93, #100, #95–#99); archived                                                  |
 
 Unlinked plans must be connected to a Linear issue before implementation unless the user explicitly directs otherwise.
 
