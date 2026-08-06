@@ -16,11 +16,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { List, Pencil } from "lucide-react";
+import { formatRelativeTime } from "@/lib/format";
+import { usePeriodicNow } from "@/hooks/use-periodic-now";
 import { toast } from "sonner";
 import { EditAffiliateDialog } from "@/components/admin/affiliates/edit-affiliate-dialog";
 import { AffiliateConversionsDialog } from "@/components/admin/affiliates/affiliate-conversions-dialog";
 
 export function AffiliatesTable() {
+  const now = usePeriodicNow();
   const affiliates = useQuery(api.affiliates.listAffiliates);
   const updateAffiliate = useMutation(api.affiliates.updateAffiliate);
   const [editing, setEditing] = React.useState<Id<"affiliates"> | null>(null);
@@ -53,9 +56,10 @@ export function AffiliatesTable() {
 
   return (
     <>
-      <Table containerClassName="overflow-x-visible">
+      <Table containerClassName="overflow-x-visible" dense>
         <TableHeader sticky>
           <TableRow>
+            <TableHead>Created</TableHead>
             <TableHead>Slug</TableHead>
             <TableHead>User</TableHead>
             <TableHead className="text-right">Conversions</TableHead>
@@ -68,6 +72,14 @@ export function AffiliatesTable() {
         <TableBody>
           {affiliates.map((affiliate) => (
             <TableRow key={affiliate._id}>
+              <TableCell
+                className="text-muted-foreground"
+                title={new Date(affiliate.createdAt).toLocaleString()}
+              >
+                {now === null
+                  ? ""
+                  : formatRelativeTime(affiliate.createdAt, now)}
+              </TableCell>
               <TableCell className="font-mono">/r/{affiliate.slug}</TableCell>
               <TableCell>
                 <div>{affiliate.userName}</div>
