@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { useQuery } from "convex/react";
-import { CalendarClock, ClockAlert, History, LucideIcon } from "lucide-react";
+import { CalendarClock, LucideIcon } from "lucide-react";
 import { api } from "@/convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { EmptyState } from "@/components/admin/shared/empty-state";
 import { getDayLabel, getUpcomingWindow } from "@/lib/admin-overview";
-import { formatRelativeTime } from "@/lib/format";
 
 const PANEL_LIMIT = 5;
 
@@ -114,58 +113,18 @@ export function NeedsAttentionRow({ now }: NeedsAttentionRowProps) {
       ? "skip"
       : { ...upcomingWindow, limit: PANEL_LIMIT },
   );
-  const pending = useQuery(api.overview.getPendingApprovals, {
-    limit: PANEL_LIMIT,
-  });
-  const recent = useQuery(api.overview.getRecentActivity, {
-    limit: PANEL_LIMIT,
-  });
-
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <Panel
-        title="Next 48 hours"
-        icon={CalendarClock}
-        href="/admin/reservations"
-        items={schedule}
-        emptyMessage="Nothing scheduled"
-        renderMeta={(item) => {
-          const day = now === null ? "" : getDayLabel(item.timestamp, now);
-          const label = item.event === "return" ? "Return" : "Pickup";
-          return [label, day, item.time].filter(Boolean).join(" ");
-        }}
-      />
-      <Panel
-        title="Pending confirmations"
-        icon={ClockAlert}
-        href="/admin/reservations"
-        items={pending}
-        emptyMessage="All caught up"
-        renderMeta={(item) =>
-          now === null
-            ? kindLabel(item)
-            : `${kindLabel(item)} · ${formatRelativeTime(item.timestamp, now)}`
-        }
-      />
-      <Panel
-        title="Recent activity"
-        icon={History}
-        href="/admin/reservations"
-        items={recent}
-        emptyMessage="No bookings yet"
-        renderMeta={(item) =>
-          now === null
-            ? kindLabel(item)
-            : `${kindLabel(item)} · ${formatRelativeTime(item.timestamp, now)}`
-        }
-      />
-    </div>
+    <Panel
+      title="Next 48 hours"
+      icon={CalendarClock}
+      href="/admin/reservations"
+      items={schedule}
+      emptyMessage="Nothing scheduled"
+      renderMeta={(item) => {
+        const day = now === null ? "" : getDayLabel(item.timestamp, now);
+        const label = item.event === "return" ? "Return" : "Pickup";
+        return [label, day, item.time].filter(Boolean).join(" ");
+      }}
+    />
   );
-}
-
-function kindLabel(item: OverviewItem): string {
-  const number = item.bookingNumber ? ` #${item.bookingNumber}` : "";
-  return item.kind === "reservation"
-    ? `Reservation${number}`
-    : `Transfer${number}`;
 }

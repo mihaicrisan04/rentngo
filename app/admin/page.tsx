@@ -79,12 +79,7 @@ export default function AdminOverviewPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Admin Overview</h1>
-        <p className="text-muted-foreground">
-          Welcome to the Rent&apos;n Go admin dashboard
-        </p>
-      </div>
+      <h1 className="text-3xl font-bold">Admin Overview</h1>
 
       {/* Main Statistics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -154,10 +149,9 @@ export default function AdminOverviewPage() {
         </Card>
       </div>
 
-      <NeedsAttentionRow now={now} />
-
-      {/* Charts Section */}
-      <div className="grid gap-4 md:grid-cols-2">
+      {/* Schedule + charts share one row so the page fits without scrolling */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <NeedsAttentionRow now={now} />
         {/* Weekly Reservations */}
         <Card>
           <CardHeader>
@@ -167,7 +161,7 @@ export default function AdminOverviewPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px]">
+            <ChartContainer config={chartConfig} className="h-[180px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={weeklyReservationData}>
                   <XAxis dataKey="day" />
@@ -193,7 +187,7 @@ export default function AdminOverviewPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={chartConfig} className="h-[300px]">
+            <ChartContainer config={chartConfig} className="h-[180px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={monthlyRevenueData}>
                   <XAxis dataKey="month" />
