@@ -32,6 +32,7 @@ import {
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { usePeriodicNow } from "@/hooks/use-periodic-now";
+import { useBooleanQueryParam } from "@/hooks/use-query-param";
 
 const CreateReservationDialog = dynamic(
   () =>
@@ -54,7 +55,7 @@ const chartConfig = {
 
 export default function ReservationsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [showCharts, setShowCharts] = useState(false);
+  const [showCharts, setShowCharts] = useBooleanQueryParam("analytics");
   const now = usePeriodicNow();
   const monthNow =
     now === null
@@ -113,7 +114,7 @@ export default function ReservationsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setShowCharts((v) => !v)}>
+          <Button variant="outline" onClick={() => setShowCharts(!showCharts)}>
             <BarChart3 className="h-4 w-4 mr-2" />
             Analytics
             {showCharts ? (

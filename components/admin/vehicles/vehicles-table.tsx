@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useNumberQueryParam } from "@/hooks/use-query-param";
 import dynamic from "next/dynamic";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -42,7 +43,7 @@ interface VehiclesTableProps {
 
 export function VehiclesTable({ fullHeight = false }: VehiclesTableProps) {
   const layout = getTableLayout(fullHeight);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useNumberQueryParam("page", 1);
   const [editingVehicle, setEditingVehicle] = useState<Id<"vehicles"> | null>(null);
 
   // Fetch all vehicles and paginate on the client side
@@ -60,11 +61,11 @@ export function VehiclesTable({ fullHeight = false }: VehiclesTableProps) {
   }, [vehicleClasses]);
 
   const handleNextPage = (totalPages: number) => {
-    setCurrentPage((p) => Math.min(totalPages, p + 1));
+    setCurrentPage(Math.min(totalPages, currentPage + 1));
   };
 
   const handlePreviousPage = () => {
-    setCurrentPage((p) => Math.max(1, p - 1));
+    setCurrentPage(Math.max(1, currentPage - 1));
   };
 
   const handleEdit = (vehicleId: Id<"vehicles">) => {
@@ -126,7 +127,7 @@ export function VehiclesTable({ fullHeight = false }: VehiclesTableProps) {
   return (
     <div className={layout.root}>
       <div className={cn("rounded-md border", layout.scrollArea)}>
-        <Table containerClassName="overflow-x-visible">
+        <Table containerClassName="overflow-x-visible" dense>
           <TableHeader sticky>
             <TableRow>
               <TableHead className="w-20">Image</TableHead>
