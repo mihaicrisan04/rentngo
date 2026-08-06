@@ -19,31 +19,15 @@ export function DashboardSkeleton() {
         ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-48" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-[200px] w-full" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-32" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-[200px] w-full" />
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
+      <Card className="min-h-[24rem] flex-1">
         <CardHeader>
-          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-6 w-40" />
         </CardHeader>
-        <CardContent>
-          <Skeleton className="h-64 w-full" />
+        <CardContent className="space-y-3">
+          <Skeleton className="h-9 w-full" />
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
         </CardContent>
       </Card>
     </>
