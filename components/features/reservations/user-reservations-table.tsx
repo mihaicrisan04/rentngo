@@ -31,7 +31,6 @@ export function UserReservationsTable() {
     { initialNumItems: ITEMS_PER_PAGE },
   );
 
-
   if (paginationStatus === "LoadingFirstPage") {
     return (
       <div className="flex justify-center py-8">
