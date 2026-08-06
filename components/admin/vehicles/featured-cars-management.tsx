@@ -6,14 +6,6 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Vehicle } from "@/types/vehicle";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -49,122 +41,54 @@ function FeaturedCarSlot({
   );
 
   return (
-    <Card className="relative">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Star className="h-4 w-4 text-yellow-500" />
-            <CardTitle className="text-sm">Slot {slot}</CardTitle>
-          </div>
-          {currentVehicle && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => onRemoveVehicle(slot)}
-              disabled={disabled}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {currentVehicle ? (
-          <div className="space-y-3">
-            {/* Current Vehicle Display */}
-            <div className="flex items-start gap-3">
-              <div className="w-16 h-12 relative rounded-md overflow-hidden bg-muted flex-shrink-0">
-                {imageUrl ? (
-                  <Image
-                    src={imageUrl}
-                    alt={`${currentVehicle.make} ${currentVehicle.model}`}
-                    fill
-                    className="object-cover"
-                    sizes="64px"
-                  />
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <Car className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-medium text-sm truncate">
-                  {currentVehicle.make} {currentVehicle.model}
-                </h4>
-                <p className="text-xs text-muted-foreground">
-                  {currentVehicle.year} • {currentVehicle.pricingTiers && currentVehicle.pricingTiers.length > 0 ? currentVehicle.pricingTiers[0].pricePerDay : 'N/A'} EUR/day
-                </p>
-                <div className="flex gap-1 mt-1">
-                  <Badge variant="secondary" className="text-xs">
-                    {currentVehicle.type}
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    {currentVehicle.status}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-
-            {/* Change Vehicle Dropdown */}
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">
-                Change Vehicle
-              </label>
-              <Select
-                onValueChange={(value) => onSetVehicle(slot, value as Id<"vehicles">)}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Select different vehicle..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableVehicles.map((vehicle) => (
-                    <SelectItem key={vehicle._id} value={vehicle._id}>
-                      {vehicle.make} {vehicle.model} ({vehicle.year})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+    <div className="flex items-center gap-2 rounded-md border p-2">
+      <div className="relative h-8 w-11 shrink-0 overflow-hidden rounded bg-muted">
+        {imageUrl ? (
+          <Image
+            src={imageUrl}
+            alt={`${currentVehicle?.make} ${currentVehicle?.model}`}
+            fill
+            className="object-cover"
+            sizes="44px"
+          />
         ) : (
-          /* Empty Slot */
-          <div className="space-y-3">
-            <div className="flex items-center justify-center h-24 border-2 border-dashed border-muted-foreground/25 rounded-lg">
-              <div className="text-center">
-                <Star className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
-                <p className="text-xs text-muted-foreground">No featured car</p>
-              </div>
-            </div>
-
-            {/* Select Vehicle Dropdown */}
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">
-                Select Vehicle
-              </label>
-              <Select
-                onValueChange={(value) => onSetVehicle(slot, value as Id<"vehicles">)}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Choose a vehicle..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableVehicles.map((vehicle) => (
-                    <SelectItem key={vehicle._id} value={vehicle._id}>
-                      {vehicle.make} {vehicle.model} ({vehicle.year})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="flex h-full items-center justify-center">
+            <Car className="h-3.5 w-3.5 text-muted-foreground" />
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+
+      <Select
+        value={currentVehicle?._id}
+        onValueChange={(value) => onSetVehicle(slot, value as Id<"vehicles">)}
+        disabled={disabled}
+      >
+        <SelectTrigger className="h-8 min-w-0 flex-1 text-xs">
+          <SelectValue placeholder={`Slot ${slot} — empty`} />
+        </SelectTrigger>
+        <SelectContent>
+          {availableVehicles.map((vehicle) => (
+            <SelectItem key={vehicle._id} value={vehicle._id}>
+              {vehicle.make} {vehicle.model} ({vehicle.year})
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {currentVehicle && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => onRemoveVehicle(slot)}
+          disabled={disabled}
+          aria-label={`Remove featured car from slot ${slot}`}
+          className="h-7 w-7 shrink-0 p-0 text-muted-foreground hover:text-destructive"
+        >
+          <X className="h-3.5 w-3.5" />
+        </Button>
+      )}
+    </div>
   );
 }
 
@@ -247,72 +171,74 @@ export function FeaturedCarsManagement() {
     }
   };
 
+  const header = (
+    <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center gap-2">
+        <Star className="h-4 w-4 text-yellow-500" />
+        <h2 className="text-sm font-semibold">Featured cars</h2>
+        <span className="text-xs text-muted-foreground">
+          3 slots shown on the homepage
+        </span>
+      </div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={handleClearAll}
+        disabled={isLoading || !featuredCars?.length}
+        className="h-7 text-xs"
+      >
+        Clear all
+      </Button>
+    </div>
+  );
+
   if (!availableVehicles) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Featured Cars</CardTitle>
-          <CardDescription>Loading...</CardDescription>
-        </CardHeader>
-      </Card>
+      <section className="space-y-2 rounded-lg border p-3">
+        {header}
+        <div className="grid gap-2 sm:grid-cols-3">
+          {[1, 2, 3].map((slot) => (
+            <div key={slot} className="h-[52px] animate-pulse rounded-md bg-muted" />
+          ))}
+        </div>
+      </section>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Featured Cars</CardTitle>
-            <CardDescription>
-              Manage the 3 featured vehicles displayed on the homepage
-            </CardDescription>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleClearAll}
-              disabled={isLoading || !featuredCars?.length}
-            >
-              Clear All
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1, 2, 3].map((slot) => {
-            const currentVehicle = featuredBySlot.get(slot);
-            
-            // Get available vehicles for this slot (including current if editing)
-            const availableForSlot = currentVehicle 
-              ? [currentVehicle, ...availableVehicles]
-              : availableVehicles;
+    <section className="space-y-2 rounded-lg border p-3">
+      {header}
 
-            return (
-              <FeaturedCarSlot
-                key={slot}
-                slot={slot}
-                currentVehicle={currentVehicle}
-                availableVehicles={availableForSlot}
-                onSetVehicle={handleSetVehicle}
-                onRemoveVehicle={handleRemoveVehicle}
-                disabled={isLoading}
-              />
-            );
-          })}
-        </div>
+      <div className="grid gap-2 sm:grid-cols-3">
+        {[1, 2, 3].map((slot) => {
+          const currentVehicle = featuredBySlot.get(slot);
 
-        {availableVehicles.length === 0 && featuredCars?.length === 3 && (
-          <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-            <p className="text-sm text-muted-foreground">
-              All available vehicles are already featured. Remove a featured car to select a different one.
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          // Get available vehicles for this slot (including current if editing)
+          const availableForSlot = currentVehicle
+            ? [currentVehicle, ...availableVehicles]
+            : availableVehicles;
+
+          return (
+            <FeaturedCarSlot
+              key={slot}
+              slot={slot}
+              currentVehicle={currentVehicle}
+              availableVehicles={availableForSlot}
+              onSetVehicle={handleSetVehicle}
+              onRemoveVehicle={handleRemoveVehicle}
+              disabled={isLoading}
+            />
+          );
+        })}
+      </div>
+
+      {availableVehicles.length === 0 && featuredCars?.length === 3 && (
+        <p className="text-xs text-muted-foreground">
+          All available vehicles are already featured. Remove one to select a
+          different vehicle.
+        </p>
+      )}
+    </section>
   );
 } 
