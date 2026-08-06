@@ -7,7 +7,6 @@ const withNextIntl = createNextIntlPlugin("./i18n.ts");
 const nextConfig: NextConfig = {
   reactCompiler: true,
   experimental: {
-    viewTransition: true,
     optimizePackageImports: ["lucide-react", "date-fns"],
   },
   typescript: {
