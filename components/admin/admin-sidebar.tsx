@@ -91,7 +91,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="overscroll-contain">
         <NavMain items={navItemsWithActiveState} />
       </SidebarContent>
       <SidebarFooter>
