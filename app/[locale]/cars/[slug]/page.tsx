@@ -65,6 +65,7 @@ function VehicleStructuredData({
       "@type": "Offer",
       priceCurrency: "EUR",
       price: pricePerDay,
+      // eslint-disable-next-line react-hooks/purity -- cache-fill-time date is intentional: the JSON-LD offer needs a far-future validity date, refreshed by the page's hourly cacheLife
       priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
       availability: "https://schema.org/InStock",
       url: `https://rngo.ro/${locale}/cars/${urlSlug}`,

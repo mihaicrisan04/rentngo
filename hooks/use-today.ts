@@ -1,21 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
-// Start of the current day, set after hydration only. Reading the clock during
-// render would be baked into the prerendered shell under `cacheComponents`
-// (next errors on it at build time), so callers get `undefined` during
-// SSR/prerender and the real date once mounted. Date pickers using this as
-// `minDate` simply don't restrict past dates until hydration — selecting a
-// date requires interaction, which implies the value is set by then.
+const subscribe = () => () => {};
+
+let cachedToday: Date | undefined;
+
+function getTodaySnapshot(): Date {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  if (!cachedToday || cachedToday.getTime() !== now.getTime()) {
+    cachedToday = now;
+  }
+  return cachedToday;
+}
+
+// Start of the current day, `undefined` during SSR/prerender. Reading the
+// clock during server render would bake "today" into the prerendered shell
+// under `cacheComponents` (next fails the build on it), so the server
+// snapshot is empty and the real date appears on the client. Date pickers
+// using this as `minDate` don't restrict past dates until then — selecting a
+// date requires interaction, which implies the value is set.
 export function useToday(): Date | undefined {
-  const [today, setToday] = useState<Date>();
-
-  useEffect(() => {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    setToday(now);
-  }, []);
-
-  return today;
+  return useSyncExternalStore(subscribe, getTodaySnapshot, () => undefined);
 }
