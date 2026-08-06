@@ -80,7 +80,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
   }))
 
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar collapsible="icon" variant="inset" {...props}>
       <SidebarHeader>
         <SidebarMenu>
             <SidebarMenuItem>
@@ -91,7 +91,7 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
             </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="overscroll-contain">
         <NavMain items={navItemsWithActiveState} />
       </SidebarContent>
       <SidebarFooter>
