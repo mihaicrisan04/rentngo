@@ -14,6 +14,7 @@ import { UserReservationEmail } from "./emails/templates/UserReservationEmail";
 import { UserTransferEmail } from "./emails/templates/UserTransferEmail";
 import { AdminTransferEmail } from "./emails/templates/AdminTransferEmail";
 import { ReservationEmailData, TransferEmailData } from "./emails/types";
+import { additionalChargeCodeValidator } from "./validators";
 import { COMPANY } from "../lib/company";
 
 // Initialize Resend component (testMode: false for production)
@@ -71,16 +72,7 @@ const pricingDetailsValidator = v.object({
     v.array(
       v.object({
         description: v.optional(v.string()),
-        code: v.optional(
-          v.union(
-            v.literal("pickupLocationFee"),
-            v.literal("returnLocationFee"),
-            v.literal("snowChains"),
-            v.literal("childSeat1to4"),
-            v.literal("childSeat5to12"),
-            v.literal("extraKm"),
-          ),
-        ),
+        code: v.optional(additionalChargeCodeValidator),
         params: v.optional(
           v.record(v.string(), v.union(v.string(), v.number())),
         ),

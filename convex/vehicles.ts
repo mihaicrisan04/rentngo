@@ -11,6 +11,12 @@ import {
   recordStatsRemove,
   recordStatsStatusChange,
 } from "./tableStats";
+import {
+  fuelTypeValidator,
+  transmissionValidator,
+  vehicleStatusValidator,
+  vehicleTypeValidator,
+} from "./validators";
 
 // Pricing tier validator
 const pricingTierValidator = v.object({
@@ -18,30 +24,6 @@ const pricingTierValidator = v.object({
   maxDays: v.number(),
   pricePerDay: v.number(),
 });
-
-const vehicleTypeValidator = v.union(
-  v.literal("sedan"),
-  v.literal("suv"),
-  v.literal("hatchback"),
-  v.literal("sports"),
-  v.literal("truck"),
-  v.literal("van"),
-);
-const transmissionValidator = v.union(
-  v.literal("automatic"),
-  v.literal("manual"),
-);
-const fuelTypeValidator = v.union(
-  v.literal("diesel"),
-  v.literal("electric"),
-  v.literal("hybrid"),
-  v.literal("benzina"),
-);
-const vehicleStatusValidator = v.union(
-  v.literal("available"),
-  v.literal("rented"),
-  v.literal("maintenance"),
-);
 const vehicleDocValidator = v.object({
   _id: v.id("vehicles"),
   _creationTime: v.number(),
@@ -76,35 +58,10 @@ export const getAll = query({
     paginationOpts: paginationOptsValidator,
     filters: v.optional(
       v.object({
-        type: v.optional(
-          v.union(
-            v.literal("sedan"),
-            v.literal("suv"),
-            v.literal("hatchback"),
-            v.literal("sports"),
-            v.literal("truck"),
-            v.literal("van"),
-          ),
-        ),
-        transmission: v.optional(
-          v.union(v.literal("automatic"), v.literal("manual")),
-        ),
-        fuelType: v.optional(
-          v.union(
-            v.literal("petrol"),
-            v.literal("diesel"),
-            v.literal("electric"),
-            v.literal("hybrid"),
-            v.literal("benzina"),
-          ),
-        ),
-        status: v.optional(
-          v.union(
-            v.literal("available"),
-            v.literal("rented"),
-            v.literal("maintenance"),
-          ),
-        ),
+        type: v.optional(vehicleTypeValidator),
+        transmission: v.optional(transmissionValidator),
+        fuelType: v.optional(fuelTypeValidator),
+        status: v.optional(vehicleStatusValidator),
       }),
     ),
   },
@@ -201,30 +158,12 @@ export const create = mutation({
     make: v.string(),
     model: v.string(),
     year: v.optional(v.number()),
-    type: v.optional(
-      v.union(
-        v.literal("sedan"),
-        v.literal("suv"),
-        v.literal("hatchback"),
-        v.literal("sports"),
-        v.literal("truck"),
-        v.literal("van"),
-      ),
-    ),
+    type: v.optional(vehicleTypeValidator),
     classId: v.optional(v.id("vehicleClasses")), // Reference to vehicle class
     classSortIndex: v.optional(v.number()), // For custom sorting within a class
     seats: v.optional(v.number()),
-    transmission: v.optional(
-      v.union(v.literal("automatic"), v.literal("manual")),
-    ),
-    fuelType: v.optional(
-      v.union(
-        v.literal("diesel"),
-        v.literal("electric"),
-        v.literal("hybrid"),
-        v.literal("benzina"),
-      ),
-    ),
+    transmission: v.optional(transmissionValidator),
+    fuelType: v.optional(fuelTypeValidator),
     engineCapacity: v.optional(v.number()),
     engineType: v.optional(v.string()),
     pricingTiers: v.array(pricingTierValidator),
@@ -232,11 +171,7 @@ export const create = mutation({
     isOwner: v.optional(v.boolean()),
     location: v.optional(v.string()),
     features: v.optional(v.array(v.string())),
-    status: v.union(
-      v.literal("available"),
-      v.literal("rented"),
-      v.literal("maintenance"),
-    ),
+    status: vehicleStatusValidator,
     isTransferVehicle: v.optional(v.boolean()),
     transferPricePerKm: v.optional(v.number()),
     transferSeats: v.optional(v.number()),
@@ -278,30 +213,12 @@ export const update = mutation({
     make: v.optional(v.string()),
     model: v.optional(v.string()),
     year: v.optional(v.number()),
-    type: v.optional(
-      v.union(
-        v.literal("sedan"),
-        v.literal("suv"),
-        v.literal("hatchback"),
-        v.literal("sports"),
-        v.literal("truck"),
-        v.literal("van"),
-      ),
-    ),
+    type: v.optional(vehicleTypeValidator),
     classId: v.optional(v.id("vehicleClasses")), // Reference to vehicle class
     classSortIndex: v.optional(v.number()), // For custom sorting within a class
     seats: v.optional(v.number()),
-    transmission: v.optional(
-      v.union(v.literal("automatic"), v.literal("manual")),
-    ),
-    fuelType: v.optional(
-      v.union(
-        v.literal("diesel"),
-        v.literal("electric"),
-        v.literal("hybrid"),
-        v.literal("benzina"),
-      ),
-    ),
+    transmission: v.optional(transmissionValidator),
+    fuelType: v.optional(fuelTypeValidator),
     engineCapacity: v.optional(v.number()),
     engineType: v.optional(v.string()),
     pricingTiers: v.optional(v.array(pricingTierValidator)),
@@ -309,13 +226,7 @@ export const update = mutation({
     isOwner: v.optional(v.boolean()),
     location: v.optional(v.string()),
     features: v.optional(v.array(v.string())),
-    status: v.optional(
-      v.union(
-        v.literal("available"),
-        v.literal("rented"),
-        v.literal("maintenance"),
-      ),
-    ),
+    status: v.optional(vehicleStatusValidator),
     images: v.optional(v.array(v.id("_storage"))),
     mainImageId: v.optional(v.id("_storage")),
     isTransferVehicle: v.optional(v.boolean()),
@@ -565,11 +476,7 @@ export const getByClass = query({
       make: v.string(),
       model: v.string(),
       year: v.optional(v.number()),
-      status: v.union(
-        v.literal("available"),
-        v.literal("rented"),
-        v.literal("maintenance"),
-      ),
+      status: vehicleStatusValidator,
       classSortIndex: v.optional(v.number()),
       mainImageId: v.optional(v.id("_storage")),
     }),
@@ -638,16 +545,7 @@ export const getAllVehiclesWithClasses = query({
       make: v.string(),
       model: v.string(),
       year: v.optional(v.number()),
-      type: v.optional(
-        v.union(
-          v.literal("sedan"),
-          v.literal("suv"),
-          v.literal("hatchback"),
-          v.literal("sports"),
-          v.literal("truck"),
-          v.literal("van"),
-        ),
-      ),
+      type: v.optional(vehicleTypeValidator),
       class: v.optional(
         v.union(
           v.literal("economy"),
@@ -670,38 +568,17 @@ export const getAllVehiclesWithClasses = query({
       classId: v.optional(v.id("vehicleClasses")),
       classSortIndex: v.optional(v.number()),
       seats: v.optional(v.number()),
-      transmission: v.optional(
-        v.union(v.literal("automatic"), v.literal("manual")),
-      ),
-      fuelType: v.optional(
-        v.union(
-          v.literal("diesel"),
-          v.literal("electric"),
-          v.literal("hybrid"),
-          v.literal("benzina"),
-        ),
-      ),
+      transmission: v.optional(transmissionValidator),
+      fuelType: v.optional(fuelTypeValidator),
       engineCapacity: v.optional(v.number()),
       engineType: v.optional(v.string()),
       pricePerDay: v.optional(v.number()),
-      pricingTiers: v.optional(
-        v.array(
-          v.object({
-            minDays: v.number(),
-            maxDays: v.number(),
-            pricePerDay: v.number(),
-          }),
-        ),
-      ),
+      pricingTiers: v.optional(v.array(pricingTierValidator)),
       warranty: v.optional(v.number()),
       isOwner: v.optional(v.boolean()),
       location: v.optional(v.string()),
       features: v.optional(v.array(v.string())),
-      status: v.union(
-        v.literal("available"),
-        v.literal("rented"),
-        v.literal("maintenance"),
-      ),
+      status: vehicleStatusValidator,
       images: v.optional(v.array(v.id("_storage"))),
       mainImageId: v.optional(v.id("_storage")),
       // Transfer-related fields
@@ -780,17 +657,8 @@ export const getFleetSummary = query({
       year: v.optional(v.number()),
       slug: v.optional(v.string()),
       seats: v.optional(v.number()),
-      transmission: v.optional(
-        v.union(v.literal("automatic"), v.literal("manual")),
-      ),
-      fuelType: v.optional(
-        v.union(
-          v.literal("diesel"),
-          v.literal("electric"),
-          v.literal("hybrid"),
-          v.literal("benzina"),
-        ),
-      ),
+      transmission: v.optional(transmissionValidator),
+      fuelType: v.optional(fuelTypeValidator),
       pricePerDayFrom: v.union(v.number(), v.null()),
       className: v.optional(v.string()),
     }),

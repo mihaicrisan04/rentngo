@@ -46,14 +46,12 @@ import {
   msToDateString,
   DEFAULT_ADDITIONAL_50KM_PRICE,
 } from "../lib/pricing";
-
-// Validator for reservation status, strictly aligned with schema.ts
-const reservationStatusValidator = v.union(
-  v.literal("pending"),
-  v.literal("confirmed"),
-  v.literal("cancelled"),
-  v.literal("completed"),
-);
+import {
+  additionalChargeCodeValidator,
+  bookingStatusValidator as reservationStatusValidator,
+  paymentMethodValidator,
+} from "./validators";
+import { stripUndefined } from "./lib/patch";
 
 // Explicit type for ReservationStatus based on the schema
 type ReservationStatusType =
@@ -77,11 +75,7 @@ const reservationDocValidator = v.object({
   restitutionTime: v.string(),
   pickupLocation: v.string(),
   restitutionLocation: v.string(),
-  paymentMethod: v.union(
-    v.literal("cash_on_delivery"),
-    v.literal("card_on_delivery"),
-    v.literal("card_online"),
-  ),
+  paymentMethod: paymentMethodValidator,
   status: reservationStatusValidator,
   totalPrice: v.number(),
   customerInfo: v.object({
@@ -102,16 +96,7 @@ const reservationDocValidator = v.object({
     v.array(
       v.object({
         description: v.optional(v.string()),
-        code: v.optional(
-          v.union(
-            v.literal("pickupLocationFee"),
-            v.literal("returnLocationFee"),
-            v.literal("snowChains"),
-            v.literal("childSeat1to4"),
-            v.literal("childSeat5to12"),
-            v.literal("extraKm"),
-          ),
-        ),
+        code: v.optional(additionalChargeCodeValidator),
         params: v.optional(
           v.record(v.string(), v.union(v.string(), v.number())),
         ),
@@ -157,11 +142,7 @@ export const createReservation = mutation({
     restitutionTime: v.string(), // Time in "HH:MM" format
     pickupLocation: v.string(), // Name of pickup location
     restitutionLocation: v.string(), // Name of return location
-    paymentMethod: v.union(
-      v.literal("cash_on_delivery"),
-      v.literal("card_on_delivery"),
-      v.literal("card_online"),
-    ),
+    paymentMethod: paymentMethodValidator,
     totalPrice: v.number(),
     customerInfo: v.object({
       name: v.string(),
@@ -631,11 +612,7 @@ export const getReservationsByPickupLocation = query({
 
 export const getReservationsByPaymentMethod = query({
   args: {
-    paymentMethod: v.union(
-      v.literal("cash_on_delivery"),
-      v.literal("card_on_delivery"),
-      v.literal("card_online"),
-    ),
+    paymentMethod: paymentMethodValidator,
   },
   returns: v.array(reservationDocValidator),
   handler: async (ctx, args) => {
@@ -732,13 +709,7 @@ export const updateReservationDetails = mutation({
     restitutionTime: v.optional(v.string()),
     pickupLocation: v.optional(v.string()),
     restitutionLocation: v.optional(v.string()),
-    paymentMethod: v.optional(
-      v.union(
-        v.literal("cash_on_delivery"),
-        v.literal("card_on_delivery"),
-        v.literal("card_online"),
-      ),
-    ),
+    paymentMethod: v.optional(paymentMethodValidator),
     totalPrice: v.optional(v.number()),
     customerInfo: v.optional(
       v.object({
@@ -780,42 +751,7 @@ export const updateReservationDetails = mutation({
       throw new Error("User not authorized to update this reservation.");
     }
 
-    // Construct the updates object carefully to pass to patch
-    const updatesToApply: Partial<typeof reservation> = {};
-    if (updatesIn.vehicleId !== undefined)
-      updatesToApply.vehicleId = updatesIn.vehicleId;
-    if (updatesIn.startDate !== undefined)
-      updatesToApply.startDate = updatesIn.startDate;
-    if (updatesIn.endDate !== undefined)
-      updatesToApply.endDate = updatesIn.endDate;
-    if (updatesIn.pickupTime !== undefined)
-      updatesToApply.pickupTime = updatesIn.pickupTime;
-    if (updatesIn.restitutionTime !== undefined)
-      updatesToApply.restitutionTime = updatesIn.restitutionTime;
-    if (updatesIn.pickupLocation !== undefined)
-      updatesToApply.pickupLocation = updatesIn.pickupLocation;
-    if (updatesIn.restitutionLocation !== undefined)
-      updatesToApply.restitutionLocation = updatesIn.restitutionLocation;
-    if (updatesIn.paymentMethod !== undefined)
-      updatesToApply.paymentMethod = updatesIn.paymentMethod;
-    if (updatesIn.totalPrice !== undefined)
-      updatesToApply.totalPrice = updatesIn.totalPrice;
-    if (updatesIn.customerInfo !== undefined)
-      updatesToApply.customerInfo = updatesIn.customerInfo;
-    if (updatesIn.status !== undefined)
-      updatesToApply.status = updatesIn.status; // status is already validated by args
-    if (updatesIn.additionalCharges !== undefined)
-      updatesToApply.additionalCharges = updatesIn.additionalCharges;
-    if (updatesIn.isSCDWSelected !== undefined)
-      updatesToApply.isSCDWSelected = updatesIn.isSCDWSelected;
-    if (updatesIn.deductibleAmount !== undefined)
-      updatesToApply.deductibleAmount = updatesIn.deductibleAmount;
-    if (updatesIn.protectionCost !== undefined)
-      updatesToApply.protectionCost = updatesIn.protectionCost;
-    if (updatesIn.seasonId !== undefined)
-      updatesToApply.seasonId = updatesIn.seasonId;
-    if (updatesIn.seasonalMultiplier !== undefined)
-      updatesToApply.seasonalMultiplier = updatesIn.seasonalMultiplier;
+    const updatesToApply = stripUndefined(updatesIn);
 
     if (Object.keys(updatesToApply).length === 0) {
       return { success: true, message: "No changes provided." };

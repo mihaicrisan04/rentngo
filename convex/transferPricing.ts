@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { requireAdmin } from "./users";
 import { computeTransferPricing } from "../lib/pricing";
+import { stripUndefined } from "./lib/patch";
 
 // Query: List all active pricing tiers (sorted by minExtraKm)
 export const listTiers = query({
@@ -169,13 +170,12 @@ export const updateTier = mutation({
       }
     }
 
-    // Build update object
-    const updates: Record<string, number | boolean | undefined> = {};
-    if (minExtraKm !== undefined) updates.minExtraKm = minExtraKm;
-    if (maxExtraKm !== undefined) updates.maxExtraKm = maxExtraKm;
-    if (pricePerKm !== undefined) updates.pricePerKm = pricePerKm;
-    if (isActive !== undefined) updates.isActive = isActive;
-
+    const updates = stripUndefined({
+      minExtraKm,
+      maxExtraKm,
+      pricePerKm,
+      isActive,
+    });
     if (Object.keys(updates).length > 0) {
       await ctx.db.patch(id, updates);
     }
