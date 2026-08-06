@@ -40,7 +40,7 @@ export function CouponsManagement() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <CouponsTable />
+          <CouponsTable onCreate={() => setShowCreateDialog(true)} />
         </CardContent>
       </Card>
 

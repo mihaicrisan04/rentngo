@@ -21,7 +21,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { Edit, Trash2, MoreHorizontal } from "lucide-react";
+import { Edit, Trash2, MoreHorizontal, Car } from "lucide-react";
+import { EmptyState } from "@/components/admin/shared/empty-state";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,9 +40,13 @@ const ITEMS_PER_PAGE = 10;
 
 interface VehiclesTableProps {
   fullHeight?: boolean;
+  onCreate?: () => void;
 }
 
-export function VehiclesTable({ fullHeight = false }: VehiclesTableProps) {
+export function VehiclesTable({
+  fullHeight = false,
+  onCreate,
+}: VehiclesTableProps) {
   const layout = getTableLayout(fullHeight);
   const [currentPage, setCurrentPage] = useNumberQueryParam("page", 1);
   const [editingVehicle, setEditingVehicle] = useState<Id<"vehicles"> | null>(null);
@@ -146,8 +151,13 @@ export function VehiclesTable({ fullHeight = false }: VehiclesTableProps) {
           <TableBody>
             {vehicles.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
-                  No vehicles found. Add your first vehicle to get started.
+                <TableCell colSpan={11}>
+                  <EmptyState
+                    icon={Car}
+                    message="No vehicles yet"
+                    actionLabel={onCreate ? "Add vehicle" : undefined}
+                    onAction={onCreate}
+                  />
                 </TableCell>
               </TableRow>
             ) : (

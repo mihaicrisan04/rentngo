@@ -47,7 +47,7 @@ export default function VehiclesPage() {
       </div>
 
       <div className="flex min-h-[24rem] flex-1 flex-col">
-        <VehiclesTable fullHeight />
+        <VehiclesTable fullHeight onCreate={() => setCreateDialogOpen(true)} />
       </div>
 
       <CreateVehicleDialog

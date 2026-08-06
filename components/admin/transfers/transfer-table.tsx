@@ -33,10 +33,15 @@ import {
   Users,
   ArrowRight,
   Luggage,
+  CarTaxiFront,
 } from "lucide-react";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/admin/shared/empty-state";
+import { toastWithUndo } from "@/components/admin/shared/undo-toast";
 
 const ITEMS_PER_PAGE = 10;
+
+type TransferStatus = "pending" | "confirmed" | "cancelled" | "completed";
 
 type TransfersPagination = UsePaginatedQueryReturnType<
   typeof api.transfers.getAllTransfersPaginated
@@ -57,18 +62,36 @@ export function TransfersTable({
 }: TransfersTableProps) {
   const layout = getTableLayout(fullHeight);
   const now = usePeriodicNow();
-  const updateStatus = useMutation(api.transfers.updateTransferStatus);
+  const updateStatus = useMutation(
+    api.transfers.updateTransferStatus,
+  ).withOptimisticUpdate((localStore, { transferId, newStatus }) => {
+    for (const { args, value } of localStore.getAllQueries(
+      api.transfers.getAllTransfersPaginated,
+    )) {
+      if (value === undefined) continue;
+      localStore.setQuery(api.transfers.getAllTransfersPaginated, args, {
+        ...value,
+        page: value.page.map((transfer) =>
+          transfer._id === transferId
+            ? { ...transfer, status: newStatus }
+            : transfer,
+        ),
+      });
+    }
+  });
   const deleteTransfer = useMutation(api.transfers.deleteTransferPermanently);
 
   const handleStatusUpdate = async (
     transferId: Id<"transfers">,
-    newStatus: "pending" | "confirmed" | "cancelled" | "completed",
+    newStatus: TransferStatus,
+    previousStatus: TransferStatus,
   ) => {
     try {
       await updateStatus({ transferId, newStatus });
-      toast.success("Transfer status updated", {
+      toastWithUndo({
+        message: "Transfer status updated",
         description: `Status changed to ${newStatus}`,
-        position: "bottom-right",
+        onUndo: () => updateStatus({ transferId, newStatus: previousStatus }),
       });
     } catch (error) {
       toast.error("Failed to update status", {
@@ -125,11 +148,11 @@ export function TransfersTable({
           <TableBody>
             {transfers.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={10}
-                  className="text-center py-8 text-muted-foreground"
-                >
-                  No transfers found.
+                <TableCell colSpan={10}>
+                  <EmptyState
+                    icon={CarTaxiFront}
+                    message="No transfers yet"
+                  />
                 </TableCell>
               </TableRow>
             ) : (
@@ -252,7 +275,11 @@ export function TransfersTable({
                         {transfer.status === "pending" && (
                           <DropdownMenuItem
                             onClick={() =>
-                              handleStatusUpdate(transfer._id, "confirmed")
+                              handleStatusUpdate(
+                                transfer._id,
+                                "confirmed",
+                                transfer.status,
+                              )
                             }
                             className="cursor-pointer"
                           >
@@ -263,7 +290,11 @@ export function TransfersTable({
                         {transfer.status === "confirmed" && (
                           <DropdownMenuItem
                             onClick={() =>
-                              handleStatusUpdate(transfer._id, "completed")
+                              handleStatusUpdate(
+                                transfer._id,
+                                "completed",
+                                transfer.status,
+                              )
                             }
                             className="cursor-pointer"
                           >
@@ -275,7 +306,11 @@ export function TransfersTable({
                           transfer.status === "confirmed") && (
                           <DropdownMenuItem
                             onClick={() =>
-                              handleStatusUpdate(transfer._id, "cancelled")
+                              handleStatusUpdate(
+                                transfer._id,
+                                "cancelled",
+                                transfer.status,
+                              )
                             }
                             className="cursor-pointer text-red-600 hover:text-red-700"
                           >

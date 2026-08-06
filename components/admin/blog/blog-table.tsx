@@ -24,7 +24,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Edit, Trash2, Eye, Star } from "lucide-react";
+import { Edit, Trash2, Eye, Star, FileText } from "lucide-react";
+import { EmptyState } from "@/components/admin/shared/empty-state";
+import { toastWithUndo } from "@/components/admin/shared/undo-toast";
 import { formatPublishDate } from "@/lib/blog-utils";
 import { formatRelativeTime } from "@/lib/format";
 import { usePeriodicNow } from "@/hooks/use-periodic-now";
@@ -36,14 +38,37 @@ interface BlogTableProps {
   blogs: BlogAdminListItem[];
   onEdit: (blog: BlogAdminListItem) => void;
   locale: string;
+  onCreate?: () => void;
 }
 
-export function BlogTable({ blogs, onEdit, locale }: BlogTableProps) {
+export function BlogTable({ blogs, onEdit, locale, onCreate }: BlogTableProps) {
   const now = usePeriodicNow();
   const [deleteId, setDeleteId] = useState<Id<"blogs"> | null>(null);
   const deleteBlog = useMutation(api.blogs.remove);
-  const setFeatured = useMutation(api.blogs.setFeatured);
-  const unsetFeatured = useMutation(api.blogs.unsetFeatured);
+  const setFeatured = useMutation(api.blogs.setFeatured).withOptimisticUpdate(
+    (localStore, { id }) => {
+      const current = localStore.getQuery(api.blogs.getAllAdmin, {});
+      if (current === undefined) return;
+      localStore.setQuery(
+        api.blogs.getAllAdmin,
+        {},
+        current.map((blog) => ({ ...blog, isFeatured: blog._id === id })),
+      );
+    },
+  );
+  const unsetFeatured = useMutation(
+    api.blogs.unsetFeatured,
+  ).withOptimisticUpdate((localStore, { id }) => {
+    const current = localStore.getQuery(api.blogs.getAllAdmin, {});
+    if (current === undefined) return;
+    localStore.setQuery(
+      api.blogs.getAllAdmin,
+      {},
+      current.map((blog) =>
+        blog._id === id ? { ...blog, isFeatured: false } : blog,
+      ),
+    );
+  });
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -59,13 +84,23 @@ export function BlogTable({ blogs, onEdit, locale }: BlogTableProps) {
   };
 
   const handleToggleFeatured = async (blog: BlogAdminListItem) => {
+    const previousFeatured = blogs.find((b) => b.isFeatured);
     try {
       if (blog.isFeatured) {
         await unsetFeatured({ id: blog._id });
-        toast.success("Removed from featured");
+        toastWithUndo({
+          message: "Removed from featured",
+          onUndo: () => setFeatured({ id: blog._id }),
+        });
       } else {
         await setFeatured({ id: blog._id });
-        toast.success("Set as featured post");
+        toastWithUndo({
+          message: "Set as featured post",
+          onUndo: () =>
+            previousFeatured
+              ? setFeatured({ id: previousFeatured._id })
+              : unsetFeatured({ id: blog._id }),
+        });
       }
     } catch (error) {
       toast.error("Error updating featured status");
@@ -91,11 +126,13 @@ export function BlogTable({ blogs, onEdit, locale }: BlogTableProps) {
           <TableBody>
             {blogs.length === 0 ? (
               <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="text-center py-8 text-muted-foreground"
-                >
-                  No blog posts found
+                <TableCell colSpan={7}>
+                  <EmptyState
+                    icon={FileText}
+                    message="No blog posts yet"
+                    actionLabel={onCreate ? "Create post" : undefined}
+                    onAction={onCreate}
+                  />
                 </TableCell>
               </TableRow>
             ) : (

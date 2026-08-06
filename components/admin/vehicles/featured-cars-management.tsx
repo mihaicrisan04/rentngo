@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Star, X, Car } from "lucide-react";
 import { toast } from "sonner";
+import { toastWithUndo } from "@/components/admin/shared/undo-toast";
 import Image from "next/image";
 
 interface FeaturedCarSlotProps {
@@ -190,10 +191,17 @@ export function FeaturedCarsManagement() {
   }
 
   const handleSetVehicle = async (slot: number, vehicleId: Id<"vehicles">) => {
+    const previousVehicleId = featuredBySlot.get(slot)?._id;
     setIsLoading(true);
     try {
       await setFeaturedCar({ slot, vehicleId });
-      toast.success(`Featured car slot ${slot} updated successfully`);
+      toastWithUndo({
+        message: `Featured car slot ${slot} updated`,
+        onUndo: () =>
+          previousVehicleId
+            ? setFeaturedCar({ slot, vehicleId: previousVehicleId })
+            : removeFeaturedCar({ slot }),
+      });
     } catch (error) {
       console.error("Error setting featured car:", error);
       toast.error(`Failed to set featured car: ${error}`);
@@ -203,10 +211,17 @@ export function FeaturedCarsManagement() {
   };
 
   const handleRemoveVehicle = async (slot: number) => {
+    const previousVehicleId = featuredBySlot.get(slot)?._id;
     setIsLoading(true);
     try {
       await removeFeaturedCar({ slot });
-      toast.success(`Featured car removed from slot ${slot}`);
+      toastWithUndo({
+        message: `Featured car removed from slot ${slot}`,
+        onUndo: () =>
+          previousVehicleId
+            ? setFeaturedCar({ slot, vehicleId: previousVehicleId })
+            : Promise.resolve(),
+      });
     } catch (error) {
       console.error("Error removing featured car:", error);
       toast.error(`Failed to remove featured car: ${error}`);

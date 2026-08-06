@@ -66,7 +66,12 @@ export default function AdminBlogsPage() {
               </div>
             </div>
           ) : (
-            <BlogTable blogs={blogs} onEdit={handleEdit} locale="en" />
+            <BlogTable
+              blogs={blogs}
+              onEdit={handleEdit}
+              locale="en"
+              onCreate={() => setCreateDialogOpen(true)}
+            />
           )}
         </CardContent>
       </Card>

@@ -54,7 +54,7 @@ export function AffiliatesManagement() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <AffiliatesTable />
+          <AffiliatesTable onCreate={() => setShowCreateDialog(true)} />
         </CardContent>
       </Card>
 
