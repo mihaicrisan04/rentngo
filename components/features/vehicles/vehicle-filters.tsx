@@ -10,46 +10,69 @@ import { X, ChevronDown, ChevronUp, Filter } from "lucide-react";
 import { Vehicle } from "@/types/vehicle";
 import { useTranslations } from "next-intl";
 import {
-  useVehicleFilters,
+  FILTER_CATEGORIES,
+  FilterCategory,
   FilterOption,
+  FilterState,
 } from "@/hooks/use-vehicle-filters";
+
+interface CategoryUiConfig {
+  labelKey: string;
+  emptyKey: string;
+  capitalize: boolean;
+  scrollable: boolean;
+}
+
+const CATEGORY_UI: Record<FilterCategory, CategoryUiConfig> = {
+  brands: {
+    labelKey: "brand",
+    emptyKey: "noBrands",
+    capitalize: false,
+    scrollable: true,
+  },
+  fuelTypes: {
+    labelKey: "fuelType",
+    emptyKey: "noFuelTypes",
+    capitalize: true,
+    scrollable: false,
+  },
+  transmissions: {
+    labelKey: "transmission",
+    emptyKey: "noTransmissions",
+    capitalize: true,
+    scrollable: false,
+  },
+  types: {
+    labelKey: "type",
+    emptyKey: "noTypes",
+    capitalize: true,
+    scrollable: false,
+  },
+};
 
 interface VehicleFiltersProps {
   allVehicles: Vehicle[] | null;
-  onFilterChange: (filteredVehicles: Vehicle[] | null) => void;
+  filterState: FilterState;
+  filterOptions: Record<FilterCategory, FilterOption[]>;
+  toggleFilter: (category: FilterCategory, value: string) => void;
+  removeFilter: (category: FilterCategory, value: string) => void;
+  clearAllFilters: () => void;
+  hasActiveFilters: boolean;
+  activeFilterCount: number;
 }
 
 export function VehicleFilters({
   allVehicles,
-  onFilterChange,
+  filterState,
+  filterOptions,
+  toggleFilter,
+  removeFilter,
+  clearAllFilters,
+  hasActiveFilters,
+  activeFilterCount,
 }: VehicleFiltersProps) {
   const t = useTranslations("filters");
   const [isExpanded, setIsExpanded] = React.useState(false);
-
-  const {
-    filterState,
-    filteredVehicles,
-    brandOptions,
-    fuelTypeOptions,
-    transmissionOptions,
-    typeOptions,
-    toggleBrand,
-    toggleFuelType,
-    toggleTransmission,
-    toggleType,
-    removeBrand,
-    removeFuelType,
-    removeTransmission,
-    removeType,
-    clearAllFilters,
-    hasActiveFilters,
-    activeFilterCount,
-  } = useVehicleFilters(allVehicles);
-
-  // Update parent component when filtered vehicles change
-  React.useEffect(() => {
-    onFilterChange(filteredVehicles);
-  }, [filteredVehicles, onFilterChange]);
 
   if (!allVehicles || allVehicles.length === 0) {
     return null;
@@ -85,96 +108,39 @@ export function VehicleFilters({
         <Card className="mb-3 shadow-lg bg-accent">
           <CardContent className="p-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Brand Filter */}
-              <div>
-                <Label className="text-sm font-semibold mb-2 block">
-                  {t("brand")}
-                </Label>
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                  {brandOptions.map((option) => (
-                    <FilterCheckboxItem
-                      key={option.value}
-                      option={option}
-                      checked={filterState.brands.includes(option.value)}
-                      onCheckedChange={() => toggleBrand(option.value)}
-                    />
-                  ))}
-                  {brandOptions.length === 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      {t("noBrands")}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Fuel Type Filter */}
-              <div>
-                <Label className="text-sm font-semibold mb-2 block">
-                  {t("fuelType")}
-                </Label>
-                <div className="space-y-2">
-                  {fuelTypeOptions.map((option) => (
-                    <FilterCheckboxItem
-                      key={option.value}
-                      option={option}
-                      checked={filterState.fuelTypes.includes(option.value)}
-                      onCheckedChange={() => toggleFuelType(option.value)}
-                      capitalize
-                    />
-                  ))}
-                  {fuelTypeOptions.length === 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      {t("noFuelTypes")}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Transmission Filter */}
-              <div>
-                <Label className="text-sm font-semibold mb-2 block">
-                  {t("transmission")}
-                </Label>
-                <div className="space-y-2">
-                  {transmissionOptions.map((option) => (
-                    <FilterCheckboxItem
-                      key={option.value}
-                      option={option}
-                      checked={filterState.transmissions.includes(option.value)}
-                      onCheckedChange={() => toggleTransmission(option.value)}
-                      capitalize
-                    />
-                  ))}
-                  {transmissionOptions.length === 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      {t("noTransmissions")}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Type Filter */}
-              <div>
-                <Label className="text-sm font-semibold mb-2 block">
-                  {t("type")}
-                </Label>
-                <div className="space-y-2">
-                  {typeOptions.map((option) => (
-                    <FilterCheckboxItem
-                      key={option.value}
-                      option={option}
-                      checked={filterState.types.includes(option.value)}
-                      onCheckedChange={() => toggleType(option.value)}
-                      capitalize
-                    />
-                  ))}
-                  {typeOptions.length === 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      {t("noTypes")}
-                    </p>
-                  )}
-                </div>
-              </div>
+              {FILTER_CATEGORIES.map((category) => {
+                const ui = CATEGORY_UI[category];
+                const options = filterOptions[category];
+                return (
+                  <div key={category}>
+                    <Label className="text-sm font-semibold mb-2 block">
+                      {t(ui.labelKey)}
+                    </Label>
+                    <div
+                      className={`space-y-2 ${
+                        ui.scrollable ? "max-h-48 overflow-y-auto pr-2" : ""
+                      }`}
+                    >
+                      {options.map((option) => (
+                        <FilterCheckboxItem
+                          key={option.value}
+                          option={option}
+                          checked={filterState[category].includes(option.value)}
+                          onCheckedChange={() =>
+                            toggleFilter(category, option.value)
+                          }
+                          capitalize={ui.capitalize}
+                        />
+                      ))}
+                      {options.length === 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          {t(ui.emptyKey)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -187,61 +153,22 @@ export function VehicleFilters({
             {t("activeFilters")} ({activeFilterCount}):
           </span>
 
-          {/* Brand chips */}
-          {filterState.brands.map((brand) => (
-            <Button
-              key={`brand-${brand}`}
-              variant="secondary"
-              size="sm"
-              className="h-7 px-2 text-xs"
-              onClick={() => removeBrand(brand)}
-            >
-              {brand}
-              <X className="ml-1 h-3 w-3" />
-            </Button>
-          ))}
-
-          {/* Fuel type chips */}
-          {filterState.fuelTypes.map((fuelType) => (
-            <Button
-              key={`fuel-${fuelType}`}
-              variant="secondary"
-              size="sm"
-              className="h-7 px-2 text-xs capitalize"
-              onClick={() => removeFuelType(fuelType)}
-            >
-              {fuelType}
-              <X className="ml-1 h-3 w-3" />
-            </Button>
-          ))}
-
-          {/* Transmission chips */}
-          {filterState.transmissions.map((transmission) => (
-            <Button
-              key={`transmission-${transmission}`}
-              variant="secondary"
-              size="sm"
-              className="h-7 px-2 text-xs capitalize"
-              onClick={() => removeTransmission(transmission)}
-            >
-              {transmission}
-              <X className="ml-1 h-3 w-3" />
-            </Button>
-          ))}
-
-          {/* Type chips */}
-          {filterState.types.map((type) => (
-            <Button
-              key={`type-${type}`}
-              variant="secondary"
-              size="sm"
-              className="h-7 px-2 text-xs capitalize"
-              onClick={() => removeType(type)}
-            >
-              {type}
-              <X className="ml-1 h-3 w-3" />
-            </Button>
-          ))}
+          {FILTER_CATEGORIES.map((category) =>
+            filterState[category].map((value) => (
+              <Button
+                key={`${category}-${value}`}
+                variant="secondary"
+                size="sm"
+                className={`h-7 px-2 text-xs ${
+                  CATEGORY_UI[category].capitalize ? "capitalize" : ""
+                }`}
+                onClick={() => removeFilter(category, value)}
+              >
+                {value}
+                <X className="ml-1 h-3 w-3" />
+              </Button>
+            ))
+          )}
 
           {/* Clear all button */}
           <Button

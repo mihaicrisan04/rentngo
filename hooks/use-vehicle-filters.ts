@@ -1,15 +1,17 @@
 import { useState, useMemo, useCallback } from "react";
 import { Vehicle } from "@/types/vehicle";
 
-// Filter state structure
-export interface FilterState {
-  brands: string[];
-  fuelTypes: string[];
-  transmissions: string[];
-  types: string[];
-}
+export const FILTER_CATEGORIES = [
+  "brands",
+  "fuelTypes",
+  "transmissions",
+  "types",
+] as const;
 
-// Filter option with count
+export type FilterCategory = (typeof FILTER_CATEGORIES)[number];
+
+export type FilterState = Record<FilterCategory, string[]>;
+
 export interface FilterOption {
   label: string;
   value: string;
@@ -23,278 +25,126 @@ function normalizeString(str: string | undefined | null): string {
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
 }
 
-interface UseVehicleFiltersReturn {
+const categoryValue: Record<FilterCategory, (vehicle: Vehicle) => string> = {
+  brands: (vehicle) => normalizeString(vehicle.make),
+  fuelTypes: (vehicle) => vehicle.fuelType || "",
+  transmissions: (vehicle) => vehicle.transmission || "",
+  types: (vehicle) => vehicle.type || "",
+};
+
+const EMPTY_FILTER_STATE: FilterState = {
+  brands: [],
+  fuelTypes: [],
+  transmissions: [],
+  types: [],
+};
+
+function matchesCategory(
+  vehicle: Vehicle,
+  category: FilterCategory,
+  selected: string[]
+): boolean {
+  if (selected.length === 0) return true;
+  const value = categoryValue[category](vehicle);
+  if (category === "brands") {
+    return selected.some((s) => value === normalizeString(s));
+  }
+  return selected.includes(value);
+}
+
+interface UseVehicleFiltersReturn<V extends Vehicle> {
   filterState: FilterState;
-  filteredVehicles: Vehicle[] | null;
-  brandOptions: FilterOption[];
-  fuelTypeOptions: FilterOption[];
-  transmissionOptions: FilterOption[];
-  typeOptions: FilterOption[];
-  toggleBrand: (brand: string) => void;
-  toggleFuelType: (fuelType: string) => void;
-  toggleTransmission: (transmission: string) => void;
-  toggleType: (type: string) => void;
-  removeBrand: (brand: string) => void;
-  removeFuelType: (fuelType: string) => void;
-  removeTransmission: (transmission: string) => void;
-  removeType: (type: string) => void;
+  filteredVehicles: V[] | null;
+  filterOptions: Record<FilterCategory, FilterOption[]>;
+  toggleFilter: (category: FilterCategory, value: string) => void;
+  removeFilter: (category: FilterCategory, value: string) => void;
   clearAllFilters: () => void;
   hasActiveFilters: boolean;
   activeFilterCount: number;
 }
 
-export function useVehicleFilters(
-  allVehicles: Vehicle[] | null
-): UseVehicleFiltersReturn {
-  const [filterState, setFilterState] = useState<FilterState>({
-    brands: [],
-    fuelTypes: [],
-    transmissions: [],
-    types: [],
-  });
+export function useVehicleFilters<V extends Vehicle>(
+  allVehicles: V[] | null
+): UseVehicleFiltersReturn<V> {
+  const [filterState, setFilterState] =
+    useState<FilterState>(EMPTY_FILTER_STATE);
 
-  // Extract and normalize unique values with counts
-  const brandOptions = useMemo<FilterOption[]>(() => {
-    if (!allVehicles) return [];
-
-    const brandCounts = new Map<string, number>();
-
-    allVehicles.forEach((vehicle) => {
-      const normalized = normalizeString(vehicle.make);
-      if (normalized) {
-        brandCounts.set(normalized, (brandCounts.get(normalized) || 0) + 1);
-      }
-    });
-
-    return Array.from(brandCounts.entries())
-      .map(([brand, count]) => ({
-        label: brand,
-        value: brand,
-        count,
-      }))
-      .sort((a, b) => a.label.localeCompare(b.label));
+  // Extract unique values with counts, per category
+  const filterOptions = useMemo(() => {
+    const options = {} as Record<FilterCategory, FilterOption[]>;
+    for (const category of FILTER_CATEGORIES) {
+      const counts = new Map<string, number>();
+      allVehicles?.forEach((vehicle) => {
+        const value = categoryValue[category](vehicle);
+        if (value) {
+          counts.set(value, (counts.get(value) || 0) + 1);
+        }
+      });
+      options[category] = Array.from(counts.entries())
+        .map(([value, count]) => ({ label: value, value, count }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+    }
+    return options;
   }, [allVehicles]);
 
-  const fuelTypeOptions = useMemo<FilterOption[]>(() => {
-    if (!allVehicles) return [];
-
-    const fuelTypeCounts = new Map<string, number>();
-
-    allVehicles.forEach((vehicle) => {
-      if (vehicle.fuelType) {
-        fuelTypeCounts.set(
-          vehicle.fuelType,
-          (fuelTypeCounts.get(vehicle.fuelType) || 0) + 1
-        );
-      }
-    });
-
-    return Array.from(fuelTypeCounts.entries())
-      .map(([fuelType, count]) => ({
-        label: fuelType,
-        value: fuelType,
-        count,
-      }))
-      .sort((a, b) => a.label.localeCompare(b.label));
-  }, [allVehicles]);
-
-  const transmissionOptions = useMemo<FilterOption[]>(() => {
-    if (!allVehicles) return [];
-
-    const transmissionCounts = new Map<string, number>();
-
-    allVehicles.forEach((vehicle) => {
-      if (vehicle.transmission) {
-        transmissionCounts.set(
-          vehicle.transmission,
-          (transmissionCounts.get(vehicle.transmission) || 0) + 1
-        );
-      }
-    });
-
-    return Array.from(transmissionCounts.entries())
-      .map(([transmission, count]) => ({
-        label: transmission,
-        value: transmission,
-        count,
-      }))
-      .sort((a, b) => a.label.localeCompare(b.label));
-  }, [allVehicles]);
-
-  const typeOptions = useMemo<FilterOption[]>(() => {
-    if (!allVehicles) return [];
-
-    const typeCounts = new Map<string, number>();
-
-    allVehicles.forEach((vehicle) => {
-      if (vehicle.type) {
-        typeCounts.set(vehicle.type, (typeCounts.get(vehicle.type) || 0) + 1);
-      }
-    });
-
-    return Array.from(typeCounts.entries())
-      .map(([type, count]) => ({
-        label: type,
-        value: type,
-        count,
-      }))
-      .sort((a, b) => a.label.localeCompare(b.label));
-  }, [allVehicles]);
-
-  // Apply filters to vehicle list
-  const filteredVehicles = useMemo<Vehicle[] | null>(() => {
+  // Apply filters with OR logic within a category, AND across categories
+  const filteredVehicles = useMemo<V[] | null>(() => {
     if (!allVehicles) return null;
 
-    const { brands, fuelTypes, transmissions, types } = filterState;
-
-    // If no filters active, return all vehicles
-    if (
-      brands.length === 0 &&
-      fuelTypes.length === 0 &&
-      transmissions.length === 0 &&
-      types.length === 0
-    ) {
+    if (FILTER_CATEGORIES.every((c) => filterState[c].length === 0)) {
       return allVehicles;
     }
 
-    // Apply filters with OR logic within category, AND across categories
-    return allVehicles.filter((vehicle) => {
-      // Brand filter (OR logic)
-      const matchesBrand =
-        brands.length === 0 ||
-        brands.some((b) => normalizeString(vehicle.make) === normalizeString(b));
-
-      // Fuel type filter (OR logic)
-      const matchesFuel =
-        fuelTypes.length === 0 || fuelTypes.includes(vehicle.fuelType || "");
-
-      // Transmission filter (OR logic)
-      const matchesTransmission =
-        transmissions.length === 0 ||
-        transmissions.includes(vehicle.transmission || "");
-
-      // Type filter (OR logic)
-      const matchesType =
-        types.length === 0 || types.includes(vehicle.type || "");
-
-      // AND all categories together
-      return matchesBrand && matchesFuel && matchesTransmission && matchesType;
-    });
+    return allVehicles.filter((vehicle) =>
+      FILTER_CATEGORIES.every((category) =>
+        matchesCategory(vehicle, category, filterState[category])
+      )
+    );
   }, [allVehicles, filterState]);
 
-  // Toggle functions for multi-select
-  const toggleBrand = useCallback((brand: string) => {
-    setFilterState((prev) => ({
-      ...prev,
-      brands: prev.brands.includes(brand)
-        ? prev.brands.filter((b) => b !== brand)
-        : [...prev.brands, brand],
-    }));
-  }, []);
-
-  const toggleFuelType = useCallback((fuelType: string) => {
-    setFilterState((prev) => ({
-      ...prev,
-      fuelTypes: prev.fuelTypes.includes(fuelType)
-        ? prev.fuelTypes.filter((f) => f !== fuelType)
-        : [...prev.fuelTypes, fuelType],
-    }));
-  }, []);
-
-  const toggleTransmission = useCallback((transmission: string) => {
-    setFilterState((prev) => ({
-      ...prev,
-      transmissions: prev.transmissions.includes(transmission)
-        ? prev.transmissions.filter((t) => t !== transmission)
-        : [...prev.transmissions, transmission],
-    }));
-  }, []);
-
-  const toggleType = useCallback((type: string) => {
-    setFilterState((prev) => ({
-      ...prev,
-      types: prev.types.includes(type)
-        ? prev.types.filter((t) => t !== type)
-        : [...prev.types, type],
-    }));
-  }, []);
-
-  // Remove functions for filter chips
-  const removeBrand = useCallback((brand: string) => {
-    setFilterState((prev) => ({
-      ...prev,
-      brands: prev.brands.filter((b) => b !== brand),
-    }));
-  }, []);
-
-  const removeFuelType = useCallback((fuelType: string) => {
-    setFilterState((prev) => ({
-      ...prev,
-      fuelTypes: prev.fuelTypes.filter((f) => f !== fuelType),
-    }));
-  }, []);
-
-  const removeTransmission = useCallback((transmission: string) => {
-    setFilterState((prev) => ({
-      ...prev,
-      transmissions: prev.transmissions.filter((t) => t !== transmission),
-    }));
-  }, []);
-
-  const removeType = useCallback((type: string) => {
-    setFilterState((prev) => ({
-      ...prev,
-      types: prev.types.filter((t) => t !== type),
-    }));
-  }, []);
-
-  // Clear all filters
-  const clearAllFilters = useCallback(() => {
-    setFilterState({
-      brands: [],
-      fuelTypes: [],
-      transmissions: [],
-      types: [],
-    });
-  }, []);
-
-  // Check if any filters are active
-  const hasActiveFilters = useMemo(
-    () =>
-      filterState.brands.length > 0 ||
-      filterState.fuelTypes.length > 0 ||
-      filterState.transmissions.length > 0 ||
-      filterState.types.length > 0,
-    [filterState]
+  const toggleFilter = useCallback(
+    (category: FilterCategory, value: string) => {
+      setFilterState((prev) => ({
+        ...prev,
+        [category]: prev[category].includes(value)
+          ? prev[category].filter((v) => v !== value)
+          : [...prev[category], value],
+      }));
+    },
+    []
   );
 
-  // Count active filters
+  const removeFilter = useCallback(
+    (category: FilterCategory, value: string) => {
+      setFilterState((prev) => ({
+        ...prev,
+        [category]: prev[category].filter((v) => v !== value),
+      }));
+    },
+    []
+  );
+
+  const clearAllFilters = useCallback(() => {
+    setFilterState(EMPTY_FILTER_STATE);
+  }, []);
+
   const activeFilterCount = useMemo(
     () =>
-      filterState.brands.length +
-      filterState.fuelTypes.length +
-      filterState.transmissions.length +
-      filterState.types.length,
+      FILTER_CATEGORIES.reduce(
+        (total, category) => total + filterState[category].length,
+        0
+      ),
     [filterState]
   );
 
   return {
     filterState,
     filteredVehicles,
-    brandOptions,
-    fuelTypeOptions,
-    transmissionOptions,
-    typeOptions,
-    toggleBrand,
-    toggleFuelType,
-    toggleTransmission,
-    toggleType,
-    removeBrand,
-    removeFuelType,
-    removeTransmission,
-    removeType,
+    filterOptions,
+    toggleFilter,
+    removeFilter,
     clearAllFilters,
-    hasActiveFilters,
+    hasActiveFilters: activeFilterCount > 0,
     activeFilterCount,
   };
 }
