@@ -3,7 +3,6 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import {
   Plus,
@@ -210,18 +209,12 @@ export default function ReservationsPage() {
         </div>
       )}
 
-      {/* Reservations Table */}
-      <Card className="min-h-[24rem] flex-1">
-        <CardHeader className="shrink-0">
-          <CardTitle>All Reservations</CardTitle>
-        </CardHeader>
-        <CardContent className="flex min-h-0 flex-1 flex-col">
-          <ReservationsTable
-            fullHeight
-            onCreate={() => setIsCreateDialogOpen(true)}
-          />
-        </CardContent>
-      </Card>
+      <div className="flex min-h-[24rem] flex-1 flex-col">
+        <ReservationsTable
+          fullHeight
+          onCreate={() => setIsCreateDialogOpen(true)}
+        />
+      </div>
 
       <CreateReservationDialog
         open={isCreateDialogOpen}

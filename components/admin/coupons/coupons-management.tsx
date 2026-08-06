@@ -3,7 +3,6 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus } from "lucide-react";
 import { CouponsTable } from "@/components/admin/coupons/coupons-table";
 
@@ -31,18 +30,12 @@ export function CouponsManagement() {
         </Button>
       </div>
 
-      {/* All Coupons Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Coupons</CardTitle>
-          <CardDescription>
-            Codes are case-insensitive; expiry is end of day, Romania time
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <CouponsTable onCreate={() => setShowCreateDialog(true)} />
-        </CardContent>
-      </Card>
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Codes are case-insensitive; expiry is end of day, Romania time
+        </p>
+        <CouponsTable onCreate={() => setShowCreateDialog(true)} />
+      </div>
 
       {/* Create Coupon Dialog */}
       <CreateCouponDialog
