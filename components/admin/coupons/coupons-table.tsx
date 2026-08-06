@@ -5,6 +5,8 @@ import dynamic from "next/dynamic";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Doc } from "@/convex/_generated/dataModel";
+import { formatRelativeTime } from "@/lib/format";
+import { usePeriodicNow } from "@/hooks/use-periodic-now";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -31,9 +33,12 @@ const EditCouponDialog = dynamic(
 
 type Coupon = Doc<"coupons">;
 
-function couponStatus(coupon: Coupon): "active" | "inactive" | "expired" | "exhausted" {
+function couponStatus(
+  coupon: Coupon,
+  now: number,
+): "active" | "inactive" | "expired" | "exhausted" {
   if (!coupon.isActive) return "inactive";
-  if (coupon.expiresAt !== undefined && Date.now() > coupon.expiresAt) return "expired";
+  if (coupon.expiresAt !== undefined && now > coupon.expiresAt) return "expired";
   if (
     coupon.maxRedemptions !== undefined &&
     coupon.redemptionCount >= coupon.maxRedemptions
@@ -50,6 +55,7 @@ const statusBadgeClasses: Record<ReturnType<typeof couponStatus>, string> = {
 };
 
 export function CouponsTable() {
+  const now = usePeriodicNow();
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
 
   const coupons = useQuery(api.coupons.list);
@@ -95,9 +101,10 @@ export function CouponsTable() {
   return (
     <div className="space-y-4">
       <div className="rounded-md border">
-        <Table containerClassName="overflow-x-visible">
+        <Table containerClassName="overflow-x-visible" dense>
           <TableHeader sticky>
             <TableRow>
+              <TableHead>Created</TableHead>
               <TableHead>Code</TableHead>
               <TableHead>Discount</TableHead>
               <TableHead>Applies To</TableHead>
@@ -111,15 +118,23 @@ export function CouponsTable() {
           <TableBody>
             {coupons.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                   No coupons found. Create your first coupon to get started.
                 </TableCell>
               </TableRow>
             ) : (
               coupons.map((coupon) => {
-                const status = couponStatus(coupon);
+                const status = couponStatus(coupon, now ?? 0);
                 return (
                   <TableRow key={coupon._id}>
+                    <TableCell
+                      className="text-muted-foreground"
+                      title={new Date(coupon._creationTime).toLocaleString()}
+                    >
+                      {now === null
+                        ? ""
+                        : formatRelativeTime(coupon._creationTime, now)}
+                    </TableCell>
                     <TableCell>
                       <div className="font-mono font-medium">{coupon.code}</div>
                       {coupon.label && (

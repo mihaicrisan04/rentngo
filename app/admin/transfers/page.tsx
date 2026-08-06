@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { usePaginatedQuery, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { usePeriodicNow } from "@/hooks/use-periodic-now";
+import { useBooleanQueryParam } from "@/hooks/use-query-param";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard, formatGrowth } from "@/components/admin/shared/stat-card";
@@ -56,7 +57,7 @@ const ITEMS_PER_PAGE = 10;
 
 export default function AdminTransfersPage() {
   const [showPricingDialog, setShowPricingDialog] = useState(false);
-  const [showCharts, setShowCharts] = useState(false);
+  const [showCharts, setShowCharts] = useBooleanQueryParam("analytics");
   const now = usePeriodicNow();
   const monthNow =
     now === null
@@ -119,7 +120,7 @@ export default function AdminTransfersPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => setShowCharts((v) => !v)}>
+          <Button variant="outline" onClick={() => setShowCharts(!showCharts)}>
             <BarChart3 className="h-4 w-4 mr-2" />
             Analytics
             {showCharts ? (

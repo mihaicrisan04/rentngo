@@ -6,8 +6,9 @@ import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { formatDate, formatPrice } from "@/lib/format";
+import { formatDate, formatPrice, formatRelativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { usePeriodicNow } from "@/hooks/use-periodic-now";
 import { getTableLayout } from "@/components/admin/shared/table-layout";
 import {
   Table,
@@ -55,6 +56,7 @@ export function TransfersTable({
   fullHeight = false,
 }: TransfersTableProps) {
   const layout = getTableLayout(fullHeight);
+  const now = usePeriodicNow();
   const updateStatus = useMutation(api.transfers.updateTransferStatus);
   const deleteTransfer = useMutation(api.transfers.deleteTransferPermanently);
 
@@ -105,10 +107,11 @@ export function TransfersTable({
   return (
     <div className={layout.root}>
       <div className={cn("rounded-md border", layout.scrollArea)}>
-        <Table containerClassName="overflow-x-visible">
+        <Table containerClassName="overflow-x-visible" dense>
           <TableHeader sticky>
             <TableRow>
               <TableHead>#</TableHead>
+              <TableHead>Created</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Route</TableHead>
               <TableHead>Vehicle</TableHead>
@@ -123,7 +126,7 @@ export function TransfersTable({
             {transfers.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={9}
+                  colSpan={10}
                   className="text-center py-8 text-muted-foreground"
                 >
                   No transfers found.
@@ -134,6 +137,14 @@ export function TransfersTable({
                 <TableRow key={transfer._id}>
                   <TableCell className="font-medium">
                     #{transfer.transferNumber}
+                  </TableCell>
+                  <TableCell
+                    className="text-muted-foreground"
+                    title={new Date(transfer._creationTime).toLocaleString()}
+                  >
+                    {now === null
+                      ? ""
+                      : formatRelativeTime(transfer._creationTime, now)}
                   </TableCell>
                   <TableCell>
                     <div>

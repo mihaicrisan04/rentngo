@@ -7,9 +7,14 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { formatDate, formatPrice } from "@/lib/format";
+import { formatDate, formatPrice, formatRelativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { usePeriodicNow } from "@/hooks/use-periodic-now";
 import { getTableLayout } from "@/components/admin/shared/table-layout";
+import {
+  rowActivationProps,
+  stopRowActivation,
+} from "@/components/admin/shared/row-activation";
 import {
   Table,
   TableBody,
@@ -58,6 +63,7 @@ export function ReservationsTable({
   fullHeight = false,
 }: ReservationsTableProps) {
   const layout = getTableLayout(fullHeight);
+  const now = usePeriodicNow();
   const [editingReservation, setEditingReservation] =
     useState<Id<"reservations"> | null>(null);
   const [emailDialogReservation, setEmailDialogReservation] =
@@ -134,9 +140,10 @@ export function ReservationsTable({
   return (
     <div className={layout.root}>
       <div className={cn("rounded-md border", layout.scrollArea)}>
-        <Table containerClassName="overflow-x-visible">
+        <Table containerClassName="overflow-x-visible" dense>
           <TableHeader sticky>
             <TableRow>
+              <TableHead>Created</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Vehicle</TableHead>
               <TableHead>Dates</TableHead>
@@ -152,7 +159,7 @@ export function ReservationsTable({
             {reservations.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={9}
+                  colSpan={10}
                   className="text-center py-8 text-muted-foreground"
                 >
                   No reservations found.
@@ -160,7 +167,18 @@ export function ReservationsTable({
               </TableRow>
             ) : (
               reservations.map((reservation) => (
-                <TableRow key={reservation._id}>
+                <TableRow
+                  key={reservation._id}
+                  {...rowActivationProps(() => handleEdit(reservation._id))}
+                >
+                  <TableCell
+                    className="text-muted-foreground"
+                    title={new Date(reservation._creationTime).toLocaleString()}
+                  >
+                    {now === null
+                      ? ""
+                      : formatRelativeTime(reservation._creationTime, now)}
+                  </TableCell>
                   <TableCell>
                     <div>
                       <div className="font-medium">
@@ -259,7 +277,7 @@ export function ReservationsTable({
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell {...stopRowActivation}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">

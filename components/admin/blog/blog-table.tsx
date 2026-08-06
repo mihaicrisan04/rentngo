@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Edit, Trash2, Eye, Star } from "lucide-react";
 import { formatPublishDate } from "@/lib/blog-utils";
+import { formatRelativeTime } from "@/lib/format";
+import { usePeriodicNow } from "@/hooks/use-periodic-now";
 import { toast } from "sonner";
 import { Id } from "@/convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
@@ -37,6 +39,7 @@ interface BlogTableProps {
 }
 
 export function BlogTable({ blogs, onEdit, locale }: BlogTableProps) {
+  const now = usePeriodicNow();
   const [deleteId, setDeleteId] = useState<Id<"blogs"> | null>(null);
   const deleteBlog = useMutation(api.blogs.remove);
   const setFeatured = useMutation(api.blogs.setFeatured);
@@ -73,7 +76,7 @@ export function BlogTable({ blogs, onEdit, locale }: BlogTableProps) {
   return (
     <>
       <div className="rounded-md border">
-        <Table containerClassName="overflow-x-visible">
+        <Table containerClassName="overflow-x-visible" dense>
           <TableHeader sticky>
             <TableRow>
               <TableHead className="w-10"></TableHead>
@@ -127,10 +130,18 @@ export function BlogTable({ blogs, onEdit, locale }: BlogTableProps) {
                       {blog.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>
-                    {blog.publishedAt
-                      ? formatPublishDate(blog.publishedAt, locale)
-                      : "-"}
+                  <TableCell
+                    title={
+                      blog.publishedAt
+                        ? formatPublishDate(blog.publishedAt, locale)
+                        : undefined
+                    }
+                  >
+                    {blog.publishedAt === undefined || now === null
+                      ? "-"
+                      : formatRelativeTime(blog.publishedAt, now, (ts) =>
+                          formatPublishDate(ts, locale),
+                        )}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
