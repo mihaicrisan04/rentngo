@@ -75,6 +75,7 @@ jobs:
       # intentionally not duplicated here (it requires NEXT_PUBLIC_CONVEX_URL +
       # Clerk keys for build-time generateStaticParams data fetching).
       #
-      # Lint is not yet a gate: `bun run lint` currently reports pre-existing
-      # errors (mostly no-explicit-any) tracked under Convex Hardening in prd.md.
-      # Add a `bun run lint` step here once those are resolved.
+      # Lint is not yet a gate: `bun run lint` (oxlint) currently reports
+      # pre-existing errors — mostly no-explicit-any, react-hooks
+      # set-state-in-effect and jsx-a11y — tracked under Convex Hardening in
+      # prd.md. Add a `bun run lint` step here once those are resolved.

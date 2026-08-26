@@ -36,22 +36,22 @@ run = "next build --webpack"
 
 [tasks.lint]
 alias = "l"
-description = "Run ESLint"
+description = "Run oxlint"
 sources = ["app/**/*", "components/**/*", "lib/**/*", "hooks/**/*", "convex/**/*"]
-run = "eslint ."
+run = "oxlint"
 
 [tasks."lint:fix"]
-description = "Run ESLint with auto-fix"
-run = "eslint . --fix"
+description = "Run oxlint with auto-fix"
+run = "oxlint --fix"
 
 [tasks.format]
 alias = "f"
-description = "Format code with Prettier"
-run = "prettier --write ."
+description = "Format code with oxfmt"
+run = "oxfmt"
 
 [tasks."format:check"]
 description = "Check formatting without writing"
-run = "prettier --check ."
+run = "oxfmt --check"
 
 [tasks.check]
 alias = "c"

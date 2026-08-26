@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 80,
+  "sortPackageJson": false,
+  "ignorePatterns": [
+    ".next/",
+    ".claude/worktrees/",
+    ".tsgo-cache/",
+    ".vercel/",
+    ".agents/plans/",
+    ".agents/skills/",
+    "convex/_generated/",
+    "node_modules/",
+    "coverage/",
+    "CHANGELOG.md",
+    "bun.lock",
+    "*.tsbuildinfo"
+  ]
+}
