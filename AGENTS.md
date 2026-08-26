@@ -24,7 +24,7 @@ mise run check              # lint + format check + typecheck + tests
 mise build                  # production build
 ```
 
-Without mise, use the equivalent `bun run dev`, `bun run lint`, `bun run typecheck`, `bun run test`, and `bun run build` scripts. `bun run typecheck:fast` is advisory only. Do not pass `--bun` to Next.js or Convex commands.
+Without mise, use the equivalent `bun run dev`, `bun run lint`, `bun run typecheck`, `bun run test`, and `bun run build` scripts. Do not pass `--bun` to Next.js or Convex commands.
 
 Run the narrowest relevant check while iterating, then the broader checks affected by the change. Report which checks ran and any pre-existing failures. User-visible frontend changes require desktop and mobile browser verification when browser tooling is available.
 

@@ -105,18 +105,6 @@ sources = [
 ]
 run = "tsc --noEmit"
 
-[tasks."typecheck:fast"]
-alias = "tcf"
-description = "Run fast advisory TypeScript type checking (tsgo)"
-sources = [
-  "app/**/*",
-  "components/**/*",
-  "lib/**/*",
-  "hooks/**/*",
-  "convex/**/*",
-  "tsconfig.json",
-]
-run = "tsgo --noEmit --tsBuildInfoFile .tsgo-cache/tsconfig.tsbuildinfo"
 
 [tasks."convex:deploy"]
 description = "Deploy Convex backend"

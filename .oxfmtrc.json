@@ -5,7 +5,6 @@
   "ignorePatterns": [
     ".next/",
     ".claude/worktrees/",
-    ".tsgo-cache/",
     ".vercel/",
     ".agents/plans/",
     ".agents/skills/",

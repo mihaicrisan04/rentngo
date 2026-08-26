@@ -33,24 +33,6 @@ jobs:
       - name: Typecheck
         run: bunx tsc --noEmit
 
-  typecheck-fast:
-    name: Typecheck (tsgo, informational)
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.3.14
-
-      - run: bun install --frozen-lockfile
-      - run: bunx tsgo --noEmit
-
   test:
     name: Unit tests
     runs-on: ubuntu-latest
