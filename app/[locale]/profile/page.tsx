@@ -71,7 +71,9 @@ export default function ProfilePage() {
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-center">
             {t("title")}
           </h1>
-          <p className="text-muted-foreground mt-2 text-center">{t("subtitle")}</p>
+          <p className="text-muted-foreground mt-2 text-center">
+            {t("subtitle")}
+          </p>
         </div>
 
         <div className="space-y-8">

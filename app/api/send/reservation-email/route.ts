@@ -1,34 +1,35 @@
-import { Resend } from 'resend';
-import { NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
-import { COMPANY } from '@/lib/company';
+import { Resend } from "resend";
+import { NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { COMPANY } from "@/lib/company";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
-    try {
-        // Only authenticated admins may send emails (role from Clerk publicMetadata,
-        // same source of truth as proxy.ts)
-        const { userId, sessionClaims } = await auth();
-        if (!userId) {
-            return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-        }
-        if (sessionClaims?.metadata?.role !== 'admin') {
-            return NextResponse.json({ error: 'Not authorized' }, { status: 403 });
-        }
+  try {
+    // Only authenticated admins may send emails (role from Clerk publicMetadata,
+    // same source of truth as proxy.ts)
+    const { userId, sessionClaims } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+    if (sessionClaims?.metadata?.role !== "admin") {
+      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
 
-        const { to, subject, message, emailType, reservationData } = await request.json();
+    const { to, subject, message, emailType, reservationData } =
+      await request.json();
 
-        // Validate required fields
-        if (!to || !subject || !message) {
-            return NextResponse.json(
-                { error: 'Missing required fields: to, subject, message' }, 
-                { status: 400 }
-            );
-        }
+    // Validate required fields
+    if (!to || !subject || !message) {
+      return NextResponse.json(
+        { error: "Missing required fields: to, subject, message" },
+        { status: 400 },
+      );
+    }
 
-        // Create HTML email content
-        const htmlContent = `
+    // Create HTML email content
+    const htmlContent = `
             <!DOCTYPE html>
             <html>
             <head>
@@ -122,10 +123,12 @@ export async function POST(request: Request) {
                     </div>
                     
                     <div class="content">
-                        ${message.replace(/\n/g, '<br>')}
+                        ${message.replace(/\n/g, "<br>")}
                     </div>
                     
-                    ${reservationData ? `
+                    ${
+                      reservationData
+                        ? `
                     <div class="reservation-details">
                         <h3 style="margin-top: 0; color: #1f2937;">Reservation Summary</h3>
                         <div class="detail-row">
@@ -153,7 +156,9 @@ export async function POST(request: Request) {
                             <span class="detail-value">€${reservationData.totalPrice}</span>
                         </div>
                     </div>
-                    ` : ''}
+                    `
+                        : ""
+                    }
                     
                     <div class="footer">
                         <p>Thank you for choosing Rent'n Go!</p>
@@ -167,27 +172,32 @@ export async function POST(request: Request) {
             </html>
         `;
 
-        const { data, error } = await resend.emails.send({
-            from: 'Rent\'n Go <noreply@rngo.ro>',
-            to: to,
-            subject: subject,
-            html: htmlContent,
-            replyTo: COMPANY.email,
-        });
+    const { data, error } = await resend.emails.send({
+      from: "Rent'n Go <noreply@rngo.ro>",
+      to: to,
+      subject: subject,
+      html: htmlContent,
+      replyTo: COMPANY.email,
+    });
 
-        if (error) {
-            console.error('Resend error:', error);
-            return NextResponse.json({ error: 'Failed to send email' }, { status: 500 });
-        }
-
-        return NextResponse.json({ 
-            success: true, 
-            messageId: data?.id,
-            message: 'Email sent successfully' 
-        });
-
-    } catch (error) {
-        console.error('Email sending error:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    if (error) {
+      console.error("Resend error:", error);
+      return NextResponse.json(
+        { error: "Failed to send email" },
+        { status: 500 },
+      );
     }
-} 
+
+    return NextResponse.json({
+      success: true,
+      messageId: data?.id,
+      message: "Email sent successfully",
+    });
+  } catch (error) {
+    console.error("Email sending error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
+}

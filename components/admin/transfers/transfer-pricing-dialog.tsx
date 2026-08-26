@@ -67,7 +67,9 @@ export function TransferPricingDialog({
   const seedTiers = useMutation(api.transferPricing.seedDefaultTiers);
 
   const [isAdding, setIsAdding] = useState(false);
-  const [editingId, setEditingId] = useState<Id<"transferPricingTiers"> | null>(null);
+  const [editingId, setEditingId] = useState<Id<"transferPricingTiers"> | null>(
+    null,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<TierFormData>({
@@ -96,13 +98,18 @@ export function TransferPricingDialog({
       form.reset();
       setIsAdding(false);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to add tier");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to add tier",
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleEdit = async (id: Id<"transferPricingTiers">, values: TierFormData) => {
+  const handleEdit = async (
+    id: Id<"transferPricingTiers">,
+    values: TierFormData,
+  ) => {
     setIsSubmitting(true);
     try {
       await updateTier({
@@ -114,13 +121,18 @@ export function TransferPricingDialog({
       toast.success("Pricing tier updated");
       setEditingId(null);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update tier");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update tier",
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleToggleActive = async (id: Id<"transferPricingTiers">, isActive: boolean) => {
+  const handleToggleActive = async (
+    id: Id<"transferPricingTiers">,
+    isActive: boolean,
+  ) => {
     try {
       await updateTier({ id, isActive });
       toast.success(isActive ? "Tier activated" : "Tier deactivated");
@@ -136,18 +148,27 @@ export function TransferPricingDialog({
       await deleteTier({ id });
       toast.success("Pricing tier deleted");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete tier");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete tier",
+      );
     }
   };
 
   const handleSeedDefaults = async () => {
-    if (!confirm("This will seed default pricing tiers. Existing tiers must be deleted first. Continue?")) return;
+    if (
+      !confirm(
+        "This will seed default pricing tiers. Existing tiers must be deleted first. Continue?",
+      )
+    )
+      return;
 
     try {
       await seedTiers({});
       toast.success("Default pricing tiers created");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to seed tiers");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to seed tiers",
+      );
     }
   };
 
@@ -166,8 +187,9 @@ export function TransferPricingDialog({
         <DialogHeader>
           <DialogTitle>Transfer Pricing Tiers</DialogTitle>
           <DialogDescription>
-            Configure km-range pricing tiers for transfer services. The price per km applies
-            to extra kilometers beyond the first 15km (included in base fare).
+            Configure km-range pricing tiers for transfer services. The price
+            per km applies to extra kilometers beyond the first 15km (included
+            in base fare).
           </DialogDescription>
         </DialogHeader>
 
@@ -199,7 +221,10 @@ export function TransferPricingDialog({
           {isAdding && (
             <div className="border rounded-lg p-4 bg-muted/50">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleAdd)} className="space-y-4">
+                <form
+                  onSubmit={form.handleSubmit(handleAdd)}
+                  className="space-y-4"
+                >
                   <div className="grid grid-cols-3 gap-4">
                     <FormField
                       control={form.control}
@@ -213,7 +238,13 @@ export function TransferPricingDialog({
                               min="0"
                               step="1"
                               {...field}
-                              onChange={(e) => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value === ""
+                                    ? undefined
+                                    : Number(e.target.value),
+                                )
+                              }
                               disabled={isSubmitting}
                             />
                           </FormControl>
@@ -235,7 +266,13 @@ export function TransferPricingDialog({
                               placeholder="Unlimited"
                               {...field}
                               value={field.value ?? ""}
-                              onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value
+                                    ? Number(e.target.value)
+                                    : undefined,
+                                )
+                              }
                               disabled={isSubmitting}
                             />
                           </FormControl>
@@ -255,7 +292,13 @@ export function TransferPricingDialog({
                               min="0.01"
                               step="0.01"
                               {...field}
-                              onChange={(e) => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))}
+                              onChange={(e) =>
+                                field.onChange(
+                                  e.target.value === ""
+                                    ? undefined
+                                    : Number(e.target.value),
+                                )
+                              }
                               disabled={isSubmitting}
                             />
                           </FormControl>
@@ -301,15 +344,26 @@ export function TransferPricingDialog({
                 {tiers === undefined ? (
                   Array.from({ length: 3 }).map((_, i) => (
                     <TableRow key={i}>
-                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-24" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-16" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-16" />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-20" />
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : tiers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                    <TableCell
+                      colSpan={4}
+                      className="text-center py-8 text-muted-foreground"
+                    >
                       No pricing tiers configured. Add a tier or seed defaults.
                     </TableCell>
                   </TableRow>
@@ -321,7 +375,9 @@ export function TransferPricingDialog({
                           <TableCell colSpan={2}>
                             <Form {...editForm}>
                               <form
-                                onSubmit={editForm.handleSubmit((values) => handleEdit(tier._id, values))}
+                                onSubmit={editForm.handleSubmit((values) =>
+                                  handleEdit(tier._id, values),
+                                )}
                                 className="flex gap-2 items-end"
                               >
                                 <FormField
@@ -335,7 +391,13 @@ export function TransferPricingDialog({
                                           min="0"
                                           step="1"
                                           {...field}
-                                          onChange={(e) => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))}
+                                          onChange={(e) =>
+                                            field.onChange(
+                                              e.target.value === ""
+                                                ? undefined
+                                                : Number(e.target.value),
+                                            )
+                                          }
                                           disabled={isSubmitting}
                                         />
                                       </FormControl>
@@ -356,14 +418,22 @@ export function TransferPricingDialog({
                                           placeholder="∞"
                                           {...field}
                                           value={field.value ?? ""}
-                                          onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                                          onChange={(e) =>
+                                            field.onChange(
+                                              e.target.value
+                                                ? Number(e.target.value)
+                                                : undefined,
+                                            )
+                                          }
                                           disabled={isSubmitting}
                                         />
                                       </FormControl>
                                     </FormItem>
                                   )}
                                 />
-                                <span className="text-muted-foreground">km</span>
+                                <span className="text-muted-foreground">
+                                  km
+                                </span>
                                 <FormField
                                   control={editForm.control}
                                   name="pricePerKm"
@@ -375,14 +445,22 @@ export function TransferPricingDialog({
                                           min="0.01"
                                           step="0.01"
                                           {...field}
-                                          onChange={(e) => field.onChange(e.target.value === "" ? undefined : Number(e.target.value))}
+                                          onChange={(e) =>
+                                            field.onChange(
+                                              e.target.value === ""
+                                                ? undefined
+                                                : Number(e.target.value),
+                                            )
+                                          }
                                           disabled={isSubmitting}
                                         />
                                       </FormControl>
                                     </FormItem>
                                   )}
                                 />
-                                <span className="text-muted-foreground">EUR</span>
+                                <span className="text-muted-foreground">
+                                  EUR
+                                </span>
                                 <Button
                                   type="submit"
                                   size="icon"
@@ -418,9 +496,15 @@ export function TransferPricingDialog({
                             <div className="flex items-center gap-2">
                               <Switch
                                 checked={tier.isActive}
-                                onCheckedChange={(checked) => handleToggleActive(tier._id, checked)}
+                                onCheckedChange={(checked) =>
+                                  handleToggleActive(tier._id, checked)
+                                }
                               />
-                              <Badge variant={tier.isActive ? "default" : "secondary"}>
+                              <Badge
+                                variant={
+                                  tier.isActive ? "default" : "secondary"
+                                }
+                              >
                                 {tier.isActive ? "Active" : "Inactive"}
                               </Badge>
                             </div>
@@ -456,10 +540,21 @@ export function TransferPricingDialog({
 
           {/* Info section */}
           <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg space-y-1">
-            <p><strong>Formula:</strong> total = base_fare + (extra_km × tier_price × class_multiplier)</p>
-            <p><strong>Base fare:</strong> Covers first 15km (configured per vehicle class)</p>
-            <p><strong>Extra KM:</strong> Total distance minus 15km</p>
-            <p><strong>Class multiplier:</strong> Applied on top of tier pricing (configured per vehicle class)</p>
+            <p>
+              <strong>Formula:</strong> total = base_fare + (extra_km ×
+              tier_price × class_multiplier)
+            </p>
+            <p>
+              <strong>Base fare:</strong> Covers first 15km (configured per
+              vehicle class)
+            </p>
+            <p>
+              <strong>Extra KM:</strong> Total distance minus 15km
+            </p>
+            <p>
+              <strong>Class multiplier:</strong> Applied on top of tier pricing
+              (configured per vehicle class)
+            </p>
           </div>
         </div>
       </DialogContent>

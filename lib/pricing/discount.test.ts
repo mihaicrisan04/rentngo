@@ -155,9 +155,10 @@ describe("evaluateCoupon", () => {
   it("gates on the minimum order value (inclusive)", () => {
     const coupon = { ...baseCoupon, minOrderValue: 200 };
     expect(evaluateCoupon(coupon, context)).toMatchObject({ valid: true });
-    expect(
-      evaluateCoupon(coupon, { ...context, subtotal: 199.99 }),
-    ).toEqual({ valid: false, reason: "belowMinimum" });
+    expect(evaluateCoupon(coupon, { ...context, subtotal: 199.99 })).toEqual({
+      valid: false,
+      reason: "belowMinimum",
+    });
   });
 });
 

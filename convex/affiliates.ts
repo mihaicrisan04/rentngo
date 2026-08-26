@@ -120,7 +120,11 @@ export const updateSettings = mutation({
     );
     const existing = await ctx.db.query("affiliateSettings").first();
     if (existing) {
-      await ctx.db.patch(existing._id, { ...args, tiers, updatedAt: Date.now() });
+      await ctx.db.patch(existing._id, {
+        ...args,
+        tiers,
+        updatedAt: Date.now(),
+      });
     } else {
       await ctx.db.insert("affiliateSettings", {
         ...args,
@@ -218,9 +222,7 @@ export const createAffiliate = mutation({
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) =>
-        q.eq("email", args.userEmail.trim()),
-      )
+      .withIndex("by_email", (q) => q.eq("email", args.userEmail.trim()))
       .first();
     if (!user || user.deletedAt !== undefined) {
       throw new Error(
@@ -749,10 +751,7 @@ export const getMyAffiliate = query({
       referredDiscount: referredDiscountValidator,
       conversions: v.array(
         v.object({
-          bookingType: v.union(
-            v.literal("reservation"),
-            v.literal("transfer"),
-          ),
+          bookingType: v.union(v.literal("reservation"), v.literal("transfer")),
           status: conversionStatusValidator,
           createdAt: v.number(),
         }),

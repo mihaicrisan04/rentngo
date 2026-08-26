@@ -132,7 +132,9 @@ export function UserReservationsTable() {
                     </div>
                   )}
                 </TableCell>
-                <TableCell><StatusBadge status={reservation.status} /></TableCell>
+                <TableCell>
+                  <StatusBadge status={reservation.status} />
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

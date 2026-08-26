@@ -11,27 +11,33 @@ import { Button } from "@/components/ui/button";
 const DEFAULT_CAR_RENTAL_FAQS = [
   {
     question: "What documents do I need to rent a car?",
-    answer: "You'll typically need a valid driver's license held for at least one year, a credit card in the main driver's name for the security deposit, and a form of photo ID (like a passport or national ID card). International renters might need an International Driving Permit (IDP).",
+    answer:
+      "You'll typically need a valid driver's license held for at least one year, a credit card in the main driver's name for the security deposit, and a form of photo ID (like a passport or national ID card). International renters might need an International Driving Permit (IDP).",
   },
   {
     question: "Is there a minimum age to rent a car?",
-    answer: "Yes, the minimum age is generally 21 years. However, drivers between 21-24 may be subject to a young driver surcharge and may have restrictions on available vehicle categories.",
+    answer:
+      "Yes, the minimum age is generally 21 years. However, drivers between 21-24 may be subject to a young driver surcharge and may have restrictions on available vehicle categories.",
   },
   {
     question: "Can I add an additional driver?",
-    answer: "Yes, additional drivers can usually be added for an extra daily fee. They must meet the same age and license requirements as the main driver and must be present at the rental counter with their documents.",
+    answer:
+      "Yes, additional drivers can usually be added for an extra daily fee. They must meet the same age and license requirements as the main driver and must be present at the rental counter with their documents.",
   },
   {
     question: "What is your fuel policy?",
-    answer: "Our standard fuel policy is 'full-to-full.' You will receive the car with a full tank of fuel and you should return it full. If returned with less fuel, refueling charges will apply. Other pre-paid fuel options might be available.",
+    answer:
+      "Our standard fuel policy is 'full-to-full.' You will receive the car with a full tank of fuel and you should return it full. If returned with less fuel, refueling charges will apply. Other pre-paid fuel options might be available.",
   },
   {
     question: "What happens if I return the car late?",
-    answer: "We understand delays can happen. A short grace period is usually allowed, but late returns beyond that may incur additional charges, potentially a full extra day's rental. Please contact us if you anticipate being late.",
+    answer:
+      "We understand delays can happen. A short grace period is usually allowed, but late returns beyond that may incur additional charges, potentially a full extra day's rental. Please contact us if you anticipate being late.",
   },
   {
     question: "Is insurance included in the rental price?",
-    answer: "Basic Collision Damage Waiver (CDW) and Theft Protection (TP) with an excess amount are typically included. We also offer optional insurance packages to reduce the excess or provide more comprehensive coverage.",
+    answer:
+      "Basic Collision Damage Waiver (CDW) and Theft Protection (TP) with an excess amount are typically included. We also offer optional insurance packages to reduce the excess or provide more comprehensive coverage.",
   },
 ];
 
@@ -52,13 +58,23 @@ interface FaqSectionProps extends React.HTMLAttributes<HTMLElement> {
 }
 
 const FaqSection = React.forwardRef<HTMLElement, FaqSectionProps>(
-  ({ className, title, description, items = DEFAULT_CAR_RENTAL_FAQS, ctaSection, ...props }, ref) => {
+  (
+    {
+      className,
+      title,
+      description,
+      items = DEFAULT_CAR_RENTAL_FAQS,
+      ctaSection,
+      ...props
+    },
+    ref,
+  ) => {
     return (
       <section
         ref={ref}
         className={cn(
           "py-16 px-4 w-full bg-gradient-to-b from-transparent to-transparent mx-auto lg:max-w-5xl",
-          className
+          className,
         )}
         {...props}
       >
@@ -133,7 +149,7 @@ const FaqSection = React.forwardRef<HTMLElement, FaqSectionProps>(
         </div>
       </section>
     );
-  }
+  },
 );
 FaqSection.displayName = "FaqSection";
 
@@ -161,7 +177,7 @@ const FaqItem = React.forwardRef<
         "border border-border/50",
         isOpen
           ? "bg-gradient-to-br from-background via-muted/50 to-background"
-          : "hover:bg-muted/50"
+          : "hover:bg-muted/50",
       )}
     >
       <div
@@ -169,7 +185,7 @@ const FaqItem = React.forwardRef<
         tabIndex={0}
         onClick={() => setIsOpen(!isOpen)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
+          if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             setIsOpen(!isOpen);
           }
@@ -178,7 +194,7 @@ const FaqItem = React.forwardRef<
           "w-full px-6 py-4 h-auto text-left cursor-pointer",
           "hover:bg-transparent transition-colors",
           "flex items-start justify-between gap-4",
-          "focus:outline-none"
+          "focus:outline-none",
         )}
       >
         <div
@@ -186,7 +202,7 @@ const FaqItem = React.forwardRef<
             "text-base font-medium transition-colors duration-200 text-left",
             "text-foreground/70 flex-1 min-w-0",
             "break-words hyphens-auto",
-            isOpen && "text-foreground"
+            isOpen && "text-foreground",
           )}
         >
           {question}
@@ -200,7 +216,7 @@ const FaqItem = React.forwardRef<
           className={cn(
             "p-0.5 rounded-full flex-shrink-0",
             "transition-colors duration-200",
-            isOpen ? "text-primary" : "text-muted-foreground"
+            isOpen ? "text-primary" : "text-muted-foreground",
           )}
         >
           <ChevronDown className="h-4 w-4" />

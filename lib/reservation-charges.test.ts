@@ -43,7 +43,8 @@ describe("buildLegacyChargeDescriptions", () => {
     ];
     expect(buildLegacyChargeDescriptions(charges, t)).toEqual([
       {
-        description: 'payment.additionalCharges.snowChains {"days":4,"price":12}',
+        description:
+          'payment.additionalCharges.snowChains {"days":4,"price":12}',
         amount: 12,
       },
       {

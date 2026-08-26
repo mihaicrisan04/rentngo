@@ -62,7 +62,10 @@ async function validateRequest(request: Request): Promise<WebhookEvent | null> {
   };
 
   try {
-    return new Webhook(secret).verify(payload, svixHeaders) as unknown as WebhookEvent;
+    return new Webhook(secret).verify(
+      payload,
+      svixHeaders,
+    ) as unknown as WebhookEvent;
   } catch {
     return null;
   }

@@ -39,7 +39,10 @@ export function EditSeasonDialog({
   seasonId,
   onSuccess,
 }: EditSeasonDialogProps) {
-  const season = useQuery(api.seasons.getById, seasonId ? { id: seasonId } : "skip");
+  const season = useQuery(
+    api.seasons.getById,
+    seasonId ? { id: seasonId } : "skip",
+  );
   const updateSeason = useMutation(api.seasons.update);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -110,7 +113,10 @@ export function EditSeasonDialog({
 
         <ScrollArea className="max-h-[calc(80vh-150px)] pr-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-6 py-4"
+            >
               <SeasonFormFields form={form} isSubmitting={isSubmitting} />
             </form>
           </Form>

@@ -26,6 +26,8 @@ export async function generateMetadata({
   });
 }
 
-export default function ReservationLayout({ children }: ReservationLayoutProps) {
+export default function ReservationLayout({
+  children,
+}: ReservationLayoutProps) {
   return <>{children}</>;
 }

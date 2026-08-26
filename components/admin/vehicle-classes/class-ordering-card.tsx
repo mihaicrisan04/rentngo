@@ -70,13 +70,13 @@ export function ClassOrderingCard({
 }: ClassOrderingCardProps) {
   return (
     <Card
-        className={`p-4 transition-all ${
-          isDragging
-            ? "opacity-50 shadow-lg scale-105"
-            : "hover:shadow-md hover:border-primary/50"
-        }`}
-      >
-        <div className="flex items-center gap-3">
+      className={`p-4 transition-all ${
+        isDragging
+          ? "opacity-50 shadow-lg scale-105"
+          : "hover:shadow-md hover:border-primary/50"
+      }`}
+    >
+      <div className="flex items-center gap-3">
         {/* Drag Handle */}
         <div
           {...dragHandleProps}

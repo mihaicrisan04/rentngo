@@ -209,10 +209,11 @@ export function EditReservationDialog({
   const watchedEndDate = form.watch("endDate");
 
   // Get seasonal pricing based on selected dates
-  const { multiplier: currentSeasonalMultiplier, seasonId: currentSeasonId } = useDateBasedSeasonalPricing(
-    watchedStartDate ? new Date(watchedStartDate) : null,
-    watchedEndDate ? new Date(watchedEndDate) : null,
-  );
+  const { multiplier: currentSeasonalMultiplier, seasonId: currentSeasonId } =
+    useDateBasedSeasonalPricing(
+      watchedStartDate ? new Date(watchedStartDate) : null,
+      watchedEndDate ? new Date(watchedEndDate) : null,
+    );
 
   useEffect(() => {
     if (open && reservation) {
@@ -610,16 +611,17 @@ export function EditReservationDialog({
                           const pickup = new Date(startDate);
                           const restitution = new Date(endDate);
 
-                          const priceDetails = calculateVehiclePricingWithSeason(
-                            selectedVehicle,
-                            1.0,
-                            pickup,
-                            restitution,
-                            undefined,
-                            undefined,
-                            pickupTime,
-                            restitutionTime,
-                          );
+                          const priceDetails =
+                            calculateVehiclePricingWithSeason(
+                              selectedVehicle,
+                              1.0,
+                              pickup,
+                              restitution,
+                              undefined,
+                              undefined,
+                              pickupTime,
+                              restitutionTime,
+                            );
 
                           if (!priceDetails.days) return "";
 

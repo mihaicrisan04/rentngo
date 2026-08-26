@@ -55,7 +55,10 @@ import { stripUndefined } from "./lib/patch";
 
 // Explicit type for ReservationStatus based on the schema
 type ReservationStatusType =
-  "pending" | "confirmed" | "cancelled" | "completed";
+  | "pending"
+  | "confirmed"
+  | "cancelled"
+  | "completed";
 
 // Validator for additional charges, aligned with schema.ts
 const additionalChargeValidator = v.object({

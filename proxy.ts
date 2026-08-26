@@ -1,6 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import createMiddleware from 'next-intl/middleware';
+import createMiddleware from "next-intl/middleware";
 
 // Admin routes that require admin role
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
@@ -20,9 +20,9 @@ const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 
 // Create the internationalization middleware
 const intlMiddleware = createMiddleware({
-  locales: ['ro', 'en'],
-  defaultLocale: 'ro',
-  localePrefix: 'always' // Both /ro and /en will have explicit prefixes
+  locales: ["ro", "en"],
+  defaultLocale: "ro",
+  localePrefix: "always", // Both /ro and /en will have explicit prefixes
 });
 
 export default clerkMiddleware(async (auth, req) => {
@@ -31,12 +31,13 @@ export default clerkMiddleware(async (auth, req) => {
   // Skip internationalization for admin routes, API routes, referral links
   // (/r/<slug> is a locale-less Route Handler that must not be redirected to
   // /ro/r/<slug>), and static files
-  if (isAdminRoute(req) ||
-      pathname.startsWith('/api/') ||
-      pathname.startsWith('/r/') ||
-      pathname.startsWith('/_next/') ||
-      pathname.includes('.')) {
-
+  if (
+    isAdminRoute(req) ||
+    pathname.startsWith("/api/") ||
+    pathname.startsWith("/r/") ||
+    pathname.startsWith("/_next/") ||
+    pathname.includes(".")
+  ) {
     // Handle admin routes
     if (isAdminRoute(req)) {
       const { userId, sessionClaims } = await auth();

@@ -7,7 +7,9 @@ interface BackgroundImageProps {
   bottomGradient?: boolean;
 }
 
-export function BackgroundImage({ bottomGradient = true }: BackgroundImageProps) {
+export function BackgroundImage({
+  bottomGradient = true,
+}: BackgroundImageProps) {
   return (
     <div
       className="absolute inset-x-0 top-0 w-full h-[75vh] -z-10 overflow-hidden"

@@ -37,7 +37,9 @@ function FeaturedCarSlot({
 }: FeaturedCarSlotProps) {
   const imageUrl = useQuery(
     api.vehicles.getImageUrl,
-    currentVehicle?.mainImageId ? { imageId: currentVehicle.mainImageId } : "skip"
+    currentVehicle?.mainImageId
+      ? { imageId: currentVehicle.mainImageId }
+      : "skip",
   );
 
   return (
@@ -97,14 +99,19 @@ export function FeaturedCarsManagement() {
 
   // Fetch current featured cars
   const featuredCars = useQuery(api.featuredCars.getFeaturedCars);
-  
+
   // Fetch available vehicles (excluding already featured ones)
-  const availableVehicles = useQuery(api.featuredCars.getAvailableVehiclesForFeatured, {});
+  const availableVehicles = useQuery(
+    api.featuredCars.getAvailableVehiclesForFeatured,
+    {},
+  );
 
   // Mutations
   const setFeaturedCar = useMutation(api.featuredCars.setFeaturedCar);
   const removeFeaturedCar = useMutation(api.featuredCars.removeFeaturedCar);
-  const clearAllFeaturedCars = useMutation(api.featuredCars.clearAllFeaturedCars);
+  const clearAllFeaturedCars = useMutation(
+    api.featuredCars.clearAllFeaturedCars,
+  );
 
   // Organize featured cars by slot
   const featuredBySlot = new Map<number, Vehicle>();
@@ -199,7 +206,10 @@ export function FeaturedCarsManagement() {
         {header}
         <div className="grid gap-2 sm:grid-cols-3">
           {[1, 2, 3].map((slot) => (
-            <div key={slot} className="h-[52px] animate-pulse rounded-md bg-muted" />
+            <div
+              key={slot}
+              className="h-[52px] animate-pulse rounded-md bg-muted"
+            />
           ))}
         </div>
       </section>
@@ -241,4 +251,4 @@ export function FeaturedCarsManagement() {
       )}
     </section>
   );
-} 
+}

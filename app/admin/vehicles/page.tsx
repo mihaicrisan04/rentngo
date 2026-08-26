@@ -9,8 +9,11 @@ import { FeaturedCarsManagement } from "@/components/admin/vehicles/featured-car
 import { useRouter } from "next/navigation";
 
 const CreateVehicleDialog = dynamic(
-  () => import("@/components/admin/vehicles/create-vehicle-dialog").then(m => m.CreateVehicleDialog),
-  { ssr: false }
+  () =>
+    import("@/components/admin/vehicles/create-vehicle-dialog").then(
+      (m) => m.CreateVehicleDialog,
+    ),
+  { ssr: false },
 );
 
 export default function VehiclesPage() {

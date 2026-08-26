@@ -136,9 +136,7 @@ describe("computeTransferPricing", () => {
 
   it("ignores inactive tiers", () => {
     // The 1.6/km tier is disabled → 20 extra km hits the fallback 1.0/km
-    const withInactive: TransferTierData[] = [
-      { ...tiers[0], isActive: false },
-    ];
+    const withInactive: TransferTierData[] = [{ ...tiers[0], isActive: false }];
     const fare = computeTransferPricing({
       distanceKm: 35,
       transferType: "one_way",

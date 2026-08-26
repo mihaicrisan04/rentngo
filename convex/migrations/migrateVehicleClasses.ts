@@ -117,10 +117,7 @@ export default internalMutation({
         );
         migratedCount++;
       } catch (error) {
-        console.log(
-          `Error updating ${vehicle.make} ${vehicle.model}:`,
-          error,
-        );
+        console.log(`Error updating ${vehicle.make} ${vehicle.model}:`, error);
         errors.push(
           `${vehicle.make} ${vehicle.model} (ID: ${vehicle._id}) - update failed: ${error}`,
         );

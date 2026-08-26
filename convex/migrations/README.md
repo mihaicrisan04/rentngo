@@ -5,6 +5,7 @@ This directory contains database migration and seeding scripts for the RentNGo a
 ## Overview
 
 Migrations are internal mutations that run server-side to modify data or schema. They are useful for:
+
 - Seeding initial data
 - Migrating data between schema changes
 - Bulk updates or transformations
@@ -18,17 +19,20 @@ Seeds the initial vehicle classes into the database.
 
 **Purpose**: Creates the standard vehicle class categories used throughout the application.
 
-**When to run**: 
+**When to run**:
+
 - After initial deployment
 - When setting up a new environment
 - If vehicle classes table is empty
 
 **Features**:
+
 - Idempotent (safe to run multiple times)
 - Skips classes that already exist
 - Creates 15 standard vehicle classes with descriptions
 
 **Usage via Convex Dashboard**:
+
 1. Go to your Convex dashboard
 2. Navigate to "Functions" tab
 3. Find `migrations/seedVehicleClasses`
@@ -36,11 +40,13 @@ Seeds the initial vehicle classes into the database.
 5. Check console output for results
 
 **Usage via Convex CLI**:
+
 ```bash
 npx convex run migrations/seedVehicleClasses
 ```
 
 **Expected Output**:
+
 ```
 Created: Vehicle class "Economy"
 Created: Vehicle class "Compact"
@@ -57,11 +63,13 @@ Migrates existing vehicles from the old hardcoded `class` enum to the new `class
 **Purpose**: Updates all vehicles to use the new vehicle classes table instead of the deprecated enum field.
 
 **When to run**:
+
 - After running `seedVehicleClasses`
 - After upgrading from the old class system
 - When you have existing vehicles without `classId`
 
 **Features**:
+
 - Idempotent (safe to run multiple times)
 - Skips vehicles that already have `classId`
 - Maps old enum values to new class names
@@ -69,9 +77,11 @@ Migrates existing vehicles from the old hardcoded `class` enum to the new `class
 - Sets default `classSortIndex` to 0
 
 **Prerequisites**:
+
 - Vehicle classes must exist (run `seedVehicleClasses` first)
 
 **Usage via Convex Dashboard**:
+
 1. Go to your Convex dashboard
 2. Navigate to "Functions" tab
 3. Find `migrations/migrateVehicleClasses`
@@ -79,11 +89,13 @@ Migrates existing vehicles from the old hardcoded `class` enum to the new `class
 5. Review the migration summary
 
 **Usage via Convex CLI**:
+
 ```bash
 npx convex run migrations/migrateVehicleClasses
 ```
 
 **Expected Output**:
+
 ```
 Found 50 vehicles to process
 Migrated: BMW X5 from "luxury" to "Luxury"
@@ -97,6 +109,7 @@ Errors: 0
 ```
 
 **Old to New Class Mapping**:
+
 ```
 economy       → Economy
 compact       → Compact
@@ -150,6 +163,7 @@ When setting up a new environment or migrating to the vehicle classes system:
 ## Internal Mutations
 
 Migrations use `internalMutation` which means:
+
 - They can only be called from the Convex dashboard or CLI
 - They cannot be called from client code
 - They have full database access
@@ -158,23 +172,29 @@ Migrations use `internalMutation` which means:
 ## Troubleshooting
 
 ### "Class not found in database"
+
 **Problem**: Vehicle classes don't exist yet
 **Solution**: Run `seedVehicleClasses` first
 
 ### "Already has classId"
+
 **Message**: This is normal - the vehicle was already migrated
 **Action**: No action needed, the script skips these automatically
 
 ### "Unknown class"
+
 **Problem**: A vehicle has a class value that isn't in the mapping
-**Solution**: 
+**Solution**:
+
 1. Check the vehicle's current class value
 2. Add the mapping to `migrateVehicleClasses.ts`
 3. Or manually update the vehicle in the database
 
 ### Migration script not showing in dashboard
+
 **Problem**: Convex hasn't detected the new file
-**Solution**: 
+**Solution**:
+
 1. Save the file
 2. Wait for Convex to sync (check the CLI output)
 3. Refresh the dashboard
@@ -182,6 +202,7 @@ Migrations use `internalMutation` which means:
 ## Future Migrations
 
 As the schema evolves, add new migration scripts here. Follow the naming convention:
+
 - Use descriptive names: `migrateXtoY.ts`, `seedZ.ts`, `fixABug.ts`
 - Include the date in comments
 - Document what changed and why

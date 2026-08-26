@@ -28,9 +28,7 @@ export const listTiers = query({
       .withIndex("by_sort_index")
       .collect();
 
-    const filteredTiers = activeOnly
-      ? tiers.filter((t) => t.isActive)
-      : tiers;
+    const filteredTiers = activeOnly ? tiers.filter((t) => t.isActive) : tiers;
 
     return filteredTiers.sort((a, b) => a.minExtraKm - b.minExtraKm);
   },
@@ -90,8 +88,7 @@ export const createTier = mutation({
       const newMax = maxExtraKm ?? Infinity;
 
       // Check if ranges overlap
-      const overlap =
-        minExtraKm < tierMax && newMax > tier.minExtraKm;
+      const overlap = minExtraKm < tierMax && newMax > tier.minExtraKm;
 
       if (overlap) {
         throw new Error(
@@ -139,7 +136,8 @@ export const updateTier = mutation({
     }
 
     const newMin = minExtraKm ?? existingTier.minExtraKm;
-    const newMax = maxExtraKm !== undefined ? maxExtraKm : existingTier.maxExtraKm;
+    const newMax =
+      maxExtraKm !== undefined ? maxExtraKm : existingTier.maxExtraKm;
 
     // Validate range
     if (newMax !== undefined && newMax <= newMin) {
@@ -270,7 +268,9 @@ export const seedDefaultTiers = mutation({
     // Check if tiers already exist
     const existingTiers = await ctx.db.query("transferPricingTiers").collect();
     if (existingTiers.length > 0) {
-      throw new Error("Pricing tiers already exist. Delete them first to reseed.");
+      throw new Error(
+        "Pricing tiers already exist. Delete them first to reseed.",
+      );
     }
 
     // Default tiers as specified in the plan

@@ -89,55 +89,55 @@ export function CouponCodeInput({
   const content = (
     <>
       {result?.valid && submittedCode ? (
-          <div className="flex items-center justify-between rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 p-3">
-            <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
-              <CheckCircle2 className="h-4 w-4 shrink-0" />
-              <span>
-                {t("applied", { code: result.code })}
-                {": "}
-                <span className="font-semibold">
-                  −{result.discountAmount} EUR
-                </span>
+        <div className="flex items-center justify-between rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 p-3">
+          <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            <span>
+              {t("applied", { code: result.code })}
+              {": "}
+              <span className="font-semibold">
+                −{result.discountAmount} EUR
               </span>
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleRemove}
-              aria-label={t("remove")}
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            </span>
           </div>
-        ) : (
-          <div className="flex gap-2">
-            <Input
-              value={inputValue}
-              onChange={(e) => {
-                setInputValue(e.target.value.toUpperCase());
-                setSubmittedCode(null);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleApply();
-                }
-              }}
-              placeholder={t("placeholder")}
-              className="uppercase"
-              maxLength={32}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleApply}
-              disabled={!inputValue.trim() || subtotal === null || isChecking}
-            >
-              {isChecking ? t("checking") : t("apply")}
-            </Button>
-          </div>
-        )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleRemove}
+            aria-label={t("remove")}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <Input
+            value={inputValue}
+            onChange={(e) => {
+              setInputValue(e.target.value.toUpperCase());
+              setSubmittedCode(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleApply();
+              }
+            }}
+            placeholder={t("placeholder")}
+            className="uppercase"
+            maxLength={32}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleApply}
+            disabled={!inputValue.trim() || subtotal === null || isChecking}
+          >
+            {isChecking ? t("checking") : t("apply")}
+          </Button>
+        </div>
+      )}
       {result && !result.valid && submittedCode && (
         <p className="text-sm text-destructive">
           {t(`errors.${result.reason}`)}

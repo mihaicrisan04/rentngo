@@ -1,16 +1,9 @@
-"use client"
+"use client";
 
-import {
-  ChevronsUpDown,
-  LogOut,
-} from "lucide-react"
-import { useUser, useClerk } from "@clerk/nextjs"
+import { ChevronsUpDown, LogOut } from "lucide-react";
+import { useUser, useClerk } from "@clerk/nextjs";
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,30 +11,34 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
 export function NavUser() {
-  const { isMobile } = useSidebar()
-  const { user } = useUser()
-  const { signOut } = useClerk()
+  const { isMobile } = useSidebar();
+  const { user } = useUser();
+  const { signOut } = useClerk();
 
   if (!user) {
-    return null
+    return null;
   }
 
-  const userInitials = `${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`.toUpperCase()
-  const displayName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || 'User'
-  const primaryEmail = user.primaryEmailAddress?.emailAddress || 'No email'
+  const userInitials =
+    `${user.firstName?.charAt(0) || ""}${user.lastName?.charAt(0) || ""}`.toUpperCase();
+  const displayName =
+    `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+    user.username ||
+    "User";
+  const primaryEmail = user.primaryEmailAddress?.emailAddress || "No email";
 
   const handleSignOut = () => {
-    signOut({ redirectUrl: '/' })
-  }
+    signOut({ redirectUrl: "/" });
+  };
 
   return (
     <SidebarMenu>
@@ -54,7 +51,9 @@ export function NavUser() {
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.imageUrl} alt={displayName} />
-                <AvatarFallback className="rounded-lg">{userInitials}</AvatarFallback>
+                <AvatarFallback className="rounded-lg">
+                  {userInitials}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{displayName}</span>
@@ -73,7 +72,9 @@ export function NavUser() {
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user.imageUrl} alt={displayName} />
-                  <AvatarFallback className="rounded-lg">{userInitials}</AvatarFallback>
+                  <AvatarFallback className="rounded-lg">
+                    {userInitials}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{displayName}</span>
@@ -90,5 +91,5 @@ export function NavUser() {
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
-  )
+  );
 }

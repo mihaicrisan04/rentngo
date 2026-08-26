@@ -35,7 +35,9 @@ export function assertValidReservationExtras(
   ];
   for (const [name, value] of counts) {
     if (!Number.isInteger(value) || value < 0) {
-      throw new Error(`Invalid extras: ${name} must be a non-negative integer (got ${value}).`);
+      throw new Error(
+        `Invalid extras: ${name} must be a non-negative integer (got ${value}).`,
+      );
     }
   }
   if (!Number.isFinite(extras.extraKilometers) || extras.extraKilometers < 0) {
@@ -210,8 +212,19 @@ export function calculateVehiclePricingWithSeason(
   pickupTime?: string | null,
   restitutionTime?: string | null,
 ): PriceDetails {
-  if (pickup && restitution && pickupTime && restitutionTime && restitution >= pickup) {
-    const calculatedDays = calculateRentalDays(pickup, restitution, pickupTime, restitutionTime);
+  if (
+    pickup &&
+    restitution &&
+    pickupTime &&
+    restitutionTime &&
+    restitution >= pickup
+  ) {
+    const calculatedDays = calculateRentalDays(
+      pickup,
+      restitution,
+      pickupTime,
+      restitutionTime,
+    );
 
     // Get the base price per day from pricing tiers
     const basePricePerDay = getPriceForDuration(vehicle, calculatedDays);
@@ -219,16 +232,23 @@ export function calculateVehiclePricingWithSeason(
     // Apply seasonal multiplier to the price per day and round it; a
     // multiplier of 1 keeps the exact (possibly fractional) daily rate
     const seasonalPricePerDay =
-      seasonalMultiplier === 1 ? basePricePerDay : Math.round(basePricePerDay * seasonalMultiplier);
+      seasonalMultiplier === 1
+        ? basePricePerDay
+        : Math.round(basePricePerDay * seasonalMultiplier);
 
     // Calculate base price using the rounded seasonal price per day
     const basePriceBeforeSeason = calculatedDays * basePricePerDay;
     const seasonallyAdjustedBasePrice = calculatedDays * seasonalPricePerDay;
-    const seasonalAdjustment = seasonallyAdjustedBasePrice - basePriceBeforeSeason;
+    const seasonalAdjustment =
+      seasonallyAdjustedBasePrice - basePriceBeforeSeason;
 
     // Add location fees
-    const deliveryFee = deliveryLocation ? getLocationPrice(deliveryLocation) : 0;
-    const returnFee = restitutionLocation ? getLocationPrice(restitutionLocation) : 0;
+    const deliveryFee = deliveryLocation
+      ? getLocationPrice(deliveryLocation)
+      : 0;
+    const returnFee = restitutionLocation
+      ? getLocationPrice(restitutionLocation)
+      : 0;
     const totalLocationFees = deliveryFee + returnFee;
 
     return {

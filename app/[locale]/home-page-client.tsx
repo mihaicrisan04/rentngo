@@ -172,10 +172,26 @@ export function HomePageClient({
           <div className="max-w-5xl mx-auto w-full px-4 mt-4 mb-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { icon: Star, label: t("trustBar.rating"), value: t("trustBar.ratingDesc") },
-                { icon: Plane, label: t("trustBar.airport"), value: t("trustBar.airportDesc") },
-                { icon: Clock, label: t("trustBar.support"), value: t("trustBar.supportDesc") },
-                { icon: Headphones, label: t("trustBar.roadside"), value: t("trustBar.roadsideDesc") },
+                {
+                  icon: Star,
+                  label: t("trustBar.rating"),
+                  value: t("trustBar.ratingDesc"),
+                },
+                {
+                  icon: Plane,
+                  label: t("trustBar.airport"),
+                  value: t("trustBar.airportDesc"),
+                },
+                {
+                  icon: Clock,
+                  label: t("trustBar.support"),
+                  value: t("trustBar.supportDesc"),
+                },
+                {
+                  icon: Headphones,
+                  label: t("trustBar.roadside"),
+                  value: t("trustBar.roadsideDesc"),
+                },
               ].map((item, i) => (
                 <div
                   key={i}
@@ -311,7 +327,12 @@ export function HomePageClient({
                       {tAbout("ourStory.description3")}
                     </p>
                     <div className="pt-4">
-                      <Button variant="outline" size="lg" className="group" asChild>
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="group"
+                        asChild
+                      >
                         <Link href="/about">
                           {tAbout("mission.buttonText")}
                           <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -408,9 +429,7 @@ export function HomePageClient({
                   className="px-8 h-13 text-base"
                   asChild
                 >
-                  <Link href="/contact">
-                    {t("faq.contact")}
-                  </Link>
+                  <Link href="/contact">{t("faq.contact")}</Link>
                 </Button>
               </div>
             </div>

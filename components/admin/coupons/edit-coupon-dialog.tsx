@@ -58,7 +58,9 @@ export function EditCouponDialog({
       discountValue: String(coupon.discountValue),
       expiresAt: expiryToDateInput(coupon.expiresAt),
       maxRedemptions:
-        coupon.maxRedemptions !== undefined ? String(coupon.maxRedemptions) : "",
+        coupon.maxRedemptions !== undefined
+          ? String(coupon.maxRedemptions)
+          : "",
       minOrderValue:
         coupon.minOrderValue !== undefined ? String(coupon.minOrderValue) : "",
       appliesTo: coupon.appliesTo,
@@ -109,7 +111,10 @@ export function EditCouponDialog({
 
         <ScrollArea className="max-h-[calc(80vh-150px)] pr-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-6 py-4"
+            >
               <div className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
                 Used {coupon.redemptionCount} time
                 {coupon.redemptionCount === 1 ? "" : "s"}

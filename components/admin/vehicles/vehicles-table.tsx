@@ -20,7 +20,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Edit, Trash2, MoreHorizontal, Car } from "lucide-react";
 import { EmptyState } from "@/components/admin/shared/empty-state";
 import {
@@ -32,8 +39,11 @@ import {
 import { toast } from "sonner";
 
 const EditVehicleDialog = dynamic(
-  () => import("@/components/admin/vehicles/edit-vehicle-dialog").then(m => m.EditVehicleDialog),
-  { ssr: false }
+  () =>
+    import("@/components/admin/vehicles/edit-vehicle-dialog").then(
+      (m) => m.EditVehicleDialog,
+    ),
+  { ssr: false },
 );
 
 const ITEMS_PER_PAGE = 10;
@@ -49,11 +59,15 @@ export function VehiclesTable({
 }: VehiclesTableProps) {
   const layout = getTableLayout(fullHeight);
   const [currentPage, setCurrentPage] = useNumberQueryParam("page", 1);
-  const [editingVehicle, setEditingVehicle] = useState<Id<"vehicles"> | null>(null);
+  const [editingVehicle, setEditingVehicle] = useState<Id<"vehicles"> | null>(
+    null,
+  );
 
   // Fetch all vehicles and paginate on the client side
   const vehicles = useQuery(api.vehicles.getAllVehicles);
-  const vehicleClasses = useQuery(api.vehicleClasses.list, { activeOnly: false });
+  const vehicleClasses = useQuery(api.vehicleClasses.list, {
+    activeOnly: false,
+  });
 
   const deleteVehicle = useMutation(api.vehicles.remove);
 
@@ -61,7 +75,7 @@ export function VehiclesTable({
   const classLookup = useMemo(() => {
     if (!vehicleClasses) return new Map<string, string>();
     return new Map(
-      vehicleClasses.map((vc) => [vc._id, vc.displayName || vc.name])
+      vehicleClasses.map((vc) => [vc._id, vc.displayName || vc.name]),
     );
   }, [vehicleClasses]);
 
@@ -77,8 +91,15 @@ export function VehiclesTable({
     setEditingVehicle(vehicleId);
   };
 
-  const handleDelete = async (vehicleId: Id<"vehicles">, vehicleName: string) => {
-    if (confirm(`Are you sure you want to delete ${vehicleName}? This action cannot be undone.`)) {
+  const handleDelete = async (
+    vehicleId: Id<"vehicles">,
+    vehicleName: string,
+  ) => {
+    if (
+      confirm(
+        `Are you sure you want to delete ${vehicleName}? This action cannot be undone.`,
+      )
+    ) {
       try {
         await deleteVehicle({ id: vehicleId });
         toast.success("Vehicle deleted successfully", {
@@ -98,7 +119,7 @@ export function VehiclesTable({
   const VehicleImage = ({ vehicle }: { vehicle: Vehicle }) => {
     const imageUrl = useQuery(
       api.vehicles.getImageUrl,
-      vehicle.mainImageId ? { imageId: vehicle.mainImageId } : "skip"
+      vehicle.mainImageId ? { imageId: vehicle.mainImageId } : "skip",
     );
 
     return (
@@ -187,7 +208,9 @@ export function VehiclesTable({
                   </TableCell>
                   <TableCell>
                     {vehicle.classId && classLookup.get(vehicle.classId) ? (
-                      <span className="capitalize">{classLookup.get(vehicle.classId)}</span>
+                      <span className="capitalize">
+                        {classLookup.get(vehicle.classId)}
+                      </span>
                     ) : (
                       <span className="text-muted-foreground">-</span>
                     )}
@@ -197,7 +220,9 @@ export function VehiclesTable({
                     {vehicle.engineCapacity && vehicle.engineType ? (
                       <div className="text-sm">
                         <div>{vehicle.engineCapacity}L</div>
-                        <div className="text-muted-foreground">{vehicle.engineType}</div>
+                        <div className="text-muted-foreground">
+                          {vehicle.engineType}
+                        </div>
                       </div>
                     ) : (
                       <span className="text-muted-foreground">-</span>
@@ -218,14 +243,21 @@ export function VehiclesTable({
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">{vehicle.pricingTiers && vehicle.pricingTiers.length > 0 ? vehicle.pricingTiers[0].pricePerDay : 'N/A'} EUR</div>
+                    <div className="font-medium">
+                      {vehicle.pricingTiers && vehicle.pricingTiers.length > 0
+                        ? vehicle.pricingTiers[0].pricePerDay
+                        : "N/A"}{" "}
+                      EUR
+                    </div>
                     {vehicle.warranty && (
                       <div className="text-xs text-muted-foreground">
                         Warranty: {vehicle.warranty} EUR
                       </div>
                     )}
                   </TableCell>
-                  <TableCell><StatusBadge status={vehicle.status} fallback="available" /></TableCell>
+                  <TableCell>
+                    <StatusBadge status={vehicle.status} fallback="available" />
+                  </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -242,7 +274,12 @@ export function VehiclesTable({
                           Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleDelete(vehicle._id, `${vehicle.make} ${vehicle.model}`)}
+                          onClick={() =>
+                            handleDelete(
+                              vehicle._id,
+                              `${vehicle.make} ${vehicle.model}`,
+                            )
+                          }
                           className="cursor-pointer text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
@@ -261,14 +298,19 @@ export function VehiclesTable({
       {vehicles.length > 0 && (
         <div className={cn("flex items-center justify-between", layout.footer)}>
           <div className="text-sm text-muted-foreground">
-            Showing {startIndex + 1} to {Math.min(endIndex, vehicles.length)} of {vehicles.length} vehicles
+            Showing {startIndex + 1} to {Math.min(endIndex, vehicles.length)} of{" "}
+            {vehicles.length} vehicles
           </div>
           <Pagination>
             <PaginationContent>
               <PaginationItem>
-                <PaginationPrevious 
+                <PaginationPrevious
                   onClick={handlePreviousPage}
-                  className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  className={
+                    currentPage === 1
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
                 />
               </PaginationItem>
               <PaginationItem>
@@ -277,9 +319,13 @@ export function VehiclesTable({
                 </PaginationLink>
               </PaginationItem>
               <PaginationItem>
-                <PaginationNext 
+                <PaginationNext
                   onClick={() => handleNextPage(totalPages)}
-                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  className={
+                    currentPage === totalPages
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
                 />
               </PaginationItem>
             </PaginationContent>
@@ -296,4 +342,4 @@ export function VehiclesTable({
       )}
     </div>
   );
-} 
+}

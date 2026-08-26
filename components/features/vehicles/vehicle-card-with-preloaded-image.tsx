@@ -30,7 +30,10 @@ interface VehicleCardWithPreloadedImageProps {
   imagePriority?: boolean;
 }
 
-function buildCarDetailsUrl(vehicleSlug: string | undefined, vehicleId: string): string {
+function buildCarDetailsUrl(
+  vehicleSlug: string | undefined,
+  vehicleId: string,
+): string {
   return `/cars/${vehicleSlug || vehicleId}`;
 }
 
@@ -98,8 +101,12 @@ export function VehicleCardWithPreloadedImage({
   const currency = "EUR";
   // Carry the vehicle in the href so new-tab/cmd-click works; the reservation
   // page moves it into per-tab storage and strips it back to a bare URL.
-  const reservationUrl = vehicle ? `/reservation?vehicleId=${vehicle._id}` : "#";
-  const carDetailsUrl = vehicle ? buildCarDetailsUrl(vehicle.slug, vehicle._id) : "#";
+  const reservationUrl = vehicle
+    ? `/reservation?vehicleId=${vehicle._id}`
+    : "#";
+  const carDetailsUrl = vehicle
+    ? buildCarDetailsUrl(vehicle.slug, vehicle._id)
+    : "#";
 
   if (!vehicle || typeof vehicle._id !== "string") {
     return (

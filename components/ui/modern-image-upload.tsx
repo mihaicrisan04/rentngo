@@ -22,7 +22,12 @@ interface ModernImageUploadProps {
 }
 
 const maxFileSize = 10 * 1024 * 1024; // 10MB
-const acceptedFileTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+const acceptedFileTypes = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+];
 
 // Validate file
 function validateFile(file: File): string | null {
@@ -53,46 +58,52 @@ export function ModernImageUpload({
   const [isUploading, setIsUploading] = useState(false);
 
   // Handle file selection (click or drag)
-  const handleFileSelect = useCallback((fileList: FileList | File[]) => {
-    const fileArray = Array.from(fileList);
-    const newFiles: ImageFile[] = [];
-    const errors: string[] = [];
+  const handleFileSelect = useCallback(
+    (fileList: FileList | File[]) => {
+      const fileArray = Array.from(fileList);
+      const newFiles: ImageFile[] = [];
+      const errors: string[] = [];
 
-    // Check total file count
-    if (files.length + fileArray.length > maxFiles) {
-      onError?.(`Cannot select more than ${maxFiles} files.`);
-      return;
-    }
-
-    fileArray.forEach((file) => {
-      const error = validateFile(file);
-      if (error) {
-        errors.push(`${file.name}: ${error}`);
+      // Check total file count
+      if (files.length + fileArray.length > maxFiles) {
+        onError?.(`Cannot select more than ${maxFiles} files.`);
         return;
       }
 
-      const previewUrl = URL.createObjectURL(file);
-      newFiles.push({
-        file,
-        previewUrl,
-        error: error || undefined,
+      fileArray.forEach((file) => {
+        const error = validateFile(file);
+        if (error) {
+          errors.push(`${file.name}: ${error}`);
+          return;
+        }
+
+        const previewUrl = URL.createObjectURL(file);
+        newFiles.push({
+          file,
+          previewUrl,
+          error: error || undefined,
+        });
       });
-    });
 
-    if (errors.length > 0) {
-      onError?.(errors.join("\n"));
-    }
+      if (errors.length > 0) {
+        onError?.(errors.join("\n"));
+      }
 
-    onFilesChange([...files, ...newFiles]);
-  }, [files, maxFiles, onFilesChange, onError]);
+      onFilesChange([...files, ...newFiles]);
+    },
+    [files, maxFiles, onFilesChange, onError],
+  );
 
   // Handle file input change
-  const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const fileList = event.target.files;
-    if (fileList) {
-      handleFileSelect(fileList);
-    }
-  }, [handleFileSelect]);
+  const handleFileChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const fileList = event.target.files;
+      if (fileList) {
+        handleFileSelect(fileList);
+      }
+    },
+    [handleFileSelect],
+  );
 
   // Handle click to open file dialog
   const handleThumbnailClick = useCallback(() => {
@@ -117,36 +128,42 @@ export function ModernImageUpload({
     setIsDragging(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
 
-    const droppedFiles = Array.from(e.dataTransfer.files).filter(file =>
-      file.type.startsWith("image/")
-    );
+      const droppedFiles = Array.from(e.dataTransfer.files).filter((file) =>
+        file.type.startsWith("image/"),
+      );
 
-    if (droppedFiles.length > 0) {
-      handleFileSelect(droppedFiles);
-    }
-  }, [handleFileSelect]);
+      if (droppedFiles.length > 0) {
+        handleFileSelect(droppedFiles);
+      }
+    },
+    [handleFileSelect],
+  );
 
   // Remove a file from selection
-  const handleRemoveFile = useCallback((index: number) => {
-    const newFiles = [...files];
-    const removed = newFiles.splice(index, 1)[0];
+  const handleRemoveFile = useCallback(
+    (index: number) => {
+      const newFiles = [...files];
+      const removed = newFiles.splice(index, 1)[0];
 
-    // Cleanup preview URL
-    if (removed && removed.previewUrl) {
-      URL.revokeObjectURL(removed.previewUrl);
-    }
+      // Cleanup preview URL
+      if (removed && removed.previewUrl) {
+        URL.revokeObjectURL(removed.previewUrl);
+      }
 
-    onFilesChange(newFiles);
-  }, [files, onFilesChange]);
+      onFilesChange(newFiles);
+    },
+    [files, onFilesChange],
+  );
 
   // Clear all files
   const handleClearAll = useCallback(() => {
-    files.forEach(file => {
+    files.forEach((file) => {
       if (file.previewUrl) {
         URL.revokeObjectURL(file.previewUrl);
       }
@@ -161,16 +178,18 @@ export function ModernImageUpload({
   const handleUpload = useCallback(async () => {
     if (!onUpload) return;
 
-    const validFiles = files.filter(f => !f.error);
+    const validFiles = files.filter((f) => !f.error);
     if (validFiles.length === 0) return;
 
     setIsUploading(true);
     try {
-      await onUpload(validFiles.map(f => f.file));
+      await onUpload(validFiles.map((f) => f.file));
       handleClearAll();
     } catch (error) {
       console.error("Error uploading images:", error);
-      onError?.(error instanceof Error ? error.message : "Failed to upload images");
+      onError?.(
+        error instanceof Error ? error.message : "Failed to upload images",
+      );
     } finally {
       setIsUploading(false);
     }
@@ -178,7 +197,7 @@ export function ModernImageUpload({
 
   // Get summary information
   const getSummary = useCallback(() => {
-    const validFiles = files.filter(f => !f.error);
+    const validFiles = files.filter((f) => !f.error);
     const totalSize = validFiles.reduce((sum, file) => sum + file.file.size, 0);
 
     return {
@@ -186,7 +205,7 @@ export function ModernImageUpload({
       validFileCount: validFiles.length,
       totalSize,
       totalSizeMB: (totalSize / 1024 / 1024).toFixed(1),
-      hasErrors: files.some(f => f.error),
+      hasErrors: files.some((f) => f.error),
     };
   }, [files]);
 
@@ -223,7 +242,7 @@ export function ModernImageUpload({
             "flex h-48 cursor-pointer flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 transition-colors",
             !disabled && "hover:bg-muted hover:border-muted-foreground/40",
             isDragging && !disabled && "border-primary/50 bg-primary/5",
-            disabled && "cursor-not-allowed opacity-50"
+            disabled && "cursor-not-allowed opacity-50",
           )}
         >
           <div className="rounded-full bg-background p-3 shadow-sm">
@@ -239,7 +258,8 @@ export function ModernImageUpload({
               </p>
             )}
             <p className="mt-1 text-xs text-muted-foreground">
-              Max {maxFiles} files, {(maxFileSize / 1024 / 1024).toFixed(0)}MB each
+              Max {maxFiles} files, {(maxFileSize / 1024 / 1024).toFixed(0)}MB
+              each
             </p>
           </div>
         </div>
@@ -248,7 +268,8 @@ export function ModernImageUpload({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">
-              {summary.validFileCount} of {maxFiles} files selected ({summary.totalSizeMB}MB total)
+              {summary.validFileCount} of {maxFiles} files selected (
+              {summary.totalSizeMB}MB total)
             </div>
             <div className="flex gap-2">
               <Button
@@ -256,7 +277,9 @@ export function ModernImageUpload({
                 size="sm"
                 variant="outline"
                 onClick={handleThumbnailClick}
-                disabled={disabled || isUploading || summary.fileCount >= maxFiles}
+                disabled={
+                  disabled || isUploading || summary.fileCount >= maxFiles
+                }
               >
                 <ImagePlus className="h-4 w-4 mr-1" />
                 Add More
@@ -285,7 +308,9 @@ export function ModernImageUpload({
                   /* Error state */
                   <div className="flex h-full flex-col items-center justify-center gap-2 p-2 bg-destructive/5 border-destructive/20">
                     <FileImage className="h-8 w-8 text-destructive/60" />
-                    <p className="text-xs text-destructive text-center">{fileData.error}</p>
+                    <p className="text-xs text-destructive text-center">
+                      {fileData.error}
+                    </p>
                   </div>
                 ) : (
                   /* Image preview */
@@ -331,43 +356,42 @@ export function ModernImageUpload({
             ))}
           </div>
 
-          {onUpload ? (
-            /* Immediate-upload mode: upload button */
-            summary.validFileCount > 0 && (
-              <div className="flex items-center justify-between pt-2 border-t">
-                <p className="text-xs text-muted-foreground">
-                  Images will be uploaded in the order shown.
-                </p>
-                <Button
-                  type="button"
-                  onClick={handleUpload}
-                  disabled={disabled || isUploading}
-                  className="bg-primary hover:bg-primary/80"
-                >
-                  {isUploading ? (
-                    <>
-                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload {summary.validFileCount} Images
-                    </>
-                  )}
-                </Button>
-              </div>
-            )
-          ) : (
-            /* Deferred mode: files are uploaded on form submit */
-            summary.validFileCount > 0 && (
-              <div className="pt-2 border-t">
-                <p className="text-xs text-muted-foreground">
-                  {summary.validFileCount} images ready. First image will be the main display image.
-                </p>
-              </div>
-            )
-          )}
+          {onUpload
+            ? /* Immediate-upload mode: upload button */
+              summary.validFileCount > 0 && (
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <p className="text-xs text-muted-foreground">
+                    Images will be uploaded in the order shown.
+                  </p>
+                  <Button
+                    type="button"
+                    onClick={handleUpload}
+                    disabled={disabled || isUploading}
+                    className="bg-primary hover:bg-primary/80"
+                  >
+                    {isUploading ? (
+                      <>
+                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload {summary.validFileCount} Images
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )
+            : /* Deferred mode: files are uploaded on form submit */
+              summary.validFileCount > 0 && (
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-muted-foreground">
+                    {summary.validFileCount} images ready. First image will be
+                    the main display image.
+                  </p>
+                </div>
+              )}
         </div>
       )}
     </div>

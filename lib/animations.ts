@@ -81,17 +81,17 @@ export const cardHoverVariants: Variants = {
     transition: {
       duration: 0.2,
       type: "tween",
-      ease: "easeIn"
-    }
+      ease: "easeIn",
+    },
   },
   hover: {
     scale: 1.05,
     transition: {
       duration: 0.3,
       type: "tween",
-      ease: "easeOut"
-    }
-  }
+      ease: "easeOut",
+    },
+  },
 };
 
 // Fade in from bottom animation
@@ -105,9 +105,9 @@ export const fadeInFromBottom: Variants = {
     y: 0,
     transition: {
       duration: 0.6,
-      ease: "easeOut"
-    }
-  }
+      ease: "easeOut",
+    },
+  },
 };
 
 // Slide in from left animation
@@ -121,12 +121,12 @@ export const slideInFromLeft: Variants = {
     x: 0,
     transition: {
       duration: 0.6,
-      ease: "easeOut"
-    }
-  }
+      ease: "easeOut",
+    },
+  },
 };
 
-// Slide in from right animation  
+// Slide in from right animation
 export const slideInFromRight: Variants = {
   hidden: {
     opacity: 0,
@@ -137,7 +137,7 @@ export const slideInFromRight: Variants = {
     x: 0,
     transition: {
       duration: 0.6,
-      ease: "easeOut"
-    }
-  }
-}; 
+      ease: "easeOut",
+    },
+  },
+};

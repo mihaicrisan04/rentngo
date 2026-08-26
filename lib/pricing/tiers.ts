@@ -4,7 +4,9 @@ import type { PricingTier, VehiclePricingData } from "./types";
  * Get the base price tier (lowest minDays + highest pricePerDay)
  * This represents the "standard" or "base" price for the vehicle
  */
-export function getBasePriceTier(vehicle: VehiclePricingData): PricingTier | null {
+export function getBasePriceTier(
+  vehicle: VehiclePricingData,
+): PricingTier | null {
   if (!vehicle.pricingTiers || vehicle.pricingTiers.length === 0) {
     return null;
   }
@@ -31,11 +33,16 @@ export function getBasePricePerDay(vehicle: VehiclePricingData): number {
     return baseTier.pricePerDay;
   }
 
-  throw new Error(`Vehicle ${vehicle._id ?? "(unknown)"} has no pricing tiers configured`);
+  throw new Error(
+    `Vehicle ${vehicle._id ?? "(unknown)"} has no pricing tiers configured`,
+  );
 }
 
 /** Get the daily rate for a specific rental duration from the pricing tiers. */
-export function getPriceForDuration(vehicle: VehiclePricingData, days: number): number {
+export function getPriceForDuration(
+  vehicle: VehiclePricingData,
+  days: number,
+): number {
   // If vehicle has pricing tiers, use them
   if (vehicle.pricingTiers && vehicle.pricingTiers.length > 0) {
     // Find the appropriate tier for the rental duration
@@ -69,12 +76,18 @@ export function getPriceForDurationWithSeason(
 }
 
 /** Total rental price (no season/extras) for a duration. */
-export function getTotalPrice(vehicle: VehiclePricingData, days: number): number {
+export function getTotalPrice(
+  vehicle: VehiclePricingData,
+  days: number,
+): number {
   return getPriceForDuration(vehicle, days) * days;
 }
 
 /** Min/max daily rate across the vehicle's pricing tiers. */
-export function getPriceRange(vehicle: VehiclePricingData): { min: number; max: number } {
+export function getPriceRange(vehicle: VehiclePricingData): {
+  min: number;
+  max: number;
+} {
   if (vehicle.pricingTiers && vehicle.pricingTiers.length > 0) {
     const prices = vehicle.pricingTiers.map((tier) => tier.pricePerDay);
     return {

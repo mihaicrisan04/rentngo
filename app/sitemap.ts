@@ -9,9 +9,16 @@ function createBilingualEntry(
   path: string,
   options: {
     lastModified?: Date;
-    changeFrequency: "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never";
+    changeFrequency:
+      | "always"
+      | "hourly"
+      | "daily"
+      | "weekly"
+      | "monthly"
+      | "yearly"
+      | "never";
     priority: number;
-  }
+  },
 ): MetadataRoute.Sitemap {
   const { lastModified = new Date(), changeFrequency, priority } = options;
 
@@ -90,7 +97,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(vehicle._creationTime),
       changeFrequency: "weekly",
       priority: 0.8,
-    })
+    }),
   );
 
   return [

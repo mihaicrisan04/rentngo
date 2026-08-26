@@ -63,9 +63,7 @@ export function AffiliateDashboard() {
   }
 
   const referralUrl = `${
-    typeof window !== "undefined"
-      ? window.location.origin
-      : "https://rngo.ro"
+    typeof window !== "undefined" ? window.location.origin : "https://rngo.ro"
   }/r/${affiliate.slug}`;
 
   const copyLink = async () => {

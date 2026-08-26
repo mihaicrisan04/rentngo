@@ -45,7 +45,9 @@ function formatVehicleLine(vehicle: {
   const details = [
     vehicle.className,
     vehicle.seats ? `${vehicle.seats} seats` : undefined,
-    vehicle.transmission ? TRANSMISSION_LABELS[vehicle.transmission] : undefined,
+    vehicle.transmission
+      ? TRANSMISSION_LABELS[vehicle.transmission]
+      : undefined,
     vehicle.fuelType ? FUEL_LABELS[vehicle.fuelType] : undefined,
   ]
     .filter(Boolean)
@@ -66,7 +68,7 @@ export async function GET() {
     const fleet = await fetchQuery(api.vehicles.getFleetSummary);
     if (fleet.length > 0) {
       fleetSection = ["## Fleet", "", ...fleet.map(formatVehicleLine), ""].join(
-        "\n"
+        "\n",
       );
     }
   } catch {

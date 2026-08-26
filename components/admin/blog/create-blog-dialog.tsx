@@ -37,7 +37,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { toast } from "sonner";
-import { Plus, X, Upload, Wand2, Image as ImageIcon, Eye, Star } from "lucide-react";
+import {
+  Plus,
+  X,
+  Upload,
+  Wand2,
+  Image as ImageIcon,
+  Eye,
+  Star,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import { generateSlugFromTitle, calculateReadingTime } from "@/lib/blog-utils";
@@ -176,11 +184,7 @@ function ImageThumbnail({
     >
       <div className="aspect-[4/3] bg-muted">
         {url ? (
-          <img
-            src={url}
-            alt=""
-            className="w-full h-full object-cover"
-          />
+          <img src={url} alt="" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <ImageIcon className="h-6 w-6 text-muted-foreground/30" />
@@ -277,10 +281,14 @@ export function CreateBlogDialog({
     },
   });
 
-  function getLocaleStatus(lang: "ro" | "en"): "empty" | "partial" | "complete" {
+  function getLocaleStatus(
+    lang: "ro" | "en",
+  ): "empty" | "partial" | "complete" {
     const title = form.watch(lang === "ro" ? "title_ro" : "title_en");
     const slug = form.watch(lang === "ro" ? "slug_ro" : "slug_en");
-    const description = form.watch(lang === "ro" ? "description_ro" : "description_en");
+    const description = form.watch(
+      lang === "ro" ? "description_ro" : "description_en",
+    );
     const content = form.watch(lang === "ro" ? "content_ro" : "content_en");
     const filled = [title, slug, description, content].filter(
       (v) => v && v.trim().length > 0,
@@ -426,11 +434,16 @@ export function CreateBlogDialog({
   };
 
   const renderContentFields = (lang: "ro" | "en") => {
-    const titleField: "title_ro" | "title_en" = lang === "ro" ? "title_ro" : "title_en";
-    const slugField: "slug_ro" | "slug_en" = lang === "ro" ? "slug_ro" : "slug_en";
-    const descField: "description_ro" | "description_en" = lang === "ro" ? "description_ro" : "description_en";
-    const contentField: "content_ro" | "content_en" = lang === "ro" ? "content_ro" : "content_en";
-    const readingTimeField: "readingTime_ro" | "readingTime_en" = lang === "ro" ? "readingTime_ro" : "readingTime_en";
+    const titleField: "title_ro" | "title_en" =
+      lang === "ro" ? "title_ro" : "title_en";
+    const slugField: "slug_ro" | "slug_en" =
+      lang === "ro" ? "slug_ro" : "slug_en";
+    const descField: "description_ro" | "description_en" =
+      lang === "ro" ? "description_ro" : "description_en";
+    const contentField: "content_ro" | "content_en" =
+      lang === "ro" ? "content_ro" : "content_en";
+    const readingTimeField: "readingTime_ro" | "readingTime_en" =
+      lang === "ro" ? "readingTime_ro" : "readingTime_en";
     const label = lang === "ro" ? "Romanian" : "English";
     const slugPlaceholder = lang === "ro" ? "slug-in-romana" : "english-slug";
     const urlPrefix = lang === "ro" ? "/ro/blog/" : "/en/blog/";
@@ -816,9 +829,7 @@ export function CreateBlogDialog({
                       activeLang === "ro" ? "content_ro" : "content_en",
                     )}
                     readingTime={form.watch(
-                      activeLang === "ro"
-                        ? "readingTime_ro"
-                        : "readingTime_en",
+                      activeLang === "ro" ? "readingTime_ro" : "readingTime_en",
                     )}
                     tags={tags}
                   />

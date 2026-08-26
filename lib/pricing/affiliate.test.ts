@@ -84,9 +84,9 @@ describe("computeReferredDiscount", () => {
 
   it("grants nothing on a non-positive subtotal", () => {
     expect(computeReferredDiscount(0, { type: "fixed", value: 10 })).toBe(0);
-    expect(
-      computeReferredDiscount(-5, { type: "percentage", value: 50 }),
-    ).toBe(0);
+    expect(computeReferredDiscount(-5, { type: "percentage", value: 50 })).toBe(
+      0,
+    );
   });
 });
 
@@ -204,15 +204,15 @@ describe("referredEligibility", () => {
 
   it("allows again once every prior conversion is voided", () => {
     // The DB layer maps "only voided priors" to hasLiveConversion: false
-    expect(
-      referredEligibility({ ...base, hasLiveConversion: false }),
-    ).toEqual({ eligible: true });
+    expect(referredEligibility({ ...base, hasLiveConversion: false })).toEqual({
+      eligible: true,
+    });
   });
 
   it("a guest (no user id) never matches the owner's id", () => {
-    expect(
-      referredEligibility({ ...base, bookerUserId: undefined }),
-    ).toEqual({ eligible: true });
+    expect(referredEligibility({ ...base, bookerUserId: undefined })).toEqual({
+      eligible: true,
+    });
   });
 });
 

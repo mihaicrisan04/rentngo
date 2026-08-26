@@ -14,18 +14,25 @@ export type { PriceDetails } from "@/lib/pricing";
 /**
  * Format vehicle name for display
  */
-export function formatVehicleName(make: string, model: string, year?: number): string {
-  const yearStr = year ? ` ${year}` : '';
+export function formatVehicleName(
+  make: string,
+  model: string,
+  year?: number,
+): string {
+  const yearStr = year ? ` ${year}` : "";
   return `${make} ${model}${yearStr}`;
 }
 
 /**
  * Format engine specification display
  */
-export function formatEngineSpec(capacity?: number, type?: string): string | undefined {
+export function formatEngineSpec(
+  capacity?: number,
+  type?: string,
+): string | undefined {
   if (!capacity) return undefined;
   const capacityStr = `${capacity.toFixed(1)}L`;
-  const typeStr = type ? ` ${type}` : '';
+  const typeStr = type ? ` ${type}` : "";
   return `${capacityStr}${typeStr}`.trim();
 }
 
@@ -33,14 +40,17 @@ export function formatEngineSpec(capacity?: number, type?: string): string | und
  * Get vehicle type display label
  */
 export function getVehicleTypeLabel(type?: string): string {
-  if (!type) return '';
+  if (!type) return "";
   return type.charAt(0).toUpperCase() + type.slice(1);
 }
 
 /**
  * Check if dates are valid for rental
  */
-export function isValidRentalPeriod(pickup?: Date, restitution?: Date): boolean {
+export function isValidRentalPeriod(
+  pickup?: Date,
+  restitution?: Date,
+): boolean {
   if (!pickup || !restitution) return false;
   return restitution > pickup;
 }
@@ -57,7 +67,11 @@ export function getMinReturnDate(pickupDate?: Date): Date {
  * Generate a URL-friendly slug from vehicle make, model, and year
  * Format: make-model-year (e.g., "bmw-x5-2024")
  */
-export function generateVehicleSlug(make: string, model: string, year?: number): string {
+export function generateVehicleSlug(
+  make: string,
+  model: string,
+  year?: number,
+): string {
   const parts = [make, model];
   if (year) {
     parts.push(year.toString());
@@ -68,8 +82,8 @@ export function generateVehicleSlug(make: string, model: string, year?: number):
     .toLowerCase()
     .trim()
     .replace(/[^\w\s-]/g, "") // Remove special characters except hyphens
-    .replace(/[\s_]+/g, "-")  // Replace spaces and underscores with hyphens
-    .replace(/-+/g, "-")      // Collapse multiple hyphens
+    .replace(/[\s_]+/g, "-") // Replace spaces and underscores with hyphens
+    .replace(/-+/g, "-") // Collapse multiple hyphens
     .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
 }
 

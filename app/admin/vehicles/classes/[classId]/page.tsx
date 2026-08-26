@@ -105,7 +105,9 @@ export default function VehicleOrderingPage() {
     if (vehicleClass) {
       setAdditional50kmPrice(String(vehicleClass.additional50kmPrice ?? 5));
       setTransferBaseFare(String(vehicleClass.transferBaseFare ?? 25));
-      setTransferMultiplier(vehicleClass.transferMultiplier?.toString() ?? "1.0");
+      setTransferMultiplier(
+        vehicleClass.transferMultiplier?.toString() ?? "1.0",
+      );
     }
   }, [vehicleClass]);
 

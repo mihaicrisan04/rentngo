@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
 const denseClasses =
-  "[&_th]:h-8 [&_th]:py-1 [&_td]:py-1.5 [&_td]:leading-tight"
+  "[&_th]:h-8 [&_th]:py-1 [&_td]:py-1.5 [&_td]:leading-tight";
 
 function Table({
   className,
@@ -13,8 +13,8 @@ function Table({
   dense = false,
   ...props
 }: React.ComponentProps<"table"> & {
-  containerClassName?: string
-  dense?: boolean
+  containerClassName?: string;
+  dense?: boolean;
 }) {
   return (
     <div
@@ -26,16 +26,16 @@ function Table({
         className={cn(
           "w-full caption-bottom text-sm",
           dense && denseClasses,
-          className
+          className,
         )}
         {...props}
       />
     </div>
-  )
+  );
 }
 
 const stickyHeaderClasses =
-  "sticky top-0 z-10 [&>tr>th]:bg-background [&>tr>th]:border-b [&>tr>th:first-child]:rounded-tl-md [&>tr>th:last-child]:rounded-tr-md"
+  "sticky top-0 z-10 [&>tr>th]:bg-background [&>tr>th]:border-b [&>tr>th:first-child]:rounded-tl-md [&>tr>th:last-child]:rounded-tr-md";
 
 function TableHeader({
   className,
@@ -45,10 +45,14 @@ function TableHeader({
   return (
     <thead
       data-slot="table-header"
-      className={cn("[&_tr]:border-b", sticky && stickyHeaderClasses, className)}
+      className={cn(
+        "[&_tr]:border-b",
+        sticky && stickyHeaderClasses,
+        className,
+      )}
       {...props}
     />
-  )
+  );
 }
 
 function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
@@ -58,7 +62,7 @@ function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
       className={cn("[&_tr:last-child]:border-0", className)}
       {...props}
     />
-  )
+  );
 }
 
 function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
@@ -67,23 +71,24 @@ function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
       data-slot="table-footer"
       className={cn(
         "bg-muted/50 border-t font-medium [&>tr]:last:border-b-0",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   return (
-    <tr data-slot="table-row" 
-        className={cn(
+    <tr
+      data-slot="table-row"
+      className={cn(
         "hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function TableHead({ className, ...props }: React.ComponentProps<"th">) {
@@ -92,11 +97,11 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
       data-slot="table-head"
       className={cn(
         "text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function TableCell({ className, ...props }: React.ComponentProps<"td">) {
@@ -105,11 +110,11 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
       data-slot="table-cell"
       className={cn(
         "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function TableCaption({
@@ -122,7 +127,7 @@ function TableCaption({
       className={cn("text-muted-foreground mt-4 text-sm", className)}
       {...props}
     />
-  )
+  );
 }
 
 export {
@@ -134,4 +139,4 @@ export {
   TableRow,
   TableCell,
   TableCaption,
-}
+};

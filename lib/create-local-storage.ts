@@ -52,7 +52,10 @@ export function createLocalStorage<T extends object>(
         }
       }
 
-      localStorage.setItem(key, JSON.stringify({ ...existing, ...dataToMerge }));
+      localStorage.setItem(
+        key,
+        JSON.stringify({ ...existing, ...dataToMerge }),
+      );
     } catch (error) {
       console.warn(`Failed to save ${label} data to localStorage:`, error);
     }

@@ -30,14 +30,31 @@ run = "convex dev"
 [tasks.build]
 alias = "b"
 description = "Build for production"
-sources = ["app/**/*", "components/**/*", "lib/**/*", "hooks/**/*", "messages/**/*", "public/**/*", "package.json", "tsconfig.json", "next.config.ts", "tailwind.config.ts"]
+sources = [
+  "app/**/*",
+  "components/**/*",
+  "lib/**/*",
+  "hooks/**/*",
+  "messages/**/*",
+  "public/**/*",
+  "package.json",
+  "tsconfig.json",
+  "next.config.ts",
+  "tailwind.config.ts",
+]
 outputs = [".next/**/*"]
 run = "next build --webpack"
 
 [tasks.lint]
 alias = "l"
 description = "Run oxlint"
-sources = ["app/**/*", "components/**/*", "lib/**/*", "hooks/**/*", "convex/**/*"]
+sources = [
+  "app/**/*",
+  "components/**/*",
+  "lib/**/*",
+  "hooks/**/*",
+  "convex/**/*",
+]
 run = "oxlint"
 
 [tasks."lint:fix"]
@@ -78,13 +95,27 @@ run = "bun run test:watch"
 [tasks.typecheck]
 alias = "tc"
 description = "Run TypeScript type checking"
-sources = ["app/**/*", "components/**/*", "lib/**/*", "hooks/**/*", "convex/**/*", "tsconfig.json"]
+sources = [
+  "app/**/*",
+  "components/**/*",
+  "lib/**/*",
+  "hooks/**/*",
+  "convex/**/*",
+  "tsconfig.json",
+]
 run = "tsc --noEmit"
 
 [tasks."typecheck:fast"]
 alias = "tcf"
 description = "Run fast advisory TypeScript type checking (tsgo)"
-sources = ["app/**/*", "components/**/*", "lib/**/*", "hooks/**/*", "convex/**/*", "tsconfig.json"]
+sources = [
+  "app/**/*",
+  "components/**/*",
+  "lib/**/*",
+  "hooks/**/*",
+  "convex/**/*",
+  "tsconfig.json",
+]
 run = "tsgo --noEmit --tsBuildInfoFile .tsgo-cache/tsconfig.tsbuildinfo"
 
 [tasks."convex:deploy"]

@@ -48,7 +48,10 @@ export const TransferPricingSection: React.FC<TransferPricingSectionProps> = ({
           <Text className="text-[16px] text-gray-800 m-0">
             {distanceKm} km
             {transferType === "round_trip" && (
-              <span className="text-gray-600 text-[14px]"> ({labels?.roundTrip ?? "Round Trip"})</span>
+              <span className="text-gray-600 text-[14px]">
+                {" "}
+                ({labels?.roundTrip ?? "Round Trip"})
+              </span>
             )}
           </Text>
         </Column>
@@ -98,4 +101,3 @@ export const TransferPricingSection: React.FC<TransferPricingSectionProps> = ({
     </Section>
   );
 };
-

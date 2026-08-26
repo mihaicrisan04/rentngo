@@ -7,7 +7,7 @@ import { Calendar } from "lucide-react";
 import { LocationPicker } from "@/components/shared/search-filters/location-picker";
 import { DateTimePicker } from "@/components/shared/search-filters/date-time-picker";
 import { SearchData } from "@/lib/search-storage";
-import { useTranslations } from 'next-intl';
+import { useTranslations } from "next-intl";
 
 interface RentalDetailsProps {
   deliveryLocation?: string;
@@ -28,7 +28,7 @@ export function RentalDetails({
   returnTime,
   onUpdateDetails,
 }: RentalDetailsProps) {
-  const t = useTranslations('rentalDetails');
+  const t = useTranslations("rentalDetails");
 
   // Calendar open states for sequential flow
   const [pickupCalendarOpen, setPickupCalendarOpen] = React.useState(false);
@@ -36,16 +36,19 @@ export function RentalDetails({
 
   const today = useToday();
 
-  const handleUpdate = React.useCallback((updates: Partial<SearchData>) => {
-    onUpdateDetails?.(updates);
-  }, [onUpdateDetails]);
+  const handleUpdate = React.useCallback(
+    (updates: Partial<SearchData>) => {
+      onUpdateDetails?.(updates);
+    },
+    [onUpdateDetails],
+  );
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
           <Calendar className="h-5 w-5" />
-          <span>{t('title')}</span>
+          <span>{t("title")}</span>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -53,24 +56,30 @@ export function RentalDetails({
           {/* Pickup Details */}
           <div className="space-y-4">
             <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-              {t('pickupDetails')}
+              {t("pickupDetails")}
             </h4>
             <div className="space-y-4">
               <LocationPicker
                 id="pickup-location"
-                label={t('pickupLocation')}
+                label={t("pickupLocation")}
                 value={deliveryLocation || ""}
-                onValueChange={(value) => handleUpdate({ deliveryLocation: value })}
-                placeholder={t('selectPickupLocation')}
+                onValueChange={(value) =>
+                  handleUpdate({ deliveryLocation: value })
+                }
+                placeholder={t("selectPickupLocation")}
                 disabled={false}
               />
               <DateTimePicker
                 id="pickup-datetime"
-                label={t('pickupDateTime')}
+                label={t("pickupDateTime")}
                 dateState={pickupDate}
                 setDateState={(date) => {
                   // Auto-adjust return date if needed
-                  if (date && returnDate && date.getTime() > returnDate.getTime()) {
+                  if (
+                    date &&
+                    returnDate &&
+                    date.getTime() > returnDate.getTime()
+                  ) {
                     handleUpdate({ pickupDate: date, returnDate: date });
                   } else {
                     handleUpdate({ pickupDate: date });
@@ -92,23 +101,29 @@ export function RentalDetails({
           {/* Return Details */}
           <div className="space-y-4">
             <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-              {t('returnDetails')}
+              {t("returnDetails")}
             </h4>
             <div className="space-y-4">
               <LocationPicker
                 id="return-location"
-                label={t('returnLocation')}
+                label={t("returnLocation")}
                 value={restitutionLocation || ""}
-                onValueChange={(value) => handleUpdate({ restitutionLocation: value })}
-                placeholder={t('selectReturnLocation')}
+                onValueChange={(value) =>
+                  handleUpdate({ restitutionLocation: value })
+                }
+                placeholder={t("selectReturnLocation")}
                 disabled={false}
               />
               <DateTimePicker
                 id="return-datetime"
-                label={t('returnDateTime')}
+                label={t("returnDateTime")}
                 dateState={returnDate}
                 setDateState={(date) => {
-                  if (date && pickupDate && date.getTime() < pickupDate.getTime()) {
+                  if (
+                    date &&
+                    pickupDate &&
+                    date.getTime() < pickupDate.getTime()
+                  ) {
                     handleUpdate({ returnDate: pickupDate });
                   } else {
                     handleUpdate({ returnDate: date });

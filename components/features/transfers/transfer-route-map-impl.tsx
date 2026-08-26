@@ -183,14 +183,20 @@ export function TransferRouteMap({
       map.remove();
       mapRef.current = null;
     };
-  }, [pickupCoordinates, dropoffCoordinates, pickupLabel, dropoffLabel, compact]);
+  }, [
+    pickupCoordinates,
+    dropoffCoordinates,
+    pickupLabel,
+    dropoffLabel,
+    compact,
+  ]);
 
   if (error) {
     return (
       <div
         className={cn(
           "flex items-center justify-center bg-muted rounded-lg",
-          className
+          className,
         )}
       >
         <p className="text-sm text-muted-foreground">{error}</p>
@@ -212,7 +218,7 @@ export function TransferRouteMap({
 
 function createMarkerElement(
   type: "pickup" | "dropoff",
-  label: string
+  label: string,
 ): HTMLDivElement {
   const container = document.createElement("div");
   container.className = "flex flex-col items-center";
@@ -240,7 +246,9 @@ function createMarkerElement(
   return container;
 }
 
-function createCompactMarkerElement(type: "pickup" | "dropoff"): HTMLDivElement {
+function createCompactMarkerElement(
+  type: "pickup" | "dropoff",
+): HTMLDivElement {
   const pin = document.createElement("div");
   pin.className = `
     w-4 h-4 rounded-full border-2 border-white shadow-md flex items-center justify-center

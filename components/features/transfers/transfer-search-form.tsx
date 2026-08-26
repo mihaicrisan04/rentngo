@@ -321,7 +321,9 @@ export function TransferSearchForm({
                 timeState={pickupTime}
                 setTimeState={setPickupTime}
                 minDate={today}
-                disabledDateRanges={(date: Date) => (today ? date < today : false)}
+                disabledDateRanges={(date: Date) =>
+                  today ? date < today : false
+                }
                 popoverAlign="start"
                 contentAlign="start"
                 isLoading={isLoading}
@@ -362,10 +364,9 @@ export function TransferSearchForm({
                   setTimeState={setReturnTime}
                   minDate={pickupDate || today}
                   disabledDateRanges={(date: Date) => {
-                  const min = pickupDate || today;
-                  return min ? date < min : false;
-                }
-                  }
+                    const min = pickupDate || today;
+                    return min ? date < min : false;
+                  }}
                   popoverAlign="end"
                   contentAlign="start"
                   isLoading={isLoading}

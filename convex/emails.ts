@@ -24,7 +24,8 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || COMPANY.email;
 // EMAIL_FROM / EMAIL_SUBJECT_PREFIX are set per Convex deployment so the
 // develop environment sends visibly distinct emails (e.g. "Rent'n Go [DEV]"
 // with "[DEV] " subjects) from the same verified sender domain.
-const FROM_EMAIL = process.env.EMAIL_FROM || `${COMPANY.name} <noreply@rngo.ro>`;
+const FROM_EMAIL =
+  process.env.EMAIL_FROM || `${COMPANY.name} <noreply@rngo.ro>`;
 const SUBJECT_PREFIX = process.env.EMAIL_SUBJECT_PREFIX || "";
 
 // Validators for email data
@@ -211,7 +212,9 @@ export const sendTransferConfirmationEmail = internalAction({
       estimatedDurationMinutes: args.estimatedDurationMinutes,
       pricingDetails: args.pricingDetails,
       paymentMethod: args.paymentMethod as
-        "cash_on_delivery" | "card_on_delivery" | "card_online",
+        | "cash_on_delivery"
+        | "card_on_delivery"
+        | "card_online",
       locale,
     };
 

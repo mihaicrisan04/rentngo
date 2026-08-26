@@ -7,8 +7,11 @@ import { Plus } from "lucide-react";
 import { CouponsTable } from "@/components/admin/coupons/coupons-table";
 
 const CreateCouponDialog = dynamic(
-  () => import("@/components/admin/coupons/create-coupon-dialog").then(m => m.CreateCouponDialog),
-  { ssr: false }
+  () =>
+    import("@/components/admin/coupons/create-coupon-dialog").then(
+      (m) => m.CreateCouponDialog,
+    ),
+  { ssr: false },
 );
 
 export function CouponsManagement() {
@@ -19,7 +22,9 @@ export function CouponsManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Coupons Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Coupons Management
+          </h1>
           <p className="text-muted-foreground">
             Create and manage discount codes for rentals and transfers
           </p>

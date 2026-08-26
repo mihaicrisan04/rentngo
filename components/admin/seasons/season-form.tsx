@@ -12,10 +12,23 @@ import {
 } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, X } from "lucide-react";
-import { emptySeasonPeriod, type SeasonFormData } from "@/components/admin/seasons/season-schema";
+import {
+  emptySeasonPeriod,
+  type SeasonFormData,
+} from "@/components/admin/seasons/season-schema";
 
 function handleNumberInput(e: React.KeyboardEvent<HTMLInputElement>) {
-  if (!/[0-9.]/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+  if (
+    !/[0-9.]/.test(e.key) &&
+    ![
+      "Backspace",
+      "Delete",
+      "Tab",
+      "Enter",
+      "ArrowLeft",
+      "ArrowRight",
+    ].includes(e.key)
+  ) {
     e.preventDefault();
   }
 }
@@ -25,7 +38,10 @@ interface SeasonFormFieldsProps {
   isSubmitting: boolean;
 }
 
-export function SeasonFormFields({ form, isSubmitting }: SeasonFormFieldsProps) {
+export function SeasonFormFields({
+  form,
+  isSubmitting,
+}: SeasonFormFieldsProps) {
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "periods",
@@ -178,7 +194,9 @@ export function SeasonFormFields({ form, isSubmitting }: SeasonFormFieldsProps) 
               name={`periods.${index}.description`}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs">Description (Optional)</FormLabel>
+                  <FormLabel className="text-xs">
+                    Description (Optional)
+                  </FormLabel>
                   <FormControl>
                     <Input
                       {...field}

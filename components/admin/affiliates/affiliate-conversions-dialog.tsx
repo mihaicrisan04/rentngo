@@ -120,9 +120,7 @@ export function AffiliateConversionsDialog({
                           disabled={voidingId === conversion._id}
                           onClick={() => handleVoid(conversion._id)}
                         >
-                          {voidingId === conversion._id
-                            ? "Voiding..."
-                            : "Void"}
+                          {voidingId === conversion._id ? "Voiding..." : "Void"}
                         </Button>
                       )}
                     </TableCell>

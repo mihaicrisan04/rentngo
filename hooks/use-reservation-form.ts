@@ -5,10 +5,7 @@ import { useTranslations } from "next-intl";
 import { api } from "@/convex/_generated/api";
 import { searchStorage } from "@/lib/search-storage";
 import type { PaymentMethod } from "@/lib/checkout-payment-methods";
-import {
-  FormErrors,
-  validateReservationForm,
-} from "@/lib/reservation-schema";
+import { FormErrors, validateReservationForm } from "@/lib/reservation-schema";
 
 export interface PersonalInfo {
   name: string;

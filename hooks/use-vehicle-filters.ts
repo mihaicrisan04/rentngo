@@ -42,7 +42,7 @@ const EMPTY_FILTER_STATE: FilterState = {
 function matchesCategory(
   vehicle: Vehicle,
   category: FilterCategory,
-  selected: string[]
+  selected: string[],
 ): boolean {
   if (selected.length === 0) return true;
   const value = categoryValue[category](vehicle);
@@ -64,7 +64,7 @@ interface UseVehicleFiltersReturn<V extends Vehicle> {
 }
 
 export function useVehicleFilters<V extends Vehicle>(
-  allVehicles: V[] | null
+  allVehicles: V[] | null,
 ): UseVehicleFiltersReturn<V> {
   const [filterState, setFilterState] =
     useState<FilterState>(EMPTY_FILTER_STATE);
@@ -97,8 +97,8 @@ export function useVehicleFilters<V extends Vehicle>(
 
     return allVehicles.filter((vehicle) =>
       FILTER_CATEGORIES.every((category) =>
-        matchesCategory(vehicle, category, filterState[category])
-      )
+        matchesCategory(vehicle, category, filterState[category]),
+      ),
     );
   }, [allVehicles, filterState]);
 
@@ -111,7 +111,7 @@ export function useVehicleFilters<V extends Vehicle>(
           : [...prev[category], value],
       }));
     },
-    []
+    [],
   );
 
   const removeFilter = useCallback(
@@ -121,7 +121,7 @@ export function useVehicleFilters<V extends Vehicle>(
         [category]: prev[category].filter((v) => v !== value),
       }));
     },
-    []
+    [],
   );
 
   const clearAllFilters = useCallback(() => {
@@ -132,9 +132,9 @@ export function useVehicleFilters<V extends Vehicle>(
     () =>
       FILTER_CATEGORIES.reduce(
         (total, category) => total + filterState[category].length,
-        0
+        0,
       ),
-    [filterState]
+    [filterState],
   );
 
   return {

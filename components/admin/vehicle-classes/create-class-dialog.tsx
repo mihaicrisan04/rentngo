@@ -202,7 +202,9 @@ export function CreateClassDialog({
                       placeholder="5.00"
                       {...field}
                       disabled={isSubmitting}
-                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      onChange={(e) =>
+                        field.onChange(parseFloat(e.target.value) || 0)
+                      }
                       value={field.value || 5}
                     />
                   </FormControl>

@@ -37,7 +37,9 @@ describe("formatRelativeTime", () => {
   it("uses a caller-supplied absolute formatter past the cutoff", () => {
     const old = now - 30 * DAY;
     expect(formatRelativeTime(old, now, () => "long ago")).toBe("long ago");
-    expect(formatRelativeTime(now - HOUR, now, () => "long ago")).toBe("1h ago");
+    expect(formatRelativeTime(now - HOUR, now, () => "long ago")).toBe(
+      "1h ago",
+    );
   });
 
   it("falls back to the absolute date for future timestamps", () => {

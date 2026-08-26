@@ -51,16 +51,33 @@ const reservationSchema = z.object({
   vehicleId: z.string().min(1, "Vehicle is required"),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().min(1, "End date is required"),
-  pickupTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Please enter time in HH:MM format"),
-  restitutionTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Please enter time in HH:MM format"),
+  pickupTime: z
+    .string()
+    .regex(
+      /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+      "Please enter time in HH:MM format",
+    ),
+  restitutionTime: z
+    .string()
+    .regex(
+      /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+      "Please enter time in HH:MM format",
+    ),
   pickupLocation: z.string().min(1, "Pickup location is required"),
   restitutionLocation: z.string().min(1, "Return location is required"),
-  paymentMethod: z.enum(["cash_on_delivery", "card_on_delivery", "card_online"], {
-    error: "Payment method is required",
-  }),
-  totalPrice: z.string()
+  paymentMethod: z.enum(
+    ["cash_on_delivery", "card_on_delivery", "card_online"],
+    {
+      error: "Payment method is required",
+    },
+  ),
+  totalPrice: z
+    .string()
     .min(1, "Total price is required")
-    .regex(/^\d+(\.\d{1,2})?$/, "Price must be a valid number with up to 2 decimal places")
+    .regex(
+      /^\d+(\.\d{1,2})?$/,
+      "Price must be a valid number with up to 2 decimal places",
+    )
     .refine((val) => {
       const price = parseFloat(val);
       return price > 0;
@@ -71,10 +88,18 @@ const reservationSchema = z.object({
   customerMessage: z.string().optional(),
   flightNumber: z.string().optional(),
   isSCDWSelected: z.boolean(),
-  deductibleAmount: z.string()
-    .regex(/^\d+(\.\d{1,2})?$/, "Deductible must be a valid number with up to 2 decimal places"),
-  protectionCost: z.string()
-    .regex(/^\d+(\.\d{1,2})?$/, "Protection cost must be a valid number with up to 2 decimal places")
+  deductibleAmount: z
+    .string()
+    .regex(
+      /^\d+(\.\d{1,2})?$/,
+      "Deductible must be a valid number with up to 2 decimal places",
+    ),
+  protectionCost: z
+    .string()
+    .regex(
+      /^\d+(\.\d{1,2})?$/,
+      "Protection cost must be a valid number with up to 2 decimal places",
+    )
     .optional(),
 });
 
@@ -124,10 +149,11 @@ export function CreateReservationDialog({
   const watchedEndDate = form.watch("endDate");
 
   // Get seasonal pricing based on selected dates
-  const { multiplier: seasonalMultiplier, seasonId } = useDateBasedSeasonalPricing(
-    watchedStartDate ? new Date(watchedStartDate) : null,
-    watchedEndDate ? new Date(watchedEndDate) : null,
-  );
+  const { multiplier: seasonalMultiplier, seasonId } =
+    useDateBasedSeasonalPricing(
+      watchedStartDate ? new Date(watchedStartDate) : null,
+      watchedEndDate ? new Date(watchedEndDate) : null,
+    );
 
   useEffect(() => {
     if (!open) {
@@ -162,7 +188,9 @@ export function CreateReservationDialog({
         additionalCharges: undefined,
         isSCDWSelected: values.isSCDWSelected,
         deductibleAmount: parseFloat(values.deductibleAmount),
-        protectionCost: values.protectionCost ? parseFloat(values.protectionCost) : undefined,
+        protectionCost: values.protectionCost
+          ? parseFloat(values.protectionCost)
+          : undefined,
         seasonId: seasonId as Id<"seasons"> | undefined,
         seasonalMultiplier: seasonalMultiplier,
       });
@@ -179,7 +207,17 @@ export function CreateReservationDialog({
   };
 
   const handleNumberInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!/[0-9.]/.test(e.key) && !['Backspace', 'Delete', 'Tab', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+    if (
+      !/[0-9.]/.test(e.key) &&
+      ![
+        "Backspace",
+        "Delete",
+        "Tab",
+        "Enter",
+        "ArrowLeft",
+        "ArrowRight",
+      ].includes(e.key)
+    ) {
       e.preventDefault();
     }
   };
@@ -193,14 +231,21 @@ export function CreateReservationDialog({
 
     if (!vehicleId || !vehicles || !startDate || !endDate) return null;
 
-    const selectedVehicle = vehicles.find(v => v._id === vehicleId);
+    const selectedVehicle = vehicles.find((v) => v._id === vehicleId);
     if (!selectedVehicle) return null;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const days = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+    const days = Math.max(
+      1,
+      Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)),
+    );
 
-    const seasonalPricePerDay = getPriceForDurationWithSeason(selectedVehicle, days, seasonalMultiplier);
+    const seasonalPricePerDay = getPriceForDurationWithSeason(
+      selectedVehicle,
+      days,
+      seasonalMultiplier,
+    );
     const basePrice = seasonalPricePerDay * days;
     return basePrice + protectionCost;
   };
@@ -211,32 +256,34 @@ export function CreateReservationDialog({
         <DialogHeader>
           <DialogTitle>Create New Reservation</DialogTitle>
         </DialogHeader>
-        
+
         <ScrollArea className="max-h-[calc(80vh-150px)] pr-6">
           <Tabs defaultValue="details" className="w-full">
-            <TabsList className={cn(
-              "inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full grid grid-cols-3"
-            )}>
-              <TabsTrigger 
+            <TabsList
+              className={cn(
+                "inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-full grid grid-cols-3",
+              )}
+            >
+              <TabsTrigger
                 value="details"
                 className={cn(
-                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
                 )}
               >
                 Reservation Details
               </TabsTrigger>
-              <TabsTrigger 
+              <TabsTrigger
                 value="customer"
                 className={cn(
-                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
                 )}
               >
                 Customer Info
               </TabsTrigger>
-              <TabsTrigger 
+              <TabsTrigger
                 value="pricing"
                 className={cn(
-                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
                 )}
               >
                 Pricing & Payment
@@ -244,11 +291,14 @@ export function CreateReservationDialog({
             </TabsList>
 
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
-                <TabsContent 
-                  value="details" 
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6 py-4"
+              >
+                <TabsContent
+                  value="details"
                   className={cn(
-                    "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4"
+                    "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4",
                   )}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -258,18 +308,35 @@ export function CreateReservationDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Vehicle</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={isSubmitting}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select vehicle" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {vehicles?.filter(v => v.status === 'available').map((vehicle) => (
-                                <SelectItem key={vehicle._id} value={vehicle._id}>
-                                  {vehicle.make} {vehicle.model} ({vehicle.year}) - {Math.round((vehicle.pricingTiers && vehicle.pricingTiers.length > 0 ? vehicle.pricingTiers[0].pricePerDay : 50) * seasonalMultiplier)} EUR/day
-                                </SelectItem>
-                              ))}
+                              {vehicles
+                                ?.filter((v) => v.status === "available")
+                                .map((vehicle) => (
+                                  <SelectItem
+                                    key={vehicle._id}
+                                    value={vehicle._id}
+                                  >
+                                    {vehicle.make} {vehicle.model} (
+                                    {vehicle.year}) -{" "}
+                                    {Math.round(
+                                      (vehicle.pricingTiers &&
+                                      vehicle.pricingTiers.length > 0
+                                        ? vehicle.pricingTiers[0].pricePerDay
+                                        : 50) * seasonalMultiplier,
+                                    )}{" "}
+                                    EUR/day
+                                  </SelectItem>
+                                ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -283,20 +350,38 @@ export function CreateReservationDialog({
                           const vehicleId = form.watch("vehicleId");
                           const startDate = form.watch("startDate");
                           const endDate = form.watch("endDate");
-                          
-                          if (!vehicleId || !vehicles || !startDate || !endDate) {
+
+                          if (
+                            !vehicleId ||
+                            !vehicles ||
+                            !startDate ||
+                            !endDate
+                          ) {
                             return "Select vehicle and dates to see pricing";
                           }
 
-                          const selectedVehicle = vehicles.find(v => v._id === vehicleId);
+                          const selectedVehicle = vehicles.find(
+                            (v) => v._id === vehicleId,
+                          );
                           if (!selectedVehicle) return "";
 
                           const start = new Date(startDate);
                           const end = new Date(endDate);
-                          const days = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+                          const days = Math.max(
+                            1,
+                            Math.ceil(
+                              (end.getTime() - start.getTime()) /
+                                (1000 * 60 * 60 * 24),
+                            ),
+                          );
 
-                          const seasonalPricePerDay = getPriceForDurationWithSeason(selectedVehicle, days, seasonalMultiplier);
-                          return `${days} ${days !== 1 ? 'days' : 'day'} × ${seasonalPricePerDay} EUR = ${days * seasonalPricePerDay} EUR`;
+                          const seasonalPricePerDay =
+                            getPriceForDurationWithSeason(
+                              selectedVehicle,
+                              days,
+                              seasonalMultiplier,
+                            );
+                          return `${days} ${days !== 1 ? "days" : "day"} × ${seasonalPricePerDay} EUR = ${days * seasonalPricePerDay} EUR`;
                         })()}
                       </div>
                     </div>
@@ -308,8 +393,8 @@ export function CreateReservationDialog({
                         <FormItem>
                           <FormLabel>Start Date</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               type="date"
                               disabled={isSubmitting}
                             />
@@ -326,8 +411,8 @@ export function CreateReservationDialog({
                         <FormItem>
                           <FormLabel>End Date</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               type="date"
                               disabled={isSubmitting}
                             />
@@ -344,8 +429,8 @@ export function CreateReservationDialog({
                         <FormItem>
                           <FormLabel>Pickup Time</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               type="time"
                               disabled={isSubmitting}
                             />
@@ -362,8 +447,8 @@ export function CreateReservationDialog({
                         <FormItem>
                           <FormLabel>Return Time</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               type="time"
                               disabled={isSubmitting}
                             />
@@ -380,7 +465,11 @@ export function CreateReservationDialog({
                         <FormItem>
                           <FormLabel>Pickup Location</FormLabel>
                           <FormControl>
-                            <Input {...field} disabled={isSubmitting} placeholder="e.g., Bucharest Airport" />
+                            <Input
+                              {...field}
+                              disabled={isSubmitting}
+                              placeholder="e.g., Bucharest Airport"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -394,7 +483,11 @@ export function CreateReservationDialog({
                         <FormItem>
                           <FormLabel>Return Location</FormLabel>
                           <FormControl>
-                            <Input {...field} disabled={isSubmitting} placeholder="e.g., Bucharest Airport" />
+                            <Input
+                              {...field}
+                              disabled={isSubmitting}
+                              placeholder="e.g., Bucharest Airport"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -403,10 +496,10 @@ export function CreateReservationDialog({
                   </div>
                 </TabsContent>
 
-                <TabsContent 
-                  value="customer" 
+                <TabsContent
+                  value="customer"
                   className={cn(
-                    "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4"
+                    "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4",
                   )}
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -431,7 +524,11 @@ export function CreateReservationDialog({
                         <FormItem>
                           <FormLabel>Customer Email</FormLabel>
                           <FormControl>
-                            <Input {...field} type="email" disabled={isSubmitting} />
+                            <Input
+                              {...field}
+                              type="email"
+                              disabled={isSubmitting}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -459,10 +556,10 @@ export function CreateReservationDialog({
                         <FormItem>
                           <FormLabel>Flight Number (Optional)</FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
+                            <Input
+                              {...field}
                               placeholder="e.g., RO 123"
-                              disabled={isSubmitting} 
+                              disabled={isSubmitting}
                             />
                           </FormControl>
                           <FormMessage />
@@ -478,8 +575,8 @@ export function CreateReservationDialog({
                       <FormItem>
                         <FormLabel>Customer Message (Optional)</FormLabel>
                         <FormControl>
-                          <Textarea 
-                            {...field} 
+                          <Textarea
+                            {...field}
                             placeholder="Any special requests or notes..."
                             disabled={isSubmitting}
                             className="min-h-[100px]"
@@ -491,15 +588,17 @@ export function CreateReservationDialog({
                   />
                 </TabsContent>
 
-                <TabsContent 
-                  value="pricing" 
+                <TabsContent
+                  value="pricing"
                   className={cn(
-                    "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4"
+                    "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 space-y-4",
                   )}
                 >
                   <div className="space-y-4">
-                    <h4 className="text-sm font-medium">Protection & Insurance</h4>
-                    
+                    <h4 className="text-sm font-medium">
+                      Protection & Insurance
+                    </h4>
+
                     <FormField
                       control={form.control}
                       name="isSCDWSelected"
@@ -538,13 +637,15 @@ export function CreateReservationDialog({
                           <FormItem>
                             <FormLabel>Deductible Amount (EUR)</FormLabel>
                             <FormControl>
-                              <Input 
+                              <Input
                                 {...field}
                                 type="number"
                                 step="0.01"
                                 min="0"
                                 placeholder="0.00"
-                                disabled={isSubmitting || form.watch("isSCDWSelected")}
+                                disabled={
+                                  isSubmitting || form.watch("isSCDWSelected")
+                                }
                               />
                             </FormControl>
                             <FormMessage />
@@ -559,7 +660,7 @@ export function CreateReservationDialog({
                           <FormItem>
                             <FormLabel>Protection Cost (EUR)</FormLabel>
                             <FormControl>
-                              <Input 
+                              <Input
                                 {...field}
                                 type="number"
                                 step="0.01"
@@ -584,8 +685,8 @@ export function CreateReservationDialog({
                           <FormLabel>Total Price (EUR)</FormLabel>
                           <div className="flex gap-2">
                             <FormControl>
-                              <Input 
-                                {...field} 
+                              <Input
+                                {...field}
                                 onKeyDown={handleNumberInput}
                                 disabled={isSubmitting}
                                 placeholder="e.g., 250.00"
@@ -597,9 +698,13 @@ export function CreateReservationDialog({
                               size="sm"
                               disabled={isSubmitting}
                               onClick={() => {
-                                const suggestedPrice = calculateSuggestedPrice();
+                                const suggestedPrice =
+                                  calculateSuggestedPrice();
                                 if (suggestedPrice !== null) {
-                                  form.setValue("totalPrice", suggestedPrice.toString());
+                                  form.setValue(
+                                    "totalPrice",
+                                    suggestedPrice.toString(),
+                                  );
                                 }
                               }}
                             >
@@ -617,16 +722,26 @@ export function CreateReservationDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Payment Method</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={isSubmitting}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select payment method" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="cash_on_delivery">Cash on Delivery</SelectItem>
-                              <SelectItem value="card_on_delivery">Card on Delivery</SelectItem>
-                              <SelectItem value="card_online">Card Online</SelectItem>
+                              <SelectItem value="cash_on_delivery">
+                                Cash on Delivery
+                              </SelectItem>
+                              <SelectItem value="card_on_delivery">
+                                Card on Delivery
+                              </SelectItem>
+                              <SelectItem value="card_online">
+                                Card Online
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -642,38 +757,62 @@ export function CreateReservationDialog({
                       const vehicleId = form.watch("vehicleId");
                       const startDate = form.watch("startDate");
                       const endDate = form.watch("endDate");
-                      const protectionCost = parseFloat(form.watch("protectionCost") || "0");
+                      const protectionCost = parseFloat(
+                        form.watch("protectionCost") || "0",
+                      );
                       const isSCDW = form.watch("isSCDWSelected");
-                      
+
                       if (!vehicleId || !vehicles || !startDate || !endDate) {
-                        return <p className="text-sm text-muted-foreground">Select vehicle and dates to see breakdown</p>;
+                        return (
+                          <p className="text-sm text-muted-foreground">
+                            Select vehicle and dates to see breakdown
+                          </p>
+                        );
                       }
 
-                      const selectedVehicle = vehicles.find(v => v._id === vehicleId);
+                      const selectedVehicle = vehicles.find(
+                        (v) => v._id === vehicleId,
+                      );
                       if (!selectedVehicle) return null;
 
                       const start = new Date(startDate);
                       const end = new Date(endDate);
-                      const days = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
-                      
-                      const seasonalPricePerDay = getPriceForDurationWithSeason(selectedVehicle, days, seasonalMultiplier);
+                      const days = Math.max(
+                        1,
+                        Math.ceil(
+                          (end.getTime() - start.getTime()) /
+                            (1000 * 60 * 60 * 24),
+                        ),
+                      );
+
+                      const seasonalPricePerDay = getPriceForDurationWithSeason(
+                        selectedVehicle,
+                        days,
+                        seasonalMultiplier,
+                      );
                       const basePrice = seasonalPricePerDay * days;
 
                       return (
                         <div className="text-sm space-y-1">
                           <div className="flex justify-between">
-                            <span>Base rental ({days} {days !== 1 ? 'days' : 'day'})</span>
+                            <span>
+                              Base rental ({days} {days !== 1 ? "days" : "day"})
+                            </span>
                             <span>{basePrice.toFixed(2)} EUR</span>
                           </div>
                           {protectionCost > 0 && (
                             <div className="flex justify-between">
-                              <span>Protection ({isSCDW ? 'SCDW' : 'Standard'})</span>
+                              <span>
+                                Protection ({isSCDW ? "SCDW" : "Standard"})
+                              </span>
                               <span>{protectionCost.toFixed(2)} EUR</span>
                             </div>
                           )}
                           <div className="border-t pt-1 flex justify-between font-medium">
                             <span>Total</span>
-                            <span>{(basePrice + protectionCost).toFixed(2)} EUR</span>
+                            <span>
+                              {(basePrice + protectionCost).toFixed(2)} EUR
+                            </span>
                           </div>
                         </div>
                       );
@@ -705,4 +844,4 @@ export function CreateReservationDialog({
       </DialogContent>
     </Dialog>
   );
-} 
+}

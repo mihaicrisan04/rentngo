@@ -38,9 +38,12 @@ import { toast } from "sonner";
 import { Mail, Send } from "lucide-react";
 
 const emailSchema = z.object({
-  emailType: z.enum(["modification", "confirmation", "cancellation", "reminder"], {
-    error: "Email type is required",
-  }),
+  emailType: z.enum(
+    ["modification", "confirmation", "cancellation", "reminder"],
+    {
+      error: "Email type is required",
+    },
+  ),
   subject: z.string().min(1, "Subject is required"),
   message: z.string().min(1, "Message is required"),
 });
@@ -60,10 +63,13 @@ export function ReservationEmailDialog({
   reservationId,
   onSuccess,
 }: ReservationEmailDialogProps) {
-  const reservation = useQuery(api.reservations.getReservationById, reservationId ? { reservationId } : "skip");
+  const reservation = useQuery(
+    api.reservations.getReservationById,
+    reservationId ? { reservationId } : "skip",
+  );
   const vehicle = useQuery(
-    api.vehicles.getById, 
-    reservation?.vehicleId ? { id: reservation.vehicleId } : "skip"
+    api.vehicles.getById,
+    reservation?.vehicleId ? { id: reservation.vehicleId } : "skip",
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -106,7 +112,7 @@ Reservation Details:
 - Vehicle: ${vehicleName}
 - Pickup: ${reservation.pickupLocation} at ${reservation.pickupTime}
 - Return: ${reservation.restitutionLocation} at ${reservation.restitutionTime}
-- Total Price: €${reservation.totalPrice}`
+- Total Price: €${reservation.totalPrice}`,
         };
       case "confirmation":
         return {
@@ -121,12 +127,12 @@ Reservation Details:
 - Pickup: ${reservation.pickupLocation} at ${reservation.pickupTime}
 - Return: ${reservation.restitutionLocation} at ${reservation.restitutionTime}
 - Total Price: €${reservation.totalPrice}
-- Payment Method: ${reservation.paymentMethod.replace(/_/g, ' ')}
+- Payment Method: ${reservation.paymentMethod.replace(/_/g, " ")}
 
 We look forward to serving you!
 
 Best regards,
-Rent'n Go Team`
+Rent'n Go Team`,
         };
       case "cancellation":
         return {
@@ -140,7 +146,7 @@ We regret to inform you that your reservation for the ${vehicleName} from ${star
 If you have any questions or would like to make a new reservation, please don't hesitate to contact us.
 
 Best regards,
-Rent'n Go Team`
+Rent'n Go Team`,
         };
       case "reminder":
         return {
@@ -156,7 +162,7 @@ This is a friendly reminder about your upcoming reservation:
 Please ensure you have all necessary documents ready for pickup.
 
 Best regards,
-Rent'n Go Team`
+Rent'n Go Team`,
         };
       default:
         return { subject: "", message: "" };
@@ -186,10 +192,10 @@ Rent'n Go Team`
       };
 
       // Send email via our API route
-      const response = await fetch('/api/send/reservation-email', {
-        method: 'POST',
+      const response = await fetch("/api/send/reservation-email", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           to: reservation.customerInfo.email,
@@ -203,7 +209,7 @@ Rent'n Go Team`
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to send email');
+        throw new Error(result.error || "Failed to send email");
       }
 
       toast.success("Email sent successfully", {
@@ -220,13 +226,16 @@ Rent'n Go Team`
           },
         },
       });
-      
+
       onSuccess?.();
       onOpenChange(false);
     } catch (error) {
       console.error("Error sending email:", error);
       toast.error("Failed to send email", {
-        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        description:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred",
         duration: 5000,
       });
     } finally {
@@ -247,47 +256,64 @@ Rent'n Go Team`
             Send Email to Customer
           </DialogTitle>
         </DialogHeader>
-        
+
         <ScrollArea className="max-h-[calc(80vh-150px)] pr-6">
           <div className="space-y-4">
             <div className="p-4 border rounded-lg bg-muted/30">
               <h4 className="font-medium mb-2 flex items-center gap-2">
                 <span>Customer Information</span>
                 {reservation.status && (
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    reservation.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                    reservation.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    reservation.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                    'bg-blue-100 text-blue-800'
-                  }`}>
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full ${
+                      reservation.status === "confirmed"
+                        ? "bg-green-100 text-green-800"
+                        : reservation.status === "pending"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : reservation.status === "cancelled"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-blue-100 text-blue-800"
+                    }`}
+                  >
                     {reservation.status}
                   </span>
                 )}
               </h4>
               <div className="text-sm space-y-1">
-                <p><strong>Name:</strong> {reservation.customerInfo.name}</p>
-                <p><strong>Email:</strong> {reservation.customerInfo.email}</p>
-                <p><strong>Phone:</strong> {reservation.customerInfo.phone}</p>
+                <p>
+                  <strong>Name:</strong> {reservation.customerInfo.name}
+                </p>
+                <p>
+                  <strong>Email:</strong> {reservation.customerInfo.email}
+                </p>
+                <p>
+                  <strong>Phone:</strong> {reservation.customerInfo.phone}
+                </p>
                 {vehicle && (
-                  <p><strong>Vehicle:</strong> {vehicle.make} {vehicle.model} ({vehicle.year})</p>
+                  <p>
+                    <strong>Vehicle:</strong> {vehicle.make} {vehicle.model} (
+                    {vehicle.year})
+                  </p>
                 )}
               </div>
             </div>
 
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
                 <FormField
                   control={form.control}
                   name="emailType"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Email Type</FormLabel>
-                      <Select 
+                      <Select
                         onValueChange={(value) => {
                           field.onChange(value);
                           handleEmailTypeChange(value);
-                        }} 
-                        value={field.value} 
+                        }}
+                        value={field.value}
                         disabled={isSubmitting}
                       >
                         <FormControl>
@@ -296,9 +322,15 @@ Rent'n Go Team`
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="modification">Modification Request</SelectItem>
-                          <SelectItem value="confirmation">Confirmation</SelectItem>
-                          <SelectItem value="cancellation">Cancellation</SelectItem>
+                          <SelectItem value="modification">
+                            Modification Request
+                          </SelectItem>
+                          <SelectItem value="confirmation">
+                            Confirmation
+                          </SelectItem>
+                          <SelectItem value="cancellation">
+                            Cancellation
+                          </SelectItem>
                           <SelectItem value="reminder">Reminder</SelectItem>
                         </SelectContent>
                       </Select>
@@ -314,7 +346,11 @@ Rent'n Go Team`
                     <FormItem>
                       <FormLabel>Subject</FormLabel>
                       <FormControl>
-                        <Input {...field} disabled={isSubmitting} placeholder="Enter email subject" />
+                        <Input
+                          {...field}
+                          disabled={isSubmitting}
+                          placeholder="Enter email subject"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -328,15 +364,16 @@ Rent'n Go Team`
                     <FormItem>
                       <FormLabel>Message</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          {...field} 
+                        <Textarea
+                          {...field}
                           disabled={isSubmitting}
                           className="min-h-[200px]"
                           placeholder="Enter your message here... (reservation details will be automatically included)"
                         />
                       </FormControl>
                       <p className="text-xs text-muted-foreground mt-1">
-                        A professional email template with reservation details will be automatically generated.
+                        A professional email template with reservation details
+                        will be automatically generated.
                       </p>
                       <FormMessage />
                     </FormItem>
@@ -378,4 +415,4 @@ Rent'n Go Team`
       </DialogContent>
     </Dialog>
   );
-} 
+}

@@ -17,9 +17,9 @@ export function hasTransferSearchDetails(
 ): data is TransferSearchDetails {
   return Boolean(
     data?.pickupLocation &&
-      data?.dropoffLocation &&
-      data?.pickupDate &&
-      data?.pickupTime,
+    data?.dropoffLocation &&
+    data?.pickupDate &&
+    data?.pickupTime,
   );
 }
 
@@ -29,9 +29,7 @@ interface UseTransferSearchReturn {
 }
 
 export function useTransferSearch(): UseTransferSearchReturn {
-  const [searchData, setSearchData] = useState<TransferSearchData | null>(
-    null,
-  );
+  const [searchData, setSearchData] = useState<TransferSearchData | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {

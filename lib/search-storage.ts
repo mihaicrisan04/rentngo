@@ -14,7 +14,9 @@ export const DEFAULT_SEARCH_LOCATION = "Aeroport Cluj-Napoca";
 export const DEFAULT_SEARCH_TIME = "10:00";
 
 const getDefaultLocationIfEmpty = (location: string | undefined): string => {
-  return location && location.trim() !== "" ? location : DEFAULT_SEARCH_LOCATION;
+  return location && location.trim() !== ""
+    ? location
+    : DEFAULT_SEARCH_LOCATION;
 };
 
 const defaults = (): SearchData => ({
@@ -40,7 +42,7 @@ const storage = createLocalStorage<SearchData>({
 
 export const applySearchUpdates = (
   prev: SearchData,
-  updates: Partial<SearchData>
+  updates: Partial<SearchData>,
 ): SearchData => {
   const next = { ...prev, ...updates };
   if (

@@ -242,7 +242,7 @@ export function buildAutoRentalSellerSchema(): Record<string, unknown> {
 
 /** FAQPage node. Answers must be plain text (schema.org expects text/simple HTML). */
 export function buildFaqPageSchema(
-  items: Array<{ question: string; answer: string }>
+  items: Array<{ question: string; answer: string }>,
 ): Record<string, unknown> {
   return {
     "@context": "https://schema.org",
