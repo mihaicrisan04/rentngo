@@ -112,8 +112,8 @@ export const TransferDetailsSection: React.FC<TransferDetailsSectionProps> = ({
           </Text>
           <Text className="text-[16px] text-gray-800 m-0 mt-[4px]">
             {transferType === "one_way"
-              ? labels?.oneWay ?? "One Way"
-              : labels?.roundTrip ?? "Round Trip"}
+              ? (labels?.oneWay ?? "One Way")
+              : (labels?.roundTrip ?? "Round Trip")}
           </Text>
         </Column>
         <Column className="w-1/3 px-[8px]">
@@ -158,4 +158,3 @@ export const TransferDetailsSection: React.FC<TransferDetailsSectionProps> = ({
     </Section>
   );
 };
-

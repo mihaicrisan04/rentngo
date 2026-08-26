@@ -1,17 +1,13 @@
-'use client'
+"use client";
 
 import ConvexClientProvider from "@/components/shared/providers/convex-client-provider";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
-import { NextIntlClientProvider } from 'next-intl';
+import { NextIntlClientProvider } from "next-intl";
 
 // Root providers without locale-specific features
-export function Providers({
-  children,
-}: { 
-  children: React.ReactNode;
-}) {
+export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider>
       <ConvexClientProvider>
@@ -26,22 +22,26 @@ export function Providers({
         </ThemeProvider>
       </ConvexClientProvider>
     </ClerkProvider>
-  )
+  );
 }
 
 // Locale-specific providers
 export function LocaleProviders({
   children,
   locale,
-  messages
-}: { 
+  messages,
+}: {
   children: React.ReactNode;
   locale: string;
   messages: any;
 }) {
   return (
-    <NextIntlClientProvider locale={locale} messages={messages} timeZone="Europe/Bucharest">
+    <NextIntlClientProvider
+      locale={locale}
+      messages={messages}
+      timeZone="Europe/Bucharest"
+    >
       {children}
     </NextIntlClientProvider>
-  )
+  );
 }

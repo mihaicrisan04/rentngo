@@ -1,1 +1,1 @@
-export { default as ConvexClientProvider } from './convex-client-provider';
+export { default as ConvexClientProvider } from "./convex-client-provider";

@@ -45,9 +45,7 @@ function ReservationPageContent() {
   // means a later ro↔en locale switch — which drops query params — reads the
   // selection back from storage instead of losing it. Session (not local)
   // storage keeps each tab's pick isolated.
-  const [vehicleId, setVehicleId] = React.useState<Id<"vehicles"> | null>(
-    null,
-  );
+  const [vehicleId, setVehicleId] = React.useState<Id<"vehicles"> | null>(null);
   const [vehicleIdReady, setVehicleIdReady] = React.useState(false);
 
   React.useEffect(() => {
@@ -264,7 +262,7 @@ function ReservationPageContent() {
 
       // Success notification
       toast(t("reservation.success"), {
-        description: t("reservation.successDescription")
+        description: t("reservation.successDescription"),
       });
 
       // Clear storage (form data + the reserved vehicle) and redirect

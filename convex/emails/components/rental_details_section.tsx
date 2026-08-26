@@ -77,8 +77,8 @@ export const RentalDetailsSection: React.FC<RentalDetailsSectionProps> = ({
               </Text>
               <Text className="text-[16px] text-gray-800 m-0 mt-[4px]">
                 +{rentalDetails.extraKilometers} km (
-                {calculateExtraKmPackages(rentalDetails.extraKilometers ?? 0)}{" "}
-                × {EXTRA_KM_PACKAGE_SIZE} km)
+                {calculateExtraKmPackages(rentalDetails.extraKilometers ?? 0)} ×{" "}
+                {EXTRA_KM_PACKAGE_SIZE} km)
               </Text>
             </Column>
           )}

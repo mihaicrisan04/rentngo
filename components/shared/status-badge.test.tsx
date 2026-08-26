@@ -28,8 +28,9 @@ describe("StatusBadge under the admin intl provider", () => {
   });
 
   it("en messages contain every common.status key", () => {
-    const status = (enMessages as { common: { status: Record<string, string> } })
-      .common.status;
+    const status = (
+      enMessages as { common: { status: Record<string, string> } }
+    ).common.status;
     for (const key of [
       "pending",
       "confirmed",

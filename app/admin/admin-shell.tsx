@@ -25,7 +25,9 @@ const CLASS_DETAIL_ROUTE = ["admin", "vehicles", "classes"] as const;
 function matchClassDetailSegment(pathSegments: string[]) {
   const matchesPrefix =
     pathSegments.length > CLASS_DETAIL_ROUTE.length &&
-    CLASS_DETAIL_ROUTE.every((segment, index) => pathSegments[index] === segment);
+    CLASS_DETAIL_ROUTE.every(
+      (segment, index) => pathSegments[index] === segment,
+    );
   if (!matchesPrefix) return null;
   return {
     index: CLASS_DETAIL_ROUTE.length,

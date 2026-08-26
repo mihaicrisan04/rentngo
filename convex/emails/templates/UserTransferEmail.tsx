@@ -1,5 +1,12 @@
 import * as React from "react";
-import { Body, Head, Html, Preview, Hr, Tailwind } from "@react-email/components";
+import {
+  Body,
+  Head,
+  Html,
+  Preview,
+  Hr,
+  Tailwind,
+} from "@react-email/components";
 import { TransferEmailData } from "../types";
 import { EmailHeader } from "../components/email_header";
 import { EmailFooter } from "../components/email_footer";

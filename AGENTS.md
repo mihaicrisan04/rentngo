@@ -17,7 +17,7 @@ The project uses Bun as package manager and script runner while Node remains the
 ```bash
 bun install                 # install dependencies
 mise dev                    # frontend + Convex development
-mise lint                   # ESLint
+mise lint                   # oxlint
 mise run typecheck          # authoritative TypeScript check
 mise test                   # unit tests
 mise run check              # lint + format check + typecheck + tests

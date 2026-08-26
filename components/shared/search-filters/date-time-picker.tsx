@@ -81,7 +81,8 @@ export function DateTimePicker({
     const matchers: Matcher[] = [];
     if (minDate) matchers.push({ before: minDate });
     if (disabledDateRanges) {
-      if (Array.isArray(disabledDateRanges)) matchers.push(...disabledDateRanges);
+      if (Array.isArray(disabledDateRanges))
+        matchers.push(...disabledDateRanges);
       else matchers.push(disabledDateRanges);
     }
     return matchers;
@@ -126,7 +127,7 @@ export function DateTimePicker({
 
       return currentSlotMinutes <= pickupTimeMinutes;
     },
-    [dateState, pickupDate, pickupTime]
+    [dateState, pickupDate, pickupTime],
   );
 
   const handleDateChange = (newDate: Date | undefined) => {
@@ -181,14 +182,14 @@ export function DateTimePicker({
     <div
       className={cn(
         "grid gap-1.5 w-full",
-        contentAlign === "end" && "justify-items-end"
+        contentAlign === "end" && "justify-items-end",
       )}
     >
       <Label
         htmlFor={id}
         className={cn(
           "text-sm font-medium",
-          contentAlign === "end" && "text-right"
+          contentAlign === "end" && "text-right",
         )}
       >
         {label}
@@ -201,7 +202,7 @@ export function DateTimePicker({
               variant="outline"
               className={cn(
                 "gap-1 font-normal",
-                !dateState && "text-muted-foreground"
+                !dateState && "text-muted-foreground",
               )}
               disabled={isLoading}
             >
@@ -236,7 +237,7 @@ export function DateTimePicker({
           variant="outline"
           className={cn(
             "gap-1 font-normal",
-            !timeState && "text-muted-foreground"
+            !timeState && "text-muted-foreground",
           )}
           disabled={isLoading || !dateState}
           asChild
@@ -247,7 +248,7 @@ export function DateTimePicker({
               onChange={(e) => handleTimeChange(e.target.value)}
               disabled={isLoading || !dateState}
               className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
-              style={{ color: 'CanvasText', backgroundColor: 'Canvas' }}
+              style={{ color: "CanvasText", backgroundColor: "Canvas" }}
             >
               <option value="" disabled>
                 {t("selectTime")}

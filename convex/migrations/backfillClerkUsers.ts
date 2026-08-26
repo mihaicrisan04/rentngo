@@ -29,10 +29,9 @@ export default internalAction({
         offset: String(offset),
         order_by: "+created_at",
       });
-      const response = await fetch(
-        `https://api.clerk.com/v1/users?${params}`,
-        { headers: { Authorization: `Bearer ${secretKey}` } },
-      );
+      const response = await fetch(`https://api.clerk.com/v1/users?${params}`, {
+        headers: { Authorization: `Bearer ${secretKey}` },
+      });
       if (!response.ok) {
         throw new Error(
           `Clerk API request failed: ${response.status} ${await response.text()}`,

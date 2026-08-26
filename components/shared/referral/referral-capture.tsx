@@ -35,8 +35,7 @@ function ReferralCaptureInner() {
 
     let cancelled = false;
     const capture = async () => {
-      const visitorKey =
-        getStoredReferral()?.visitorKey ?? crypto.randomUUID();
+      const visitorKey = getStoredReferral()?.visitorKey ?? crypto.randomUUID();
       try {
         // Validates the slug (active affiliate, program enabled, not a
         // self-referral) and records the attribution row the booking

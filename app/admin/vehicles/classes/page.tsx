@@ -12,8 +12,11 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 const CreateClassDialog = dynamic(
-  () => import("@/components/admin/vehicle-classes/create-class-dialog").then(m => m.CreateClassDialog),
-  { ssr: false }
+  () =>
+    import("@/components/admin/vehicle-classes/create-class-dialog").then(
+      (m) => m.CreateClassDialog,
+    ),
+  { ssr: false },
 );
 import { DndContext } from "@dnd-kit/core";
 import {

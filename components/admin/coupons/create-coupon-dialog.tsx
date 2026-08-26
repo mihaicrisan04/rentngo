@@ -80,7 +80,10 @@ export function CreateCouponDialog({
 
         <ScrollArea className="max-h-[calc(80vh-150px)] pr-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-6 py-4"
+            >
               <CouponFormFields form={form} isSubmitting={isSubmitting} />
             </form>
           </Form>

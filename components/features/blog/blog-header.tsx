@@ -31,7 +31,11 @@ export function BlogHeader({
       {tags && tags.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {tags.map((tag) => (
-            <Badge key={tag} variant="secondary" className="rounded-lg px-2.5 py-0.5">
+            <Badge
+              key={tag}
+              variant="secondary"
+              className="rounded-lg px-2.5 py-0.5"
+            >
               {tag}
             </Badge>
           ))}

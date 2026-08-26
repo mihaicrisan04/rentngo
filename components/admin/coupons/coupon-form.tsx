@@ -29,12 +29,18 @@ export const couponFormSchema = z
       .min(3, "Code must be at least 3 characters")
       .max(32, "Code must be at most 32 characters")
       .regex(/^[A-Za-z0-9_-]+$/, "Only letters, digits, - and _ are allowed"),
-    label: z.string().max(100, "Label must be less than 100 characters").optional(),
+    label: z
+      .string()
+      .max(100, "Label must be less than 100 characters")
+      .optional(),
     discountType: z.enum(["percentage", "fixed"]),
     discountValue: z
       .string()
       .min(1, "Discount value is required")
-      .regex(/^\d+(\.\d{1,2})?$/, "Must be a valid number with up to 2 decimals"),
+      .regex(
+        /^\d+(\.\d{1,2})?$/,
+        "Must be a valid number with up to 2 decimals",
+      ),
     expiresAt: z.string().optional(), // "YYYY-MM-DD"; end of day Europe/Bucharest
     maxRedemptions: z
       .string()
@@ -93,7 +99,9 @@ export function couponFormToMutationValues(values: CouponFormData) {
     label: values.label?.trim() || undefined,
     discountType: values.discountType,
     discountValue: parseFloat(values.discountValue),
-    expiresAt: values.expiresAt ? bucharestEndOfDayMs(values.expiresAt) : undefined,
+    expiresAt: values.expiresAt
+      ? bucharestEndOfDayMs(values.expiresAt)
+      : undefined,
     maxRedemptions: values.maxRedemptions
       ? parseInt(values.maxRedemptions, 10)
       : undefined,
@@ -118,7 +126,10 @@ interface CouponFormFieldsProps {
   isSubmitting: boolean;
 }
 
-export function CouponFormFields({ form, isSubmitting }: CouponFormFieldsProps) {
+export function CouponFormFields({
+  form,
+  isSubmitting,
+}: CouponFormFieldsProps) {
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -135,7 +146,9 @@ export function CouponFormFields({ form, isSubmitting }: CouponFormFieldsProps) 
                     disabled={isSubmitting}
                     placeholder="e.g., SUMMER2026"
                     className="uppercase font-mono"
-                    onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                    onChange={(e) =>
+                      field.onChange(e.target.value.toUpperCase())
+                    }
                   />
                 </FormControl>
                 <Button
@@ -143,7 +156,11 @@ export function CouponFormFields({ form, isSubmitting }: CouponFormFieldsProps) 
                   variant="outline"
                   size="icon"
                   disabled={isSubmitting}
-                  onClick={() => form.setValue("code", generateCouponCode(), { shouldValidate: true })}
+                  onClick={() =>
+                    form.setValue("code", generateCouponCode(), {
+                      shouldValidate: true,
+                    })
+                  }
                   title="Generate random code"
                 >
                   <Wand2 className="h-4 w-4" />
@@ -215,7 +232,9 @@ export function CouponFormFields({ form, isSubmitting }: CouponFormFieldsProps) 
                   {...field}
                   disabled={isSubmitting}
                   placeholder={
-                    form.watch("discountType") === "percentage" ? "e.g., 15" : "e.g., 20"
+                    form.watch("discountType") === "percentage"
+                      ? "e.g., 15"
+                      : "e.g., 20"
                   }
                 />
               </FormControl>
@@ -270,7 +289,11 @@ export function CouponFormFields({ form, isSubmitting }: CouponFormFieldsProps) 
             <FormItem>
               <FormLabel>Minimum Order (EUR, Optional)</FormLabel>
               <FormControl>
-                <Input {...field} disabled={isSubmitting} placeholder="No minimum if empty" />
+                <Input
+                  {...field}
+                  disabled={isSubmitting}
+                  placeholder="No minimum if empty"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

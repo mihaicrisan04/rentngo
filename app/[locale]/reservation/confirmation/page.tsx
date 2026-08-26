@@ -68,9 +68,7 @@ function ReservationConfirmationContent() {
       <div className="flex-grow flex items-center justify-center p-4 md:p-8">
         <div className="text-center max-w-md mx-auto">
           <AlertCircle className="h-16 w-16 text-amber-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-4">
-            {t("noReservationFound")}
-          </h1>
+          <h1 className="text-2xl font-bold mb-4">{t("noReservationFound")}</h1>
           <p className="text-muted-foreground mb-6">
             {t("noReservationDescription")}
           </p>

@@ -25,7 +25,7 @@ const UserDocValidator = v.object({
     v.object({
       language: v.union(v.literal("en"), v.literal("ro")),
       notifications: v.boolean(),
-    })
+    }),
   ),
   deletedAt: v.optional(v.number()),
 });
@@ -47,7 +47,7 @@ type ClerkUserAttributes = {
  */
 async function upsertUser(
   ctx: MutationCtx,
-  attrs: ClerkUserAttributes
+  attrs: ClerkUserAttributes,
 ): Promise<Doc<"users">> {
   const existingUser = await ctx.db
     .query("users")
@@ -67,10 +67,16 @@ async function upsertUser(
       updates.email = attrs.email;
     }
     // Only update firstName/lastName if Clerk provides them (don't overwrite with undefined)
-    if (attrs.firstName !== undefined && existingUser.firstName !== attrs.firstName) {
+    if (
+      attrs.firstName !== undefined &&
+      existingUser.firstName !== attrs.firstName
+    ) {
       updates.firstName = attrs.firstName;
     }
-    if (attrs.lastName !== undefined && existingUser.lastName !== attrs.lastName) {
+    if (
+      attrs.lastName !== undefined &&
+      existingUser.lastName !== attrs.lastName
+    ) {
       updates.lastName = attrs.lastName;
     }
 
@@ -102,7 +108,7 @@ async function upsertUser(
  */
 async function softDeleteUser(
   ctx: MutationCtx,
-  user: Doc<"users">
+  user: Doc<"users">,
 ): Promise<void> {
   await ctx.db.patch(user._id, {
     deletedAt: Date.now(),
@@ -131,16 +137,21 @@ export const upsertFromClerk = internalMutation({
     if (!primaryEmail) {
       // Schema requires an email. Skip (200) rather than throw so Clerk
       // doesn't retry an event we can never process.
-      console.warn("[users] upsertFromClerk: Clerk user has no email, skipping", {
-        clerkId: data.id,
-      });
+      console.warn(
+        "[users] upsertFromClerk: Clerk user has no email, skipping",
+        {
+          clerkId: data.id,
+        },
+      );
       return null;
     }
 
     const firstName = data.first_name ?? undefined;
     const lastName = data.last_name ?? undefined;
     const name =
-      (firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName) ||
+      (firstName && lastName
+        ? `${firstName} ${lastName}`
+        : firstName || lastName) ||
       data.username ||
       primaryEmail;
 
@@ -203,7 +214,7 @@ export const update = mutation({
       v.object({
         language: v.union(v.literal("en"), v.literal("ro")),
         notifications: v.boolean(),
-      })
+      }),
     ),
   },
   returns: v.null(),
@@ -246,7 +257,9 @@ export const remove = mutation({
  * Helper function to get the current authenticated user from the database.
  * Returns null if not authenticated, user not found, or soft-deleted.
  */
-export const getCurrentUser = async (ctx: QueryCtx | MutationCtx): Promise<Doc<"users"> | null> => {
+export const getCurrentUser = async (
+  ctx: QueryCtx | MutationCtx,
+): Promise<Doc<"users"> | null> => {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
     return null;
@@ -272,7 +285,7 @@ export const getCurrentUser = async (ctx: QueryCtx | MutationCtx): Promise<Doc<"
  * a booking. Returns null when unauthenticated (guest flows stay guest).
  */
 export const getOrCreateCurrentUser = async (
-  ctx: MutationCtx
+  ctx: MutationCtx,
 ): Promise<Doc<"users"> | null> => {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
@@ -286,13 +299,17 @@ export const getOrCreateCurrentUser = async (
   }
 
   // Extract name components from the Clerk identity (JWT claims)
-  const firstName = typeof identity.firstName === "string" ? identity.firstName : undefined;
-  const lastName = typeof identity.lastName === "string" ? identity.lastName : undefined;
+  const firstName =
+    typeof identity.firstName === "string" ? identity.firstName : undefined;
+  const lastName =
+    typeof identity.lastName === "string" ? identity.lastName : undefined;
   // Determine the full name: use identity.name, fallback to firstName + lastName,
   // then identity.nickname, then email. The schema requires 'name' to be a string.
   const name =
     (typeof identity.name === "string" ? identity.name : null) ||
-    (firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName) ||
+    (firstName && lastName
+      ? `${firstName} ${lastName}`
+      : firstName || lastName) ||
     (typeof identity.nickname === "string" ? identity.nickname : null) ||
     email;
 
@@ -310,10 +327,14 @@ export const getOrCreateCurrentUser = async (
  * Helper function to get the current authenticated user from the database.
  * Throws an error if not authenticated or user not found.
  */
-export const getCurrentUserOrThrow = async (ctx: QueryCtx | MutationCtx): Promise<Doc<"users">> => {
+export const getCurrentUserOrThrow = async (
+  ctx: QueryCtx | MutationCtx,
+): Promise<Doc<"users">> => {
   const user = await getCurrentUser(ctx);
   if (!user) {
-    throw new Error("User not authenticated or not found in database. Please ensure user is logged in and has been created.");
+    throw new Error(
+      "User not authenticated or not found in database. Please ensure user is logged in and has been created.",
+    );
   }
   return user;
 };
@@ -322,7 +343,9 @@ export const getCurrentUserOrThrow = async (ctx: QueryCtx | MutationCtx): Promis
  * Helper function to require that the current authenticated user is an admin.
  * Throws an error if not authenticated, user not found, or not an admin.
  */
-export const requireAdmin = async (ctx: QueryCtx | MutationCtx): Promise<Doc<"users">> => {
+export const requireAdmin = async (
+  ctx: QueryCtx | MutationCtx,
+): Promise<Doc<"users">> => {
   const user = await getCurrentUserOrThrow(ctx);
   if (user.role !== "admin") {
     throw new Error("User not authorized (admin only).");

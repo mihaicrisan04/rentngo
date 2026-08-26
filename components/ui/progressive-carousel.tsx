@@ -6,9 +6,9 @@ import React, {
   useRef,
   ReactNode,
   FC,
-} from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '@/lib/utils';
+} from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { cn } from "@/lib/utils";
 
 // Define the type for the context value
 interface ProgressSliderContextType {
@@ -60,7 +60,7 @@ export const useProgressSliderContext = (): ProgressSliderContextType => {
   const context = useContext(ProgressSliderContext);
   if (!context) {
     throw new Error(
-      'useProgressSliderContext must be used within a ProgressSlider'
+      "useProgressSliderContext must be used within a ProgressSlider",
     );
   }
   return context;
@@ -84,12 +84,14 @@ export const ProgressSlider: FC<ProgressSliderProps> = ({
 
   useEffect(() => {
     const getChildren = React.Children.toArray(children).find(
-      (child) => (child as React.ReactElement).type === SliderContent
+      (child) => (child as React.ReactElement).type === SliderContent,
     ) as React.ReactElement<SliderContentProps> | undefined;
 
     if (getChildren && getChildren.props) {
       const values = React.Children.toArray(getChildren.props.children).map(
-        (child) => (child as React.ReactElement<SliderWrapperProps>).props.value as string
+        (child) =>
+          (child as React.ReactElement<SliderWrapperProps>).props
+            .value as string,
       );
       setSliderValues(values);
     }
@@ -114,7 +116,7 @@ export const ProgressSlider: FC<ProgressSliderProps> = ({
       setProgress(
         isFastForward
           ? progress + (100 - progress) * timeFraction
-          : timeFraction * 100
+          : timeFraction * 100,
       );
       frame.current = requestAnimationFrame(animate);
     } else {
@@ -150,7 +152,7 @@ export const ProgressSlider: FC<ProgressSliderProps> = ({
     <ProgressSliderContext.Provider
       value={{ active, progress, handleButtonClick, vertical }}
     >
-      <div className={cn('relative', className)}>{children}</div>
+      <div className={cn("relative", className)}>{children}</div>
     </ProgressSliderContext.Provider>
   );
 };
@@ -159,7 +161,7 @@ export const SliderContent: FC<SliderContentProps> = ({
   children,
   className,
 }) => {
-  return <div className={cn('', className)}>{children}</div>;
+  return <div className={cn("", className)}>{children}</div>;
 };
 
 export const SliderWrapper: FC<SliderWrapperProps> = ({
@@ -170,14 +172,14 @@ export const SliderWrapper: FC<SliderWrapperProps> = ({
   const { active } = useProgressSliderContext();
 
   return (
-    <AnimatePresence mode='popLayout'>
+    <AnimatePresence mode="popLayout">
       {active === value && (
         <motion.div
           key={value}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className={cn('', className)}
+          className={cn("", className)}
         >
           {children}
         </motion.div>
@@ -190,7 +192,7 @@ export const SliderBtnGroup: FC<ProgressBarProps> = ({
   children,
   className,
 }) => {
-  return <div className={cn('', className)}>{children}</div>;
+  return <div className={cn("", className)}>{children}</div>;
 };
 
 export const SliderBtn: FC<SliderBtnProps> = ({
@@ -205,22 +207,22 @@ export const SliderBtn: FC<SliderBtnProps> = ({
   return (
     <button
       className={cn(
-        `relative ${active === value ? 'opacity-100' : 'opacity-50'}`,
-        className
+        `relative ${active === value ? "opacity-100" : "opacity-50"}`,
+        className,
       )}
       onClick={() => handleButtonClick(value)}
     >
       {children}
       <div
-        className='absolute inset-0 overflow-hidden -z-10 max-h-full max-w-full '
-        role='progressbar'
+        className="absolute inset-0 overflow-hidden -z-10 max-h-full max-w-full "
+        role="progressbar"
         aria-valuenow={active === value ? progress : 0}
       >
         <span
-          className={cn('absolute left-0 ', progressBarClass)}
+          className={cn("absolute left-0 ", progressBarClass)}
           style={{
-            [vertical ? 'height' : 'width']:
-              active === value ? `${progress}%` : '0%',
+            [vertical ? "height" : "width"]:
+              active === value ? `${progress}%` : "0%",
           }}
         />
       </div>

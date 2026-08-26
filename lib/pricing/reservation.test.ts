@@ -51,7 +51,11 @@ describe("computeReservationPricing — full booking scenarios", () => {
 
     // Line items: coded, locale-free, with the params the i18n layer needs
     expect(breakdown.additionalCharges).toEqual([
-      { code: "pickupLocationFee", params: { location: "Cluj-Napoca" }, amount: 10 },
+      {
+        code: "pickupLocationFee",
+        params: { location: "Cluj-Napoca" },
+        amount: 10,
+      },
       { code: "snowChains", params: { days: 6 }, amount: 18 }, // 6 days × 3
       { code: "childSeat1to4", params: { count: 1, days: 6 }, amount: 18 }, // 1 × 6 × 3
       { code: "extraKm", params: { km: 100 }, amount: 10 }, // 2 packages × 5
@@ -117,7 +121,11 @@ describe("computeReservationPricing — full booking scenarios", () => {
     expect(breakdown.deliveryFee).toBe(220);
     expect(breakdown.returnFee).toBe(120);
     expect(breakdown.additionalCharges).toEqual([
-      { code: "pickupLocationFee", params: { location: "Bucuresti" }, amount: 220 },
+      {
+        code: "pickupLocationFee",
+        params: { location: "Bucuresti" },
+        amount: 220,
+      },
       { code: "returnLocationFee", params: { location: "Sibiu" }, amount: 120 },
     ]);
     // 2 days × base tier 50 + 340 fees + 600 deductible not charged = 440

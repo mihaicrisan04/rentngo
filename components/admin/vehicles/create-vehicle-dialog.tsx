@@ -199,7 +199,7 @@ export function CreateVehicleDialog({
   // Query to check if slug exists (only runs when slugToCheck is set)
   const existingSlugVehicleId = useQuery(
     api.vehicles.checkSlugExists,
-    slugToCheck ? { slug: slugToCheck } : "skip"
+    slugToCheck ? { slug: slugToCheck } : "skip",
   );
 
   // Debounced slug check
@@ -230,7 +230,8 @@ export function CreateVehicleDialog({
     };
   }, []);
 
-  const slugExists = existingSlugVehicleId !== null && existingSlugVehicleId !== undefined;
+  const slugExists =
+    existingSlugVehicleId !== null && existingSlugVehicleId !== undefined;
 
   const form = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
@@ -307,7 +308,9 @@ export function CreateVehicleDialog({
         warranty: values.warranty ? parseFloat(values.warranty) : 0,
         isOwner: values.isOwner,
         isTransferVehicle: values.isTransferVehicle,
-        transferSeats: values.transferSeats ? parseInt(values.transferSeats) : undefined,
+        transferSeats: values.transferSeats
+          ? parseInt(values.transferSeats)
+          : undefined,
         features: values.features,
         status: values.status as VehicleStatus,
         pricingTiers: pricingTiers,
@@ -366,7 +369,8 @@ export function CreateVehicleDialog({
       onOpenChange(false);
     } catch (error) {
       console.error("Error creating vehicle:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to create vehicle";
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create vehicle";
       if (errorMessage.includes("slug")) {
         toast.error("This slug is already in use by another vehicle");
       } else {
@@ -552,7 +556,11 @@ export function CreateVehicleDialog({
                                 {...field}
                                 disabled={isSubmitting}
                                 placeholder="e.g., bmw-x5-2024"
-                                className={slugExists ? "border-destructive focus-visible:ring-destructive" : ""}
+                                className={
+                                  slugExists
+                                    ? "border-destructive focus-visible:ring-destructive"
+                                    : ""
+                                }
                                 onChange={(e) => {
                                   field.onChange(e);
                                   debouncedSlugCheck(e.target.value);
@@ -570,9 +578,11 @@ export function CreateVehicleDialog({
                                 const slug = generateVehicleSlug(
                                   make,
                                   model,
-                                  year ? parseInt(year) : undefined
+                                  year ? parseInt(year) : undefined,
                                 );
-                                form.setValue("slug", slug, { shouldValidate: true });
+                                form.setValue("slug", slug, {
+                                  shouldValidate: true,
+                                });
                                 debouncedSlugCheck(slug);
                               }}
                               disabled={isSubmitting}
@@ -582,13 +592,18 @@ export function CreateVehicleDialog({
                             </Button>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            SEO-friendly URL slug. Used in car detail pages: /cars/[slug]
+                            SEO-friendly URL slug. Used in car detail pages:
+                            /cars/[slug]
                           </p>
                           {isCheckingSlug && (
-                            <p className="text-xs text-muted-foreground">Checking availability...</p>
+                            <p className="text-xs text-muted-foreground">
+                              Checking availability...
+                            </p>
                           )}
                           {slugExists && (
-                            <p className="text-xs text-destructive">This slug is already in use by another vehicle</p>
+                            <p className="text-xs text-destructive">
+                              This slug is already in use by another vehicle
+                            </p>
                           )}
                           <FormMessage />
                         </FormItem>
@@ -884,8 +899,8 @@ export function CreateVehicleDialog({
                               />
                             </FormControl>
                             <p className="text-xs text-muted-foreground">
-                              Actual passenger capacity for transfers (excluding driver).
-                              If empty, uses regular seats minus 2.
+                              Actual passenger capacity for transfers (excluding
+                              driver). If empty, uses regular seats minus 2.
                             </p>
                             <FormMessage />
                           </FormItem>

@@ -4,7 +4,13 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -25,8 +31,8 @@ export function CurrentSeasonSelector() {
   const handleSetCurrent = async (seasonId: string) => {
     try {
       await setCurrent({ seasonId: seasonId as Id<"seasons">, setBy: "Admin" });
-      
-      const selectedSeason = seasons?.find(s => s._id === seasonId);
+
+      const selectedSeason = seasons?.find((s) => s._id === seasonId);
       toast.success("Current season updated", {
         description: `${selectedSeason?.name} is now the active season.`,
         position: "bottom-right",
@@ -63,7 +69,11 @@ export function CurrentSeasonSelector() {
         description: "Base pricing is currently applied",
         multiplier: 1.0,
         icon: <Minus className="h-5 w-5" />,
-        badge: <Badge variant="secondary" className="bg-gray-100 text-gray-800">Base Pricing</Badge>
+        badge: (
+          <Badge variant="secondary" className="bg-gray-100 text-gray-800">
+            Base Pricing
+          </Badge>
+        ),
       };
     }
 
@@ -75,19 +85,28 @@ export function CurrentSeasonSelector() {
       name: season.name,
       description: season.description || "No description provided",
       multiplier: season.multiplier,
-      icon: isIncrease ? <TrendingUp className="h-5 w-5" /> : isDecrease ? <TrendingDown className="h-5 w-5" /> : <Minus className="h-5 w-5" />,
-      badge: <Badge className="bg-green-100 text-green-800">Current Season</Badge>
+      icon: isIncrease ? (
+        <TrendingUp className="h-5 w-5" />
+      ) : isDecrease ? (
+        <TrendingDown className="h-5 w-5" />
+      ) : (
+        <Minus className="h-5 w-5" />
+      ),
+      badge: (
+        <Badge className="bg-green-100 text-green-800">Current Season</Badge>
+      ),
     };
   };
 
   const formatPeriods = (periods: any[]) => {
     if (!periods || periods.length === 0) return "No periods defined";
-    
+
     return periods.map((period, index) => (
       <div key={index} className="text-sm flex items-center gap-2">
         <CalendarDays className="h-4 w-4 text-muted-foreground" />
         <span>
-          {new Date(period.startDate).toLocaleDateString('en-GB')} - {new Date(period.endDate).toLocaleDateString('en-GB')}
+          {new Date(period.startDate).toLocaleDateString("en-GB")} -{" "}
+          {new Date(period.endDate).toLocaleDateString("en-GB")}
         </span>
         {period.description && (
           <span className="text-muted-foreground">({period.description})</span>
@@ -129,11 +148,17 @@ export function CurrentSeasonSelector() {
                 <h3 className="text-lg font-semibold">{currentInfo.name}</h3>
                 {currentInfo.badge}
               </div>
-              <p className="text-sm text-muted-foreground">{currentInfo.description}</p>
+              <p className="text-sm text-muted-foreground">
+                {currentInfo.description}
+              </p>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold">{currentInfo.multiplier}x</div>
-              <div className="text-xs text-muted-foreground">Price Multiplier</div>
+              <div className="text-2xl font-bold">
+                {currentInfo.multiplier}x
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Price Multiplier
+              </div>
             </div>
           </div>
 
@@ -173,7 +198,9 @@ export function CurrentSeasonSelector() {
           {seasons.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground">
               <p>No active seasons available.</p>
-              <p className="text-sm">Create and activate seasons to enable seasonal pricing.</p>
+              <p className="text-sm">
+                Create and activate seasons to enable seasonal pricing.
+              </p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -207,8 +234,8 @@ export function CurrentSeasonSelector() {
                   <div
                     key={season._id}
                     className={`p-3 rounded-lg border ${
-                      currentSeason?.seasonId === season._id 
-                        ? "bg-accent border-green-200" 
+                      currentSeason?.seasonId === season._id
+                        ? "bg-accent border-green-200"
                         : "bg-muted/50"
                     }`}
                   >
@@ -217,23 +244,32 @@ export function CurrentSeasonSelector() {
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{season.name}</span>
                           {currentSeason?.seasonId === season._id && (
-                            <Badge variant="secondary" className="bg-green-100 text-green-800">
+                            <Badge
+                              variant="secondary"
+                              className="bg-green-100 text-green-800"
+                            >
                               Current
                             </Badge>
                           )}
                         </div>
                         {season.description && (
-                          <p className="text-xs text-muted-foreground">{season.description}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {season.description}
+                          </p>
                         )}
                       </div>
                       <div className="text-right">
                         <div className="font-medium">{season.multiplier}x</div>
                         <div className="text-xs text-muted-foreground">
-                          {season.multiplier > 1 ? "Price increase" : season.multiplier < 1 ? "Price decrease" : "Base price"}
+                          {season.multiplier > 1
+                            ? "Price increase"
+                            : season.multiplier < 1
+                              ? "Price decrease"
+                              : "Base price"}
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="mt-2 space-y-1">
                       {formatPeriods(season.periods)}
                     </div>
@@ -246,4 +282,4 @@ export function CurrentSeasonSelector() {
       </Card>
     </div>
   );
-} 
+}

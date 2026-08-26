@@ -47,7 +47,7 @@ export function CarDetailClient({
 
   const { multiplier: currentMultiplier } = useDateBasedSeasonalPricing(
     rentalState.pickupDate,
-    rentalState.returnDate
+    rentalState.returnDate,
   );
 
   const priceDetails = calculateVehiclePricingWithSeason(
@@ -58,9 +58,8 @@ export function CarDetailClient({
     rentalState.deliveryLocation,
     rentalState.restitutionLocation,
     rentalState.pickupTime,
-    rentalState.returnTime
+    rentalState.returnTime,
   );
-
 
   const currency = "EUR";
   // Carry the vehicle in the href so new-tab/cmd-click works; the reservation
@@ -70,7 +69,7 @@ export function CarDetailClient({
   const vehicleName = formatVehicleName(
     vehicle.make,
     vehicle.model,
-    vehicle.year
+    vehicle.year,
   );
 
   return (

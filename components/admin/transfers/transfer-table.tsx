@@ -149,10 +149,7 @@ export function TransfersTable({
             {transfers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={10}>
-                  <EmptyState
-                    icon={CarTaxiFront}
-                    message="No transfers yet"
-                  />
+                  <EmptyState icon={CarTaxiFront} message="No transfers yet" />
                 </TableCell>
               </TableRow>
             ) : (

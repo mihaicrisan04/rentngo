@@ -42,7 +42,8 @@ export const COMPANY = {
   },
   /** Legal registration details (from the Terms & Conditions page) */
   registration: {
-    registeredOffice: "Sat Florești, Strada Tăuțului nr. 214D, Jud. Cluj, Romania",
+    registeredOffice:
+      "Sat Florești, Strada Tăuțului nr. 214D, Jud. Cluj, Romania",
     tradeRegister: "J12/1445/2024",
     cui: "49799254",
   },

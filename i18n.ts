@@ -1,7 +1,7 @@
-import { notFound } from 'next/navigation';
-import { getRequestConfig } from 'next-intl/server';
+import { notFound } from "next/navigation";
+import { getRequestConfig } from "next-intl/server";
 
-export const locales = ['ro', 'en'] as const;
+export const locales = ["ro", "en"] as const;
 
 export type Locale = (typeof locales)[number];
 
@@ -14,11 +14,11 @@ export default getRequestConfig(async ({ locale }) => {
   if (locale && !isLocale(locale)) notFound();
 
   // Ensure locale is always a string
-  const validLocale = locale || 'ro';
+  const validLocale = locale || "ro";
 
   return {
     locale: validLocale,
     messages: (await import(`./messages/${validLocale}.json`)).default,
-    timeZone: 'Europe/Bucharest' // Add timezone for Romania
+    timeZone: "Europe/Bucharest", // Add timezone for Romania
   };
 });

@@ -17,7 +17,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Edit, Trash2, MoreHorizontal, Power, TicketPercent } from "lucide-react";
+import {
+  Edit,
+  Trash2,
+  MoreHorizontal,
+  Power,
+  TicketPercent,
+} from "lucide-react";
 import { EmptyState } from "@/components/admin/shared/empty-state";
 import { toastWithUndo } from "@/components/admin/shared/undo-toast";
 import {
@@ -29,8 +35,11 @@ import {
 import { toast } from "sonner";
 
 const EditCouponDialog = dynamic(
-  () => import("@/components/admin/coupons/edit-coupon-dialog").then(m => m.EditCouponDialog),
-  { ssr: false }
+  () =>
+    import("@/components/admin/coupons/edit-coupon-dialog").then(
+      (m) => m.EditCouponDialog,
+    ),
+  { ssr: false },
 );
 
 type Coupon = Doc<"coupons">;
@@ -40,7 +49,8 @@ function couponStatus(
   now: number,
 ): "active" | "inactive" | "expired" | "exhausted" {
   if (!coupon.isActive) return "inactive";
-  if (coupon.expiresAt !== undefined && now > coupon.expiresAt) return "expired";
+  if (coupon.expiresAt !== undefined && now > coupon.expiresAt)
+    return "expired";
   if (
     coupon.maxRedemptions !== undefined &&
     coupon.redemptionCount >= coupon.maxRedemptions
@@ -92,14 +102,19 @@ export function CouponsTable({ onCreate }: CouponsTableProps) {
       });
     } catch (error) {
       toast.error("Failed to update coupon", {
-        description: error instanceof Error ? error.message : "Please try again later.",
+        description:
+          error instanceof Error ? error.message : "Please try again later.",
         position: "bottom-right",
       });
     }
   };
 
   const handleDelete = async (coupon: Coupon) => {
-    if (confirm(`Are you sure you want to delete "${coupon.code}"? This action cannot be undone.`)) {
+    if (
+      confirm(
+        `Are you sure you want to delete "${coupon.code}"? This action cannot be undone.`,
+      )
+    ) {
       try {
         await removeCoupon({ id: coupon._id });
         toast.success("Coupon deleted successfully", {
@@ -108,7 +123,8 @@ export function CouponsTable({ onCreate }: CouponsTableProps) {
         });
       } catch (error) {
         toast.error("Failed to delete coupon", {
-          description: error instanceof Error ? error.message : "Please try again later.",
+          description:
+            error instanceof Error ? error.message : "Please try again later.",
           position: "bottom-right",
         });
       }
@@ -164,7 +180,9 @@ export function CouponsTable({ onCreate }: CouponsTableProps) {
                     <TableCell>
                       <div className="font-mono font-medium">{coupon.code}</div>
                       {coupon.label && (
-                        <div className="text-xs text-muted-foreground">{coupon.label}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {coupon.label}
+                        </div>
                       )}
                     </TableCell>
                     <TableCell>
@@ -184,13 +202,18 @@ export function CouponsTable({ onCreate }: CouponsTableProps) {
                     </TableCell>
                     <TableCell>
                       {coupon.expiresAt !== undefined
-                        ? new Date(coupon.expiresAt).toLocaleDateString("en-GB", {
-                            timeZone: "Europe/Bucharest",
-                          })
+                        ? new Date(coupon.expiresAt).toLocaleDateString(
+                            "en-GB",
+                            {
+                              timeZone: "Europe/Bucharest",
+                            },
+                          )
                         : "—"}
                     </TableCell>
                     <TableCell>
-                      {coupon.minOrderValue !== undefined ? `€${coupon.minOrderValue}` : "—"}
+                      {coupon.minOrderValue !== undefined
+                        ? `€${coupon.minOrderValue}`
+                        : "—"}
                     </TableCell>
                     <TableCell>
                       <Badge className={statusBadgeClasses[status]}>

@@ -20,7 +20,7 @@ interface VehicleListDisplayWithPreloadedImagesProps {
 }
 
 function groupVehiclesByClass(
-  vehicles: VehicleWithImageUrl[]
+  vehicles: VehicleWithImageUrl[],
 ): Record<string, VehicleWithImageUrl[]> {
   const grouped: Record<string, VehicleWithImageUrl[]> = {
     other: [],
@@ -44,7 +44,7 @@ function groupVehiclesByClass(
 }
 
 function sortVehiclesInClass(
-  vehicles: VehicleWithImageUrl[]
+  vehicles: VehicleWithImageUrl[],
 ): VehicleWithImageUrl[] {
   return [...vehicles].sort((a, b) => {
     const aSortIndex = a.classSortIndex ?? 999999;

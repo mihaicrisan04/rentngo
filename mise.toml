@@ -30,28 +30,45 @@ run = "convex dev"
 [tasks.build]
 alias = "b"
 description = "Build for production"
-sources = ["app/**/*", "components/**/*", "lib/**/*", "hooks/**/*", "messages/**/*", "public/**/*", "package.json", "tsconfig.json", "next.config.ts", "tailwind.config.ts"]
+sources = [
+  "app/**/*",
+  "components/**/*",
+  "lib/**/*",
+  "hooks/**/*",
+  "messages/**/*",
+  "public/**/*",
+  "package.json",
+  "tsconfig.json",
+  "next.config.ts",
+  "tailwind.config.ts",
+]
 outputs = [".next/**/*"]
 run = "next build --webpack"
 
 [tasks.lint]
 alias = "l"
-description = "Run ESLint"
-sources = ["app/**/*", "components/**/*", "lib/**/*", "hooks/**/*", "convex/**/*"]
-run = "eslint ."
+description = "Run oxlint"
+sources = [
+  "app/**/*",
+  "components/**/*",
+  "lib/**/*",
+  "hooks/**/*",
+  "convex/**/*",
+]
+run = "oxlint"
 
 [tasks."lint:fix"]
-description = "Run ESLint with auto-fix"
-run = "eslint . --fix"
+description = "Run oxlint with auto-fix"
+run = "oxlint --fix"
 
 [tasks.format]
 alias = "f"
-description = "Format code with Prettier"
-run = "prettier --write ."
+description = "Format code with oxfmt"
+run = "oxfmt"
 
 [tasks."format:check"]
 description = "Check formatting without writing"
-run = "prettier --check ."
+run = "oxfmt --check"
 
 [tasks.check]
 alias = "c"
@@ -78,13 +95,27 @@ run = "bun run test:watch"
 [tasks.typecheck]
 alias = "tc"
 description = "Run TypeScript type checking"
-sources = ["app/**/*", "components/**/*", "lib/**/*", "hooks/**/*", "convex/**/*", "tsconfig.json"]
+sources = [
+  "app/**/*",
+  "components/**/*",
+  "lib/**/*",
+  "hooks/**/*",
+  "convex/**/*",
+  "tsconfig.json",
+]
 run = "tsc --noEmit"
 
 [tasks."typecheck:fast"]
 alias = "tcf"
 description = "Run fast advisory TypeScript type checking (tsgo)"
-sources = ["app/**/*", "components/**/*", "lib/**/*", "hooks/**/*", "convex/**/*", "tsconfig.json"]
+sources = [
+  "app/**/*",
+  "components/**/*",
+  "lib/**/*",
+  "hooks/**/*",
+  "convex/**/*",
+  "tsconfig.json",
+]
 run = "tsgo --noEmit --tsBuildInfoFile .tsgo-cache/tsconfig.tsbuildinfo"
 
 [tasks."convex:deploy"]

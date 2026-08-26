@@ -6,7 +6,9 @@ import { Id } from "./_generated/dataModel";
 const GRACE_MS = 24 * 60 * 60 * 1000;
 const BATCH = 200;
 
-async function collectReferencedStorageIds(ctx: MutationCtx): Promise<Set<string>> {
+async function collectReferencedStorageIds(
+  ctx: MutationCtx,
+): Promise<Set<string>> {
   const referenced = new Set<string>();
 
   const vehicles = await ctx.db.query("vehicles").collect();

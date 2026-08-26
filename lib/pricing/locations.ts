@@ -25,7 +25,8 @@ export const LOCATION_DATA: LocationWithPrice[] = [
   { name: "Timisoara", price: 200 },
 ];
 
-const normalizeLocationName = (name: string): string => name.trim().toLowerCase();
+const normalizeLocationName = (name: string): string =>
+  name.trim().toLowerCase();
 
 const findLocation = (locationName: string): LocationWithPrice | undefined => {
   const normalized = normalizeLocationName(locationName);

@@ -6,11 +6,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { LocationPicker } from "@/components/shared/search-filters/location-picker";
 import { DateTimePicker } from "@/components/shared/search-filters/date-time-picker";
 import { SearchData } from "@/lib/search-storage";
-import { useTranslations } from 'next-intl';
+import { useTranslations } from "next-intl";
 
 interface VehicleSearchFormProps {
   searchState: SearchData & { isHydrated: boolean };
-  updateSearchField: <K extends keyof SearchData>(field: K, value: SearchData[K]) => void;
+  updateSearchField: <K extends keyof SearchData>(
+    field: K,
+    value: SearchData[K],
+  ) => void;
   isLoading?: boolean;
 }
 
@@ -19,7 +22,7 @@ export function VehicleSearchForm({
   updateSearchField,
   isLoading = false,
 }: VehicleSearchFormProps) {
-  const t = useTranslations('vehicleSearchForm');
+  const t = useTranslations("vehicleSearchForm");
   const today = useToday();
 
   // Calendar open states for sequential flow
@@ -29,10 +32,10 @@ export function VehicleSearchForm({
   return (
     <div className="mb-6">
       <div className="mb-4 text-center">
-        <h1 className="text-xl font-semibold">{t('title')}</h1>
-        <p className="text-sm text-muted-foreground">{t('subtitle')}</p>
+        <h1 className="text-xl font-semibold">{t("title")}</h1>
+        <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
-      
+
       <Card className="shadow-md">
         <CardContent className="p-4">
           <div className="flex flex-col lg:flex-row gap-4">
@@ -40,20 +43,24 @@ export function VehicleSearchForm({
             <div className="flex flex-col gap-4 w-full lg:w-1/2">
               <LocationPicker
                 id="deliveryLocation"
-                label={t('pickupLocation')}
+                label={t("pickupLocation")}
                 value={searchState.deliveryLocation || ""}
-                onValueChange={(value) => updateSearchField('deliveryLocation', value)}
-                placeholder={t('selectPickup')}
+                onValueChange={(value) =>
+                  updateSearchField("deliveryLocation", value)
+                }
+                placeholder={t("selectPickup")}
                 disabled={isLoading}
               />
               <DateTimePicker
                 id="pickupDate"
-                label={t('pickupDateTime')}
-                disabledDateRanges={(date: Date) => (today ? date < today : false)}
+                label={t("pickupDateTime")}
+                disabledDateRanges={(date: Date) =>
+                  today ? date < today : false
+                }
                 dateState={searchState.pickupDate}
-                setDateState={(date) => updateSearchField('pickupDate', date)}
+                setDateState={(date) => updateSearchField("pickupDate", date)}
                 timeState={searchState.pickupTime || null}
-                setTimeState={(time) => updateSearchField('pickupTime', time)}
+                setTimeState={(time) => updateSearchField("pickupTime", time)}
                 minDate={today}
                 isLoading={isLoading}
                 calendarOpen={pickupCalendarOpen}
@@ -62,8 +69,12 @@ export function VehicleSearchForm({
                   setTimeout(() => setReturnCalendarOpen(true), 100);
                 }}
                 onDateChange={(newDate) => {
-                  if (newDate && searchState.returnDate && searchState.returnDate < newDate) {
-                    updateSearchField('returnDate', newDate);
+                  if (
+                    newDate &&
+                    searchState.returnDate &&
+                    searchState.returnDate < newDate
+                  ) {
+                    updateSearchField("returnDate", newDate);
                   }
                 }}
               />
@@ -73,19 +84,21 @@ export function VehicleSearchForm({
             <div className="flex flex-col gap-4 w-full lg:w-1/2">
               <LocationPicker
                 id="restitutionLocation"
-                label={t('returnLocation')}
+                label={t("returnLocation")}
                 value={searchState.restitutionLocation || ""}
-                onValueChange={(value) => updateSearchField('restitutionLocation', value)}
-                placeholder={t('selectReturn')}
+                onValueChange={(value) =>
+                  updateSearchField("restitutionLocation", value)
+                }
+                placeholder={t("selectReturn")}
                 disabled={isLoading}
               />
               <DateTimePicker
                 id="returnDate"
-                label={t('returnDateTime')}
+                label={t("returnDateTime")}
                 dateState={searchState.returnDate}
-                setDateState={(date) => updateSearchField('returnDate', date)}
+                setDateState={(date) => updateSearchField("returnDate", date)}
                 timeState={searchState.returnTime || null}
-                setTimeState={(time) => updateSearchField('returnTime', time)}
+                setTimeState={(time) => updateSearchField("returnTime", time)}
                 minDate={searchState.pickupDate || today}
                 disabledDateRanges={(date: Date) => {
                   const min = searchState.pickupDate || today;
@@ -103,4 +116,4 @@ export function VehicleSearchForm({
       </Card>
     </div>
   );
-} 
+}

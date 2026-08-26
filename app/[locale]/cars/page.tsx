@@ -29,7 +29,12 @@ export async function generateMetadata({
       ro: "mașini de închiriat cluj-napoca, car rentals cluj, închiriere auto cluj, rent car cluj-napoca, vehicule închiriere cluj",
       en: "car rentals cluj-napoca, rent car cluj, car hire cluj, vehicle rental cluj-napoca, cars for rent cluj",
     },
-    image: { url: "https://rngo.ro/og-cars.png", width: 1376, height: 768, alt: "Rent'n Go - Mașini de Închiriat Cluj-Napoca" },
+    image: {
+      url: "https://rngo.ro/og-cars.png",
+      width: 1376,
+      height: 768,
+      alt: "Rent'n Go - Mașini de Închiriat Cluj-Napoca",
+    },
   });
 }
 
@@ -38,7 +43,10 @@ export async function generateMetadata({
 export default async function CarsPage() {
   "use cache";
   cacheLife("hours");
-  const vehicles = await fetchStaticQuery(api.vehicles.getAllVehiclesWithClasses, {});
+  const vehicles = await fetchStaticQuery(
+    api.vehicles.getAllVehiclesWithClasses,
+    {},
+  );
 
   return <CarsPageClient initialVehicles={vehicles} />;
 }

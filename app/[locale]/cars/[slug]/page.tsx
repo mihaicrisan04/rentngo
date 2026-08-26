@@ -28,7 +28,11 @@ function VehicleStructuredData({
     fuelType?: string;
     transmission?: string;
     features?: string[];
-    pricingTiers?: { minDays: number; maxDays: number | null; pricePerDay: number }[];
+    pricingTiers?: {
+      minDays: number;
+      maxDays: number | null;
+      pricePerDay: number;
+    }[];
     pricePerDay?: number;
   };
   imageUrl: string;
@@ -40,7 +44,9 @@ function VehicleStructuredData({
 
   let pricePerDay = 0;
   if (vehicle.pricingTiers && vehicle.pricingTiers.length > 0) {
-    const sortedTiers = [...vehicle.pricingTiers].sort((a, b) => a.minDays - b.minDays);
+    const sortedTiers = [...vehicle.pricingTiers].sort(
+      (a, b) => a.minDays - b.minDays,
+    );
     pricePerDay = sortedTiers[0].pricePerDay;
   }
 
@@ -60,7 +66,10 @@ function VehicleStructuredData({
     vehicleModelDate: vehicle.year?.toString(),
     bodyType: vehicle.type || "Car",
     fuelType: vehicle.fuelType || "Petrol",
-    vehicleTransmission: vehicle.transmission === "Automatic" ? "AutomaticTransmission" : "ManualTransmission",
+    vehicleTransmission:
+      vehicle.transmission === "Automatic"
+        ? "AutomaticTransmission"
+        : "ManualTransmission",
     seatingCapacity: vehicle.seats || 5,
     numberOfDoors: 4,
     offers: {
@@ -68,7 +77,9 @@ function VehicleStructuredData({
       priceCurrency: "EUR",
       price: pricePerDay,
       // eslint-disable-next-line react-hooks/purity -- cache-fill-time date is intentional: the JSON-LD offer needs a far-future validity date, refreshed by the page's hourly cacheLife
-      priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+      priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0],
       availability: "https://schema.org/InStock",
       url: `${COMPANY.baseUrl}/${locale}/cars/${urlSlug}`,
       seller: buildAutoRentalSellerSchema(),
@@ -235,7 +246,7 @@ export default async function CarDetailPage({ params }: PageProps) {
           imageId,
         });
         return { imageId: imageId.toString(), url };
-      })
+      }),
     );
     urls.forEach(({ imageId, url }) => {
       if (url) {

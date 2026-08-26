@@ -284,7 +284,9 @@ export function ReservationsTable({
                       {reservation.paymentMethod.replace(/_/g, " ")}
                     </span>
                   </TableCell>
-                  <TableCell><StatusBadge status={reservation.status} /></TableCell>
+                  <TableCell>
+                    <StatusBadge status={reservation.status} />
+                  </TableCell>
                   <TableCell className="max-w-[150px]">
                     <div className="text-sm">
                       {reservation.customerInfo.flightNumber && (

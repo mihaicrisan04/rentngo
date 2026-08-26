@@ -34,8 +34,11 @@ import {
 import { toast } from "sonner";
 
 const EditSeasonDialog = dynamic(
-  () => import("@/components/admin/seasons/edit-season-dialog").then(m => m.EditSeasonDialog),
-  { ssr: false }
+  () =>
+    import("@/components/admin/seasons/edit-season-dialog").then(
+      (m) => m.EditSeasonDialog,
+    ),
+  { ssr: false },
 );
 
 interface SeasonsTableProps {
@@ -43,8 +46,10 @@ interface SeasonsTableProps {
 }
 
 export function SeasonsTable({ onCreate }: SeasonsTableProps) {
-  const [editingSeason, setEditingSeason] = useState<Id<"seasons"> | null>(null);
-  
+  const [editingSeason, setEditingSeason] = useState<Id<"seasons"> | null>(
+    null,
+  );
+
   const seasons = useQuery(api.seasons.getAll);
   const currentSeason = useQuery(api.seasons.getCurrent);
   const deleteSeason = useMutation(api.seasons.deleteSeason);
@@ -56,7 +61,11 @@ export function SeasonsTable({ onCreate }: SeasonsTableProps) {
   };
 
   const handleDelete = async (seasonId: Id<"seasons">, seasonName: string) => {
-    if (confirm(`Are you sure you want to delete "${seasonName}"? This action cannot be undone.`)) {
+    if (
+      confirm(
+        `Are you sure you want to delete "${seasonName}"? This action cannot be undone.`,
+      )
+    ) {
       try {
         await deleteSeason({ id: seasonId });
         toast.success("Season deleted successfully", {
@@ -73,7 +82,10 @@ export function SeasonsTable({ onCreate }: SeasonsTableProps) {
     }
   };
 
-  const handleSetCurrent = async (seasonId: Id<"seasons">, seasonName: string) => {
+  const handleSetCurrent = async (
+    seasonId: Id<"seasons">,
+    seasonName: string,
+  ) => {
     const previousSeasonId = currentSeason?.seasonId;
     try {
       await setCurrent({ seasonId, setBy: "Admin" });
@@ -122,14 +134,17 @@ export function SeasonsTable({ onCreate }: SeasonsTableProps) {
 
   const formatPeriods = (periods: any[]) => {
     if (!periods || periods.length === 0) return "No periods defined";
-    
+
     return periods.map((period, index) => (
       <div key={index} className="text-sm">
         <div className="font-medium">
-          {new Date(period.startDate).toLocaleDateString('en-GB')} - {new Date(period.endDate).toLocaleDateString('en-GB')}
+          {new Date(period.startDate).toLocaleDateString("en-GB")} -{" "}
+          {new Date(period.endDate).toLocaleDateString("en-GB")}
         </div>
         {period.description && (
-          <div className="text-xs text-muted-foreground">{period.description}</div>
+          <div className="text-xs text-muted-foreground">
+            {period.description}
+          </div>
         )}
       </div>
     ));
@@ -177,11 +192,13 @@ export function SeasonsTable({ onCreate }: SeasonsTableProps) {
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">
-                      {season.multiplier}x
-                    </div>
+                    <div className="font-medium">{season.multiplier}x</div>
                     <div className="text-xs text-muted-foreground">
-                      {season.multiplier > 1 ? "Price increase" : season.multiplier < 1 ? "Price decrease" : "Base price"}
+                      {season.multiplier > 1
+                        ? "Price increase"
+                        : season.multiplier < 1
+                          ? "Price decrease"
+                          : "Base price"}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -189,7 +206,9 @@ export function SeasonsTable({ onCreate }: SeasonsTableProps) {
                       {formatPeriods(season.periods)}
                     </div>
                   </TableCell>
-                  <TableCell><StatusBadge status={seasonStatus(season)} /></TableCell>
+                  <TableCell>
+                    <StatusBadge status={seasonStatus(season)} />
+                  </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -215,7 +234,9 @@ export function SeasonsTable({ onCreate }: SeasonsTableProps) {
                           </DropdownMenuItem>
                         ) : season.isActive ? (
                           <DropdownMenuItem
-                            onClick={() => handleSetCurrent(season._id, season.name)}
+                            onClick={() =>
+                              handleSetCurrent(season._id, season.name)
+                            }
                             className="cursor-pointer text-green-600 hover:text-green-700"
                           >
                             <Play className="h-4 w-4 mr-2" />
@@ -248,4 +269,4 @@ export function SeasonsTable({ onCreate }: SeasonsTableProps) {
       )}
     </div>
   );
-} 
+}

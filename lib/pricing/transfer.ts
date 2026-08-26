@@ -39,7 +39,8 @@ export function assertValidTransferDistance(distanceKm: number): void {
 export function computeTransferPricing(
   input: TransferPricingInput,
 ): TransferPricingBreakdown {
-  const baseFare = input.vehicleClass?.transferBaseFare ?? TRANSFER_DEFAULT_BASE_FARE;
+  const baseFare =
+    input.vehicleClass?.transferBaseFare ?? TRANSFER_DEFAULT_BASE_FARE;
   const classMultiplier =
     input.vehicleClass?.transferMultiplier ?? TRANSFER_DEFAULT_MULTIPLIER;
 

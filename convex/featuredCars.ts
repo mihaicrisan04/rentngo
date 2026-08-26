@@ -55,7 +55,7 @@ export const getFeaturedVehicles = query({
         }
 
         return { ...vehicle, imageUrl };
-      })
+      }),
     );
 
     return vehicles.filter((v): v is NonNullable<typeof v> => v !== null);
@@ -167,13 +167,15 @@ export const getAvailableVehiclesForFeatured = query({
     const featuredCars = await ctx.db.query("featuredCars").collect();
     const featuredVehicleIds = new Set(
       featuredCars
-        .filter((featured) => !args.excludeSlot || featured.slot !== args.excludeSlot)
-        .map((featured) => featured.vehicleId)
+        .filter(
+          (featured) => !args.excludeSlot || featured.slot !== args.excludeSlot,
+        )
+        .map((featured) => featured.vehicleId),
     );
 
     // Filter out already featured vehicles
     const availableVehicles = allVehicles.filter(
-      (vehicle) => !featuredVehicleIds.has(vehicle._id)
+      (vehicle) => !featuredVehicleIds.has(vehicle._id),
     );
 
     return availableVehicles;
@@ -191,11 +193,11 @@ export const clearAllFeaturedCars = mutation({
     }
 
     const allFeatured = await ctx.db.query("featuredCars").collect();
-    
+
     for (const featured of allFeatured) {
       await ctx.db.delete(featured._id);
     }
 
     return { success: true, cleared: allFeatured.length };
   },
-}); 
+});

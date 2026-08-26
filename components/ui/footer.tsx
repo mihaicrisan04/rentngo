@@ -87,7 +87,10 @@ export function Footer({ logo, brandName }: FooterProps) {
           <div className="flex items-center gap-4 mt-6 md:mt-0">
             <ul className="flex list-none gap-3">
               {socialLinks.map((link, i) => (
-                <li key={i} className="hover:scale-110 transition-transform duration-200">
+                <li
+                  key={i}
+                  className="hover:scale-110 transition-transform duration-200"
+                >
                   {link.icon}
                 </li>
               ))}
@@ -137,7 +140,9 @@ export function Footer({ logo, brandName }: FooterProps) {
           {/* Copyright */}
           <div className="text-sm leading-6 text-muted-foreground whitespace-nowrap lg:row-start-1 lg:col-span-4 xl:col-span-5">
             <div>{tFooter("copyright")}</div>
-            <div className="text-muted-foreground/70">{tFooter("allRightsReserved")}</div>
+            <div className="text-muted-foreground/70">
+              {tFooter("allRightsReserved")}
+            </div>
             <div className="flex items-center gap-1 mt-2">
               <span>{tFooter("builtBy")}</span>
               <Link

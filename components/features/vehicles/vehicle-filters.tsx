@@ -167,7 +167,7 @@ export function VehicleFilters({
                 {value}
                 <X className="ml-1 h-3 w-3" />
               </Button>
-            ))
+            )),
           )}
 
           {/* Clear all button */}

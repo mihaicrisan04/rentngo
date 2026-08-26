@@ -37,7 +37,9 @@ export default function AboutLayout({ children }: AboutLayoutProps) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdScriptContent(organizationSchema) }}
+        dangerouslySetInnerHTML={{
+          __html: jsonLdScriptContent(organizationSchema),
+        }}
       />
       {children}
     </>
