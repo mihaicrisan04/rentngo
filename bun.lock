@@ -11,7 +11,7 @@
         "@dnd-kit/sortable": "^10.0.0",
         "@dnd-kit/utilities": "^3.2.2",
         "@hookform/resolvers": "^5.9.1",
-        "@lucide/lab": "^0.1.2",
+        "@lucide/lab": "^0.2.0",
         "@mapbox/search-js-react": "^1.6.0",
         "@mdx-js/loader": "^3.1.1",
         "@mdx-js/react": "^3.1.1",
@@ -322,7 +322,7 @@
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
-    "@lucide/lab": ["@lucide/lab@0.1.2", "", {}, "sha512-VprF2BJa7ZuTGOhUd5cf8tHJXyL63wdxcGieAiVVoR9hO0YmPsnZO0AGqDiX2/br+/MC6n8BoJcmPilltOXIJA=="],
+    "@lucide/lab": ["@lucide/lab@0.2.0", "", {}, "sha512-5zXVyp+HizDgWjGX8v3yNEijo7yJwoHS5Icj9qeqBCIHPWxVNGofbEXtnHEJ1VZ71Uhho32AX6xpHVWtWbPO2g=="],
 
     "@mapbox/search-js-core": ["@mapbox/search-js-core@1.6.0", "", { "dependencies": { "@types/geojson": "^7946.0.8" } }, "sha512-MEr1scUV6H8ZdkP0XRA4q07gim5XDdjdO6Jp7pV5kSA35s7xvpN5E3ywkHm6Wif6+nRsRA45KwlXH8MiD9I8Bw=="],
 
