@@ -5,6 +5,7 @@ import createMDX from "@next/mdx";
 const withNextIntl = createNextIntlPlugin("./i18n.ts");
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["desktop.tail2362eb.ts.net"],
   reactCompiler: true,
   cacheComponents: true,
   partialPrefetching: true,
