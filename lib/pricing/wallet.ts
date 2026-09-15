@@ -204,6 +204,16 @@ export interface ExpiringCredits {
   expiresAt: number;
 }
 
+export interface ExpiringCreditsOptions {
+  windowDays?: number;
+  /**
+   * `computeAvailableBalance` for the same ledger. Credits are summed before
+   * any overdraft is settled, so without this the nudge could name more than
+   * the balance the customer can actually spend.
+   */
+  availableBalance?: number;
+}
+
 /**
  * The "use it before" nudge: everything still unspent that lapses within
  * `windowDays`. Read-time only — nothing marks a credit as expiring.
@@ -211,8 +221,9 @@ export interface ExpiringCredits {
 export function computeExpiringCredits(
   credits: WalletCredit[],
   now: number,
-  windowDays: number = EXPIRING_SOON_WINDOW_DAYS,
+  options: ExpiringCreditsOptions = {},
 ): ExpiringCredits | null {
+  const windowDays = options.windowDays ?? EXPIRING_SOON_WINDOW_DAYS;
   const deadline = now + windowDays * 24 * 60 * 60 * 1000;
   const soon = credits.flatMap((credit) =>
     credit.expiresAt !== undefined &&
@@ -222,8 +233,11 @@ export function computeExpiringCredits(
       : [],
   );
   if (soon.length === 0) return null;
+  const total = soon.reduce((sum, credit) => sum + credit.remaining, 0);
+  const amount = round2(Math.min(total, options.availableBalance ?? total));
+  if (amount <= 0) return null;
   return {
-    amount: round2(soon.reduce((sum, credit) => sum + credit.remaining, 0)),
+    amount,
     expiresAt: Math.min(...soon.map((credit) => credit.expiresAt)),
   };
 }

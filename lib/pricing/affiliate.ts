@@ -277,35 +277,12 @@ export function currentTier(
 /**
  * The "recommend a friend" block at the bottom of a confirmation email: the
  * booker's own code when they have one, an invitation to create an account
- * when they booked as a guest. While the program is off there is no block.
+ * when they booked as a guest. While the program is off there is no block at
+ * all (see `referralBlockForBooker` in convex/affiliates.ts).
  */
 export type ReferralEmailBlock =
   | { kind: "affiliate"; code: string }
   | { kind: "guest" };
-
-export function referralEmailBlock(params: {
-  programEnabled: boolean;
-  code?: string | null;
-}): ReferralEmailBlock | undefined {
-  if (!params.programEnabled) return undefined;
-  return params.code
-    ? { kind: "affiliate", code: params.code }
-    : { kind: "guest" };
-}
-
-/**
- * Whether the confirmation-email path should mint a referral code for the
- * booker. Self-service enrolment is open to every signed-in customer while the
- * program runs, so the email is just one more entry point into it; a guest has
- * no account to attach a code to.
- */
-export function shouldCreateReferralCodeForEmail(params: {
-  programEnabled: boolean;
-  hasAccount: boolean;
-  existingCode?: string | null;
-}): boolean {
-  return params.programEnabled && params.hasAccount && !params.existingCode;
-}
 
 /**
  * EUR discount for the referred customer. Same clamping semantics as coupons:

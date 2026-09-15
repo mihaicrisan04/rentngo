@@ -712,7 +712,8 @@
       "tier": {
         "current": "Nivelul tău: {name}",
         "none": "Nu ai atins încă primul nivel",
-        "next": "Următorul nivel: {name} — {count} recomandări aprobate îți aduc {percent}% credit"
+        "next": "Următorul nivel: {name} — {count} recomandări aprobate îți aduc {percent}% credit",
+        "custom": "Ai o recompensă negociată separat"
       }
     }
   },

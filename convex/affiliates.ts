@@ -27,8 +27,6 @@ import {
   normalizeAffiliateSlug,
   normalizeCustomerEmail,
   referralCodeReason,
-  referralEmailBlock,
-  shouldCreateReferralCodeForEmail,
   resolveConversionCredit,
   resolveReferralSource,
   resolveTierRewardPercent,
@@ -1629,38 +1627,38 @@ export const createMyAffiliate = mutation({
  * The "recommend a friend" block for a booking confirmation email. A
  * signed-in booker who is not an affiliate yet gets a code minted here — the
  * email is just another door into the same self-service enrolment — while a
- * guest is invited to create an account. Never throws: a referral block must
- * not be able to fail a booking.
+ * guest is invited to create an account. This runs inside the booking
+ * mutation, so it swallows its own failures: a referral block must never be
+ * able to roll a booking back.
  */
 export async function referralBlockForBooker(
   ctx: MutationCtx,
   userId: Id<"users"> | undefined,
 ): Promise<ReferralEmailBlock | undefined> {
-  const settings = await loadSettings(ctx);
-  if (!settings.enabled) return undefined;
+  try {
+    const settings = await loadSettings(ctx);
+    if (!settings.enabled) return undefined;
 
-  const user = userId ? await ctx.db.get(userId) : null;
-  if (!user || user.deletedAt !== undefined) return { kind: "guest" };
+    const user = userId ? await ctx.db.get(userId) : null;
+    if (!user || user.deletedAt !== undefined) return { kind: "guest" };
 
-  const existing = await ctx.db
-    .query("affiliates")
-    .withIndex("by_user", (q) => q.eq("userId", user._id))
-    .first();
-  if (
-    !shouldCreateReferralCodeForEmail({
-      programEnabled: settings.enabled,
-      hasAccount: true,
-      existingCode: existing?.slug,
-    })
-  ) {
-    return referralEmailBlock({
-      programEnabled: settings.enabled,
-      code: existing?.slug,
-    });
+    const existing = await ctx.db
+      .query("affiliates")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .first();
+    if (existing) {
+      // A deactivated affiliate's code and link are both refused at checkout,
+      // so there is nothing worth printing in the email.
+      return existing.isActive
+        ? { kind: "affiliate", code: existing.slug }
+        : undefined;
+    }
+
+    const slug = await mintAffiliateForUser(ctx, user);
+    return slug ? { kind: "affiliate", code: slug } : undefined;
+  } catch {
+    return undefined;
   }
-
-  const slug = await mintAffiliateForUser(ctx, user);
-  return slug ? { kind: "affiliate", code: slug } : undefined;
 }
 
 export const getMyAffiliate = query({
@@ -1672,6 +1670,8 @@ export const getMyAffiliate = query({
       programEnabled: v.boolean(),
       confirmedConversions: v.number(),
       currentRewardPercent: v.number(),
+      /** A negotiated percent replaces the tier table: no tier name applies. */
+      hasRewardOverride: v.boolean(),
       nextTier: v.union(tierValidator, v.null()),
       tiers: v.array(tierValidator),
       referredDiscount: referredDiscountValidator,
@@ -1712,6 +1712,7 @@ export const getMyAffiliate = query({
         approvedCount(affiliate),
         affiliate.rewardPercentOverride,
       ),
+      hasRewardOverride: affiliate.rewardPercentOverride !== undefined,
       nextTier:
         affiliate.rewardPercentOverride !== undefined
           ? null

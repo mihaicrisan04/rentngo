@@ -135,8 +135,12 @@ export function AffiliateDashboard() {
     }
   };
 
-  const { confirmedConversions, tiers, nextTier } = affiliate;
-  const tier = currentTier(tiers, confirmedConversions);
+  const { confirmedConversions, tiers, nextTier, hasRewardOverride } =
+    affiliate;
+  // A negotiated percent replaces the tier table, so no tier name applies.
+  const tier = hasRewardOverride
+    ? null
+    : currentTier(tiers, confirmedConversions);
   const progressToNext = nextTier
     ? Math.min(100, (confirmedConversions / nextTier.minConversions) * 100)
     : 100;
@@ -260,9 +264,11 @@ export function AffiliateDashboard() {
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="font-medium">
-              {tier?.name
-                ? t("tier.current", { name: tier.name })
-                : t("tier.none")}
+              {hasRewardOverride
+                ? t("tier.custom")
+                : tier?.name
+                  ? t("tier.current", { name: tier.name })
+                  : t("tier.none")}
             </span>
             {nextTier && (
               <span className="font-medium">

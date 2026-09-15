@@ -14,9 +14,7 @@ import {
   nextTier,
   normalizeAffiliateSlug,
   referralCodeReason,
-  referralEmailBlock,
   referredEligibility,
-  shouldCreateReferralCodeForEmail,
   resolveConversionCredit,
   resolveReferralSource,
   resolveTierRewardPercent,
@@ -1090,53 +1088,5 @@ describe("currentTier", () => {
 
   it("does not assume the table is sorted", () => {
     expect(currentTier([...tiers].reverse(), 6)?.name).toBe("Ambasador");
-  });
-});
-
-describe("referral block in the confirmation email", () => {
-  it("has no block at all while the program is off", () => {
-    expect(
-      referralEmailBlock({ programEnabled: false, code: "ana-x7" }),
-    ).toBeUndefined();
-    expect(
-      shouldCreateReferralCodeForEmail({
-        programEnabled: false,
-        hasAccount: true,
-      }),
-    ).toBe(false);
-  });
-
-  it("shows the booker's own code", () => {
-    expect(
-      referralEmailBlock({ programEnabled: true, code: "ana-x7" }),
-    ).toEqual({ kind: "affiliate", code: "ana-x7" });
-  });
-
-  it("invites a guest to create an account", () => {
-    expect(referralEmailBlock({ programEnabled: true })).toEqual({
-      kind: "guest",
-    });
-  });
-
-  it("mints a code only for a signed-in booker without one", () => {
-    expect(
-      shouldCreateReferralCodeForEmail({
-        programEnabled: true,
-        hasAccount: true,
-      }),
-    ).toBe(true);
-    expect(
-      shouldCreateReferralCodeForEmail({
-        programEnabled: true,
-        hasAccount: true,
-        existingCode: "ana-x7",
-      }),
-    ).toBe(false);
-    expect(
-      shouldCreateReferralCodeForEmail({
-        programEnabled: true,
-        hasAccount: false,
-      }),
-    ).toBe(false);
   });
 });

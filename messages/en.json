@@ -712,7 +712,8 @@
       "tier": {
         "current": "Your tier: {name}",
         "none": "You haven't reached the first tier yet",
-        "next": "Next tier: {name} — {count} approved referrals earn you {percent}% credit"
+        "next": "Next tier: {name} — {count} approved referrals earn you {percent}% credit",
+        "custom": "You have a separately negotiated reward"
       }
     }
   },

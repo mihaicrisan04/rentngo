@@ -711,12 +711,35 @@ describe("computeExpiringCredits", () => {
   it("takes the window in days", () => {
     const transactions = [credit("c1", 25, NOW + 90 * DAY)];
     expect(
-      computeExpiringCredits(
-        computeRemainingCredits(transactions, NOW),
-        NOW,
-        120,
-      ),
+      computeExpiringCredits(computeRemainingCredits(transactions, NOW), NOW, {
+        windowDays: 120,
+      }),
     ).toEqual({ amount: 25, expiresAt: NOW + 90 * DAY });
+  });
+
+  it("never names more than the spendable balance", () => {
+    // An overdraft (a debit no open credit could absorb) is settled against
+    // the balance but not against an individual credit's remaining
+    const transactions: WalletTransactionData[] = [
+      credit("c1", 40, NOW + 10 * DAY),
+      { id: "r1", kind: "redemption", amount: -30, createdAt: NOW - DAY },
+    ];
+    const balance = computeAvailableBalance(transactions, NOW);
+    expect(balance).toBe(10);
+    expect(
+      computeExpiringCredits(computeRemainingCredits(transactions, NOW), NOW, {
+        availableBalance: balance,
+      }),
+    ).toEqual({ amount: 10, expiresAt: NOW + 10 * DAY });
+  });
+
+  it("says nothing when the balance is already exhausted", () => {
+    const transactions = [credit("c1", 40, NOW + 10 * DAY)];
+    expect(
+      computeExpiringCredits(computeRemainingCredits(transactions, NOW), NOW, {
+        availableBalance: 0,
+      }),
+    ).toBeNull();
   });
 });
 

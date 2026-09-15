@@ -18,7 +18,7 @@ const COPY = {
     linkLabel: "Linkul tău:",
     guestBody:
       "Creează-ți un cont și primești propriul cod de recomandare: prietenii tăi au reducere la prima rezervare, iar tu aduni credit pentru următoarele tale închirieri.",
-    guestCta: "Creează cont pe rngo.ro",
+    guestCta: (site: string) => `Creează cont pe ${site}`,
   },
   en: {
     heading: "Recommend a friend",
@@ -28,7 +28,7 @@ const COPY = {
     linkLabel: "Your link:",
     guestBody:
       "Create an account to get your own referral code: your friends get a discount on their first booking and you collect credit towards your next rentals.",
-    guestCta: "Create an account on rngo.ro",
+    guestCta: (site: string) => `Create an account on ${site}`,
   },
 } as const;
 
@@ -43,10 +43,13 @@ export const ReferralBlock: React.FC<ReferralBlockProps> = ({
 }) => {
   if (!referral) return null;
   const t = COPY[locale === "ro" ? "ro" : "en"];
+  // Sign-up is a Clerk modal, not a route, so a guest is sent to the site
+  // itself rather than to a dedicated registration page.
   const referralUrl =
     referral.kind === "affiliate"
       ? buildReferralUrl(COMPANY.baseUrl, referral.code)
       : COMPANY.baseUrl;
+  const siteName = COMPANY.baseUrl.replace(/^https?:\/\//, "");
 
   return (
     <>
@@ -73,7 +76,7 @@ export const ReferralBlock: React.FC<ReferralBlockProps> = ({
               {t.guestBody}
             </Text>
             <Link className="text-[14px]" href={referralUrl}>
-              {t.guestCta}
+              {t.guestCta(siteName)}
             </Link>
           </>
         )}
