@@ -452,7 +452,7 @@ function ReservationConfirmationContent() {
                       ? t("discountLine", { code: reservation.promoCode })
                       : tReferral("discount")}
                   </span>
-                  <span>−{reservation.discountAmount} EUR</span>
+                  <span>−{formatPrice(reservation.discountAmount ?? 0)}</span>
                 </div>
               )}
               {/* SCDW line above total */}

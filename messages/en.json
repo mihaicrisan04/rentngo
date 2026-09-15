@@ -673,7 +673,7 @@
       "referredDiscountInfo": "People who book through your link get {discount} off.",
       "conversions": "Confirmed bookings",
       "currentReward": "Your current reward",
-      "nextTier": "Next tier: {count} bookings unlock a {percent}% reward",
+      "nextTier": "Next tier: {count, plural, one {# booking unlocks} other {# bookings unlock}} a {percent}% reward",
       "history": "Referral history",
       "bookingRental": "Car rental",
       "bookingTransfer": "Transfer",
@@ -712,7 +712,7 @@
       "tier": {
         "current": "Your tier: {name}",
         "none": "You haven't reached the first tier yet",
-        "next": "Next tier: {name} — {count} approved referrals earn you {percent}% credit",
+        "next": "Next tier: {name} — {count, plural, one {# approved referral earns} other {# approved referrals earn}} you {percent}% credit",
         "custom": "You have a separately negotiated reward"
       }
     }

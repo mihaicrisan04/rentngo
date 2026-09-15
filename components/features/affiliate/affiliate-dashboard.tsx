@@ -86,10 +86,38 @@ export function AffiliateDashboard() {
   // before flipping to the enrolment CTA (or the other way round).
   if (affiliate === null && enrolment === undefined) return null;
 
+  // Enrolment and every code are gated on the program kill-switch; while it is
+  // off the card keeps the contact link.
+  const programEnabled =
+    affiliate?.programEnabled ?? enrolment?.programEnabled === true;
+  const closedCard = (
+    <Card className="rounded-2xl border-border/50">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Link2 className="h-5 w-5" />
+          {t("title")}
+        </CardTitle>
+        <CardDescription>{t("description")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="rounded-xl border border-border/50 bg-muted/40 p-6 text-center space-y-4">
+          <p className="text-sm text-muted-foreground">
+            {t("notEnrolled.closedBody")}
+          </p>
+          <Button asChild variant="outline">
+            <Link href={`/${locale}/contact`}>{t("notEnrolled.cta")}</Link>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  // A closed program refuses every code and link, so an affiliate is shown the
+  // same "not open yet" card as everybody else rather than a share UI that
+  // cannot work.
+  if (!programEnabled) return closedCard;
+
   if (affiliate === null) {
-    // Enrolment is gated on the program kill-switch, same as every other part
-    // of the referral feature; while it is off the card keeps the contact link.
-    const canEnrol = enrolment?.programEnabled === true;
     return (
       <Card className="rounded-2xl border-border/50">
         <CardHeader>
@@ -102,19 +130,13 @@ export function AffiliateDashboard() {
         <CardContent>
           <div className="rounded-xl border border-border/50 bg-muted/40 p-6 text-center space-y-4">
             <p className="text-sm text-muted-foreground">
-              {canEnrol ? t("notEnrolled.body") : t("notEnrolled.closedBody")}
+              {t("notEnrolled.body")}
             </p>
-            {canEnrol ? (
-              <Button type="button" onClick={enrol} disabled={isEnrolling}>
-                {isEnrolling
-                  ? t("notEnrolled.generating")
-                  : t("notEnrolled.generate")}
-              </Button>
-            ) : (
-              <Button asChild variant="outline">
-                <Link href={`/${locale}/contact`}>{t("notEnrolled.cta")}</Link>
-              </Button>
-            )}
+            <Button type="button" onClick={enrol} disabled={isEnrolling}>
+              {isEnrolling
+                ? t("notEnrolled.generating")
+                : t("notEnrolled.generate")}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -157,7 +179,7 @@ export function AffiliateDashboard() {
         <CardDescription>{t("description")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {(!affiliate.isActive || !affiliate.programEnabled) && (
+        {!affiliate.isActive && (
           <p className="text-sm text-destructive">{t("inactive")}</p>
         )}
 

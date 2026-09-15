@@ -673,7 +673,7 @@
       "referredDiscountInfo": "Cei care rezervă prin linkul tău primesc o reducere de {discount}.",
       "conversions": "Rezervări confirmate",
       "currentReward": "Recompensa ta actuală",
-      "nextTier": "Următorul nivel: {count} rezervări deblochează o recompensă de {percent}%",
+      "nextTier": "Următorul nivel: {count, plural, one {# rezervare deblochează} few {# rezervări deblochează} other {# de rezervări deblochează}} o recompensă de {percent}%",
       "history": "Istoric recomandări",
       "bookingRental": "Închiriere auto",
       "bookingTransfer": "Transfer",
@@ -712,7 +712,7 @@
       "tier": {
         "current": "Nivelul tău: {name}",
         "none": "Nu ai atins încă primul nivel",
-        "next": "Următorul nivel: {name} — {count} recomandări aprobate îți aduc {percent}% credit",
+        "next": "Următorul nivel: {name} — {count, plural, one {# recomandare aprobată îți aduce} few {# recomandări aprobate îți aduc} other {# de recomandări aprobate îți aduc}} {percent}% credit",
         "custom": "Ai o recompensă negociată separat"
       }
     }
