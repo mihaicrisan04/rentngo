@@ -3,3 +3,24 @@
 === reject conversion m973csmk3a4etyetcydwvtzysn8efffv Tue Sep 15 06:23:48 PM EEST 2026 ===
 === approve revived conversion (previously credited+reversed) Tue Sep 15 06:29:06 PM EEST 2026 ===
 === approve conversion m977v0gq9btxyaja8693v07qgs8efq1w (override 10%) Tue Sep 15 06:31:18 PM EEST 2026 ===
+
+=== RE-VERIFY b60f62a ===
+--- step4 approve re-mint (m97a00h92c9jfacz9nq382e5bx8ef8se) Tue Sep 15 07:07:57 PM EEST 2026 ---
+{
+  "status": "approved"
+}
+--- step5 approve before completion (pending) m972tez7d1a9pt1yzgfsvqqhvs8efp1t Tue Sep 15 07:09:40 PM EEST 2026 ---
+{
+  "status": "pending"
+}
+--- step6 approve after status-only completion m972tez7d1a9pt1yzgfsvqqhvs8efp1t Tue Sep 15 07:10:57 PM EEST 2026 ---
+{
+  "status": "approved"
+}
+--- extra: double approve on re-minted m97a00h + approve on voided m972tez Tue Sep 15 07:12:08 PM EEST 2026 ---
+{
+  "status": "approved"
+}
+{
+  "status": "voided"
+}
