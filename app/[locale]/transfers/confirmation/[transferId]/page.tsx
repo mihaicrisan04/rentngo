@@ -43,6 +43,7 @@ function TransferConfirmationInner() {
   const tConfirmation = useTranslations("confirmationPage");
   const tPaymentMethods = useTranslations("reservationPage.payment.methods");
   const tWallet = useTranslations("common.wallet");
+  const tReferral = useTranslations("common.referral");
   const locale = useLocale();
 
   const transferId = params.transferId as Id<"transfers">;
@@ -380,10 +381,14 @@ function TransferConfirmationInner() {
               </span>
               <span>{getPaymentMethodLabel(transfer.paymentMethod)}</span>
             </div>
-            {transfer.promoCode && (transfer.discountAmount ?? 0) > 0 && (
+            {(transfer.discountAmount ?? 0) > 0 && (
               <div className="flex justify-between text-sm text-green-600">
                 <span>
-                  {tConfirmation("discountLine", { code: transfer.promoCode })}
+                  {transfer.discountSource !== "affiliate" && transfer.promoCode
+                    ? tConfirmation("discountLine", {
+                        code: transfer.promoCode,
+                      })
+                    : tReferral("discount")}
                 </span>
                 <span>−€{(transfer.discountAmount ?? 0).toFixed(2)}</span>
               </div>

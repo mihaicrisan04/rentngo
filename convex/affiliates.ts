@@ -39,6 +39,7 @@ import {
   type ConversionStatus,
   type ConversionTransition,
   type ReferralCodeReason,
+  type ReferralEmailBlock,
   type ReferralSource,
   type ReferredIneligibilityReason,
   type WalletTransactionData,
@@ -1559,6 +1560,32 @@ export const getMyEnrolment = query({
 });
 
 /**
+ * Mint a self-service code for `user`. Returns null when every collision retry
+ * was taken. generateAffiliateSlug always yields a valid, non-reserved
+ * "<base>-<suffix>" (see the slug generation tests), so a collision is the
+ * only retry reason.
+ */
+async function mintAffiliateForUser(
+  ctx: MutationCtx,
+  user: Doc<"users">,
+): Promise<string | null> {
+  for (let attempt = 0; attempt < SLUG_GENERATION_ATTEMPTS; attempt++) {
+    const slug = generateAffiliateSlug(user.firstName || user.name, attempt);
+    if (await findBySlug(ctx, slug)) continue;
+
+    await ctx.db.insert("affiliates", {
+      userId: user._id,
+      slug,
+      isActive: true,
+      ...counterPatch(0),
+      createdAt: Date.now(),
+    });
+    return slug;
+  }
+  return null;
+}
+
+/**
  * Self-service enrolment: a signed-in customer mints their own referral code
  * while the program is open. Gated on `settings.enabled` like every other
  * part of the program, and one code per user. Admins keep `createAffiliate`
@@ -1588,24 +1615,51 @@ export const createMyAffiliate = mutation({
       throw new Error("You already have a referral code.");
     }
 
-    // generateAffiliateSlug always yields a valid, non-reserved "<base>-<suffix>"
-    // (see the slug generation tests), so a collision is the only retry reason.
-    for (let attempt = 0; attempt < SLUG_GENERATION_ATTEMPTS; attempt++) {
-      const slug = generateAffiliateSlug(user.firstName || user.name, attempt);
-      if (await findBySlug(ctx, slug)) continue;
-
-      await ctx.db.insert("affiliates", {
-        userId: user._id,
-        slug,
-        isActive: true,
-        ...counterPatch(0),
-        createdAt: Date.now(),
-      });
-      return { slug };
+    const slug = await mintAffiliateForUser(ctx, user);
+    if (!slug) {
+      throw new Error("Could not generate a referral code. Please try again.");
     }
-    throw new Error("Could not generate a referral code. Please try again.");
+    return { slug };
   },
 });
+
+/**
+ * The "recommend a friend" block for a booking confirmation email. A
+ * signed-in booker who is not an affiliate yet gets a code minted here — the
+ * email is just another door into the same self-service enrolment — while a
+ * guest is invited to create an account. This runs inside the booking
+ * mutation, so it swallows its own failures: a referral block must never be
+ * able to roll a booking back.
+ */
+export async function referralBlockForBooker(
+  ctx: MutationCtx,
+  userId: Id<"users"> | undefined,
+): Promise<ReferralEmailBlock | undefined> {
+  try {
+    const settings = await loadSettings(ctx);
+    if (!settings.enabled) return undefined;
+
+    const user = userId ? await ctx.db.get(userId) : null;
+    if (!user || user.deletedAt !== undefined) return { kind: "guest" };
+
+    const existing = await ctx.db
+      .query("affiliates")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .first();
+    if (existing) {
+      // A deactivated affiliate's code and link are both refused at checkout,
+      // so there is nothing worth printing in the email.
+      return existing.isActive
+        ? { kind: "affiliate", code: existing.slug }
+        : undefined;
+    }
+
+    const slug = await mintAffiliateForUser(ctx, user);
+    return slug ? { kind: "affiliate", code: slug } : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 export const getMyAffiliate = query({
   args: {},
@@ -1616,6 +1670,8 @@ export const getMyAffiliate = query({
       programEnabled: v.boolean(),
       confirmedConversions: v.number(),
       currentRewardPercent: v.number(),
+      /** A negotiated percent replaces the tier table: no tier name applies. */
+      hasRewardOverride: v.boolean(),
       nextTier: v.union(tierValidator, v.null()),
       tiers: v.array(tierValidator),
       referredDiscount: referredDiscountValidator,
@@ -1656,6 +1712,7 @@ export const getMyAffiliate = query({
         approvedCount(affiliate),
         affiliate.rewardPercentOverride,
       ),
+      hasRewardOverride: affiliate.rewardPercentOverride !== undefined,
       nextTier:
         affiliate.rewardPercentOverride !== undefined
           ? null

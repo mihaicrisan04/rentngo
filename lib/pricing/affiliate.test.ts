@@ -4,6 +4,7 @@ import {
   affiliateSlugSuffix,
   computeReferredDiscount,
   conversionTransition,
+  currentTier,
   generateAffiliateSlug,
   withSettingsDefaults,
   BLOCKING_CONVERSION_STATUSES,
@@ -1065,5 +1066,27 @@ describe("resolveReferralSource", () => {
         hasLiveConversion: false,
       }),
     ).toEqual({ eligible: false, reason: "selfReferral" });
+  });
+});
+
+describe("currentTier", () => {
+  const tiers = [
+    { minConversions: 1, rewardPercent: 5, name: "Pionier" },
+    { minConversions: 6, rewardPercent: 10, name: "Ambasador" },
+  ];
+
+  it("is null below the first threshold", () => {
+    expect(currentTier(tiers, 0)).toBeNull();
+  });
+
+  it("picks the highest threshold reached", () => {
+    expect(currentTier(tiers, 1)?.name).toBe("Pionier");
+    expect(currentTier(tiers, 5)?.name).toBe("Pionier");
+    expect(currentTier(tiers, 6)?.name).toBe("Ambasador");
+    expect(currentTier(tiers, 99)?.name).toBe("Ambasador");
+  });
+
+  it("does not assume the table is sorted", () => {
+    expect(currentTier([...tiers].reverse(), 6)?.name).toBe("Ambasador");
   });
 });

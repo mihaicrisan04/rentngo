@@ -673,7 +673,7 @@
       "referredDiscountInfo": "Cei care rezervă prin linkul tău primesc o reducere de {discount}.",
       "conversions": "Rezervări confirmate",
       "currentReward": "Recompensa ta actuală",
-      "nextTier": "Următorul nivel: {count} rezervări deblochează o recompensă de {percent}%",
+      "nextTier": "Următorul nivel: {count, plural, one {# rezervare deblochează} few {# rezervări deblochează} other {# de rezervări deblochează}} o recompensă de {percent}%",
       "history": "Istoric recomandări",
       "bookingRental": "Închiriere auto",
       "bookingTransfer": "Transfer",
@@ -687,7 +687,34 @@
       },
       "yourCode": "Codul tău de recomandare",
       "copyCode": "Copiază codul de recomandare",
-      "codeInfo": "Prietenii tăi pot folosi acest cod direct în câmpul de cod promoțional la rezervare."
+      "codeInfo": "Prietenii tăi pot folosi acest cod direct în câmpul de cod promoțional la rezervare.",
+      "share": {
+        "title": "Recomandă un prieten",
+        "whatsapp": "Trimite pe WhatsApp",
+        "native": "Distribuie",
+        "message": "Închiriază o mașină la Rent'n Go cu codul meu {code} și primești o reducere la prima ta rezervare: {link}"
+      },
+      "wallet": {
+        "title": "Portofelul meu",
+        "balance": "Credit disponibil",
+        "rewardsEarned": "Recompense câștigate",
+        "expiringSoon": "{amount} EUR expiră pe {date}. Folosește creditul la următoarea rezervare.",
+        "ledger": "Mișcări credit",
+        "empty": "Încă nu ai credit în portofel.",
+        "kinds": {
+          "referralCredit": "Credit din recomandare",
+          "creditReversal": "Credit anulat",
+          "manualAdjustment": "Ajustare manuală",
+          "redemption": "Credit folosit",
+          "redemptionReversal": "Credit returnat"
+        }
+      },
+      "tier": {
+        "current": "Nivelul tău: {name}",
+        "none": "Nu ai atins încă primul nivel",
+        "next": "Următorul nivel: {name} — {count, plural, one {# recomandare aprobată îți aduce} few {# recomandări aprobate îți aduc} other {# de recomandări aprobate îți aduc}} {percent}% credit",
+        "custom": "Ai o recompensă negociată separat"
+      }
     }
   },
   "footer": {

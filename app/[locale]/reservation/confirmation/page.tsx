@@ -44,6 +44,7 @@ function ReservationConfirmationContent() {
   const tCharges = useTranslations("reservationCharges");
   const tPaymentMethods = useTranslations("reservationPage.payment.methods");
   const tWallet = useTranslations("common.wallet");
+  const tReferral = useTranslations("common.referral");
   const locale = useLocale();
 
   // Get reservation details
@@ -441,16 +442,19 @@ function ReservationConfirmationContent() {
                     </div>
                   </div>
                 )}
-              {/* Applied coupon — render the persisted discount, no recompute */}
-              {reservation.promoCode &&
-                (reservation.discountAmount ?? 0) > 0 && (
-                  <div className="flex justify-between items-center text-sm text-green-600">
-                    <span>
-                      {t("discountLine", { code: reservation.promoCode })}
-                    </span>
-                    <span>−{reservation.discountAmount} EUR</span>
-                  </div>
-                )}
+              {/* Applied discount — render the persisted one, no recompute. A
+                  referral discount from a link has no code to show. */}
+              {(reservation.discountAmount ?? 0) > 0 && (
+                <div className="flex justify-between items-center text-sm text-green-600">
+                  <span>
+                    {reservation.discountSource !== "affiliate" &&
+                    reservation.promoCode
+                      ? t("discountLine", { code: reservation.promoCode })
+                      : tReferral("discount")}
+                  </span>
+                  <span>−{formatPrice(reservation.discountAmount ?? 0)}</span>
+                </div>
+              )}
               {/* SCDW line above total */}
               {reservation.isSCDWSelected &&
                 (reservation.protectionCost ?? 0) > 0 && (

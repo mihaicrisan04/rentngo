@@ -257,6 +257,33 @@ export function nextTier(
   return next;
 }
 
+/** The tier an affiliate is in right now; null below every threshold. */
+export function currentTier(
+  tiers: AffiliateTier[],
+  approvedConversions: number,
+): AffiliateTier | null {
+  let current: AffiliateTier | null = null;
+  for (const tier of tiers) {
+    if (
+      approvedConversions >= tier.minConversions &&
+      (current === null || tier.minConversions > current.minConversions)
+    ) {
+      current = tier;
+    }
+  }
+  return current;
+}
+
+/**
+ * The "recommend a friend" block at the bottom of a confirmation email: the
+ * booker's own code when they have one, an invitation to create an account
+ * when they booked as a guest. While the program is off there is no block at
+ * all (see `referralBlockForBooker` in convex/affiliates.ts).
+ */
+export type ReferralEmailBlock =
+  | { kind: "affiliate"; code: string }
+  | { kind: "guest" };
+
 /**
  * EUR discount for the referred customer. Same clamping semantics as coupons:
  * never negative, never exceeds the subtotal, rounded to cents.

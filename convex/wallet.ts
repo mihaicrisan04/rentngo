@@ -20,8 +20,10 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { getCurrentUser, requireAdmin } from "./users";
 import {
   computeAvailableBalance,
+  computeExpiringCredits,
   computeRedeemable,
   computeRemainingCredits,
+  computeRewardsEarned,
   planRedemption,
   planWalletAdjustment,
   withSettingsDefaults,
@@ -72,11 +74,13 @@ export const getMyWallet = query({
     v.object({
       balance: v.number(),
       maxRedemptionPercent: v.number(),
-      /** Soonest-expiring unspent credit, for the "use it before" nudge. */
-      nextExpiry: v.union(
+      /** Unspent credit lapsing soon, for the "use it before" nudge. */
+      expiringSoon: v.union(
         v.object({ amount: v.number(), expiresAt: v.number() }),
         v.null(),
       ),
+      /** Lifetime referral credit minted, net of reversals. */
+      rewardsEarned: v.number(),
       transactions: v.array(
         v.object({
           id: v.id("walletTransactions"),
@@ -98,26 +102,25 @@ export const getMyWallet = query({
 
     const now = Date.now();
     // The balance is a replay, so it needs the whole ledger; the list the UI
-    // renders is bounded separately.
-    const ledger = toTransactionData(await loadLedger(ctx, user._id));
+    // renders is the newest slice of the same rows.
+    const rows = await loadLedger(ctx, user._id);
+    const ledger = toTransactionData(rows);
+    const balance = computeAvailableBalance(ledger, now);
     // Counts and amounts only — a wallet row never names the referred
     // customer it came from, so there is no other user's PII to leak here.
-    const expiring = computeRemainingCredits(ledger, now).find(
-      (credit) => credit.expiresAt !== undefined,
-    );
-    const recent = await ctx.db
-      .query("walletTransactions")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .order("desc")
-      .take(50);
+    const recent = [...rows]
+      .sort((a, b) => b.createdAt - a.createdAt)
+      .slice(0, 50);
 
     return {
-      balance: computeAvailableBalance(ledger, now),
+      balance,
       maxRedemptionPercent: settings.maxRedemptionPercent,
-      nextExpiry:
-        expiring?.expiresAt !== undefined
-          ? { amount: expiring.remaining, expiresAt: expiring.expiresAt }
-          : null,
+      expiringSoon: computeExpiringCredits(
+        computeRemainingCredits(ledger, now),
+        now,
+        { availableBalance: balance },
+      ),
+      rewardsEarned: computeRewardsEarned(ledger),
       transactions: recent.map((row) => ({
         id: row._id,
         kind: row.kind,

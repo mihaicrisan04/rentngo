@@ -89,6 +89,13 @@ const pricingDetailsValidator = v.object({
   protectionCost: v.optional(v.number()),
 });
 
+// "Recommend a friend" block; omitted entirely while the referral program is
+// off, so a disabled program sends the email exactly as before
+const referralBlockValidator = v.union(
+  v.object({ kind: v.literal("affiliate"), code: v.string() }),
+  v.object({ kind: v.literal("guest") }),
+);
+
 // Send reservation confirmation emails (admin + customer)
 export const sendReservationConfirmationEmail = internalAction({
   args: {
@@ -97,8 +104,10 @@ export const sendReservationConfirmationEmail = internalAction({
     vehicleInfo: vehicleInfoValidator,
     rentalDetails: rentalDetailsValidator,
     pricingDetails: pricingDetailsValidator,
+    referral: v.optional(referralBlockValidator),
     locale: v.optional(v.string()),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const emailData: ReservationEmailData = {
       reservationNumber: args.reservationNumber,
@@ -107,6 +116,7 @@ export const sendReservationConfirmationEmail = internalAction({
       rentalDetails: args.rentalDetails,
       pricingDetails:
         args.pricingDetails as ReservationEmailData["pricingDetails"],
+      referral: args.referral,
       locale: (args.locale === "ro" ? "ro" : "en") as "en" | "ro",
     };
 
@@ -194,8 +204,10 @@ export const sendTransferConfirmationEmail = internalAction({
     estimatedDurationMinutes: v.number(),
     pricingDetails: transferPricingDetailsValidator,
     paymentMethod: v.string(),
+    referral: v.optional(referralBlockValidator),
     locale: v.optional(v.string()),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const locale = (args.locale === "ro" ? "ro" : "en") as "en" | "ro";
 
@@ -219,6 +231,7 @@ export const sendTransferConfirmationEmail = internalAction({
         | "cash_on_delivery"
         | "card_on_delivery"
         | "card_online",
+      referral: args.referral,
       locale,
     };
 

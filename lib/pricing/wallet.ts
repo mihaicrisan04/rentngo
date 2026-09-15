@@ -194,6 +194,71 @@ export function computeAvailableBalance(
   return round2(Math.max(0, total - overdraft));
 }
 
+/** Window the profile wallet nudges about a credit before it lapses. */
+export const EXPIRING_SOON_WINDOW_DAYS = 60;
+
+export interface ExpiringCredits {
+  /** Total unspent credit lapsing inside the window. */
+  amount: number;
+  /** When the first of it lapses. */
+  expiresAt: number;
+}
+
+export interface ExpiringCreditsOptions {
+  windowDays?: number;
+  /**
+   * `computeAvailableBalance` for the same ledger. Credits are summed before
+   * any overdraft is settled, so without this the nudge could name more than
+   * the balance the customer can actually spend.
+   */
+  availableBalance?: number;
+}
+
+/**
+ * The "use it before" nudge: everything still unspent that lapses within
+ * `windowDays`. Read-time only — nothing marks a credit as expiring.
+ */
+export function computeExpiringCredits(
+  credits: WalletCredit[],
+  now: number,
+  options: ExpiringCreditsOptions = {},
+): ExpiringCredits | null {
+  const windowDays = options.windowDays ?? EXPIRING_SOON_WINDOW_DAYS;
+  const deadline = now + windowDays * 24 * 60 * 60 * 1000;
+  const soon = credits.flatMap((credit) =>
+    credit.expiresAt !== undefined &&
+    credit.expiresAt > now &&
+    credit.expiresAt <= deadline
+      ? [{ remaining: credit.remaining, expiresAt: credit.expiresAt }]
+      : [],
+  );
+  if (soon.length === 0) return null;
+  const total = soon.reduce((sum, credit) => sum + credit.remaining, 0);
+  const amount = round2(Math.min(total, options.availableBalance ?? total));
+  if (amount <= 0) return null;
+  return {
+    amount,
+    expiresAt: Math.min(...soon.map((credit) => credit.expiresAt)),
+  };
+}
+
+/**
+ * Lifetime referral earnings for the affiliate dashboard: everything minted by
+ * an approved conversion, net of the reversals a cancelled or rejected one
+ * wrote. Admin top-ups and redemptions are deliberately excluded — this is
+ * "what your referrals earned you", not the balance.
+ */
+export function computeRewardsEarned(
+  transactions: Pick<WalletTransactionData, "kind" | "amount">[],
+): number {
+  const net = transactions
+    .filter(
+      (txn) => txn.kind === "referralCredit" || txn.kind === "creditReversal",
+    )
+    .reduce((sum, txn) => sum + txn.amount, 0);
+  return round2(Math.max(0, net));
+}
+
 /**
  * What a conversion's credit is still worth on the ledger: the signed sum of
  * every row carrying its id (only credits and their reversals do). A void or a
