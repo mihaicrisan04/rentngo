@@ -680,7 +680,10 @@
       "status": {
         "pending": "Pending",
         "confirmed": "Confirmed",
-        "voided": "Voided"
+        "voided": "Voided",
+        "awaitingApproval": "Awaiting approval",
+        "approved": "Approved",
+        "rejected": "Rejected"
       },
       "yourCode": "Your referral code",
       "copyCode": "Copy referral code",

@@ -680,7 +680,10 @@
       "status": {
         "pending": "În așteptare",
         "confirmed": "Confirmată",
-        "voided": "Anulată"
+        "voided": "Anulată",
+        "awaitingApproval": "În curs de validare",
+        "approved": "Aprobată",
+        "rejected": "Respinsă"
       },
       "yourCode": "Codul tău de recomandare",
       "copyCode": "Copiază codul de recomandare",
