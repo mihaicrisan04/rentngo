@@ -8,6 +8,7 @@ Before using a plan, load the `working-with-plans` skill and verify its issue in
 
 | Plan                                 | Linear            | Repository assessment                                                                                  |
 | ------------------------------------ | ----------------- | ------------------------------------------------------------------------------------------------------ |
+| `active/feature-referral-wallet.md`  | RNGO-50           | Planned 2026-09-15; supersedes the RNGO-26 reward model (wallet credit, approval gate, 50 % cap, expiry) |
 | `active/clerk-convex-user-sync.md`   | RNGO-32           | Live on dev; production configuration remains pending                                                   |
 | `active/audit-convex-performance.md` | Unlinked          | Some work shipped; indexes, pagination, and bounded reads remain relevant                              |
 | `active/audit-admin-dialogs.md`      | Unlinked          | Requires Linear and code verification before implementation                                            |
