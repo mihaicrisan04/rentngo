@@ -70,7 +70,10 @@ const additionalChargeValidator = v.object({
   amount: v.number(),
 });
 
-const reservationDocValidator = v.object({
+// Exported for the drift guard in convex/bookingDocValidators.test.ts: this
+// spells the stored document out by hand, so every schema field must be added
+// here too or reads fail their returns validator.
+export const reservationDocValidator = v.object({
   _id: v.id("reservations"),
   _creationTime: v.number(),
   reservationNumber: v.optional(v.number()),
@@ -92,6 +95,7 @@ const reservationDocValidator = v.object({
     message: v.optional(v.string()),
     flightNumber: v.optional(v.string()),
   }),
+  customerEmailNormalized: v.optional(v.string()),
   promoCode: v.optional(v.string()),
   couponId: v.optional(v.id("coupons")),
   discountAmount: v.optional(v.number()),

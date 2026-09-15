@@ -74,7 +74,9 @@ const customerInfoValidator = v.object({
   flightNumber: v.optional(v.string()),
 });
 
-const transferDocValidator = v.object({
+// Exported for the drift guard in convex/bookingDocValidators.test.ts — see
+// reservationDocValidator.
+export const transferDocValidator = v.object({
   _id: v.id("transfers"),
   _creationTime: v.number(),
   transferNumber: v.optional(v.number()),
@@ -107,6 +109,7 @@ const transferDocValidator = v.object({
   affiliateId: v.optional(v.id("affiliates")),
   walletCreditApplied: v.optional(v.number()),
   customerInfo: customerInfoValidator,
+  customerEmailNormalized: v.optional(v.string()),
   paymentMethod: paymentMethodValidator,
   status: transferStatusValidator,
 });
