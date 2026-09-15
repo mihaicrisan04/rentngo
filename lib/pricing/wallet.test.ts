@@ -517,28 +517,42 @@ describe("conversion credit guards", () => {
 
   it("reports a fully spent credit as consumed", () => {
     expect(
-      conversionCreditState({ transactions: minted, conversionId: "conv1" }),
+      conversionCreditState({
+        transactions: minted,
+        conversionId: "conv1",
+        now: NOW,
+      }),
     ).toBe("outstanding");
     expect(
       conversionCreditState({
         transactions: [...minted, redemption("r1", 20, NOW + DAY)],
         conversionId: "conv1",
+        now: NOW,
       }),
     ).toBe("outstanding");
     expect(
       conversionCreditState({
         transactions: [...minted, redemption("r1", 50, NOW + DAY)],
         conversionId: "conv1",
+        now: NOW,
       }),
     ).toBe("consumed");
   });
 
   it("never calls a reversed credit consumed, and knows nothing was minted", () => {
     expect(
-      conversionCreditState({ transactions: reversed, conversionId: "conv1" }),
+      conversionCreditState({
+        transactions: reversed,
+        conversionId: "conv1",
+        now: NOW,
+      }),
     ).toBe("reversed");
     expect(
-      conversionCreditState({ transactions: minted, conversionId: "conv2" }),
+      conversionCreditState({
+        transactions: minted,
+        conversionId: "conv2",
+        now: NOW,
+      }),
     ).toBe("none");
   });
 
@@ -553,12 +567,50 @@ describe("conversion credit guards", () => {
         conversionId: "conv9",
       },
     ];
-    expect(conversionCreditState({ transactions, conversionId: "conv1" })).toBe(
-      "consumed",
-    );
-    expect(conversionCreditState({ transactions, conversionId: "conv9" })).toBe(
-      "outstanding",
-    );
+    expect(
+      conversionCreditState({ transactions, conversionId: "conv1", now: NOW }),
+    ).toBe("consumed");
+    expect(
+      conversionCreditState({ transactions, conversionId: "conv9", now: NOW }),
+    ).toBe("outstanding");
+  });
+
+  it("sums every credit a re-minted conversion holds", () => {
+    // Reversed, then approved again for a larger amount: the first credit is
+    // spent to nothing, but the second one is untouched.
+    const transactions: WalletTransactionData[] = [
+      { ...credit("c1", 4.5, NOW + 365 * DAY), conversionId: "conv1" },
+      {
+        id: "rev",
+        kind: "creditReversal",
+        amount: -4.5,
+        conversionId: "conv1",
+        createdAt: NOW + DAY,
+      },
+      {
+        ...credit("c2", 9, NOW + 400 * DAY, NOW + 2 * DAY),
+        conversionId: "conv1",
+      },
+    ];
+    expect(
+      conversionCreditState({ transactions, conversionId: "conv1", now: NOW }),
+    ).toBe("outstanding");
+  });
+
+  it("separates unspent-but-lapsed credit from consumed credit", () => {
+    const transactions = [
+      { ...credit("c1", 50, NOW + 10 * DAY), conversionId: "conv1" },
+    ];
+    expect(
+      conversionCreditState({ transactions, conversionId: "conv1", now: NOW }),
+    ).toBe("outstanding");
+    expect(
+      conversionCreditState({
+        transactions,
+        conversionId: "conv1",
+        now: NOW + 11 * DAY,
+      }),
+    ).toBe("expired");
   });
 });
 

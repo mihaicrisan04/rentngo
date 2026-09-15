@@ -12,6 +12,7 @@ import {
 } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { getCurrentUser, getOrCreateCurrentUser, requireAdmin } from "./users";
+import { loadLedger, toTransactionData } from "./wallet";
 import {
   computeReferredDiscount,
   conversionCreditOutstanding,
@@ -1277,20 +1278,7 @@ function ledgerCache(ctx: QueryCtx) {
   return (userId: Id<"users">) => {
     const cached = cache.get(userId);
     if (cached) return cached;
-    const loading = ctx.db
-      .query("walletTransactions")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
-      .collect()
-      .then((rows) =>
-        rows.map((row) => ({
-          id: row._id as string,
-          kind: row.kind,
-          amount: row.amount,
-          expiresAt: row.expiresAt,
-          conversionId: row.conversionId as string | undefined,
-          createdAt: row.createdAt,
-        })),
-      );
+    const loading = loadLedger(ctx, userId).then(toTransactionData);
     cache.set(userId, loading);
     return loading;
   };
@@ -1315,7 +1303,11 @@ const APPROVALS_LIMIT = 100;
 
 export const listPendingApprovals = query({
   args: {},
-  returns: v.array(pendingApprovalValidator),
+  returns: v.object({
+    rows: v.array(pendingApprovalValidator),
+    /** The cap was hit: work the queue down to see the rest. */
+    truncated: v.boolean(),
+  }),
   handler: async (ctx) => {
     await requireAdmin(ctx);
     const settings = await loadSettings(ctx);
@@ -1362,25 +1354,36 @@ export const listPendingApprovals = query({
         };
       }),
     );
-    return rows;
+    return { rows, truncated: conversions.length === APPROVALS_LIMIT };
   },
 });
 
+const creditStateValidator = v.union(
+  v.literal("none"),
+  v.literal("reversed"),
+  v.literal("consumed"),
+  v.literal("expired"),
+  v.literal("outstanding"),
+);
+
 const referralHistoryRowValidator = pendingApprovalValidator.extend({
   status: conversionStatusValidator,
-  /** The referrer spent this conversion's credit down to nothing. */
-  creditConsumed: v.boolean(),
+  /** Where the minted credit stands on the referrer's ledger. */
+  creditState: creditStateValidator,
   creditAmount: v.number(),
   reservationId: v.optional(v.id("reservations")),
   transferId: v.optional(v.id("transfers")),
   rejectionReason: v.optional(v.string()),
 });
 
+/** A conversion still awaiting a decision is the only one worth projecting. */
+const UNDECIDED_STATUSES: ConversionStatus[] = ["pending", "awaitingApproval"];
+
 /**
  * The guide's referral table: who referred whom, off which booking, for how
- * much credit, and where that credit stands. "Consumed" is derived at read
- * time from the referrer's own ledger replay — there is no second allocator
- * and no denormalized flag that could drift.
+ * much credit, and where that credit stands. The credit state is derived at
+ * read time from the referrer's own ledger replay — there is no second
+ * allocator and no denormalized flag that could drift.
  */
 export const getReferralHistory = query({
   args: {
@@ -1392,16 +1395,29 @@ export const getReferralHistory = query({
     await requireAdmin(ctx);
     const settings = await loadSettings(ctx);
     const status = args.status;
+    // "Approved" also has to answer for the legacy v1 "confirmed" rows, which
+    // no single index range spans; the narrow step of the wallet migration
+    // drops that status and this falls back to the index.
     const result = await (
       status === undefined
-        ? ctx.db.query("referralConversions")
-        : ctx.db
-            .query("referralConversions")
-            .withIndex("by_status_createdAt", (q) => q.eq("status", status))
-    )
-      .order("desc")
-      .paginate(args.paginationOpts);
+        ? ctx.db.query("referralConversions").order("desc")
+        : status === "approved"
+          ? ctx.db
+              .query("referralConversions")
+              .order("desc")
+              .filter((q) =>
+                q.or(
+                  q.eq(q.field("status"), "approved"),
+                  q.eq(q.field("status"), "confirmed"),
+                ),
+              )
+          : ctx.db
+              .query("referralConversions")
+              .withIndex("by_status_createdAt", (q) => q.eq("status", status))
+              .order("desc")
+    ).paginate(args.paginationOpts);
 
+    const now = Date.now();
     const ledgerFor = ledgerCache(ctx);
     const page = await Promise.all(
       result.page.map(async (conversion) => {
@@ -1412,29 +1428,33 @@ export const getReferralHistory = query({
           conversion,
         );
         const creditAmount = conversion.creditAmount ?? 0;
-        const projected = affiliate
-          ? resolveConversionCredit({
-              tiers: settings.tiers,
-              approvedConversionsBefore: approvedCount(affiliate),
-              rewardPercentOverride: affiliate.rewardPercentOverride,
-              bookingTotal: bookingTotal ?? 0,
-              approvedAt: conversion.createdAt,
-              creditValidityMonths: settings.creditValidityMonths,
-            })
-          : null;
-        const creditConsumed =
+        // Projecting a decided conversion would price it against today's tier
+        // and counter, which is not what it was — or will be — worth.
+        const projected =
+          affiliate && UNDECIDED_STATUSES.includes(conversion.status)
+            ? resolveConversionCredit({
+                tiers: settings.tiers,
+                approvedConversionsBefore: approvedCount(affiliate),
+                rewardPercentOverride: affiliate.rewardPercentOverride,
+                bookingTotal: bookingTotal ?? 0,
+                approvedAt: conversion.createdAt,
+                creditValidityMonths: settings.creditValidityMonths,
+              })
+            : null;
+        const creditState =
           creditAmount > 0 && referrer
             ? conversionCreditState({
                 transactions: await ledgerFor(referrer._id),
                 conversionId: conversion._id,
-              }) === "consumed"
-            : false;
+                now,
+              })
+            : ("none" as const);
 
         return {
           _id: conversion._id,
           createdAt: conversion.createdAt,
           status: conversion.status,
-          creditConsumed,
+          creditState,
           creditAmount,
           referrerName: referrer?.name ?? "(deleted user)",
           referrerSlug: affiliate?.slug ?? "",

@@ -9,7 +9,7 @@
  * amount still owed is `bookingAmountDue(totalPrice, walletCreditApplied)`.
  */
 
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import {
   mutation,
   query,
@@ -37,7 +37,7 @@ const walletKindValidator = v.union(
 );
 
 /** The ledger as the pure math wants it: ids as strings, nothing else. */
-function toTransactionData(
+export function toTransactionData(
   rows: Doc<"walletTransactions">[],
 ): WalletTransactionData[] {
   return rows.map((row) => ({
@@ -50,7 +50,7 @@ function toTransactionData(
   }));
 }
 
-async function loadLedger(
+export async function loadLedger(
   ctx: QueryCtx | MutationCtx,
   userId: Id<"users">,
 ): Promise<Doc<"walletTransactions">[]> {
@@ -375,7 +375,11 @@ export async function applyWalletAdjustment(
     creditValidityMonths: settings.creditValidityMonths,
   });
   if (!plan.ok) {
-    throw new Error(plan.error);
+    // ConvexError survives production error redaction, so the admin sees why
+    throw new ConvexError({
+      code: "WALLET_ADJUSTMENT_INVALID",
+      reason: plan.error,
+    });
   }
 
   const id = await ctx.db.insert("walletTransactions", {

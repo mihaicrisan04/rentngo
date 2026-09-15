@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import {
   validateAffiliateSettings,
   withSettingsDefaults,
+  DEFAULT_AFFILIATE_SETTINGS,
   type AffiliateTier,
 } from "@/lib/pricing";
 
@@ -284,7 +285,9 @@ export function AffiliateSettingsCard() {
                   Tier name
                 </Label>
                 <Input
-                  placeholder="Pionier"
+                  placeholder={
+                    DEFAULT_AFFILIATE_SETTINGS.tiers[index]?.name ?? "Optional"
+                  }
                   value={tier.name}
                   onChange={(e) =>
                     setTiers((prev) =>

@@ -739,6 +739,23 @@ describe("validateAffiliateSettings", () => {
     expect(validateAffiliateSettings(DEFAULT_AFFILIATE_SETTINGS)).toBeNull();
   });
 
+  // A cleared number input parses to NaN, which passes every <= / > check
+  it("rejects NaN on every free-text number", () => {
+    const base = DEFAULT_AFFILIATE_SETTINGS;
+    expect(
+      validateAffiliateSettings({ ...base, maxRedemptionPercent: Number.NaN }),
+    ).toBeTruthy();
+    expect(
+      validateAffiliateSettings({ ...base, referredDiscountValue: Number.NaN }),
+    ).toBeTruthy();
+    expect(
+      validateAffiliateSettings({
+        ...base,
+        tiers: [{ minConversions: 1, rewardPercent: Number.NaN }],
+      }),
+    ).toBeTruthy();
+  });
+
   it("rejects broken configs", () => {
     const base = DEFAULT_AFFILIATE_SETTINGS;
     expect(

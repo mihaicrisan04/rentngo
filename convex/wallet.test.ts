@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { ConvexError } from "convex/values";
 import type { MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
 import {
@@ -220,10 +221,17 @@ describe("applyWalletAdjustment", () => {
     expect(insert.mock.calls[0][1].expiresAt).toBeUndefined();
   });
 
+  // ConvexError, not Error: production redacts a plain Error to "Server Error"
   it("writes nothing when the claw-back would go below zero", async () => {
     const { ctx, insert } = createContext({ ledger: [credit("c1", 90)] });
 
-    await expect(adjust(ctx, -90.01)).rejects.toThrow(/available balance/);
+    await expect(adjust(ctx, -90.01)).rejects.toThrow(ConvexError);
+    await expect(adjust(ctx, -90.01)).rejects.toMatchObject({
+      data: {
+        code: "WALLET_ADJUSTMENT_INVALID",
+        reason: expect.stringContaining("available balance"),
+      },
+    });
     expect(insert).not.toHaveBeenCalled();
   });
 

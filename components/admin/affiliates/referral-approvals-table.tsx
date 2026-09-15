@@ -27,6 +27,11 @@ import { EmptyState } from "@/components/admin/shared/empty-state";
 import { formatPrice } from "@/lib/format";
 import { CheckCheck } from "lucide-react";
 import { toast } from "sonner";
+import type { FunctionReturnType } from "convex/server";
+
+type ConversionStatus = FunctionReturnType<
+  typeof api.affiliates.approveConversion
+>["status"];
 
 /**
  * A decision returns the status the conversion actually landed on, not the
@@ -34,7 +39,7 @@ import { toast } from "sonner";
  * back `voided`, and a second click comes back unchanged.
  */
 function toastDecision(
-  status: string,
+  status: ConversionStatus,
   requested: "approved" | "rejected",
 ): void {
   if (status === requested) {
@@ -64,7 +69,7 @@ function toastDecision(
 }
 
 export function ReferralApprovalsTable() {
-  const approvals = useQuery(api.affiliates.listPendingApprovals);
+  const pending = useQuery(api.affiliates.listPendingApprovals);
   const approveConversion = useMutation(api.affiliates.approveConversion);
   const rejectConversion = useMutation(api.affiliates.rejectConversion);
   const [busyId, setBusyId] = React.useState<Id<"referralConversions"> | null>(
@@ -114,9 +119,10 @@ export function ReferralApprovalsTable() {
     }
   };
 
-  if (approvals === undefined) {
+  if (pending === undefined) {
     return <p className="text-sm text-muted-foreground">Loading...</p>;
   }
+  const { rows: approvals, truncated } = pending;
   if (approvals.length === 0) {
     return (
       <EmptyState
@@ -128,7 +134,12 @@ export function ReferralApprovalsTable() {
 
   return (
     <>
-      <Table containerClassName="overflow-x-visible" dense>
+      {truncated && (
+        <p className="text-sm text-muted-foreground">
+          Showing the oldest 100 — decide these to see the rest.
+        </p>
+      )}
+      <Table dense>
         <TableHeader sticky>
           <TableRow>
             <TableHead>Referrer</TableHead>

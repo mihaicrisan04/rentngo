@@ -23,8 +23,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatPrice } from "@/lib/format";
+import { formatDate, formatPrice } from "@/lib/format";
 import { toast } from "sonner";
+import { ConvexError } from "convex/values";
 
 const KIND_LABEL = {
   referralCredit: "Referral credit",
@@ -33,9 +34,6 @@ const KIND_LABEL = {
   redemption: "Redeemed on a booking",
   redemptionReversal: "Redemption refunded",
 } as const;
-
-const formatDate = (timestamp: number) =>
-  new Date(timestamp).toLocaleDateString("en-GB");
 
 interface WalletDialogProps {
   userId: Id<"users">;
@@ -75,9 +73,12 @@ export function WalletDialog({
       setNote("");
     } catch (error) {
       console.error("Error adjusting wallet:", error);
+      const reason =
+        error instanceof ConvexError
+          ? (error.data as { reason?: string }).reason
+          : undefined;
       toast.error("Failed to adjust wallet", {
-        description:
-          error instanceof Error ? error.message : "Please try again.",
+        description: reason ?? "Please try again.",
         position: "bottom-left",
       });
     } finally {
@@ -137,7 +138,7 @@ export function WalletDialog({
 
             <div className="space-y-3">
               <div>
-                <Label htmlFor="wallet-amount">Add credit</Label>
+                <p className="text-sm font-medium">Add credit</p>
                 <p className="text-sm text-muted-foreground">
                   Positive tops the wallet up (offline referrals); negative
                   claws credit back and is refused if it would push the balance

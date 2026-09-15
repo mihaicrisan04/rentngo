@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { usePaginatedQuery } from "convex/react";
+import type { FunctionReturnType } from "convex/server";
 import { api } from "@/convex/_generated/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,18 +22,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/admin/shared/empty-state";
-import { formatPrice } from "@/lib/format";
+import { formatDate, formatPrice } from "@/lib/format";
 import { History } from "lucide-react";
 
-const ITEMS_PER_PAGE = 25;
+/** Bounded page: this is a reporting view, not an export. */
+const ITEMS_PER_PAGE = 20;
 
-type ConversionStatus =
-  | "pending"
-  | "awaitingApproval"
-  | "approved"
-  | "rejected"
-  | "voided"
-  | "confirmed";
+type HistoryRow = FunctionReturnType<
+  typeof api.affiliates.getReferralHistory
+>["page"][number];
+type ConversionStatus = HistoryRow["status"];
+type CreditState = HistoryRow["creditState"];
 
 /** `confirmed` is the v1 status the wallet migration still reads as approved. */
 const STATUS_LABEL: Record<ConversionStatus, string> = {
@@ -44,17 +44,27 @@ const STATUS_LABEL: Record<ConversionStatus, string> = {
   voided: "Voided",
 };
 
-const STATUS_VARIANT: Record<
-  ConversionStatus | "consumed",
+const BADGE_VARIANT: Record<
+  ConversionStatus | CreditState,
   React.ComponentProps<typeof Badge>["variant"]
 > = {
   pending: "secondary",
   awaitingApproval: "secondary",
   approved: "default",
   confirmed: "default",
-  consumed: "outline",
   rejected: "destructive",
   voided: "outline",
+  none: "default",
+  outstanding: "default",
+  reversed: "outline",
+  consumed: "outline",
+  expired: "outline",
+};
+
+/** What became of the credit outranks the conversion's own status. */
+const CREDIT_STATE_LABEL: Partial<Record<CreditState, string>> = {
+  consumed: "Consumed",
+  expired: "Expired",
 };
 
 const FILTERS = [
@@ -64,6 +74,13 @@ const FILTERS = [
   "rejected",
   "voided",
 ] as const;
+
+function badgeFor(row: HistoryRow) {
+  const creditLabel = CREDIT_STATE_LABEL[row.creditState];
+  return creditLabel
+    ? { label: creditLabel, variant: BADGE_VARIANT[row.creditState] }
+    : { label: STATUS_LABEL[row.status], variant: BADGE_VARIANT[row.status] };
+}
 
 export function ReferralHistoryTable() {
   const [status, setStatus] = React.useState<ConversionStatus | "all">("all");
@@ -79,7 +96,7 @@ export function ReferralHistoryTable() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Select
           value={status}
           onValueChange={(value) =>
@@ -100,7 +117,7 @@ export function ReferralHistoryTable() {
         </Select>
         <p className="text-sm text-muted-foreground">
           &ldquo;Consumed&rdquo; means the referrer has already spent that
-          credit on a booking.
+          credit; &ldquo;Expired&rdquo; means they no longer can.
         </p>
       </div>
 
@@ -109,7 +126,7 @@ export function ReferralHistoryTable() {
       ) : rows.length === 0 ? (
         <EmptyState icon={History} message="No referrals match this filter." />
       ) : (
-        <Table containerClassName="overflow-x-visible" dense>
+        <Table dense>
           <TableHeader sticky>
             <TableRow>
               <TableHead>Date</TableHead>
@@ -125,7 +142,7 @@ export function ReferralHistoryTable() {
             {rows.map((row) => (
               <TableRow key={row._id}>
                 <TableCell className="text-muted-foreground">
-                  {new Date(row.createdAt).toLocaleDateString("en-GB")}
+                  {formatDate(row.createdAt)}
                 </TableCell>
                 <TableCell>
                   <div>{row.referrerName}</div>
@@ -150,17 +167,13 @@ export function ReferralHistoryTable() {
                 <TableCell className="text-right">
                   {row.creditAmount > 0
                     ? formatPrice(row.creditAmount)
-                    : formatPrice(row.projectedCredit) + " (projected)"}
+                    : row.projectedCredit > 0
+                      ? `${formatPrice(row.projectedCredit)} (projected)`
+                      : "—"}
                 </TableCell>
                 <TableCell>
-                  <Badge
-                    variant={
-                      STATUS_VARIANT[
-                        row.creditConsumed ? "consumed" : row.status
-                      ]
-                    }
-                  >
-                    {row.creditConsumed ? "Consumed" : STATUS_LABEL[row.status]}
+                  <Badge variant={badgeFor(row).variant}>
+                    {badgeFor(row).label}
                   </Badge>
                   {row.rejectionReason && (
                     <div className="text-xs text-muted-foreground">

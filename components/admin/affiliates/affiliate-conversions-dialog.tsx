@@ -22,16 +22,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
+import type { FunctionReturnType } from "convex/server";
 
 const CONVERSIONS_PER_PAGE = 25;
 
-type ConversionStatus =
-  | "pending"
-  | "awaitingApproval"
-  | "approved"
-  | "rejected"
-  | "voided"
-  | "confirmed";
+type ConversionStatus = FunctionReturnType<
+  typeof api.affiliates.listConversions
+>["page"][number]["status"];
 
 const STATUS_VARIANT = {
   approved: "default",

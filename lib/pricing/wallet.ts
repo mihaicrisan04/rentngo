@@ -391,11 +391,13 @@ export type ConversionCreditState =
   | "none"
   | "reversed"
   | "consumed"
+  | "expired"
   | "outstanding";
 
 export function conversionCreditState(input: {
   transactions: WalletTransactionData[];
   conversionId: string;
+  now: number;
 }): ConversionCreditState {
   const own = input.transactions.filter(
     (txn) => txn.conversionId === input.conversionId,
@@ -403,10 +405,19 @@ export function conversionCreditState(input: {
   if (!own.some((txn) => txn.kind === "referralCredit")) return "none";
   if (conversionCreditOutstanding(own) <= 0) return "reversed";
 
-  const credit = replayLedger(input.transactions).credits.find(
+  // A conversion reversed and later re-approved holds several credit rows, so
+  // this sums them all rather than reading the first one.
+  const credits = replayLedger(input.transactions).credits.filter(
     (entry) => entry.conversionId === input.conversionId,
   );
-  return credit === undefined || credit.remaining <= 0
-    ? "consumed"
-    : "outstanding";
+  const unspent = credits.reduce((sum, credit) => sum + credit.remaining, 0);
+  if (unspent <= 0) return "consumed";
+  // Matches computeRemainingCredits: anything past its expiry is not spendable
+  return credits.some(
+    (credit) =>
+      credit.remaining > 0 &&
+      (credit.expiresAt === undefined || credit.expiresAt > input.now),
+  )
+    ? "outstanding"
+    : "expired";
 }

@@ -58,7 +58,7 @@ export function UsersManagement() {
       ) : users.length === 0 ? (
         <EmptyState icon={Users} message="No users match that search." />
       ) : (
-        <Table containerClassName="overflow-x-visible" dense>
+        <Table dense>
           <TableHeader sticky>
             <TableRow>
               <TableHead>Name</TableHead>

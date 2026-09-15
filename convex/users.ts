@@ -224,19 +224,22 @@ export const searchUsers = query({
     await requireAdmin(ctx);
     const term = args.query.trim();
 
+    // Oversampled because soft-deleted rows are dropped afterwards and would
+    // otherwise eat into the page the admin sees.
+    const scan = USER_SEARCH_LIMIT * 2;
     const matches =
       term.length === 0
-        ? await ctx.db.query("users").order("desc").take(USER_SEARCH_LIMIT)
+        ? await ctx.db.query("users").order("desc").take(scan)
         : (
             await Promise.all([
               ctx.db
                 .query("users")
                 .withSearchIndex("search_name", (q) => q.search("name", term))
-                .take(USER_SEARCH_LIMIT),
+                .take(scan),
               ctx.db
                 .query("users")
                 .withSearchIndex("search_email", (q) => q.search("email", term))
-                .take(USER_SEARCH_LIMIT),
+                .take(scan),
             ])
           ).flat();
 
