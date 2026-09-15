@@ -1,0 +1,68 @@
+=== migrations/bookingCustomerEmail:inspect ===
+{
+  "reservations": 43,
+  "reservationsNeedingBackfill": 43,
+  "transfers": 19,
+  "transfersNeedingBackfill": 19,
+  "truncated": false
+}
+--- exit 0
+=== migrations/bookingCustomerEmail:backfillReservations {"dryRun": true} ===
+{
+  "continueCursor": null,
+  "dryRun": true,
+  "isDone": true,
+  "scanned": 43,
+  "skipped": 0,
+  "updated": 43
+}
+--- exit 0
+=== migrations/bookingCustomerEmail:backfillTransfers {"dryRun": true} ===
+{
+  "continueCursor": null,
+  "dryRun": true,
+  "isDone": true,
+  "scanned": 19,
+  "skipped": 0,
+  "updated": 19
+}
+--- exit 0
+=== migrations/bookingCustomerEmail:backfillReservations ===
+{
+  "continueCursor": null,
+  "dryRun": false,
+  "isDone": true,
+  "scanned": 43,
+  "skipped": 0,
+  "updated": 43
+}
+--- exit 0
+=== migrations/bookingCustomerEmail:backfillTransfers ===
+{
+  "continueCursor": null,
+  "dryRun": false,
+  "isDone": true,
+  "scanned": 19,
+  "skipped": 0,
+  "updated": 19
+}
+--- exit 0
+=== migrations/bookingCustomerEmail:inspect ===
+{
+  "reservations": 43,
+  "reservationsNeedingBackfill": 0,
+  "transfers": 19,
+  "transfersNeedingBackfill": 0,
+  "truncated": false
+}
+--- exit 0
+=== migrations/bookingCustomerEmail:backfillReservations ===
+{
+  "continueCursor": null,
+  "dryRun": false,
+  "isDone": true,
+  "scanned": 43,
+  "skipped": 43,
+  "updated": 0
+}
+--- exit 0
