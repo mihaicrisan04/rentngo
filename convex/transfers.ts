@@ -300,19 +300,7 @@ async function createTransferHandler(
           amount: affiliateCandidates.referred.discountAmount,
         }
       : null;
-  const ownRewardDiscount: AppliedDiscount | null =
-    affiliateCandidates.ownReward
-      ? {
-          source: "affiliate",
-          code: affiliateCandidates.ownReward.slug,
-          amount: affiliateCandidates.ownReward.discountAmount,
-        }
-      : null;
-  const appliedDiscount = pickDiscount([
-    couponDiscount,
-    referredDiscount,
-    ownRewardDiscount,
-  ]);
+  const appliedDiscount = pickDiscount([couponDiscount, referredDiscount]);
   const totalPrice = appliedDiscount
     ? applyDiscountToTotal(fare.totalPrice, appliedDiscount.amount)
     : fare.totalPrice;
@@ -345,11 +333,7 @@ async function createTransferHandler(
     couponId: redeemedCoupon?.couponId,
     discountAmount: appliedDiscount?.amount,
     discountSource: appliedDiscount?.source,
-    affiliateId:
-      affiliateCandidates.referred?.affiliateId ??
-      (appliedDiscount === ownRewardDiscount
-        ? affiliateCandidates.ownReward?.affiliateId
-        : undefined),
+    affiliateId: affiliateCandidates.referred?.affiliateId,
     customerInfo: args.customerInfo,
     paymentMethod: args.paymentMethod,
     luggageCount: args.luggageCount,

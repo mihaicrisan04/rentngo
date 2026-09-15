@@ -388,19 +388,7 @@ export const createReservation = mutation({
             amount: affiliateCandidates.referred.discountAmount,
           }
         : null;
-    const ownRewardDiscount: AppliedDiscount | null =
-      affiliateCandidates.ownReward
-        ? {
-            source: "affiliate",
-            code: affiliateCandidates.ownReward.slug,
-            amount: affiliateCandidates.ownReward.discountAmount,
-          }
-        : null;
-    const appliedDiscount = pickDiscount([
-      couponDiscount,
-      referredDiscount,
-      ownRewardDiscount,
-    ]);
+    const appliedDiscount = pickDiscount([couponDiscount, referredDiscount]);
     if (appliedDiscount) {
       totalPrice = applyDiscountToTotal(totalPrice, appliedDiscount.amount);
     }
@@ -428,13 +416,8 @@ export const createReservation = mutation({
       couponId: redeemedCoupon?.couponId,
       discountAmount: appliedDiscount?.amount,
       discountSource: appliedDiscount?.source,
-      // Referrer credited for this booking (attribution), or the booker's own
-      // affiliate when their tier reward was the applied discount
-      affiliateId:
-        affiliateCandidates.referred?.affiliateId ??
-        (appliedDiscount === ownRewardDiscount
-          ? affiliateCandidates.ownReward?.affiliateId
-          : undefined),
+      // Referrer credited for this booking (attribution)
+      affiliateId: affiliateCandidates.referred?.affiliateId,
       additionalCharges: persistedCharges,
       isSCDWSelected: args.isSCDWSelected,
       deductibleAmount: pricing.deductibleAmount,
@@ -472,9 +455,9 @@ export const createReservation = mutation({
       await ctx.db.patch(reservationId, { walletCreditApplied });
     }
 
-    // Conversion lifecycle (owner decision): a referred booking confirms a
-    // conversion the moment it is created — even when a coupon won the
-    // one-discount rule — and is voided if the booking is later cancelled.
+    // Conversion lifecycle: a referred booking opens a pending conversion —
+    // even when a coupon won the one-discount rule. Nothing is credited until
+    // the rental is completed and an admin approves it.
     if (affiliateCandidates.referred) {
       const conversionId = await recordReferralConversion(ctx, {
         affiliateId: affiliateCandidates.referred.affiliateId,

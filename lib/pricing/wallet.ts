@@ -195,6 +195,31 @@ export function computeAvailableBalance(
 }
 
 /**
+ * Whether a conversion already minted credit. Approval is kept idempotent by
+ * `conversionTransition` returning null on a second approve; this is the
+ * belt-and-braces ledger-side check that no conversion can ever end up with
+ * two positive `referralCredit` rows.
+ */
+export function hasMintedReferralCredit(
+  transactions: Pick<WalletTransactionData, "kind" | "amount">[],
+): boolean {
+  return transactions.some(
+    (txn) => txn.kind === "referralCredit" && txn.amount > 0,
+  );
+}
+
+/**
+ * What a conversion's credit is still worth on the ledger: the signed sum of
+ * every row carrying its id. A void or a rejection appends a reversal for
+ * exactly this amount, so once it reaches 0 a repeated void writes nothing.
+ */
+export function conversionCreditOutstanding(
+  transactions: Pick<WalletTransactionData, "amount">[],
+): number {
+  return round2(transactions.reduce((sum, txn) => sum + txn.amount, 0));
+}
+
+/**
  * How much of `balance` may be spent on a booking: the admin-configured
  * percentage cap of the total AFTER any discount, since credit is a payment
  * towards what is still owed.

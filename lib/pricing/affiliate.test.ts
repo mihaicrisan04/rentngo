@@ -8,6 +8,7 @@ import {
   nextTier,
   normalizeAffiliateSlug,
   referredEligibility,
+  resolveConversionCredit,
   resolveTierRewardPercent,
   validateAffiliateSettings,
   DEFAULT_AFFILIATE_SETTINGS,
@@ -16,6 +17,7 @@ import {
   type ConversionBookingStatus,
 } from "./affiliate";
 import { pickDiscount, type AppliedDiscount } from "./discount";
+import { conversionCreditOutstanding, hasMintedReferralCredit } from "./wallet";
 
 const tiers: AffiliateTier[] = [
   { minConversions: 6, rewardPercent: 5 },
@@ -114,13 +116,8 @@ describe("pickDiscount with coupon and affiliate candidates", () => {
     expect(pickDiscount([null, affiliate])).toBe(affiliate);
   });
 
-  it("among affiliate candidates the first wins (referred before own reward)", () => {
-    const ownReward: AppliedDiscount = {
-      source: "affiliate",
-      code: "own-reward",
-      amount: 5,
-    };
-    expect(pickDiscount([null, affiliate, ownReward])).toBe(affiliate);
+  it("picks nothing when there is no candidate", () => {
+    expect(pickDiscount([null, undefined])).toBeNull();
   });
 });
 
@@ -155,20 +152,80 @@ describe("conversionTransition", () => {
           "approve",
           "reject",
         ] as const satisfies readonly ("approve" | "reject" | undefined)[]) {
-          const result = conversionTransition({
-            current,
-            bookingStatus,
-            adminAction,
-          });
-          if (!result) continue;
-          expect(result.nextStatus).not.toBe("confirmed");
-          expect(result.mintCredit && result.reverseCredit).toBe(false);
-          expect(result.nextStatus).not.toBe(
-            current === "confirmed" ? "approved" : current,
-          );
+          for (const autoApproveOnCompletion of [false, true]) {
+            const result = conversionTransition({
+              current,
+              bookingStatus,
+              adminAction,
+              autoApproveOnCompletion,
+            });
+            if (!result) continue;
+            expect(result.nextStatus).not.toBe("confirmed");
+            expect(result.mintCredit && result.reverseCredit).toBe(false);
+            expect(result.nextStatus).not.toBe(
+              current === "confirmed" ? "approved" : current,
+            );
+            // Money and counter move together: credit is only ever minted into
+            // `approved` with a +1, and only an approval can be reversed.
+            if (result.mintCredit) {
+              expect(result.nextStatus).toBe("approved");
+              expect(result.counterDelta).toBe(1);
+            }
+            if (result.counterDelta === 1) {
+              expect(result.mintCredit).toBe(true);
+            }
+            if (result.reverseCredit) {
+              expect(current === "approved" || current === "confirmed").toBe(
+                true,
+              );
+              expect(result.counterDelta).toBe(-1);
+            }
+            if (result.counterDelta === -1) {
+              expect(result.reverseCredit).toBe(true);
+            }
+          }
         }
       }
     }
+  });
+
+  it("auto-approval only ever fires on completion, and only for a conversion still awaiting one", () => {
+    for (const current of ALL_STATUSES) {
+      for (const bookingStatus of ALL_BOOKING_STATUSES) {
+        const auto = conversionTransition({
+          current,
+          bookingStatus,
+          autoApproveOnCompletion: true,
+        });
+        const manual = conversionTransition({
+          current,
+          bookingStatus,
+          autoApproveOnCompletion: false,
+        });
+        const minted = auto?.mintCredit === true;
+        expect(minted).toBe(
+          bookingStatus === "completed" &&
+            (current === "pending" || current === "voided"),
+        );
+        // The setting changes nothing anywhere else in the table
+        if (!minted) expect(auto).toEqual(manual);
+      }
+    }
+  });
+
+  it("auto-approval revives a voided conversion straight into a credit", () => {
+    expect(
+      conversionTransition({
+        current: "voided",
+        bookingStatus: "completed",
+        autoApproveOnCompletion: true,
+      }),
+    ).toEqual({
+      nextStatus: "approved",
+      counterDelta: 1,
+      mintCredit: true,
+      reverseCredit: false,
+    });
   });
 
   it("voids and reverses an approved conversion when the booking dies", () => {
@@ -325,6 +382,158 @@ describe("conversionTransition", () => {
         conversionTransition({ current, bookingStatus: "confirmed" }),
       ).toBeNull();
     }
+  });
+});
+
+describe("resolveConversionCredit", () => {
+  const guideTiers: AffiliateTier[] = [
+    { minConversions: 1, rewardPercent: 5, name: "Pionier" },
+    { minConversions: 6, rewardPercent: 10, name: "Ambasador" },
+  ];
+  const approve = (approvedConversionsBefore: number, over?: number) =>
+    resolveConversionCredit({
+      tiers: guideTiers,
+      approvedConversionsBefore,
+      rewardPercentOverride: over,
+      bookingTotal: 400,
+      approvedAt: Date.UTC(2026, 0, 15),
+      creditValidityMonths: 12,
+    });
+
+  it("counts the conversion being approved towards its own tier", () => {
+    // First ever approval must reach the 1-conversion tier, not fall below it
+    expect(approve(0)).toEqual({
+      rewardPercent: 5,
+      amount: 20,
+      expiresAt: Date.UTC(2027, 0, 15),
+    });
+  });
+
+  it("promotes at the sixth approval", () => {
+    expect(approve(4).rewardPercent).toBe(5);
+    expect(approve(5)).toMatchObject({ rewardPercent: 10, amount: 40 });
+    expect(approve(50).rewardPercent).toBe(10);
+  });
+
+  it("lets a per-affiliate override replace the tier table", () => {
+    expect(approve(0, 25)).toMatchObject({ rewardPercent: 25, amount: 100 });
+    expect(approve(50, 0)).toMatchObject({ rewardPercent: 0, amount: 0 });
+  });
+
+  it("mints nothing off a zero-total booking", () => {
+    expect(
+      resolveConversionCredit({
+        tiers: guideTiers,
+        approvedConversionsBefore: 0,
+        bookingTotal: 0,
+        approvedAt: Date.UTC(2026, 0, 15),
+        creditValidityMonths: 12,
+      }).amount,
+    ).toBe(0);
+  });
+});
+
+/**
+ * The composition convex/affiliates.ts applies: the transition decides, the
+ * ledger guard and the outstanding sum decide what is actually written. Kept
+ * here because the repo has no convex-test harness; the dev-deployment recipe
+ * in the RNGO-52 report covers the mutations end to end.
+ */
+describe("approval side-effects over the ledger", () => {
+  interface Row {
+    kind: "referralCredit" | "creditReversal";
+    amount: number;
+  }
+
+  function apply(
+    state: { status: ConversionStatus; counter: number; ledger: Row[] },
+    input: Parameters<typeof conversionTransition>[0],
+  ) {
+    const transition = conversionTransition(input);
+    if (!transition) return state;
+    const ledger = [...state.ledger];
+    let counter = state.counter;
+    if (transition.mintCredit && !hasMintedReferralCredit(ledger)) {
+      const credit = resolveConversionCredit({
+        tiers: [{ minConversions: 1, rewardPercent: 5 }],
+        approvedConversionsBefore: counter,
+        bookingTotal: 400,
+        approvedAt: Date.UTC(2026, 0, 15),
+        creditValidityMonths: 12,
+      });
+      ledger.push({ kind: "referralCredit", amount: credit.amount });
+      counter += transition.counterDelta;
+    } else if (!transition.mintCredit) {
+      counter += transition.counterDelta;
+    }
+    if (transition.reverseCredit) {
+      const outstanding = conversionCreditOutstanding(ledger);
+      if (outstanding > 0) {
+        ledger.push({ kind: "creditReversal", amount: -outstanding });
+      }
+    }
+    return { status: transition.nextStatus, counter, ledger };
+  }
+
+  const approved = apply(
+    { status: "awaitingApproval", counter: 0, ledger: [] },
+    {
+      current: "awaitingApproval",
+      bookingStatus: "completed",
+      adminAction: "approve",
+    },
+  );
+
+  it("one approval mints one credit and moves the counter once", () => {
+    expect(approved).toEqual({
+      status: "approved",
+      counter: 1,
+      ledger: [{ kind: "referralCredit", amount: 20 }],
+    });
+  });
+
+  it("approving again changes nothing", () => {
+    expect(
+      apply(approved, {
+        current: approved.status,
+        bookingStatus: "completed",
+        adminAction: "approve",
+      }),
+    ).toEqual(approved);
+  });
+
+  it("voiding after approval reverses exactly once", () => {
+    const voided = apply(approved, {
+      current: approved.status,
+      bookingStatus: "cancelled",
+    });
+    expect(voided).toEqual({
+      status: "voided",
+      counter: 0,
+      ledger: [
+        { kind: "referralCredit", amount: 20 },
+        { kind: "creditReversal", amount: -20 },
+      ],
+    });
+    // A repeated cancel yields no transition at all, so nothing is appended
+    expect(
+      apply(voided, { current: voided.status, bookingStatus: "cancelled" }),
+    ).toEqual(voided);
+  });
+
+  it("a revived booking completing again does not mint a second credit", () => {
+    const voided = apply(approved, {
+      current: approved.status,
+      bookingStatus: "cancelled",
+    });
+    const revived = apply(voided, {
+      current: voided.status,
+      bookingStatus: "completed",
+      autoApproveOnCompletion: true,
+    });
+    expect(revived.status).toBe("approved");
+    expect(revived.ledger).toEqual(voided.ledger);
+    expect(revived.counter).toBe(0);
   });
 });
 

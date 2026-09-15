@@ -1,16 +1,25 @@
 import { v } from "convex/values";
-import { mutation, query, MutationCtx, QueryCtx } from "./_generated/server";
+import {
+  internalMutation,
+  mutation,
+  query,
+  MutationCtx,
+  QueryCtx,
+} from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { getCurrentUser, getOrCreateCurrentUser, requireAdmin } from "./users";
 import {
   computeReferredDiscount,
+  conversionCreditOutstanding,
   conversionTransition,
   hasCouponIdentity,
+  hasMintedReferralCredit,
   isValidAffiliateSlug,
   referredEligibility,
   nextTier,
   normalizeAffiliateSlug,
   normalizeCustomerEmail,
+  resolveConversionCredit,
   resolveTierRewardPercent,
   validateAffiliateSettings,
   withSettingsDefaults,
@@ -475,15 +484,8 @@ export interface ReferredDiscountCandidate {
   rewardPercentSnapshot: number;
 }
 
-export interface OwnRewardCandidate {
-  affiliateId: Id<"affiliates">;
-  slug: string;
-  discountAmount: number;
-  rewardPercent: number;
-}
-
 /**
- * Resolve both automatic (affiliate-source) discount candidates from server
+ * Resolve the automatic (affiliate-source) discount candidate from server
  * data only. The client's {slug, visitorKey} pair must match a live,
  * unexpired attribution row recorded via recordReferralAttribution — a
  * fabricated cookie attributes nothing. Amounts always come from the
@@ -498,13 +500,10 @@ export async function resolveAffiliateCandidates(
     customerEmail: string;
     subtotal: number;
   },
-): Promise<{
-  referred: ReferredDiscountCandidate | null;
-  ownReward: OwnRewardCandidate | null;
-}> {
+): Promise<{ referred: ReferredDiscountCandidate | null }> {
   const settings = await loadSettings(ctx);
   if (!settings.enabled) {
-    return { referred: null, ownReward: null };
+    return { referred: null };
   }
 
   const email = normalizeCustomerEmail(args.customerEmail);
@@ -592,44 +591,14 @@ export async function resolveAffiliateCandidates(
     }
   }
 
-  let ownReward: OwnRewardCandidate | null = null;
-  if (args.currentUser) {
-    const ownAffiliate = await ctx.db
-      .query("affiliates")
-      .withIndex("by_user", (q) => q.eq("userId", args.currentUser!._id))
-      .first();
-    if (ownAffiliate && ownAffiliate.isActive) {
-      const rewardPercent = resolveTierRewardPercent(
-        settings.tiers,
-        approvedCount(ownAffiliate),
-        ownAffiliate.rewardPercentOverride,
-      );
-      // Superseded by wallet redemption in RNGO-53; kept unchanged here so
-      // phase 1 is a pure widen. rewardPercent is 0 unless an admin set an
-      // override or the affiliate reached a tier.
-      const discountAmount = computeReferredDiscount(args.subtotal, {
-        type: "percentage",
-        value: rewardPercent,
-      });
-      if (discountAmount > 0) {
-        ownReward = {
-          affiliateId: ownAffiliate._id,
-          slug: ownAffiliate.slug,
-          discountAmount,
-          rewardPercent,
-        };
-      }
-    }
-  }
-
-  return { referred, ownReward };
+  return { referred };
 }
 
 /**
  * Advisory checkout preview of the automatic (affiliate) discount — the
- * booking mutation recomputes everything from server data. Mirrors the
- * booking-time precedence: referred discount before own tier reward; the
- * client-side pickDiscount still lets an explicit coupon win over either.
+ * booking mutation recomputes everything from server data. The referrer's own
+ * tier reward is no longer a discount: they are paid in wallet credit, which
+ * is applied as a payment after the discount (RNGO-53).
  */
 export const previewAffiliateDiscount = query({
   args: {
@@ -639,7 +608,7 @@ export const previewAffiliateDiscount = query({
   },
   returns: v.union(
     v.object({
-      kind: v.union(v.literal("referred"), v.literal("reward")),
+      kind: v.literal("referred"),
       slug: v.string(),
       discountAmount: v.number(),
     }),
@@ -648,7 +617,7 @@ export const previewAffiliateDiscount = query({
   handler: async (ctx, args) => {
     if (args.subtotal <= 0) return null;
     const currentUser = await getCurrentUser(ctx);
-    const { referred, ownReward } = await resolveAffiliateCandidates(ctx, {
+    const { referred } = await resolveAffiliateCandidates(ctx, {
       referral: args.referral,
       currentUser,
       customerEmail: args.email ?? "",
@@ -659,13 +628,6 @@ export const previewAffiliateDiscount = query({
         kind: "referred" as const,
         slug: referred.slug,
         discountAmount: referred.discountAmount,
-      };
-    }
-    if (ownReward) {
-      return {
-        kind: "reward" as const,
-        slug: ownReward.slug,
-        discountAmount: ownReward.discountAmount,
       };
     }
     return null;
@@ -721,7 +683,7 @@ async function reverseConversionCredit(
     .query("walletTransactions")
     .withIndex("by_conversion", (q) => q.eq("conversionId", conversion._id))
     .collect();
-  const outstanding = rows.reduce((sum, row) => sum + row.amount, 0);
+  const outstanding = conversionCreditOutstanding(rows);
   if (outstanding <= 0) return;
 
   const credit = rows.find((row) => row.kind === "referralCredit");
@@ -735,42 +697,210 @@ async function reverseConversionCredit(
   });
 }
 
+/** The booking a conversion was recorded for; null once it is hard-deleted. */
+async function conversionBooking(
+  ctx: QueryCtx | MutationCtx,
+  conversion: Doc<"referralConversions">,
+): Promise<Doc<"reservations"> | Doc<"transfers"> | null> {
+  if (conversion.reservationId) {
+    return await ctx.db.get(conversion.reservationId);
+  }
+  if (conversion.transferId) {
+    return await ctx.db.get(conversion.transferId);
+  }
+  return null;
+}
+
+async function conversionBookingStatus(
+  ctx: QueryCtx | MutationCtx,
+  conversion: Doc<"referralConversions">,
+): Promise<ConversionBookingStatus> {
+  const booking = await conversionBooking(ctx, conversion);
+  return booking ? booking.status : "deleted";
+}
+
+/**
+ * Mint the referrer's credit for an approved conversion, in the approving
+ * transaction. Returns the snapshot to store on the conversion, or null when
+ * the conversion already carries a credit — the ledger-side guard behind
+ * conversionTransition's own idempotency, so a double approval can never
+ * produce two credits or two counter increments.
+ */
+async function mintConversionCredit(
+  ctx: MutationCtx,
+  conversion: Doc<"referralConversions">,
+  approvedAt: number,
+): Promise<{ creditAmount: number; bookingTotal: number } | null> {
+  const existing = await ctx.db
+    .query("walletTransactions")
+    .withIndex("by_conversion", (q) => q.eq("conversionId", conversion._id))
+    .collect();
+  if (hasMintedReferralCredit(existing)) return null;
+
+  const affiliate = await ctx.db.get(conversion.affiliateId);
+  if (!affiliate) return null;
+
+  const settings = await loadSettings(ctx);
+  // The persisted total, i.e. what the referred customer was actually charged
+  const bookingTotal =
+    (await conversionBooking(ctx, conversion))?.totalPrice ?? 0;
+  const credit = resolveConversionCredit({
+    tiers: settings.tiers,
+    approvedConversionsBefore: approvedCount(affiliate),
+    rewardPercentOverride: affiliate.rewardPercentOverride,
+    bookingTotal,
+    approvedAt,
+    creditValidityMonths: settings.creditValidityMonths,
+  });
+
+  if (credit.amount > 0) {
+    await ctx.db.insert("walletTransactions", {
+      userId: affiliate.userId,
+      kind: "referralCredit",
+      amount: credit.amount,
+      expiresAt: credit.expiresAt,
+      conversionId: conversion._id,
+      createdAt: approvedAt,
+    });
+  }
+  return { creditAmount: credit.amount, bookingTotal };
+}
+
 /**
  * Persist a transition's status flip and side-effects. Shared by the
- * booking-driven sync and the admin void so the two can never disagree.
+ * booking-driven sync, the admin approve/reject and the admin void so they can
+ * never disagree. Everything — the credit row, the snapshot and the counter —
+ * lands in the caller's transaction.
  */
 async function applyConversionTransition(
   ctx: MutationCtx,
   conversion: Doc<"referralConversions">,
   transition: ConversionTransition,
+  actor?: { adminUserId?: Id<"users">; rejectionReason?: string },
 ): Promise<void> {
+  const now = Date.now();
+  const patch: Partial<Doc<"referralConversions">> = {
+    status: transition.nextStatus,
+    voidedAt: transition.nextStatus === "voided" ? now : undefined,
+  };
+  let counterDelta = transition.counterDelta;
+
   if (transition.mintCredit) {
-    throw new Error(
-      "Minting referral credit is not driven from this path: approval is an " +
-        "admin action landing in RNGO-52. Do not enable autoApproveOnCompletion yet.",
-    );
+    const minted = await mintConversionCredit(ctx, conversion, now);
+    if (minted === null) {
+      counterDelta = 0;
+    } else {
+      patch.creditAmount = minted.creditAmount;
+      patch.bookingTotalAtApproval = minted.bookingTotal;
+      patch.approvedAt = now;
+      patch.approvedByUserId = actor?.adminUserId;
+    }
+  }
+  if (transition.nextStatus === "rejected") {
+    patch.rejectedAt = now;
+    patch.rejectionReason = actor?.rejectionReason;
   }
 
-  await ctx.db.patch(conversion._id, {
-    status: transition.nextStatus,
-    ...(transition.nextStatus === "voided"
-      ? { voidedAt: Date.now() }
-      : { voidedAt: undefined }),
-  });
+  await ctx.db.patch(conversion._id, patch);
 
   if (transition.reverseCredit) {
     await reverseConversionCredit(ctx, conversion);
   }
-  if (transition.counterDelta !== 0) {
+  if (counterDelta !== 0) {
     const affiliate = await ctx.db.get(conversion.affiliateId);
     if (affiliate) {
       await ctx.db.patch(
         affiliate._id,
-        counterPatch(approvedCount(affiliate) + transition.counterDelta),
+        counterPatch(approvedCount(affiliate) + counterDelta),
       );
     }
   }
 }
+
+/**
+ * Decide a conversion. Approving resolves the tier, mints the credit, bumps
+ * the counter and snapshots what was granted, all in one transaction;
+ * rejecting reverses a credit already minted. Idempotent — a second approval
+ * produces no transition and therefore no second credit. The booking's status
+ * is read rather than assumed, so deciding a conversion whose booking was
+ * cancelled meanwhile voids it instead of crediting it.
+ */
+async function decideConversion(
+  ctx: MutationCtx,
+  args: {
+    conversionId: Id<"referralConversions">;
+    adminAction: "approve" | "reject";
+    adminUserId?: Id<"users">;
+    reason?: string;
+  },
+): Promise<void> {
+  const conversion = await ctx.db.get(args.conversionId);
+  if (!conversion) {
+    throw new Error("Conversion not found.");
+  }
+  const transition = conversionTransition({
+    current: conversion.status,
+    bookingStatus: await conversionBookingStatus(ctx, conversion),
+    adminAction: args.adminAction,
+  });
+  if (!transition) return;
+  await applyConversionTransition(ctx, conversion, transition, {
+    adminUserId: args.adminUserId,
+    rejectionReason: args.reason?.trim() || undefined,
+  });
+}
+
+export const approveConversion = mutation({
+  args: { conversionId: v.id("referralConversions") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const admin = await requireAdmin(ctx);
+    await decideConversion(ctx, {
+      conversionId: args.conversionId,
+      adminAction: "approve",
+      adminUserId: admin._id,
+    });
+    return null;
+  },
+});
+
+export const rejectConversion = mutation({
+  args: {
+    conversionId: v.id("referralConversions"),
+    reason: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const admin = await requireAdmin(ctx);
+    await decideConversion(ctx, {
+      conversionId: args.conversionId,
+      adminAction: "reject",
+      adminUserId: admin._id,
+      reason: args.reason,
+    });
+    return null;
+  },
+});
+
+/**
+ * Same decision, callable from `npx convex run` (which carries no user
+ * identity) so the lifecycle can be exercised end to end on the dev
+ * deployment before the admin approvals UI exists (RNGO-55). Internal, so it
+ * is not reachable from a client.
+ */
+export const decideConversionAsAdmin = internalMutation({
+  args: {
+    conversionId: v.id("referralConversions"),
+    adminAction: v.union(v.literal("approve"), v.literal("reject")),
+    adminUserId: v.optional(v.id("users")),
+    reason: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await decideConversion(ctx, args);
+    return null;
+  },
+});
 
 /**
  * Keep the conversion (its status, the referrer's counter and any minted
@@ -780,9 +910,11 @@ async function applyConversionTransition(
  * change, so the counter and the booking can never disagree (OCC retries a
  * racing admin void).
  *
- * Minting is deliberately not driven from here: approval is an admin action
- * (RNGO-52), so `autoApproveOnCompletion` is not consulted and a completed
- * booking only moves the conversion to `awaitingApproval`.
+ * A completed booking parks the conversion at `awaitingApproval` for an admin,
+ * unless `autoApproveOnCompletion` is on. That setting can only ever mint from
+ * an admin-driven completion: marking a booking `completed` is admin-only on
+ * both booking tables, so a customer cannot complete their own rental into a
+ * credit.
  */
 export async function syncConversionForBooking(
   ctx: MutationCtx,
@@ -808,9 +940,11 @@ export async function syncConversionForBooking(
           .first();
   if (!conversion) return;
 
+  const settings = await loadSettings(ctx);
   const transition = conversionTransition({
     current: conversion.status,
     bookingStatus: args.bookingStatus,
+    autoApproveOnCompletion: settings.autoApproveOnCompletion,
   });
   if (!transition) return;
 
