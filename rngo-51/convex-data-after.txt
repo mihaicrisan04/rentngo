@@ -1,0 +1,19 @@
+=== referralConversions ===
+_id                                | _creationTime      | affiliateId                        | approvedAt    | bookingType   | confirmedAt   | createdAt     | referredDiscountAmount | referredEmail                | referrerRewardPercentAtConversion | reservationId                      | status     | transferId                        
+-----------------------------------|--------------------|------------------------------------|---------------|---------------|---------------|---------------|------|------------------------------|---|------------------------------------|------------|-----------------------------------
+"m973wm47sxdfantmw1frsepb5h8ef0et" | 1789483357850.038  | "m176ybmrzd1ddz7kfravpw41f98ee5et" |               | "reservation" |               | 1768765042181 | 0    | "legacy-pending@example.com" | 5 | "jn7dwz01kdcz6cjfpjd43310xs7ze588" | "pending"  |                                   
+"m97dtzyn9xxvmkhjfra7nat0618ef0yj" | 1789483357850.0378 | "m176ybmrzd1ddz7kfravpw41f98ee5et" | 1774283218699 | "transfer"    |               | 1774283218699 | 9.37 | "legacy-two@example.com"     | 5 |                                    | "approved" | "j575yndrrkepax0s4w1033fe4983eb3d"
+"m97b2dgyaqpvptehmdhpx4fy8d8efaeq" | 1789483357850.0376 | "m176ybmrzd1ddz7kfravpw41f98ee5et" | 1774283149968 | "reservation" | 1774283149968 | 1774283149968 | 22   | "legacy-one@example.com"     | 5 | "jn74xvyeqqwvbg495d8rgh7xxs83eq6j" | "approved" |                                   
+
+=== affiliates ===
+_id                                | _creationTime     | approvedConversions | confirmedConversions | createdAt     | isActive | slug            | userId                            
+-----------------------------------|-------------------|---|---|---------------|------|-----------------|-----------------------------------
+"m176ybmrzd1ddz7kfravpw41f98ee5et" | 1789483338759.799 | 2 | 2 | 1748454196593 | true | "rngo51-legacy" | "js787bx0zm3rsy709tjdrn41ws7gr0p4"
+
+=== affiliateSettings ===
+_id                                | _creationTime      | attributionWindowDays | enabled | referredDiscountType | referredDiscountValue | tiers                                                                                      | updatedAt    
+-----------------------------------|--------------------|----|-------|--------------|----|--------------------------------------------------------------------------------------------|--------------
+"md78rv60tfvfrdd47x1r6pa4ah8eex2g" | 1789483361282.2952 | 30 | false | "percentage" | 10 | [{ "minConversions": 1, "rewardPercent": 5 }, { "minConversions": 5, "rewardPercent": 8 }] | 1774283149968
+
+=== walletTransactions ===
+There are no documents in this table.
