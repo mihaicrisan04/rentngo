@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Check, Copy, Link2, Share2, Wallet } from "lucide-react";
+import { Check, Copy, Link2, Share2 } from "lucide-react";
 import { COMPANY } from "@/lib/company";
 import { currentTier } from "@/lib/pricing";
 import { buildReferralUrl, buildWhatsAppShareUrl } from "@/lib/referral";
@@ -27,18 +27,17 @@ const subscribeToNothing = () => () => {};
 
 /**
  * Self-service affiliate view on the profile page: referral code and link with
- * copy/WhatsApp/native sharing, the wallet (balance, expiring credit, ledger),
- * tier progress and conversion history. Non-affiliates get the enrolment CTA
+ * copy/WhatsApp/native sharing, tier progress and conversion history. The
+ * wallet itself is a separate card (WalletCard), because credit can also reach
+ * a customer who has no referral code. Non-affiliates get the enrolment CTA
  * while the program is open (RNGO-54), and the contact link while it is not.
  */
 export function AffiliateDashboard() {
   const t = useTranslations("profile.affiliate");
-  const tWallet = useTranslations("common.wallet");
   const locale = useLocale();
   const currentUser = useQuery(api.users.get);
   const affiliate = useQuery(api.affiliates.getMyAffiliate);
   const enrolment = useQuery(api.affiliates.getMyEnrolment);
-  const wallet = useQuery(api.wallet.getMyWallet);
   const createMyAffiliate = useMutation(api.affiliates.createMyAffiliate);
   const [copied, setCopied] = React.useState<"link" | "code" | null>(null);
   const [isEnrolling, setIsEnrolling] = React.useState(false);
@@ -241,84 +240,6 @@ export function AffiliateDashboard() {
             )}
           </div>
         </div>
-
-        {/* Wallet — only while the program is enabled (getMyWallet is null
-            otherwise) */}
-        {wallet && (
-          <div className="space-y-4">
-            <p className="flex items-center gap-2 text-sm font-medium">
-              <Wallet className="h-4 w-4" />
-              {t("wallet.title")}
-            </p>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-xl bg-muted/50 p-4 text-center">
-                <p className="text-3xl font-bold">
-                  {wallet.balance.toFixed(2)} EUR
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {t("wallet.balance")}
-                </p>
-              </div>
-              <div className="rounded-xl bg-muted/50 p-4 text-center">
-                <p className="text-3xl font-bold">
-                  {wallet.rewardsEarned.toFixed(2)} EUR
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {t("wallet.rewardsEarned")}
-                </p>
-              </div>
-            </div>
-
-            {wallet.expiringSoon && (
-              <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm">
-                {t("wallet.expiringSoon", {
-                  amount: wallet.expiringSoon.amount.toFixed(2),
-                  date: formatLedgerDate(wallet.expiringSoon.expiresAt),
-                })}
-              </p>
-            )}
-
-            <p className="text-xs text-muted-foreground">
-              {tWallet("capNote", { percent: wallet.maxRedemptionPercent })}
-            </p>
-
-            <div className="space-y-2">
-              <p className="text-sm font-medium">{t("wallet.ledger")}</p>
-              {wallet.transactions.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  {t("wallet.empty")}
-                </p>
-              ) : (
-                <div className="space-y-1">
-                  {wallet.transactions.map((transaction) => (
-                    <div
-                      key={transaction.id}
-                      className="flex items-center justify-between rounded-lg border border-border/50 px-3 py-2 text-sm"
-                    >
-                      <span>
-                        {t(`wallet.kinds.${transaction.kind}`)}
-                        <span className="text-muted-foreground ml-2">
-                          {formatLedgerDate(transaction.createdAt)}
-                        </span>
-                      </span>
-                      <span
-                        className={
-                          transaction.amount >= 0
-                            ? "font-medium text-green-600"
-                            : "font-medium"
-                        }
-                      >
-                        {transaction.amount >= 0 ? "+" : "−"}
-                        {Math.abs(transaction.amount).toFixed(2)} EUR
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Tier progress */}
         <div className="grid grid-cols-2 gap-4">

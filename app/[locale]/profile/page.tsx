@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { UserProfileForm } from "@/components/shared/auth/user-profile-form";
 import { UserReservationsTable } from "@/components/features/reservations/user-reservations-table";
 import { AffiliateDashboard } from "@/components/features/affiliate/affiliate-dashboard";
+import { WalletCard } from "@/components/features/affiliate/wallet-card";
 import { Separator } from "@/components/ui/separator";
 
 export default function ProfilePage() {
@@ -111,7 +112,9 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Affiliate program (renders only for enrolled affiliates) */}
+          {/* Wallet (renders whenever the referral program is enabled, code
+              or no code) and the affiliate card */}
+          <WalletCard />
           <AffiliateDashboard />
 
           {/* Reservations Card */}

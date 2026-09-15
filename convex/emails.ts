@@ -107,6 +107,7 @@ export const sendReservationConfirmationEmail = internalAction({
     referral: v.optional(referralBlockValidator),
     locale: v.optional(v.string()),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const emailData: ReservationEmailData = {
       reservationNumber: args.reservationNumber,
@@ -206,6 +207,7 @@ export const sendTransferConfirmationEmail = internalAction({
     referral: v.optional(referralBlockValidator),
     locale: v.optional(v.string()),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const locale = (args.locale === "ro" ? "ro" : "en") as "en" | "ro";
 
