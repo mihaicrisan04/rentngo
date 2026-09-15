@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import {
+  bookingAmountDue,
   calculateRentalDays,
   getPriceForDurationWithSeason,
 } from "@/lib/pricing";
@@ -41,6 +42,7 @@ function ReservationConfirmationContent() {
   const t = useTranslations("confirmationPage");
   const tCharges = useTranslations("reservationCharges");
   const tPaymentMethods = useTranslations("reservationPage.payment.methods");
+  const tWallet = useTranslations("common.wallet");
   const locale = useLocale();
 
   // Get reservation details
@@ -467,6 +469,26 @@ function ReservationConfirmationContent() {
                   {reservation.totalPrice} EUR
                 </span>
               </div>
+              {/* Wallet credit pays part of the total rather than discounting
+                  it, so it sits under the total with an explicit amount due */}
+              {(reservation.walletCreditApplied ?? 0) > 0 && (
+                <>
+                  <div className="flex justify-between items-center text-sm text-green-600">
+                    <span>{tWallet("creditApplied")}</span>
+                    <span>−{reservation.walletCreditApplied} EUR</span>
+                  </div>
+                  <div className="flex justify-between items-center text-lg font-bold">
+                    <span>{tWallet("amountDue")}</span>
+                    <span>
+                      {bookingAmountDue(
+                        reservation.totalPrice,
+                        reservation.walletCreditApplied,
+                      )}{" "}
+                      EUR
+                    </span>
+                  </div>
+                </>
+              )}
               {/* Warranty note below total when SCDW not selected */}
               {!reservation.isSCDWSelected &&
                 reservation.deductibleAmount !== undefined && (

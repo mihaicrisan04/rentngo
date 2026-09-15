@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   allocateRedemption,
+  bookingAmountDue,
   computeAvailableBalance,
   computeCreditForConversion,
   computeRedeemable,
   computeRemainingCredits,
   creditExpiry,
+  planRedemption,
   type WalletCredit,
   type WalletTransactionData,
 } from "./wallet";
@@ -318,5 +320,121 @@ describe("creditExpiry", () => {
     expect(creditExpiry(Date.UTC(2026, 0, 15, 9, 30, 15, 250), 12)).toBe(
       Date.UTC(2027, 0, 15, 9, 30, 15, 250),
     );
+  });
+});
+
+describe("bookingAmountDue", () => {
+  it("is the full price when no credit was spent", () => {
+    expect(bookingAmountDue(320)).toBe(320);
+    expect(bookingAmountDue(320, 0)).toBe(320);
+  });
+
+  it("subtracts the credit and never goes below zero", () => {
+    expect(bookingAmountDue(320, 160)).toBe(160);
+    expect(bookingAmountDue(320, 400)).toBe(0);
+  });
+
+  it("keeps cents exact", () => {
+    expect(bookingAmountDue(99.99, 33.33)).toBe(66.66);
+  });
+});
+
+describe("planRedemption", () => {
+  // 400 EUR is a worked booking: 500 EUR of rental + protection + extras with
+  // a 20 % discount already applied, so the 50 % cap is 200 EUR.
+  const plan = (
+    transactions: WalletTransactionData[],
+    overrides: Partial<Parameters<typeof planRedemption>[0]> = {},
+  ) =>
+    planRedemption({
+      requested: true,
+      programEnabled: true,
+      transactions,
+      totalAfterDiscount: 400,
+      maxRedemptionPercent: 50,
+      now: NOW,
+      ...overrides,
+    });
+
+  it("redeems nothing when the switch is off or the program is disabled", () => {
+    const wallet = [credit("c1", 100, NOW + 30 * DAY)];
+    expect(plan(wallet, { requested: false })).toEqual({
+      amount: 0,
+      entries: [],
+    });
+    expect(plan(wallet, { programEnabled: false })).toEqual({
+      amount: 0,
+      entries: [],
+    });
+  });
+
+  it("redeems nothing on an empty wallet", () => {
+    expect(plan([])).toEqual({ amount: 0, entries: [] });
+  });
+
+  it("caps at half of the post-discount total when the balance is larger", () => {
+    const result = plan([credit("c1", 300, NOW + 30 * DAY)]);
+    expect(result.amount).toBe(200);
+    expect(result.entries).toEqual([
+      { creditId: "c1", amount: 200, expiresAt: NOW + 30 * DAY },
+    ]);
+  });
+
+  it("spends the whole balance when it is under the cap", () => {
+    expect(plan([credit("c1", 75, NOW + 30 * DAY)]).amount).toBe(75);
+  });
+
+  it("splits across credits, soonest-expiring first, keeping each expiry", () => {
+    const result = plan([
+      credit("late", 150, NOW + 90 * DAY),
+      credit("soon", 60, NOW + 10 * DAY),
+    ]);
+    expect(result.amount).toBe(200);
+    expect(result.entries).toEqual([
+      { creditId: "soon", amount: 60, expiresAt: NOW + 10 * DAY },
+      { creditId: "late", amount: 140, expiresAt: NOW + 90 * DAY },
+    ]);
+  });
+
+  it("ignores credit that has already expired", () => {
+    const result = plan([
+      credit("gone", 300, NOW - DAY),
+      credit("live", 40, NOW + DAY),
+    ]);
+    expect(result.amount).toBe(40);
+    expect(result.entries).toEqual([
+      { creditId: "live", amount: 40, expiresAt: NOW + DAY },
+    ]);
+  });
+
+  it("leaves nothing to redeem once an earlier booking spent the credit", () => {
+    expect(
+      plan([
+        credit("c1", 100, NOW + 30 * DAY, NOW - DAY),
+        redemption("r1", 100, NOW - DAY),
+      ]),
+    ).toEqual({ amount: 0, entries: [] });
+  });
+
+  it("gives the exact amount back when the spend is reversed", () => {
+    const ledger: WalletTransactionData[] = [
+      credit("c1", 100, NOW + 30 * DAY, NOW - 2 * DAY),
+      redemption("r1", 100, NOW - DAY),
+      {
+        id: "rr1",
+        kind: "redemptionReversal",
+        amount: 100,
+        expiresAt: NOW + 30 * DAY,
+        createdAt: NOW,
+      },
+    ];
+    expect(computeAvailableBalance(ledger, NOW)).toBe(100);
+    expect(plan(ledger).amount).toBe(100);
+  });
+
+  it("redeems nothing against a free booking", () => {
+    expect(
+      plan([credit("c1", 100, NOW + 30 * DAY)], { totalAfterDiscount: 0 }),
+    ).toEqual({ amount: 0, entries: [] });
   });
 });

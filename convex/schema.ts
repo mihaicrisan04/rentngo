@@ -444,8 +444,10 @@ export default defineSchema({
     // redemptionReversal), negative spends it (redemption, creditReversal, a
     // claw-back manualAdjustment).
     amount: v.number(),
-    // Set on credit-opening rows only; absent means it never expires. A
-    // redemptionReversal carries the expiry of the credit it gives back.
+    // On a credit-opening row: when that credit lapses (absent = never). A
+    // redemption is written one row per credit it consumed and copies that
+    // credit's expiry, so a redemptionReversal can hand the expiry back
+    // unchanged instead of re-deriving the allocation from the ledger.
     expiresAt: v.optional(v.number()),
     // On a creditReversal this points at the conversion whose credit it undoes.
     conversionId: v.optional(v.id("referralConversions")),

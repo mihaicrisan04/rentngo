@@ -35,6 +35,8 @@ import {
 } from "@/components/features/checkout/contact-fields";
 import type { AppliedCoupon } from "@/components/features/checkout/coupon-code-input";
 import { useAffiliateDiscount } from "@/hooks/use-affiliate-discount";
+import { useWalletCredit } from "@/hooks/use-wallet-credit";
+import { applyDiscountToTotal } from "@/lib/pricing";
 import { getStoredReferral } from "@/lib/referral";
 import type { PaymentMethod } from "@/lib/checkout-payment-methods";
 import { ConvexError } from "convex/values";
@@ -111,6 +113,21 @@ export default function TransferBookingPage() {
   const { referral, affiliateDiscount } = useAffiliateDiscount({
     subtotal: pricing?.totalPrice ?? null,
     email: personalInfo.email,
+  });
+
+  // Wallet credit is a payment on the post-discount total, so the preview
+  // needs the same total the server will redeem against (coupon beats the
+  // automatic affiliate discount, mirroring pickDiscount)
+  const walletCredit = useWalletCredit({
+    totalAfterDiscount:
+      pricing !== undefined && pricing !== null
+        ? applyDiscountToTotal(
+            pricing.totalPrice,
+            appliedCoupon?.discountAmount ??
+              affiliateDiscount?.discountAmount ??
+              0,
+          )
+        : null,
   });
 
   React.useEffect(() => {
@@ -221,6 +238,8 @@ export default function TransferBookingPage() {
         // Referral attribution — read the cookie fresh at submit so a
         // capture that landed after mount is never dropped; server-validated
         referral: getStoredReferral() ?? referral ?? undefined,
+        // Only the intent travels; the server computes the amount
+        useWalletCredit: walletCredit.selected || undefined,
         locale,
       });
 
@@ -450,6 +469,7 @@ export default function TransferBookingPage() {
               customerEmail={personalInfo.email}
               onCouponAppliedChange={setAppliedCoupon}
               appliedAffiliateDiscount={affiliateDiscount}
+              walletCredit={walletCredit}
             />
           </div>
         </div>

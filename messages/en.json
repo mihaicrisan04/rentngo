@@ -551,8 +551,13 @@
       }
     },
     "referral": {
-      "discount": "Referral discount",
-      "reward": "Affiliate reward"
+      "discount": "Referral discount"
+    },
+    "wallet": {
+      "useCredit": "Use my credit ({amount} EUR available)",
+      "creditApplied": "Credit applied",
+      "amountDue": "Amount due",
+      "capNote": "Credit can cover at most {percent}% of a booking."
     },
     "consent": {
       "title": "Cookies",

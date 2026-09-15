@@ -56,6 +56,7 @@ import type * as users from "../users.js";
 import type * as validators from "../validators.js";
 import type * as vehicleClasses from "../vehicleClasses.js";
 import type * as vehicles from "../vehicles.js";
+import type * as wallet from "../wallet.js";
 
 import type {
   ApiFromModules,
@@ -112,6 +113,7 @@ declare const fullApi: ApiFromModules<{
   validators: typeof validators;
   vehicleClasses: typeof vehicleClasses;
   vehicles: typeof vehicles;
+  wallet: typeof wallet;
 }>;
 
 /**

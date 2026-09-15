@@ -33,6 +33,7 @@ import {
   resolveAffiliateCandidates,
   syncConversionForBooking,
 } from "./affiliates";
+import { redeemWalletCredit, reverseWalletRedemption } from "./wallet";
 import {
   applyDiscountToTotal,
   pickDiscount,
@@ -95,6 +96,7 @@ const reservationDocValidator = v.object({
     v.union(v.literal("coupon"), v.literal("affiliate")),
   ),
   affiliateId: v.optional(v.id("affiliates")),
+  walletCreditApplied: v.optional(v.number()),
   additionalCharges: v.optional(
     v.array(
       v.object({
@@ -161,6 +163,9 @@ export const createReservation = mutation({
     // an invalid/expired/fabricated pair silently attributes nothing (the
     // referral is automatic, so it never fails the booking)
     referral: v.optional(referralArgValidator),
+    // Wallet credit switch — a boolean only; the server owns the amount and
+    // ignores it for guests and while the referral program is off
+    useWalletCredit: v.optional(v.boolean()),
     additionalCharges: v.optional(v.array(additionalChargeValidator)),
     isSCDWSelected: v.boolean(),
     deductibleAmount: v.number(),
@@ -435,6 +440,20 @@ export const createReservation = mutation({
       await ctx.db.patch(redeemedCoupon.redemptionId, { reservationId });
     }
 
+    // Wallet credit is a payment on top of the single discount, so it is
+    // taken from the already-discounted total. totalPrice stays pre-credit;
+    // the amount still due is totalPrice - walletCreditApplied.
+    const walletCreditApplied = await redeemWalletCredit(ctx, {
+      bookingType: "reservation",
+      bookingId: reservationId,
+      userId: currentUser?._id,
+      totalAfterDiscount: totalPrice,
+      requested: args.useWalletCredit === true,
+    });
+    if (walletCreditApplied > 0) {
+      await ctx.db.patch(reservationId, { walletCreditApplied });
+    }
+
     // Conversion lifecycle (owner decision): a referred booking confirms a
     // conversion the moment it is created — even when a coupon won the
     // one-discount rule — and is voided if the booking is later cancelled.
@@ -501,6 +520,8 @@ export const createReservation = mutation({
             promoCode: appliedDiscount?.code,
             discountAmount: appliedDiscount?.amount,
             isReferralDiscount: appliedDiscount?.source === "affiliate",
+            walletCreditApplied:
+              walletCreditApplied > 0 ? walletCreditApplied : undefined,
             additionalCharges: persistedCharges,
             isSCDWSelected: args.isSCDWSelected,
             deductibleAmount: pricing.deductibleAmount,
@@ -702,6 +723,12 @@ export const updateReservationStatus = mutation({
       bookingId: args.reservationId,
       bookingStatus: args.newStatus,
     });
+    if (args.newStatus === "cancelled") {
+      await reverseWalletRedemption(ctx, {
+        bookingType: "reservation",
+        bookingId: args.reservationId,
+      });
+    }
 
     return { success: true };
   },
@@ -782,6 +809,12 @@ export const updateReservationDetails = mutation({
         bookingId: reservationId,
         bookingStatus: updatesToApply.status,
       });
+      if (updatesToApply.status === "cancelled") {
+        await reverseWalletRedemption(ctx, {
+          bookingType: "reservation",
+          bookingId: reservationId,
+        });
+      }
     }
 
     return { success: true, reservationId };
@@ -837,6 +870,12 @@ export const cancelReservation = mutation({
       bookingId: args.reservationId,
       bookingStatus: "cancelled",
     });
+    // Give back the wallet credit the booking spent (no-op the second time
+    // round; un-cancelling never re-redeems)
+    await reverseWalletRedemption(ctx, {
+      bookingType: "reservation",
+      bookingId: args.reservationId,
+    });
 
     return { success: true, message: "Reservation cancelled." };
   },
@@ -866,6 +905,10 @@ export const deleteReservationPermanently = mutation({
       bookingType: "reservation",
       bookingId: args.reservationId,
       bookingStatus: "deleted",
+    });
+    await reverseWalletRedemption(ctx, {
+      bookingType: "reservation",
+      bookingId: args.reservationId,
     });
     await ctx.db.delete(args.reservationId);
     await recordStatsRemove(ctx, "reservations", reservation.status);
