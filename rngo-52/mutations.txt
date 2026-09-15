@@ -1,0 +1,5 @@
+=== approve #1 (conversion m97a00h92c9jfacz9nq382e5bx8ef8se) Tue Sep 15 06:21:32 PM EEST 2026 ===
+=== approve #1 AGAIN (idempotency) Tue Sep 15 06:22:23 PM EEST 2026 ===
+=== reject conversion m973csmk3a4etyetcydwvtzysn8efffv Tue Sep 15 06:23:48 PM EEST 2026 ===
+=== approve revived conversion (previously credited+reversed) Tue Sep 15 06:29:06 PM EEST 2026 ===
+=== approve conversion m977v0gq9btxyaja8693v07qgs8efq1w (override 10%) Tue Sep 15 06:31:18 PM EEST 2026 ===
