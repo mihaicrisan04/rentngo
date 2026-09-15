@@ -230,8 +230,13 @@ export default function TransferBookingPage() {
         },
         paymentMethod,
         luggageCount: luggageCount > 0 ? luggageCount : undefined,
-        // Re-validated and redeemed server-side; the shown discount is advisory
-        promoCode: appliedCoupon?.code,
+        // Re-validated and redeemed server-side; the shown discount is
+        // advisory. A referral code entered in the same field travels
+        // separately — see the reservation checkout.
+        promoCode:
+          appliedCoupon?.kind === "coupon" ? appliedCoupon.code : undefined,
+        referralCode:
+          appliedCoupon?.kind === "referral" ? appliedCoupon.code : undefined,
         // Referral attribution — read the cookie fresh at submit so a
         // capture that landed after mount is never dropped; server-validated
         referral: getStoredReferral() ?? referral ?? undefined,

@@ -531,24 +531,28 @@
       "inactive": "Inactiv"
     },
     "coupon": {
-      "title": "Cod de reducere",
-      "placeholder": "Introdu codul de reducere",
+      "title": "Cod promoțional sau de recomandare",
+      "placeholder": "Introdu codul promoțional sau de recomandare",
       "apply": "Aplică",
       "checking": "Se verifică...",
       "applied": "Cuponul {code} a fost aplicat",
-      "remove": "Elimină cuponul",
+      "remove": "Elimină codul",
       "discount": "Reducere",
       "errors": {
-        "notFound": "Acest cod de reducere nu există.",
+        "notFound": "Acest cod nu există.",
         "inactive": "Acest cupon nu mai este activ.",
         "expired": "Acest cupon a expirat.",
         "exhausted": "Acest cupon a atins limita de utilizări.",
         "wrongBookingType": "Acest cupon nu se aplică acestui tip de rezervare.",
         "belowMinimum": "Totalul comenzii este sub minimul cerut de acest cupon.",
         "alreadyUsed": "Ai folosit deja acest cupon.",
-        "emailRequired": "Introdu adresa de email înainte de a aplica un cupon.",
-        "submitFailed": "Cuponul nu a putut fi aplicat. Verifică din nou codul și reîncearcă."
-      }
+        "emailRequired": "Introdu adresa de email înainte de a aplica un cod.",
+        "submitFailed": "Codul nu a putut fi aplicat. Verifică din nou codul și reîncearcă.",
+        "referralSelfReferral": "Acesta este propriul tău cod de recomandare — nu îl poți folosi pentru rezervările tale.",
+        "referralDuplicate": "Ai folosit deja acest cod de recomandare.",
+        "referralNotFirstRental": "Reducerea de recomandare este doar pentru prima ta rezervare."
+      },
+      "appliedReferral": "Codul de recomandare {code} a fost aplicat"
     },
     "referral": {
       "discount": "Reducere recomandare"
@@ -657,8 +661,12 @@
       "description": "Distribuie linkul tău și primești recompense când recomandările tale rezervă",
       "inactive": "Contul tău de afiliat este momentan inactiv.",
       "notEnrolled": {
-        "body": "Câștigi recompense de fiecare dată când cineva rezervă prin linkul tău personal. Înscrierea se face pe bază de invitație deocamdată — contactează-ne și te configurăm.",
-        "cta": "Contactează-ne"
+        "body": "Câștigi recompense de fiecare dată când cineva rezervă cu codul tău. Generează-ți codul și începe să îl distribui.",
+        "cta": "Contactează-ne",
+        "generate": "Generează codul meu",
+        "generating": "Se generează...",
+        "generateFailed": "Codul nu a putut fi generat. Reîncearcă.",
+        "closedBody": "Programul de recomandare nu este deschis momentan. Contactează-ne dacă vrei să afli mai multe."
       },
       "yourLink": "Linkul tău de recomandare",
       "copyLink": "Copiază linkul de recomandare",
@@ -673,7 +681,10 @@
         "pending": "În așteptare",
         "confirmed": "Confirmată",
         "voided": "Anulată"
-      }
+      },
+      "yourCode": "Codul tău de recomandare",
+      "copyCode": "Copiază codul de recomandare",
+      "codeInfo": "Prietenii tăi pot folosi acest cod direct în câmpul de cod promoțional la rezervare."
     }
   },
   "footer": {

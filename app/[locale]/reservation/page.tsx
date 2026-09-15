@@ -238,8 +238,13 @@ function ReservationPageContent() {
               : undefined,
         },
         // The server re-validates and redeems the coupon atomically; the
-        // client-shown discount is advisory only
-        promoCode: appliedCoupon?.code,
+        // client-shown discount is advisory only. A referral code entered in
+        // the same field is not a coupon — it travels separately so the
+        // server records an attribution instead of a redemption.
+        promoCode:
+          appliedCoupon?.kind === "coupon" ? appliedCoupon.code : undefined,
+        referralCode:
+          appliedCoupon?.kind === "referral" ? appliedCoupon.code : undefined,
         // Referral attribution — read the cookie fresh at submit so a
         // capture that landed after mount is never dropped; server-validated
         referral: getStoredReferral() ?? referral ?? undefined,

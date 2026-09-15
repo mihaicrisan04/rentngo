@@ -1,17 +1,23 @@
 import { describe, expect, it } from "vitest";
 import {
+  affiliateSlugBase,
+  affiliateSlugSuffix,
   computeReferredDiscount,
   conversionTransition,
+  generateAffiliateSlug,
   withSettingsDefaults,
   BLOCKING_CONVERSION_STATUSES,
+  isReservedAffiliateSlug,
   isValidAffiliateSlug,
   nextTier,
   normalizeAffiliateSlug,
   referredEligibility,
   resolveConversionCredit,
+  resolveReferralSource,
   resolveTierRewardPercent,
   validateAffiliateSettings,
   DEFAULT_AFFILIATE_SETTINGS,
+  PRIOR_RENTAL_BOOKING_STATUSES,
   type AffiliateTier,
   type ConversionStatus,
   type ConversionBookingStatus,
@@ -821,5 +827,181 @@ describe("slug helpers", () => {
     expect(isValidAffiliateSlug("john-")).toBe(false);
     expect(isValidAffiliateSlug("a".repeat(33))).toBe(false);
     expect(isValidAffiliateSlug("a".repeat(32))).toBe(true);
+  });
+});
+
+describe("PRIOR_RENTAL_BOOKING_STATUSES", () => {
+  it("counts every booking status except cancelled", () => {
+    expect([...PRIOR_RENTAL_BOOKING_STATUSES].sort()).toEqual([
+      "completed",
+      "confirmed",
+      "pending",
+    ]);
+  });
+});
+
+describe("first-rental rule", () => {
+  const base = {
+    ownerUser: { id: "affiliate_user", email: "owner@example.com" },
+    customerEmail: "customer@example.com",
+    hasLiveConversion: false,
+    firstRentalOnly: true,
+  };
+
+  // The DB layer probes by account AND by normalized booking email; either
+  // hit reaches this decision as the same hasPriorRental: true.
+  it("blocks when a prior rental was found by user id", () => {
+    expect(
+      referredEligibility({
+        ...base,
+        bookerUserId: "returning_customer",
+        hasPriorRental: true,
+      }),
+    ).toEqual({ eligible: false, reason: "notFirstRental" });
+  });
+
+  it("blocks a guest whose prior rental was found by email", () => {
+    expect(
+      referredEligibility({
+        ...base,
+        bookerUserId: undefined,
+        hasPriorRental: true,
+      }),
+    ).toEqual({ eligible: false, reason: "notFirstRental" });
+  });
+
+  it("lets a genuinely first-time customer through", () => {
+    expect(referredEligibility({ ...base, hasPriorRental: false })).toEqual({
+      eligible: true,
+    });
+  });
+});
+
+describe("reserved slugs", () => {
+  it("rejects top-level route names, locales and the /r prefix", () => {
+    for (const slug of ["admin", "api", "r", "ro", "en", "cars", "profile"]) {
+      expect(isReservedAffiliateSlug(slug)).toBe(true);
+    }
+  });
+
+  it("matches case-insensitively, like the slug lookup does", () => {
+    expect(isReservedAffiliateSlug("ADMIN")).toBe(true);
+    expect(isReservedAffiliateSlug("  Cars ")).toBe(true);
+  });
+
+  it("leaves ordinary codes alone", () => {
+    expect(isReservedAffiliateSlug("mihai-a4")).toBe(false);
+    expect(isReservedAffiliateSlug("admins")).toBe(false);
+  });
+});
+
+describe("self-service slug generation", () => {
+  const stubRandom = (values: number[]) => {
+    let i = 0;
+    return () => values[i++ % values.length];
+  };
+
+  it("uses the de-accented first name plus a random suffix", () => {
+    expect(generateAffiliateSlug("Ștefan Popescu", 0, stubRandom([0]))).toBe(
+      "stefan-aa",
+    );
+  });
+
+  it("falls back when the name yields no usable letters", () => {
+    expect(affiliateSlugBase("Ω")).toBe("rngo");
+    expect(affiliateSlugBase("")).toBe("rngo");
+  });
+
+  it("widens the suffix as collision retries climb, capped at 4", () => {
+    const lengths = [0, 1, 2, 3, 4, 5, 6, 7].map(
+      (attempt) =>
+        generateAffiliateSlug("Mihai", attempt, stubRandom([0])).split("-")[1]
+          .length,
+    );
+    expect(lengths).toEqual([2, 2, 3, 3, 4, 4, 4, 4]);
+  });
+
+  it("always produces a valid, non-reserved slug", () => {
+    for (const name of ["Mihai", "Ana-Maria Ionescu", "Ω", "X", "a"]) {
+      for (let attempt = 0; attempt < 8; attempt++) {
+        const slug = generateAffiliateSlug(name, attempt);
+        expect(isValidAffiliateSlug(slug)).toBe(true);
+        expect(isReservedAffiliateSlug(slug)).toBe(false);
+      }
+    }
+  });
+
+  it("draws suffixes only from the look-alike-free alphabet", () => {
+    expect(affiliateSlugSuffix(200)).toMatch(/^[a-z0-9]+$/);
+    expect(affiliateSlugSuffix(200)).not.toMatch(/[lo01]/);
+  });
+});
+
+describe("resolveReferralSource", () => {
+  const cookie = { slug: "rngo51-legacy", visitorKey: "visitor-key-123" };
+
+  it("accepts a typed code in any case", () => {
+    expect(resolveReferralSource({ typedCode: "  RnGo51-Legacy " })).toEqual({
+      kind: "typedCode",
+      slug: "rngo51-legacy",
+    });
+  });
+
+  it("lets a typed code beat the cookie", () => {
+    expect(
+      resolveReferralSource({
+        typedCode: "OTHER-CODE",
+        cookieReferral: cookie,
+      }),
+    ).toEqual({ kind: "typedCode", slug: "other-code" });
+  });
+
+  it("falls back to the cookie when no code was typed", () => {
+    expect(resolveReferralSource({ cookieReferral: cookie })).toEqual({
+      kind: "link",
+      slug: "rngo51-legacy",
+      visitorKey: "visitor-key-123",
+    });
+  });
+
+  it("falls back to the cookie when the typed value is not a slug", () => {
+    expect(
+      resolveReferralSource({ typedCode: "!!", cookieReferral: cookie }),
+    ).toEqual({
+      kind: "link",
+      slug: "rngo51-legacy",
+      visitorKey: "visitor-key-123",
+    });
+  });
+
+  it("resolves nothing without a typed code or a usable cookie", () => {
+    expect(resolveReferralSource({})).toBeNull();
+    expect(resolveReferralSource({ typedCode: "" })).toBeNull();
+    expect(
+      resolveReferralSource({
+        cookieReferral: { slug: "ok-slug", visitorKey: "" },
+      }),
+    ).toBeNull();
+  });
+
+  it("hands the typed and link paths the same affiliate slug", () => {
+    // Both paths resolve to one slug, so the DB layer runs the same
+    // eligibility check and writes the same conversion row either way.
+    expect(resolveReferralSource({ typedCode: "RNGO51-LEGACY" })?.slug).toBe(
+      resolveReferralSource({ cookieReferral: cookie })?.slug,
+    );
+  });
+
+  it("blocks a self-referral typed by the affiliate themselves", () => {
+    const source = resolveReferralSource({ typedCode: "RNGO51-LEGACY" });
+    expect(source).toEqual({ kind: "typedCode", slug: "rngo51-legacy" });
+    expect(
+      referredEligibility({
+        ownerUser: { id: "affiliate_user", email: "owner@example.com" },
+        bookerUserId: "affiliate_user",
+        customerEmail: "owner@example.com",
+        hasLiveConversion: false,
+      }),
+    ).toEqual({ eligible: false, reason: "selfReferral" });
   });
 });
