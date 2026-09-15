@@ -8,7 +8,6 @@ import {
   computeRemainingCredits,
   conversionCreditOutstanding,
   creditExpiry,
-  hasMintedReferralCredit,
   planRedemption,
   type WalletCredit,
   type WalletTransactionData,
@@ -499,20 +498,18 @@ describe("conversion credit guards", () => {
   };
   const reversed = [...minted, reversal];
 
-  it("spots a conversion that already minted, so a second approval cannot credit again", () => {
-    expect(hasMintedReferralCredit([])).toBe(false);
-    expect(hasMintedReferralCredit(minted)).toBe(true);
-    // A reversed credit still counts as minted — the row is never deleted
-    expect(hasMintedReferralCredit(reversed)).toBe(true);
-  });
-
-  it("does not mistake a reversal for a mint", () => {
-    expect(hasMintedReferralCredit([reversal])).toBe(false);
-  });
-
-  it("reverses exactly once: nothing is outstanding after the first reversal", () => {
+  it("blocks a second credit while one is outstanding", () => {
     expect(conversionCreditOutstanding([])).toBe(0);
     expect(conversionCreditOutstanding(minted)).toBe(50);
+  });
+
+  it("reverses exactly once, and frees the conversion to mint again", () => {
     expect(conversionCreditOutstanding(reversed)).toBe(0);
+    expect(
+      conversionCreditOutstanding([
+        ...reversed,
+        { ...credit("c2", 50, NOW + 400 * DAY), conversionId: "conv1" },
+      ]),
+    ).toBe(50);
   });
 });

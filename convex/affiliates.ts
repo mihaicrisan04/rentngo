@@ -13,7 +13,6 @@ import {
   conversionCreditOutstanding,
   conversionTransition,
   hasCouponIdentity,
-  hasMintedReferralCredit,
   isValidAffiliateSlug,
   referredEligibility,
   nextTier,
@@ -26,6 +25,7 @@ import {
   BLOCKING_CONVERSION_STATUSES,
   type AffiliateSettingsData,
   type ConversionBookingStatus,
+  type ConversionStatus,
   type ConversionTransition,
 } from "../lib/pricing";
 
@@ -722,28 +722,35 @@ async function conversionBookingStatus(
 /**
  * Mint the referrer's credit for an approved conversion, in the approving
  * transaction. Returns the snapshot to store on the conversion, or null when
- * the conversion already carries a credit — the ledger-side guard behind
- * conversionTransition's own idempotency, so a double approval can never
- * produce two credits or two counter increments.
+ * the conversion already holds outstanding credit — the ledger-side guard
+ * behind conversionTransition's own idempotency, so a double approval can
+ * never produce two live credits or two counter increments. A conversion whose
+ * credit was reversed (voided, or rejected and later approved again) holds
+ * nothing, so it can legitimately mint afresh.
  */
 async function mintConversionCredit(
   ctx: MutationCtx,
   conversion: Doc<"referralConversions">,
   approvedAt: number,
 ): Promise<{ creditAmount: number; bookingTotal: number } | null> {
+  // Only credits and their reversals carry a conversionId, so this sum is the
+  // conversion's own live credit — redemptions never reach it.
   const existing = await ctx.db
     .query("walletTransactions")
     .withIndex("by_conversion", (q) => q.eq("conversionId", conversion._id))
     .collect();
-  if (hasMintedReferralCredit(existing)) return null;
+  if (conversionCreditOutstanding(existing) > 0) return null;
 
   const affiliate = await ctx.db.get(conversion.affiliateId);
   if (!affiliate) return null;
 
   const settings = await loadSettings(ctx);
-  // The persisted total, i.e. what the referred customer was actually charged
-  const bookingTotal =
-    (await conversionBooking(ctx, conversion))?.totalPrice ?? 0;
+  const booking = await conversionBooking(ctx, conversion);
+  if (!booking) {
+    throw new Error("Cannot credit a conversion whose booking is gone.");
+  }
+  // What the referred customer was actually charged
+  const bookingTotal = booking.totalPrice;
   const credit = resolveConversionCredit({
     tiers: settings.tiers,
     approvedConversionsBefore: approvedCount(affiliate),
@@ -767,6 +774,32 @@ async function mintConversionCredit(
 }
 
 /**
+ * Whether another conversion already occupies this (affiliate, customer) slot.
+ * A voided conversion only revives if nothing else does: the booking coming
+ * back to life must not give one customer two live conversions with the same
+ * referrer, which the booking-time dedupe would never have allowed.
+ */
+async function hasOtherLiveConversion(
+  ctx: MutationCtx,
+  conversion: Doc<"referralConversions">,
+): Promise<boolean> {
+  const rows = await Promise.all(
+    BLOCKING_CONVERSION_STATUSES.map((status) =>
+      ctx.db
+        .query("referralConversions")
+        .withIndex("by_affiliate_email_status", (q) =>
+          q
+            .eq("affiliateId", conversion.affiliateId)
+            .eq("referredEmail", conversion.referredEmail)
+            .eq("status", status),
+        )
+        .first(),
+    ),
+  );
+  return rows.some((row) => row !== null && row._id !== conversion._id);
+}
+
+/**
  * Persist a transition's status flip and side-effects. Shared by the
  * booking-driven sync, the admin approve/reject and the admin void so they can
  * never disagree. Everything — the credit row, the snapshot and the counter —
@@ -777,11 +810,28 @@ async function applyConversionTransition(
   conversion: Doc<"referralConversions">,
   transition: ConversionTransition,
   actor?: { adminUserId?: Id<"users">; rejectionReason?: string },
-): Promise<void> {
+): Promise<ConversionStatus> {
+  const next = transition.nextStatus;
+  if (
+    conversion.status === "voided" &&
+    next !== "voided" &&
+    (await hasOtherLiveConversion(ctx, conversion))
+  ) {
+    return conversion.status;
+  }
+
   const now = Date.now();
+  // Every decision field is (re)written on every transition so a conversion
+  // that leaves approved or rejected cannot keep a stale snapshot.
   const patch: Partial<Doc<"referralConversions">> = {
-    status: transition.nextStatus,
-    voidedAt: transition.nextStatus === "voided" ? now : undefined,
+    status: next,
+    voidedAt: next === "voided" ? now : undefined,
+    rejectedAt: next === "rejected" ? now : undefined,
+    rejectionReason: next === "rejected" ? actor?.rejectionReason : undefined,
+    creditAmount: undefined,
+    bookingTotalAtApproval: undefined,
+    approvedAt: undefined,
+    approvedByUserId: undefined,
   };
   let counterDelta = transition.counterDelta;
 
@@ -789,16 +839,16 @@ async function applyConversionTransition(
     const minted = await mintConversionCredit(ctx, conversion, now);
     if (minted === null) {
       counterDelta = 0;
+      patch.creditAmount = conversion.creditAmount;
+      patch.bookingTotalAtApproval = conversion.bookingTotalAtApproval;
+      patch.approvedAt = conversion.approvedAt;
+      patch.approvedByUserId = conversion.approvedByUserId;
     } else {
       patch.creditAmount = minted.creditAmount;
       patch.bookingTotalAtApproval = minted.bookingTotal;
       patch.approvedAt = now;
       patch.approvedByUserId = actor?.adminUserId;
     }
-  }
-  if (transition.nextStatus === "rejected") {
-    patch.rejectedAt = now;
-    patch.rejectionReason = actor?.rejectionReason;
   }
 
   await ctx.db.patch(conversion._id, patch);
@@ -815,6 +865,7 @@ async function applyConversionTransition(
       );
     }
   }
+  return next;
 }
 
 /**
@@ -833,7 +884,7 @@ async function decideConversion(
     adminUserId?: Id<"users">;
     reason?: string;
   },
-): Promise<void> {
+): Promise<ConversionStatus> {
   const conversion = await ctx.db.get(args.conversionId);
   if (!conversion) {
     throw new Error("Conversion not found.");
@@ -843,24 +894,28 @@ async function decideConversion(
     bookingStatus: await conversionBookingStatus(ctx, conversion),
     adminAction: args.adminAction,
   });
-  if (!transition) return;
-  await applyConversionTransition(ctx, conversion, transition, {
+  // The resulting status, not the requested one: an approve whose booking was
+  // cancelled meanwhile comes back `voided`, and a no-op comes back unchanged.
+  if (!transition) return conversion.status;
+  return await applyConversionTransition(ctx, conversion, transition, {
     adminUserId: args.adminUserId,
     rejectionReason: args.reason?.trim() || undefined,
   });
 }
 
+const decisionResultValidator = v.object({ status: conversionStatusValidator });
+
 export const approveConversion = mutation({
   args: { conversionId: v.id("referralConversions") },
-  returns: v.null(),
+  returns: decisionResultValidator,
   handler: async (ctx, args) => {
     const admin = await requireAdmin(ctx);
-    await decideConversion(ctx, {
+    const status = await decideConversion(ctx, {
       conversionId: args.conversionId,
       adminAction: "approve",
       adminUserId: admin._id,
     });
-    return null;
+    return { status };
   },
 });
 
@@ -869,16 +924,16 @@ export const rejectConversion = mutation({
     conversionId: v.id("referralConversions"),
     reason: v.optional(v.string()),
   },
-  returns: v.null(),
+  returns: decisionResultValidator,
   handler: async (ctx, args) => {
     const admin = await requireAdmin(ctx);
-    await decideConversion(ctx, {
+    const status = await decideConversion(ctx, {
       conversionId: args.conversionId,
       adminAction: "reject",
       adminUserId: admin._id,
       reason: args.reason,
     });
-    return null;
+    return { status };
   },
 });
 
@@ -895,10 +950,9 @@ export const decideConversionAsAdmin = internalMutation({
     adminUserId: v.optional(v.id("users")),
     reason: v.optional(v.string()),
   },
-  returns: v.null(),
+  returns: decisionResultValidator,
   handler: async (ctx, args) => {
-    await decideConversion(ctx, args);
-    return null;
+    return { status: await decideConversion(ctx, args) };
   },
 });
 
@@ -940,11 +994,14 @@ export async function syncConversionForBooking(
           .first();
   if (!conversion) return;
 
+  // Voiding and reversing stay unconditional — a disabled program must still
+  // claw back the credit of a cancelled booking — but it must never mint.
   const settings = await loadSettings(ctx);
   const transition = conversionTransition({
     current: conversion.status,
     bookingStatus: args.bookingStatus,
-    autoApproveOnCompletion: settings.autoApproveOnCompletion,
+    autoApproveOnCompletion:
+      settings.enabled && settings.autoApproveOnCompletion,
   });
   if (!transition) return;
 

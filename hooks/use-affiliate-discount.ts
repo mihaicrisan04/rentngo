@@ -61,11 +61,5 @@ export function useAffiliateDiscount({
       : "skip",
   );
 
-  // The own-tier reward the backend can still answer with is ignored: v2 pays
-  // referrers in wallet credit, so only the referred-customer discount is a
-  // discount. The branch goes away with the backend's `reward` kind.
-  return {
-    referral,
-    affiliateDiscount: preview?.kind === "referred" ? preview : null,
-  };
+  return { referral, affiliateDiscount: preview ?? null };
 }

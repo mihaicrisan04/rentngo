@@ -310,7 +310,9 @@ export function conversionTransition(
   }
 
   if (input.adminAction === "approve") {
-    if (wasApproved) return null;
+    // Credit is earned by a finished rental: an admin cannot approve a booking
+    // that has not been completed yet, however much they want to.
+    if (wasApproved || input.bookingStatus !== "completed") return null;
     return {
       nextStatus: "approved",
       counterDelta: +1,

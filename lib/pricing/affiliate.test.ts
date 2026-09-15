@@ -17,7 +17,7 @@ import {
   type ConversionBookingStatus,
 } from "./affiliate";
 import { pickDiscount, type AppliedDiscount } from "./discount";
-import { conversionCreditOutstanding, hasMintedReferralCredit } from "./wallet";
+import { conversionCreditOutstanding } from "./wallet";
 
 const tiers: AffiliateTier[] = [
   { minConversions: 6, rewardPercent: 5 },
@@ -322,6 +322,44 @@ describe("conversionTransition", () => {
     }
   });
 
+  it("never mints for a rental that has not been completed", () => {
+    for (const current of ALL_STATUSES) {
+      for (const bookingStatus of ALL_BOOKING_STATUSES) {
+        if (bookingStatus === "completed") continue;
+        expect(
+          conversionTransition({
+            current,
+            bookingStatus,
+            adminAction: "approve",
+          })?.mintCredit ?? false,
+        ).toBe(false);
+      }
+    }
+    // An approval on a booking that is still running is simply refused
+    expect(
+      conversionTransition({
+        current: "awaitingApproval",
+        bookingStatus: "confirmed",
+        adminAction: "approve",
+      }),
+    ).toBeNull();
+  });
+
+  it("lets an admin approve a conversion they rejected earlier", () => {
+    expect(
+      conversionTransition({
+        current: "rejected",
+        bookingStatus: "completed",
+        adminAction: "approve",
+      }),
+    ).toEqual({
+      nextStatus: "approved",
+      counterDelta: 1,
+      mintCredit: true,
+      reverseCredit: false,
+    });
+  });
+
   it("admin rejection reverses a credit already minted", () => {
     expect(
       conversionTransition({
@@ -453,7 +491,7 @@ describe("approval side-effects over the ledger", () => {
     if (!transition) return state;
     const ledger = [...state.ledger];
     let counter = state.counter;
-    if (transition.mintCredit && !hasMintedReferralCredit(ledger)) {
+    if (transition.mintCredit && conversionCreditOutstanding(ledger) <= 0) {
       const credit = resolveConversionCredit({
         tiers: [{ minConversions: 1, rewardPercent: 5 }],
         approvedConversionsBefore: counter,
@@ -521,7 +559,7 @@ describe("approval side-effects over the ledger", () => {
     ).toEqual(voided);
   });
 
-  it("a revived booking completing again does not mint a second credit", () => {
+  it("a reversed conversion mints again when it is approved again", () => {
     const voided = apply(approved, {
       current: approved.status,
       bookingStatus: "cancelled",
@@ -531,9 +569,43 @@ describe("approval side-effects over the ledger", () => {
       bookingStatus: "completed",
       autoApproveOnCompletion: true,
     });
-    expect(revived.status).toBe("approved");
-    expect(revived.ledger).toEqual(voided.ledger);
-    expect(revived.counter).toBe(0);
+    expect(revived).toEqual({
+      status: "approved",
+      counter: 1,
+      ledger: [
+        { kind: "referralCredit", amount: 20 },
+        { kind: "creditReversal", amount: -20 },
+        { kind: "referralCredit", amount: 20 },
+      ],
+    });
+    // Still only ever one credit outstanding, and approving again is a no-op
+    expect(conversionCreditOutstanding(revived.ledger)).toBe(20);
+    expect(
+      apply(revived, {
+        current: revived.status,
+        bookingStatus: "completed",
+        adminAction: "approve",
+      }),
+    ).toEqual(revived);
+  });
+
+  it("re-approving after a rejection mints the credit back", () => {
+    const rejected = apply(approved, {
+      current: approved.status,
+      bookingStatus: "completed",
+      adminAction: "reject",
+    });
+    expect(rejected.counter).toBe(0);
+    expect(conversionCreditOutstanding(rejected.ledger)).toBe(0);
+
+    const reapproved = apply(rejected, {
+      current: rejected.status,
+      bookingStatus: "completed",
+      adminAction: "approve",
+    });
+    expect(reapproved.status).toBe("approved");
+    expect(reapproved.counter).toBe(1);
+    expect(conversionCreditOutstanding(reapproved.ledger)).toBe(20);
   });
 });
 

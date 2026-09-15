@@ -5,7 +5,7 @@ import {
   paginationResultValidator,
 } from "convex/server";
 import { internal } from "./_generated/api";
-import { Id } from "./_generated/dataModel";
+import { Doc, Id } from "./_generated/dataModel";
 import {
   getCurrentUser,
   getCurrentUserOrThrow,
@@ -45,6 +45,7 @@ import {
   extractLegacyExtras,
   isKnownLocation,
   msToDateString,
+  resolveEditedBookingTotal,
   DEFAULT_ADDITIONAL_50KM_PRICE,
 } from "../lib/pricing";
 import {
@@ -732,6 +733,36 @@ export const updateReservationStatus = mutation({
   },
 });
 
+const chargesKey = (charges?: { description?: string; amount: number }[]) =>
+  (charges ?? []).map((c) => `${c.description ?? ""}|${c.amount}`).join(";");
+
+/** Whether an edit touches anything the rental price is computed from. */
+function reservationPricingChanged(
+  reservation: Doc<"reservations">,
+  updates: Partial<Doc<"reservations">>,
+): boolean {
+  const priced = [
+    "vehicleId",
+    "startDate",
+    "endDate",
+    "pickupTime",
+    "restitutionTime",
+    "isSCDWSelected",
+    "protectionCost",
+    "seasonId",
+    "seasonalMultiplier",
+  ] as const;
+  return (
+    priced.some(
+      (field) =>
+        updates[field] !== undefined && updates[field] !== reservation[field],
+    ) ||
+    (updates.additionalCharges !== undefined &&
+      chargesKey(updates.additionalCharges) !==
+        chargesKey(reservation.additionalCharges))
+  );
+}
+
 export const updateReservationDetails = mutation({
   args: {
     reservationId: v.id("reservations"),
@@ -791,6 +822,15 @@ export const updateReservationDetails = mutation({
 
     if (Object.keys(updatesToApply).length === 0) {
       return { success: true, message: "No changes provided." };
+    }
+
+    if (updatesToApply.totalPrice !== undefined) {
+      updatesToApply.totalPrice = resolveEditedBookingTotal({
+        submittedTotal: updatesToApply.totalPrice,
+        storedTotal: reservation.totalPrice,
+        discountAmount: reservation.discountAmount,
+        pricingChanged: reservationPricingChanged(reservation, updatesToApply),
+      });
     }
 
     await ctx.db.patch(reservationId, updatesToApply);

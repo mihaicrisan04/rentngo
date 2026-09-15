@@ -195,23 +195,11 @@ export function computeAvailableBalance(
 }
 
 /**
- * Whether a conversion already minted credit. Approval is kept idempotent by
- * `conversionTransition` returning null on a second approve; this is the
- * belt-and-braces ledger-side check that no conversion can ever end up with
- * two positive `referralCredit` rows.
- */
-export function hasMintedReferralCredit(
-  transactions: Pick<WalletTransactionData, "kind" | "amount">[],
-): boolean {
-  return transactions.some(
-    (txn) => txn.kind === "referralCredit" && txn.amount > 0,
-  );
-}
-
-/**
  * What a conversion's credit is still worth on the ledger: the signed sum of
- * every row carrying its id. A void or a rejection appends a reversal for
- * exactly this amount, so once it reaches 0 a repeated void writes nothing.
+ * every row carrying its id (only credits and their reversals do). A void or a
+ * rejection appends a reversal for exactly this amount, so once it reaches 0 a
+ * repeated void writes nothing — and a re-approval may mint afresh, since the
+ * conversion no longer holds anything.
  */
 export function conversionCreditOutstanding(
   transactions: Pick<WalletTransactionData, "amount">[],

@@ -11,7 +11,7 @@ import {
   type MutationCtx,
 } from "./_generated/server";
 import { internal } from "./_generated/api";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { getCurrentUser, getOrCreateCurrentUser, requireAdmin } from "./users";
 import { applyAndRedeemCoupon } from "./coupons";
 import { nextBookingNumber, transferNumberCounter } from "./counters";
@@ -40,6 +40,7 @@ import {
   computeTransferPricing,
   isWithinDistanceTolerance,
   pickDiscount,
+  resolveEditedBookingTotal,
   type AppliedDiscount,
 } from "../lib/pricing";
 import { resolveRouteDistance } from "./routing";
@@ -640,6 +641,28 @@ export const updateTransferStatus = mutation({
   },
 });
 
+/** Whether an edit touches anything the transfer fare is computed from. */
+function transferPricingChanged(
+  transfer: Doc<"transfers">,
+  updates: Partial<Doc<"transfers">>,
+): boolean {
+  const priced = [
+    "vehicleId",
+    "transferType",
+    "pickupDate",
+    "returnDate",
+    "passengers",
+    "distanceKm",
+    "baseFare",
+    "distancePrice",
+    "pricePerKm",
+  ] as const;
+  return priced.some(
+    (field) =>
+      updates[field] !== undefined && updates[field] !== transfer[field],
+  );
+}
+
 export const updateTransferDetails = mutation({
   args: {
     transferId: v.id("transfers"),
@@ -676,6 +699,15 @@ export const updateTransferDetails = mutation({
     }
 
     const updatesToApply = stripUndefined(updates);
+
+    if (updatesToApply.totalPrice !== undefined) {
+      updatesToApply.totalPrice = resolveEditedBookingTotal({
+        submittedTotal: updatesToApply.totalPrice,
+        storedTotal: transfer.totalPrice,
+        discountAmount: transfer.discountAmount,
+        pricingChanged: transferPricingChanged(transfer, updatesToApply),
+      });
+    }
 
     if (Object.keys(updatesToApply).length > 0) {
       await ctx.db.patch(transferId, updatesToApply);
