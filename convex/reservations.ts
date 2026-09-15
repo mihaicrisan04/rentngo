@@ -695,7 +695,7 @@ export const updateReservationStatus = mutation({
     await syncConversionForBooking(ctx, {
       bookingType: "reservation",
       bookingId: args.reservationId,
-      bookingIsLive: args.newStatus !== "cancelled",
+      bookingStatus: args.newStatus,
     });
 
     return { success: true };
@@ -772,7 +772,7 @@ export const updateReservationDetails = mutation({
       await syncConversionForBooking(ctx, {
         bookingType: "reservation",
         bookingId: reservationId,
-        bookingIsLive: updatesToApply.status !== "cancelled",
+        bookingStatus: updatesToApply.status,
       });
     }
 
@@ -827,7 +827,7 @@ export const cancelReservation = mutation({
     await syncConversionForBooking(ctx, {
       bookingType: "reservation",
       bookingId: args.reservationId,
-      bookingIsLive: false,
+      bookingStatus: "cancelled",
     });
 
     return { success: true, message: "Reservation cancelled." };
@@ -857,7 +857,7 @@ export const deleteReservationPermanently = mutation({
     await syncConversionForBooking(ctx, {
       bookingType: "reservation",
       bookingId: args.reservationId,
-      bookingIsLive: false,
+      bookingStatus: "deleted",
     });
     await ctx.db.delete(args.reservationId);
     await recordStatsRemove(ctx, "reservations", reservation.status);

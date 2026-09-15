@@ -42,6 +42,7 @@ import type * as migrations_bilingualBlogs from "../migrations/bilingualBlogs.js
 import type * as migrations_clearDeprecatedClassField from "../migrations/clearDeprecatedClassField.js";
 import type * as migrations_clearDeprecatedPricePerDay from "../migrations/clearDeprecatedPricePerDay.js";
 import type * as migrations_migrateVehicleClasses from "../migrations/migrateVehicleClasses.js";
+import type * as migrations_referralWalletWiden from "../migrations/referralWalletWiden.js";
 import type * as migrations_seedTableStats from "../migrations/seedTableStats.js";
 import type * as migrations_seedVehicleClasses from "../migrations/seedVehicleClasses.js";
 import type * as overview from "../overview.js";
@@ -97,6 +98,7 @@ declare const fullApi: ApiFromModules<{
   "migrations/clearDeprecatedClassField": typeof migrations_clearDeprecatedClassField;
   "migrations/clearDeprecatedPricePerDay": typeof migrations_clearDeprecatedPricePerDay;
   "migrations/migrateVehicleClasses": typeof migrations_migrateVehicleClasses;
+  "migrations/referralWalletWiden": typeof migrations_referralWalletWiden;
   "migrations/seedTableStats": typeof migrations_seedTableStats;
   "migrations/seedVehicleClasses": typeof migrations_seedVehicleClasses;
   overview: typeof overview;

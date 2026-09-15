@@ -130,6 +130,83 @@ van           → Van
 
 ---
 
+### 3. `referralWalletWiden.ts`
+
+Backfill step of the referral wallet rollout (RNGO-51, phase 1 of RNGO-50).
+
+**Purpose**: move v1 referral data onto the v2 shape so the wallet lifecycle
+can be wired up in later phases.
+
+- `referralConversions.status: "confirmed"` → `"approved"`, stamping
+  `approvedAt` from the existing `confirmedAt` (falling back to `createdAt`).
+  **No wallet credit is minted**: v1 conversions were confirmed at booking time
+  under the old own-discount reward model and were never promised credit.
+- `affiliates.approvedConversions` = `confirmedConversions` wherever it is
+  still unset.
+
+**Features**:
+
+- Idempotent (rows already in the v2 shape are skipped, so a re-run reports
+  zero updates)
+- Batched behind a cursor; each call processes at most 1000 documents and
+  returns `continueCursor` when more remain
+- `dryRun: true` counts what would change without writing
+- Ships with a read-only `inspect` pre-flight query
+
+**Prerequisites**:
+
+- The widened schema and the dual-writing code must already be deployed
+  (`approvedConversions` optional, the v2 status literals, `walletTransactions`)
+- `affiliateSettings.enabled` must still be `false`. If the program was ever
+  live on the target deployment, stop and decide with the owner whether
+  historical conversions should earn credit before running anything.
+
+**Usage**:
+
+```bash
+# 1. Pre-flight — read-only, confirms the program is off and shows the counts
+npx convex run migrations/referralWalletWiden:inspect
+
+# 2. Dry run — writes nothing, reports what would change
+npx convex run migrations/referralWalletWiden:backfillConversions '{"dryRun": true}'
+npx convex run migrations/referralWalletWiden:backfillAffiliateCounters '{"dryRun": true}'
+
+# 3. Apply
+npx convex run migrations/referralWalletWiden:backfillConversions
+npx convex run migrations/referralWalletWiden:backfillAffiliateCounters
+
+# 4. If a response came back with "isDone": false, resume from its cursor
+npx convex run migrations/referralWalletWiden:backfillConversions '{"cursor": "<continueCursor>"}'
+
+# 5. Verify — legacyConfirmedConversions and affiliatesNeedingBackfill are both 0
+npx convex run migrations/referralWalletWiden:inspect
+```
+
+Add `--prod` to every command to target production.
+
+**Expected output**:
+
+```json
+{
+  "dryRun": false,
+  "scanned": 12,
+  "updated": 12,
+  "skipped": 0,
+  "isDone": true,
+  "continueCursor": null
+}
+```
+
+**Narrow step (a later deploy, NOT part of this migration)**: once no code
+reads them, drop `v.literal("confirmed")` from `referralConversions.status`,
+make `affiliates.approvedConversions` required and remove
+`affiliates.confirmedConversions` along with the dual-write in
+`convex/affiliates.ts`. The order is non-negotiable: widen → backfill → verify
+→ narrow. Narrowing before the backfill has run on a deployment will make the
+schema reject documents still carrying the v1 shape.
+
+---
+
 ## Migration Order
 
 When setting up a new environment or migrating to the vehicle classes system:
