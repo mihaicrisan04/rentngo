@@ -682,6 +682,11 @@ export const updateReservationStatus = mutation({
     if (reservation.userId !== user._id && user.role !== "admin") {
       throw new Error("User not authorized to update this reservation status.");
     }
+    // Completion is what makes a referral conversion claimable, so only staff
+    // may declare a rental finished. Customers keep their own cancellation.
+    if (args.newStatus === "completed" && user.role !== "admin") {
+      throw new Error("Only an admin can mark a reservation completed.");
+    }
 
     await ctx.db.patch(args.reservationId, { status: args.newStatus });
     await recordStatsStatusChange(
@@ -752,6 +757,9 @@ export const updateReservationDetails = mutation({
 
     if (reservation.userId !== user._id && user.role !== "admin") {
       throw new Error("User not authorized to update this reservation.");
+    }
+    if (updatesIn.status === "completed" && user.role !== "admin") {
+      throw new Error("Only an admin can mark a reservation completed.");
     }
 
     const updatesToApply = stripUndefined(updatesIn);

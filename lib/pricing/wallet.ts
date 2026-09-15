@@ -11,9 +11,11 @@
  */
 
 const round2 = (value: number) => Math.round(value * 100) / 100;
+const floor2 = (value: number) => Math.floor(value * 100) / 100;
 
 export type WalletTransactionKind =
   | "referralCredit"
+  | "creditReversal"
   | "manualAdjustment"
   | "redemption"
   | "redemptionReversal";
@@ -22,10 +24,16 @@ export type WalletTransactionKind =
 export interface WalletTransactionData {
   id: string;
   kind: WalletTransactionKind;
-  /** EUR, signed: credits and reversals positive, redemptions negative. */
+  /**
+   * EUR, signed. Positive opens credit (`referralCredit`, a top-up
+   * `manualAdjustment`, `redemptionReversal`); negative spends it
+   * (`redemption`, `creditReversal`, a claw-back `manualAdjustment`).
+   */
   amount: number;
-  /** Only set on credit-granting rows; absent means it never expires. */
+  /** Only set on credit-opening rows; absent means it never expires. */
   expiresAt?: number;
+  /** Ties a `creditReversal` to the `referralCredit` it undoes. */
+  conversionId?: string;
   createdAt: number;
 }
 
@@ -35,6 +43,7 @@ export interface WalletCredit {
   remaining: number;
   expiresAt?: number;
   createdAt: number;
+  conversionId?: string;
 }
 
 export interface WalletAllocation {
@@ -47,10 +56,6 @@ export interface WalletAllocationResult {
   allocated: number;
   /** Requested minus allocated; > 0 means the wallet could not cover it. */
   unallocated: number;
-}
-
-function isCreditKind(kind: WalletTransactionKind): boolean {
-  return kind === "referralCredit" || kind === "manualAdjustment";
 }
 
 /** Soonest-expiring first; never-expiring last; ties broken by age. */
@@ -85,44 +90,89 @@ export function allocateRedemption(
   return { allocations, allocated, unallocated: left };
 }
 
-/**
- * Credits with their unspent part, soonest-expiring first. Past redemptions
- * are replayed through the same FIFO rule used to spend them, so an expiring
- * credit takes its already-spent part with it instead of leaving a phantom
- * debt behind.
- */
-export function computeRemainingCredits(
-  transactions: WalletTransactionData[],
-  now: number,
-): WalletCredit[] {
-  const credits: WalletCredit[] = [];
-  let spent = 0;
+interface LedgerReplay {
+  credits: WalletCredit[];
+  /** Debits no open credit could absorb; never let them inflate a balance. */
+  overdraft: number;
+}
 
-  for (const txn of transactions) {
-    if (isCreditKind(txn.kind) && txn.amount > 0) {
+/** Spend `amount` over `pool`, mutating `remaining`; returns what was left. */
+function drawDown(pool: WalletCredit[], amount: number): number {
+  let left = round2(amount);
+  for (const credit of pool) {
+    if (left <= 0) break;
+    const take = round2(Math.min(credit.remaining, left));
+    if (take <= 0) continue;
+    credit.remaining = round2(credit.remaining - take);
+    left = round2(left - take);
+  }
+  return left;
+}
+
+/**
+ * Replay the ledger in chronological order. Order is authoritative: a debit
+ * may only draw on credit that already existed and had not yet lapsed when it
+ * was recorded, so a spend made after a credit expired can never be charged
+ * back to it. Phase 3 applies the same soonest-expiring-first rule when it
+ * writes a redemption, which is what keeps the replay and the real allocation
+ * in agreement.
+ */
+function replayLedger(transactions: WalletTransactionData[]): LedgerReplay {
+  // Within the same millisecond credit lands before spend — you cannot spend
+  // what has not been credited — and ids break the remaining ties so the
+  // replay is deterministic.
+  const ordered = [...transactions].sort(
+    (a, b) =>
+      a.createdAt - b.createdAt ||
+      Number(a.amount <= 0) - Number(b.amount <= 0) ||
+      a.id.localeCompare(b.id),
+  );
+  const credits: WalletCredit[] = [];
+  let overdraft = 0;
+
+  for (const txn of ordered) {
+    if (txn.amount > 0) {
       credits.push({
         id: txn.id,
         remaining: txn.amount,
         expiresAt: txn.expiresAt,
         createdAt: txn.createdAt,
+        conversionId: txn.conversionId,
       });
-    } else {
-      spent = round2(spent - txn.amount);
+      continue;
     }
+
+    const spendable = credits
+      .filter(
+        (credit) =>
+          credit.remaining > 0 &&
+          credit.createdAt <= txn.createdAt &&
+          (credit.expiresAt === undefined || credit.expiresAt > txn.createdAt),
+      )
+      .sort(byExpiryThenAge);
+
+    let left = -txn.amount;
+    // A reversal undoes a specific credit, so it takes that credit's own
+    // remaining first; whatever was already spent falls through as a debit.
+    if (txn.kind === "creditReversal" && txn.conversionId !== undefined) {
+      left = drawDown(
+        spendable.filter((c) => c.conversionId === txn.conversionId),
+        left,
+      );
+    }
+    overdraft = round2(overdraft + drawDown(spendable, left));
   }
 
-  const { allocations } = allocateRedemption(credits, Math.max(0, spent));
-  const spentByCredit = new Map<string, number>();
-  for (const allocation of allocations) {
-    spentByCredit.set(allocation.creditId, allocation.amount);
-  }
+  return { credits, overdraft };
+}
 
-  return credits
-    .map((credit) => ({
-      ...credit,
-      remaining: round2(credit.remaining - (spentByCredit.get(credit.id) ?? 0)),
-    }))
-    .filter(
+/** Credits with their unspent part, soonest-expiring first. */
+export function computeRemainingCredits(
+  transactions: WalletTransactionData[],
+  now: number,
+): WalletCredit[] {
+  return replayLedger(transactions)
+    .credits.filter(
       (credit) =>
         credit.remaining > 0 &&
         (credit.expiresAt === undefined || credit.expiresAt > now),
@@ -135,11 +185,13 @@ export function computeAvailableBalance(
   transactions: WalletTransactionData[],
   now: number,
 ): number {
-  const total = computeRemainingCredits(transactions, now).reduce(
-    (sum, credit) => sum + credit.remaining,
-    0,
-  );
-  return round2(Math.max(0, total));
+  const { credits, overdraft } = replayLedger(transactions);
+  const total = credits
+    .filter(
+      (credit) => credit.expiresAt === undefined || credit.expiresAt > now,
+    )
+    .reduce((sum, credit) => sum + credit.remaining, 0);
+  return round2(Math.max(0, total - overdraft));
 }
 
 /**
@@ -155,7 +207,10 @@ export function computeRedeemable(
   if (balance <= 0 || totalAfterDiscount <= 0 || maxRedemptionPercent <= 0) {
     return 0;
   }
-  const cap = (totalAfterDiscount * Math.min(maxRedemptionPercent, 100)) / 100;
+  // Floored, not rounded: rounding up would let the credit exceed the cap.
+  const cap = floor2(
+    (totalAfterDiscount * Math.min(maxRedemptionPercent, 100)) / 100,
+  );
   return round2(Math.max(0, Math.min(balance, cap)));
 }
 

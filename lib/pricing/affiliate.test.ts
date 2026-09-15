@@ -3,6 +3,7 @@ import {
   computeReferredDiscount,
   conversionTransition,
   withSettingsDefaults,
+  BLOCKING_CONVERSION_STATUSES,
   isValidAffiliateSlug,
   nextTier,
   normalizeAffiliateSlug,
@@ -324,6 +325,19 @@ describe("conversionTransition", () => {
         conversionTransition({ current, bookingStatus: "confirmed" }),
       ).toBeNull();
     }
+  });
+});
+
+describe("BLOCKING_CONVERSION_STATUSES", () => {
+  it("is every status except voided, so only voiding frees the customer slot", () => {
+    expect([...BLOCKING_CONVERSION_STATUSES].sort()).toEqual([
+      "approved",
+      "awaitingApproval",
+      "confirmed",
+      "pending",
+      "rejected",
+    ]);
+    expect(BLOCKING_CONVERSION_STATUSES).not.toContain("voided");
   });
 });
 

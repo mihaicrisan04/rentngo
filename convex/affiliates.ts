@@ -14,8 +14,10 @@ import {
   resolveTierRewardPercent,
   validateAffiliateSettings,
   withSettingsDefaults,
+  BLOCKING_CONVERSION_STATUSES,
   type AffiliateSettingsData,
   type ConversionBookingStatus,
+  type ConversionTransition,
 } from "../lib/pricing";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -389,23 +391,16 @@ export const voidConversion = mutation({
     if (!conversion) {
       throw new Error("Conversion not found.");
     }
-    if (conversion.status === "voided") {
+    // An admin void is the same transition a cancelled booking triggers, so
+    // it goes through the same table and reverses a minted credit too.
+    const transition = conversionTransition({
+      current: conversion.status,
+      bookingStatus: "cancelled",
+    });
+    if (!transition) {
       throw new Error("Conversion is already voided.");
     }
-
-    await ctx.db.patch(conversion._id, {
-      status: "voided",
-      voidedAt: Date.now(),
-    });
-    const affiliate = await ctx.db.get(conversion.affiliateId);
-    const wasApproved =
-      conversion.status === "approved" || conversion.status === "confirmed";
-    if (affiliate && wasApproved) {
-      await ctx.db.patch(
-        affiliate._id,
-        counterPatch(approvedCount(affiliate) - 1),
-      );
-    }
+    await applyConversionTransition(ctx, conversion, transition);
     return null;
   },
 });
@@ -549,13 +544,13 @@ export async function resolveAffiliateCandidates(
       // One referred discount/conversion per customer per affiliate: any
       // live (non-voided) prior conversion blocks a repeat; voided ones (the
       // earlier booking was cancelled) free the slot. Status is in the index,
-      // so each live status is a targeted .first() — no amount of voided
+      // so each blocking status is a targeted .first() — no amount of voided
       // history can hide an existing live conversion. Race-safe like the
       // coupon checks: a losing OCC transaction re-runs this read after the
       // winner's insert.
       const livePrior = (
         await Promise.all(
-          (["confirmed", "pending"] as const).map((status) =>
+          BLOCKING_CONVERSION_STATUSES.map((status) =>
             ctx.db
               .query("referralConversions")
               .withIndex("by_affiliate_email_status", (q) =>
@@ -733,11 +728,48 @@ async function reverseConversionCredit(
   if (!credit) return;
   await ctx.db.insert("walletTransactions", {
     userId: credit.userId,
-    kind: "referralCredit",
+    kind: "creditReversal",
     amount: -outstanding,
     conversionId: conversion._id,
     createdAt: Date.now(),
   });
+}
+
+/**
+ * Persist a transition's status flip and side-effects. Shared by the
+ * booking-driven sync and the admin void so the two can never disagree.
+ */
+async function applyConversionTransition(
+  ctx: MutationCtx,
+  conversion: Doc<"referralConversions">,
+  transition: ConversionTransition,
+): Promise<void> {
+  if (transition.mintCredit) {
+    throw new Error(
+      "Minting referral credit is not driven from this path: approval is an " +
+        "admin action landing in RNGO-52. Do not enable autoApproveOnCompletion yet.",
+    );
+  }
+
+  await ctx.db.patch(conversion._id, {
+    status: transition.nextStatus,
+    ...(transition.nextStatus === "voided"
+      ? { voidedAt: Date.now() }
+      : { voidedAt: undefined }),
+  });
+
+  if (transition.reverseCredit) {
+    await reverseConversionCredit(ctx, conversion);
+  }
+  if (transition.counterDelta !== 0) {
+    const affiliate = await ctx.db.get(conversion.affiliateId);
+    if (affiliate) {
+      await ctx.db.patch(
+        affiliate._id,
+        counterPatch(approvedCount(affiliate) + transition.counterDelta),
+      );
+    }
+  }
 }
 
 /**
@@ -782,26 +814,7 @@ export async function syncConversionForBooking(
   });
   if (!transition) return;
 
-  const now = Date.now();
-  await ctx.db.patch(conversion._id, {
-    status: transition.nextStatus,
-    ...(transition.nextStatus === "voided"
-      ? { voidedAt: now }
-      : { voidedAt: undefined }),
-  });
-
-  if (transition.reverseCredit) {
-    await reverseConversionCredit(ctx, conversion);
-  }
-  if (transition.counterDelta !== 0) {
-    const affiliate = await ctx.db.get(conversion.affiliateId);
-    if (affiliate) {
-      await ctx.db.patch(
-        affiliate._id,
-        counterPatch(approvedCount(affiliate) + transition.counterDelta),
-      );
-    }
-  }
+  await applyConversionTransition(ctx, conversion, transition);
 }
 
 // --- Affiliate-facing dashboard (owner-scoped) ---

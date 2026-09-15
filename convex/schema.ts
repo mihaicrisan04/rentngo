@@ -434,15 +434,20 @@ export default defineSchema({
     userId: v.id("users"),
     kind: v.union(
       v.literal("referralCredit"),
+      v.literal("creditReversal"), // undoes a referralCredit (voided/rejected)
       v.literal("manualAdjustment"),
       v.literal("redemption"),
-      v.literal("redemptionReversal"),
+      v.literal("redemptionReversal"), // gives back a cancelled booking's spend
     ),
-    // EUR, signed and rounded to cents: credits and reversals positive,
-    // redemptions negative.
+    // EUR, rounded to cents and signed by direction, not by kind: positive
+    // opens credit (referralCredit, a top-up manualAdjustment,
+    // redemptionReversal), negative spends it (redemption, creditReversal, a
+    // claw-back manualAdjustment).
     amount: v.number(),
-    // Set on credit-granting rows only; absent means it never expires.
+    // Set on credit-opening rows only; absent means it never expires. A
+    // redemptionReversal carries the expiry of the credit it gives back.
     expiresAt: v.optional(v.number()),
+    // On a creditReversal this points at the conversion whose credit it undoes.
     conversionId: v.optional(v.id("referralConversions")),
     reservationId: v.optional(v.id("reservations")),
     transferId: v.optional(v.id("transfers")),
@@ -450,7 +455,7 @@ export default defineSchema({
     note: v.optional(v.string()),
     createdAt: v.number(),
   })
-    .index("by_user", ["userId"])
+    .index("by_user", ["userId", "createdAt"])
     .index("by_conversion", ["conversionId"])
     .index("by_reservation", ["reservationId"])
     .index("by_transfer", ["transferId"]),

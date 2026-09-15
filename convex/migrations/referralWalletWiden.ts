@@ -38,6 +38,8 @@ const resultValidator = v.object({
  * the program must still be disabled, otherwise the owner has to decide what
  * happens to conversions earned while v1 was live.
  */
+const INSPECT_LIMIT = 2000;
+
 export const inspect = internalQuery({
   args: {},
   returns: v.object({
@@ -48,16 +50,23 @@ export const inspect = internalQuery({
     conversions: v.number(),
     legacyConfirmedConversions: v.number(),
     walletTransactions: v.number(),
+    /** True when a table hit INSPECT_LIMIT: the counts are a lower bound. */
+    truncated: v.boolean(),
   }),
   handler: async (ctx) => {
     const settings = await ctx.db.query("affiliateSettings").first();
-    const affiliates = await ctx.db.query("affiliates").collect();
-    const conversions = await ctx.db.query("referralConversions").collect();
+    const affiliates = await ctx.db.query("affiliates").take(INSPECT_LIMIT);
+    const conversions = await ctx.db
+      .query("referralConversions")
+      .take(INSPECT_LIMIT);
     const walletTransactions = await ctx.db
       .query("walletTransactions")
-      .collect();
+      .take(INSPECT_LIMIT);
 
     return {
+      truncated: [affiliates, conversions, walletTransactions].some(
+        (rows) => rows.length === INSPECT_LIMIT,
+      ),
       programEnabled: settings?.enabled ?? false,
       settingsDocExists: settings !== null,
       affiliates: affiliates.length,

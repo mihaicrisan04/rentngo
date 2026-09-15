@@ -171,6 +171,27 @@ export type ConversionStatus =
   | "voided"
   | "confirmed";
 
+/**
+ * Whether a conversion still occupies the one-referred-discount-per-customer
+ * slot for its (affiliate, email). Only voiding frees it — a rejected
+ * conversion still had its discount granted to the customer. Exhaustive by
+ * construction: adding a status literal without classifying it here is a
+ * compile error.
+ */
+const OCCUPIES_CUSTOMER_SLOT = {
+  pending: true,
+  awaitingApproval: true,
+  approved: true,
+  rejected: true,
+  confirmed: true,
+  voided: false,
+} as const satisfies Record<ConversionStatus, boolean>;
+
+/** The statuses the per-customer dedupe must look for. */
+export const BLOCKING_CONVERSION_STATUSES = (
+  Object.keys(OCCUPIES_CUSTOMER_SLOT) as ConversionStatus[]
+).filter((status) => OCCUPIES_CUSTOMER_SLOT[status]);
+
 export type ReferredIneligibilityReason =
   | "missingOwner"
   | "selfReferral"

@@ -163,6 +163,70 @@ describe("computeAvailableBalance", () => {
     expect(computeAvailableBalance(txns, NOW)).toBe(0);
   });
 
+  it("charges a spend only to credit that was live when it was recorded", () => {
+    // 40 lapses on day 1, 60 runs to day 60; the spend happens on day 10, so
+    // it can only come out of the credit that was still alive then.
+    const txns = [
+      credit("lapsed", 40, NOW + DAY),
+      credit("live", 60, NOW + 60 * DAY),
+      redemption("r", 40, NOW + 10 * DAY),
+    ];
+    expect(computeAvailableBalance(txns, NOW + 10 * DAY)).toBe(20);
+  });
+
+  it("does not let a later credit pay for an earlier spend", () => {
+    const txns = [
+      credit("early", 10, NOW + 60 * DAY),
+      redemption("r", 30, NOW + DAY),
+      // Minted afterwards, and expiring sooner, so it must not sort ahead
+      credit("late", 50, NOW + 5 * DAY, NOW + 2 * DAY),
+    ];
+    // The 20 the wallet could not cover stays an overdraft against the later
+    // credit rather than silently vanishing
+    expect(computeAvailableBalance(txns, NOW + 3 * DAY)).toBe(30);
+  });
+
+  it("a credit reversal takes back its own conversion's credit first", () => {
+    const txns: WalletTransactionData[] = [
+      { ...credit("c1", 50, NOW + 60 * DAY), conversionId: "conv1" },
+      { ...credit("c2", 30, NOW + 10 * DAY), conversionId: "conv2" },
+      {
+        id: "rev",
+        kind: "creditReversal",
+        amount: -50,
+        conversionId: "conv1",
+        createdAt: NOW + DAY,
+      },
+    ];
+    // conv2's sooner-expiring credit is untouched despite FIFO ordering
+    expect(computeRemainingCredits(txns, NOW + DAY)).toEqual([
+      {
+        id: "c2",
+        remaining: 30,
+        expiresAt: NOW + 10 * DAY,
+        createdAt: NOW,
+        conversionId: "conv2",
+      },
+    ]);
+  });
+
+  it("a reversal of an already-spent credit falls through as a debit", () => {
+    const txns: WalletTransactionData[] = [
+      { ...credit("c1", 50, NOW + 60 * DAY), conversionId: "conv1" },
+      { ...credit("c2", 50, NOW + 60 * DAY), conversionId: "conv2" },
+      redemption("spend", 50, NOW + DAY),
+      {
+        id: "rev",
+        kind: "creditReversal",
+        amount: -50,
+        conversionId: "conv1",
+        createdAt: NOW + 2 * DAY,
+      },
+    ];
+    // 100 credited, 50 spent, 50 clawed back — nothing left, never inflated
+    expect(computeAvailableBalance(txns, NOW + 3 * DAY)).toBe(0);
+  });
+
   it("keeps cents exact across many small credits", () => {
     const txns = Array.from({ length: 3 }, (_, i) =>
       credit(`c${i}`, 0.1, NOW + 30 * DAY),
@@ -207,8 +271,9 @@ describe("computeRedeemable", () => {
     expect(computeRedeemable(30, 200, 50)).toBe(30);
   });
 
-  it("rounds the cap to cents", () => {
-    expect(computeRedeemable(500, 333.33, 50)).toBe(166.67);
+  it("floors the cap to cents so it can never exceed the percentage", () => {
+    expect(computeRedeemable(500, 333.33, 50)).toBe(166.66);
+    expect(computeRedeemable(100, 33.333, 50)).toBe(16.66);
   });
 
   it("returns 0 for an empty wallet, a free booking or a 0% cap", () => {
