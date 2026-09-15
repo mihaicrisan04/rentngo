@@ -118,6 +118,11 @@ export default defineSchema({
       message: v.optional(v.string()),
       flightNumber: v.optional(v.string()), // Format: "XX 1234" (airline code + space + number)
     }),
+    // customerInfo.email lowercased+trimmed, denormalized so the referral
+    // first-rental check can look a customer up by index instead of scanning.
+    // Optional while the backfill runs (convex/migrations/README.md); written
+    // on every create and on every customerInfo update.
+    customerEmailNormalized: v.optional(v.string()),
     // Applied coupon (validated + redeemed server-side in createReservation).
     // promoCode keeps the human-readable code; discountAmount is the EUR
     // discount actually granted, persisted so confirmation/emails render the
@@ -183,7 +188,15 @@ export default defineSchema({
     .index("by_restitution_location", ["restitutionLocation"])
     .index("by_payment_method", ["paymentMethod"])
     .index("by_status", ["status"])
-    .index("by_number", ["reservationNumber"]),
+    .index("by_number", ["reservationNumber"])
+    // Status is part of both keys so the first-rental check can ask for one
+    // non-cancelled booking per status with a point lookup instead of
+    // scanning a customer's cancelled history.
+    .index("by_user_and_status", ["userId", "status"])
+    .index("by_customer_email_and_status", [
+      "customerEmailNormalized",
+      "status",
+    ]),
 
   // Transfers table - stores VIP transfer bookings
   transfers: defineTable({
@@ -251,6 +264,8 @@ export default defineSchema({
       message: v.optional(v.string()),
       flightNumber: v.optional(v.string()),
     }),
+    // See the reservations table for the semantics of this field
+    customerEmailNormalized: v.optional(v.string()),
 
     // Payment
     paymentMethod: paymentMethodValidator,
@@ -262,7 +277,12 @@ export default defineSchema({
     .index("by_vehicle", ["vehicleId"])
     .index("by_pickup_date", ["pickupDate"])
     .index("by_status", ["status"])
-    .index("by_number", ["transferNumber"]),
+    .index("by_number", ["transferNumber"])
+    .index("by_user_and_status", ["userId", "status"])
+    .index("by_customer_email_and_status", [
+      "customerEmailNormalized",
+      "status",
+    ]),
 
   routeCache: defineTable({
     key: v.string(),
@@ -389,6 +409,10 @@ export default defineSchema({
     transferId: v.optional(v.id("transfers")),
     referredUserId: v.optional(v.id("users")),
     referredEmail: v.string(), // normalized (lowercase, trimmed)
+    // The attribution row this conversion came from — the consent-gated click
+    // for a link, or the row the server minted for a typed code. Optional:
+    // conversions written before this field existed have none.
+    attributionId: v.optional(v.id("referralAttributions")),
     status: v.union(
       v.literal("pending"),
       v.literal("awaitingApproval"),

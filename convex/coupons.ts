@@ -3,9 +3,14 @@ import { mutation, query, MutationCtx, QueryCtx } from "./_generated/server";
 import { Doc, Id } from "./_generated/dataModel";
 import { requireAdmin } from "./users";
 import {
+  previewTypedReferralCode,
+  type TypedReferralPreview,
+} from "./affiliates";
+import {
   evaluateCoupon,
   hasCouponIdentity,
   normalizeCouponCode,
+  referralCodeReason,
   normalizeCustomerEmail,
   type CouponBookingType,
 } from "../lib/pricing";
@@ -215,7 +220,44 @@ const invalidReasonValidator = v.union(
   v.literal("belowMinimum"),
   v.literal("alreadyUsed"),
   v.literal("emailRequired"),
+  // Referral-code rejections (see previewTypedReferralCode)
+  v.literal("referralSelfReferral"),
+  v.literal("referralDuplicate"),
+  v.literal("referralNotFirstRental"),
 );
+
+/** Which kind of code the field matched, so the UI can name it correctly. */
+const codeKindValidator = v.union(v.literal("coupon"), v.literal("referral"));
+
+function referralPreviewResult(preview: TypedReferralPreview) {
+  // An unknown slug is indistinguishable from an unknown coupon on purpose:
+  // the field must not reveal that referral codes exist at all when the
+  // program is off, nor confirm someone else's code.
+  if (!preview.valid) {
+    return preview.reason === "notFound"
+      ? {
+          valid: false as const,
+          kind: "coupon" as const,
+          reason: "notFound" as const,
+        }
+      : {
+          valid: false as const,
+          kind: "referral" as const,
+          reason:
+            preview.reason === "emailRequired"
+              ? ("emailRequired" as const)
+              : referralCodeReason(preview.reason),
+        };
+  }
+  return {
+    valid: true as const,
+    kind: "referral" as const,
+    code: preview.slug,
+    discountType: preview.discountType,
+    discountValue: preview.discountValue,
+    discountAmount: preview.discountAmount,
+  };
+}
 
 /**
  * Live checkout feedback. Advisory only — the client-sent subtotal is used
@@ -234,6 +276,7 @@ export const validateCoupon = query({
   returns: v.union(
     v.object({
       valid: v.literal(true),
+      kind: codeKindValidator,
       code: v.string(),
       discountType: discountTypeValidator,
       discountValue: v.number(),
@@ -241,18 +284,32 @@ export const validateCoupon = query({
     }),
     v.object({
       valid: v.literal(false),
+      kind: codeKindValidator,
       reason: invalidReasonValidator,
     }),
   ),
   handler: async (ctx, args) => {
     const code = normalizeCouponCode(args.code);
     if (!code) {
-      return { valid: false as const, reason: "notFound" as const };
+      return {
+        valid: false as const,
+        kind: "coupon" as const,
+        reason: "notFound" as const,
+      };
     }
 
     const coupon = await findByCode(ctx, code);
+    // One field, two kinds of code: an unmatched coupon falls through to the
+    // affiliate slug lookup, so a referral code works where customers already
+    // expect to type a code.
     if (!coupon) {
-      return { valid: false as const, reason: "notFound" as const };
+      return referralPreviewResult(
+        await previewTypedReferralCode(ctx, {
+          code: args.code,
+          subtotal: args.subtotal,
+          email: args.email,
+        }),
+      );
     }
 
     const evaluation = evaluateCoupon(coupon, {
@@ -261,7 +318,11 @@ export const validateCoupon = query({
       now: Date.now(),
     });
     if (!evaluation.valid) {
-      return { valid: false as const, reason: evaluation.reason };
+      return {
+        valid: false as const,
+        kind: "coupon" as const,
+        reason: evaluation.reason,
+      };
     }
 
     const userId = (await currentUserId(ctx)) ?? undefined;
@@ -269,7 +330,11 @@ export const validateCoupon = query({
     // The once-per-user check needs a real identity (account or non-empty
     // email); without one the preview mirrors the redemption path's refusal.
     if (!hasCouponIdentity({ userId, email: args.email })) {
-      return { valid: false as const, reason: "emailRequired" as const };
+      return {
+        valid: false as const,
+        kind: "coupon" as const,
+        reason: "emailRequired" as const,
+      };
     }
 
     if (
@@ -278,11 +343,16 @@ export const validateCoupon = query({
         email: args.email,
       })
     ) {
-      return { valid: false as const, reason: "alreadyUsed" as const };
+      return {
+        valid: false as const,
+        kind: "coupon" as const,
+        reason: "alreadyUsed" as const,
+      };
     }
 
     return {
       valid: true as const,
+      kind: "coupon" as const,
       code: coupon.code,
       discountType: coupon.discountType,
       discountValue: coupon.discountValue,

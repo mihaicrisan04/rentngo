@@ -3,7 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
+import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import {
   Card,
@@ -19,16 +20,41 @@ import { Progress } from "@/components/ui/progress";
 import { Check, Copy, Link2 } from "lucide-react";
 
 /**
- * Self-service affiliate view on the profile page (RNGO-26): referral link,
- * confirmed-conversion counter, current tier reward and history. Renders
- * nothing for non-affiliates; enrolment is admin-provisioned.
+ * Self-service affiliate view on the profile page: referral link and code,
+ * conversion counter, current tier reward and history. Non-affiliates get the
+ * enrolment CTA while the program is open (RNGO-54), and the contact link
+ * while it is not.
  */
 export function AffiliateDashboard() {
   const t = useTranslations("profile.affiliate");
   const locale = useLocale();
   const currentUser = useQuery(api.users.get);
   const affiliate = useQuery(api.affiliates.getMyAffiliate);
-  const [copied, setCopied] = React.useState(false);
+  const enrolment = useQuery(api.affiliates.getMyEnrolment);
+  const createMyAffiliate = useMutation(api.affiliates.createMyAffiliate);
+  const [copied, setCopied] = React.useState<"link" | "code" | null>(null);
+  const [isEnrolling, setIsEnrolling] = React.useState(false);
+
+  const copy = async (value: string, target: "link" | "code") => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(target);
+      setTimeout(() => setCopied(null), 2000);
+    } catch {
+      // Clipboard unavailable — the input stays selectable
+    }
+  };
+
+  const enrol = async () => {
+    setIsEnrolling(true);
+    try {
+      await createMyAffiliate();
+    } catch {
+      toast.error(t("notEnrolled.generateFailed"));
+    } finally {
+      setIsEnrolling(false);
+    }
+  };
 
   // Both queries resolve to `null` for "no Convex user record yet" (provisioning
   // lag, or a Clerk↔Convex id mismatch) as well as their real empty states, so
@@ -37,8 +63,14 @@ export function AffiliateDashboard() {
   // enrolled". Only once the user exists do we trust affiliate === null.
   if (currentUser === undefined || affiliate === undefined) return null;
   if (currentUser === null) return null;
+  // Waiting for `enrolment` too, so the card never flashes the contact link
+  // before flipping to the enrolment CTA (or the other way round).
+  if (affiliate === null && enrolment === undefined) return null;
 
   if (affiliate === null) {
+    // Enrolment is gated on the program kill-switch, same as every other part
+    // of the referral feature; while it is off the card keeps the contact link.
+    const canEnrol = enrolment?.programEnabled === true;
     return (
       <Card className="rounded-2xl border-border/50">
         <CardHeader>
@@ -51,11 +83,19 @@ export function AffiliateDashboard() {
         <CardContent>
           <div className="rounded-xl border border-border/50 bg-muted/40 p-6 text-center space-y-4">
             <p className="text-sm text-muted-foreground">
-              {t("notEnrolled.body")}
+              {canEnrol ? t("notEnrolled.body") : t("notEnrolled.closedBody")}
             </p>
-            <Button asChild variant="outline">
-              <Link href={`/${locale}/contact`}>{t("notEnrolled.cta")}</Link>
-            </Button>
+            {canEnrol ? (
+              <Button type="button" onClick={enrol} disabled={isEnrolling}>
+                {isEnrolling
+                  ? t("notEnrolled.generating")
+                  : t("notEnrolled.generate")}
+              </Button>
+            ) : (
+              <Button asChild variant="outline">
+                <Link href={`/${locale}/contact`}>{t("notEnrolled.cta")}</Link>
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -65,16 +105,6 @@ export function AffiliateDashboard() {
   const referralUrl = `${
     typeof window !== "undefined" ? window.location.origin : "https://rngo.ro"
   }/r/${affiliate.slug}`;
-
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(referralUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Clipboard unavailable — the input stays selectable
-    }
-  };
 
   const { confirmedConversions, currentRewardPercent, nextTier } = affiliate;
   const progressToNext = nextTier
@@ -95,6 +125,31 @@ export function AffiliateDashboard() {
           <p className="text-sm text-destructive">{t("inactive")}</p>
         )}
 
+        {/* Referral code — typed straight into the checkout promo field */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium">{t("yourCode")}</p>
+          <div className="flex gap-2">
+            <Input
+              readOnly
+              value={affiliate.slug}
+              className="font-mono text-sm uppercase"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => copy(affiliate.slug, "code")}
+              aria-label={t("copyCode")}
+            >
+              {copied === "code" ? (
+                <Check className="h-4 w-4 text-green-600" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">{t("codeInfo")}</p>
+        </div>
+
         {/* Referral link */}
         <div className="space-y-2">
           <p className="text-sm font-medium">{t("yourLink")}</p>
@@ -103,10 +158,10 @@ export function AffiliateDashboard() {
             <Button
               type="button"
               variant="outline"
-              onClick={copyLink}
+              onClick={() => copy(referralUrl, "link")}
               aria-label={t("copyLink")}
             >
-              {copied ? (
+              {copied === "link" ? (
                 <Check className="h-4 w-4 text-green-600" />
               ) : (
                 <Copy className="h-4 w-4" />

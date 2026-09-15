@@ -30,6 +30,7 @@ import { useAffiliateDiscount } from "@/hooks/use-affiliate-discount";
 import { useWalletCredit } from "@/hooks/use-wallet-credit";
 import { applyDiscountToTotal, previewDiscountAmount } from "@/lib/pricing";
 import { getStoredReferral } from "@/lib/referral";
+import { isReferralCodeReason } from "@/lib/pricing";
 import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
 import { ConvexError } from "convex/values";
@@ -238,8 +239,13 @@ function ReservationPageContent() {
               : undefined,
         },
         // The server re-validates and redeems the coupon atomically; the
-        // client-shown discount is advisory only
-        promoCode: appliedCoupon?.code,
+        // client-shown discount is advisory only. A referral code entered in
+        // the same field is not a coupon — it travels separately so the
+        // server records an attribution instead of a redemption.
+        promoCode:
+          appliedCoupon?.kind === "coupon" ? appliedCoupon.code : undefined,
+        referralCode:
+          appliedCoupon?.kind === "referral" ? appliedCoupon.code : undefined,
         // Referral attribution — read the cookie fresh at submit so a
         // capture that landed after mount is never dropped; server-validated
         referral: getStoredReferral() ?? referral ?? undefined,
@@ -287,10 +293,17 @@ function ReservationPageContent() {
       router.push(`/reservation/confirmation?reservationId=${reservationId}`);
     } catch (error) {
       console.error("Error creating reservation:", error);
-      if (
-        error instanceof ConvexError &&
-        (error.data as { code?: string })?.code === "COUPON_INVALID"
-      ) {
+      const errorData =
+        error instanceof ConvexError
+          ? (error.data as { code?: string; reason?: unknown })
+          : undefined;
+      if (errorData?.code === "REFERRAL_CODE_INVALID") {
+        toast.error(
+          isReferralCodeReason(errorData.reason)
+            ? tCoupon(`errors.${errorData.reason}`)
+            : tCoupon("errors.submitFailed"),
+        );
+      } else if (errorData?.code === "COUPON_INVALID") {
         toast.error(tCoupon("errors.submitFailed"));
       } else {
         toast.error(t("reservation.error"));

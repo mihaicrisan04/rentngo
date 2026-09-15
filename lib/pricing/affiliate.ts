@@ -105,6 +105,115 @@ export function isValidAffiliateSlug(slug: string): boolean {
 }
 
 /**
+ * Slugs an affiliate may never take: the non-localized top-level routes
+ * (`app/*`), the locale prefixes, and the localized route names
+ * (`app/[locale]/*`). Such a code reads as a site section once it appears in
+ * `/r/<slug>` or in the "promo or referral code" field. Enforced on both the
+ * admin and the self-service enrolment paths.
+ */
+export const RESERVED_AFFILIATE_SLUGS: readonly string[] = [
+  "admin",
+  "api",
+  "r",
+  "ro",
+  "en",
+  "about",
+  "blog",
+  "cars",
+  "contact",
+  "faq",
+  "privacy",
+  "profile",
+  "reservation",
+  "terms",
+  "transfers",
+];
+
+export function isReservedAffiliateSlug(slug: string): boolean {
+  return RESERVED_AFFILIATE_SLUGS.includes(normalizeAffiliateSlug(slug));
+}
+
+/** No look-alike characters: a referral code gets read out loud and retyped. */
+const SLUG_SUFFIX_ALPHABET = "abcdefghijkmnpqrstuvwxyz23456789";
+const SLUG_SUFFIX_MIN_LENGTH = 2;
+const SLUG_SUFFIX_MAX_LENGTH = 4;
+const SLUG_BASE_MAX_LENGTH = 20;
+/** Used when a name yields no usable ASCII letters (e.g. a name in Cyrillic). */
+const SLUG_BASE_FALLBACK = "rngo";
+
+/** First name, de-accented and stripped to the slug alphabet. */
+export function affiliateSlugBase(name: string): string {
+  const firstName = name.trim().split(/\s+/)[0] ?? "";
+  const ascii = firstName
+    .normalize("NFD")
+    .replace(/[\u0300-\u036F]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+    .slice(0, SLUG_BASE_MAX_LENGTH);
+  return ascii.length >= 2 ? ascii : SLUG_BASE_FALLBACK;
+}
+
+export function affiliateSlugSuffix(
+  length: number,
+  random: () => number = Math.random,
+): string {
+  let suffix = "";
+  for (let i = 0; i < length; i++) {
+    const index = Math.min(
+      SLUG_SUFFIX_ALPHABET.length - 1,
+      Math.floor(random() * SLUG_SUFFIX_ALPHABET.length),
+    );
+    suffix += SLUG_SUFFIX_ALPHABET[index];
+  }
+  return suffix;
+}
+
+/**
+ * Self-service code for `name`. `attempt` is the zero-based collision retry:
+ * later attempts draw a longer suffix, so a common first name cannot livelock
+ * against a saturated two-character space.
+ */
+export function generateAffiliateSlug(
+  name: string,
+  attempt: number = 0,
+  random: () => number = Math.random,
+): string {
+  const suffixLength = Math.min(
+    SLUG_SUFFIX_MIN_LENGTH + Math.floor(attempt / 2),
+    SLUG_SUFFIX_MAX_LENGTH,
+  );
+  return `${affiliateSlugBase(name)}-${affiliateSlugSuffix(suffixLength, random)}`;
+}
+
+/**
+ * Where a booking's referral attribution comes from. A code the customer
+ * typed into the promo field always beats the cookie: it is an explicit
+ * choice, while the cookie is a side-effect of a click that may be weeks old.
+ * Both slugs are normalized here, so a mixed-case code works.
+ */
+export type ReferralSource =
+  | { kind: "typedCode"; slug: string }
+  | { kind: "link"; slug: string; visitorKey: string };
+
+export function resolveReferralSource(params: {
+  typedCode?: string | null;
+  cookieReferral?: { slug: string; visitorKey: string } | null;
+}): ReferralSource | null {
+  const typed = normalizeAffiliateSlug(params.typedCode ?? "");
+  if (isValidAffiliateSlug(typed)) {
+    return { kind: "typedCode", slug: typed };
+  }
+  const cookie = params.cookieReferral;
+  if (cookie) {
+    const slug = normalizeAffiliateSlug(cookie.slug);
+    if (isValidAffiliateSlug(slug) && cookie.visitorKey.length > 0) {
+      return { kind: "link", slug, visitorKey: cookie.visitorKey };
+    }
+  }
+  return null;
+}
+
+/**
  * Reward percent for an approved-conversion count: the highest tier whose
  * threshold is met wins; below every threshold the reward is 0. A per-affiliate
  * override replaces the tier table entirely.
@@ -193,6 +302,17 @@ export const BLOCKING_CONVERSION_STATUSES = (
   Object.keys(OCCUPIES_CUSTOMER_SLOT) as ConversionStatus[]
 ).filter((status) => OCCUPIES_CUSTOMER_SLOT[status]);
 
+/**
+ * Booking statuses that count as a prior rental for the first-rental rule:
+ * everything except `cancelled` (convex/validators.ts). Hard-deleted bookings
+ * are gone from the tables, so they cannot count either.
+ */
+export const PRIOR_RENTAL_BOOKING_STATUSES = [
+  "pending",
+  "confirmed",
+  "completed",
+] as const;
+
 export type ReferredIneligibilityReason =
   | "missingOwner"
   | "selfReferral"
@@ -224,6 +344,12 @@ export function referredEligibility(params: {
   if (!params.ownerUser) {
     return { eligible: false, reason: "missingOwner" };
   }
+  // Catches the signed-in affiliate and anyone booking with the owner's
+  // email. A signed-out affiliate typing their own code with a throwaway
+  // email is NOT caught, and deliberately so: requiring sign-in would stop
+  // genuine guests from being referred. Accepted because approval is manual
+  // by default and the admin conversion history shows referrer and referred
+  // email side by side.
   const isSelfReferral =
     params.bookerUserId === params.ownerUser.id ||
     normalizeCustomerEmail(params.ownerUser.email) ===
@@ -238,6 +364,42 @@ export function referredEligibility(params: {
     return { eligible: false, reason: "notFirstRental" };
   }
   return { eligible: true };
+}
+
+/**
+ * Why a typed referral code was refused, as the `common.coupon.errors.*`
+ * translation keys the checkout renders. Shared by the advisory preview
+ * (`validateCoupon`) and the ConvexError the booking mutations throw, so both
+ * speak the same language. `notFound` deliberately absorbs every reason that
+ * would otherwise confirm a slug exists.
+ */
+export const REFERRAL_CODE_REASONS = [
+  "notFound",
+  "emailRequired",
+  "referralSelfReferral",
+  "referralDuplicate",
+  "referralNotFirstRental",
+] as const;
+
+export type ReferralCodeReason = (typeof REFERRAL_CODE_REASONS)[number];
+
+export function isReferralCodeReason(
+  value: unknown,
+): value is ReferralCodeReason {
+  return (REFERRAL_CODE_REASONS as readonly unknown[]).includes(value);
+}
+
+const REFERRAL_CODE_REASON_BY_ELIGIBILITY = {
+  missingOwner: "notFound",
+  selfReferral: "referralSelfReferral",
+  duplicate: "referralDuplicate",
+  notFirstRental: "referralNotFirstRental",
+} as const satisfies Record<ReferredIneligibilityReason, ReferralCodeReason>;
+
+export function referralCodeReason(
+  reason: ReferredIneligibilityReason,
+): ReferralCodeReason {
+  return REFERRAL_CODE_REASON_BY_ELIGIBILITY[reason];
 }
 
 /** Booking statuses (convex/validators.ts) plus the hard-delete case. */

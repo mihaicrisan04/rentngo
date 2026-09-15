@@ -39,6 +39,7 @@ import type * as lib_tableStats from "../lib/tableStats.js";
 import type * as migrations_addAdditional50kmPrice from "../migrations/addAdditional50kmPrice.js";
 import type * as migrations_backfillClerkUsers from "../migrations/backfillClerkUsers.js";
 import type * as migrations_bilingualBlogs from "../migrations/bilingualBlogs.js";
+import type * as migrations_bookingCustomerEmail from "../migrations/bookingCustomerEmail.js";
 import type * as migrations_clearDeprecatedClassField from "../migrations/clearDeprecatedClassField.js";
 import type * as migrations_clearDeprecatedPricePerDay from "../migrations/clearDeprecatedPricePerDay.js";
 import type * as migrations_migrateVehicleClasses from "../migrations/migrateVehicleClasses.js";
@@ -96,6 +97,7 @@ declare const fullApi: ApiFromModules<{
   "migrations/addAdditional50kmPrice": typeof migrations_addAdditional50kmPrice;
   "migrations/backfillClerkUsers": typeof migrations_backfillClerkUsers;
   "migrations/bilingualBlogs": typeof migrations_bilingualBlogs;
+  "migrations/bookingCustomerEmail": typeof migrations_bookingCustomerEmail;
   "migrations/clearDeprecatedClassField": typeof migrations_clearDeprecatedClassField;
   "migrations/clearDeprecatedPricePerDay": typeof migrations_clearDeprecatedPricePerDay;
   "migrations/migrateVehicleClasses": typeof migrations_migrateVehicleClasses;

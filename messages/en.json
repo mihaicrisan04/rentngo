@@ -531,24 +531,28 @@
       "inactive": "Inactive"
     },
     "coupon": {
-      "title": "Coupon Code",
-      "placeholder": "Enter coupon code",
+      "title": "Promo or referral code",
+      "placeholder": "Enter promo or referral code",
       "apply": "Apply",
       "checking": "Checking...",
       "applied": "Coupon {code} applied",
-      "remove": "Remove coupon",
+      "remove": "Remove code",
       "discount": "Discount",
       "errors": {
-        "notFound": "This coupon code doesn't exist.",
+        "notFound": "This code doesn't exist.",
         "inactive": "This coupon is no longer active.",
         "expired": "This coupon has expired.",
         "exhausted": "This coupon has reached its usage limit.",
         "wrongBookingType": "This coupon doesn't apply to this type of booking.",
         "belowMinimum": "The order total is below this coupon's minimum.",
         "alreadyUsed": "You've already used this coupon.",
-        "emailRequired": "Enter your email address before applying a coupon.",
-        "submitFailed": "The coupon could not be applied. Please re-check the code and try again."
-      }
+        "emailRequired": "Enter your email address before applying a code.",
+        "submitFailed": "The code could not be applied. Please re-check the code and try again.",
+        "referralSelfReferral": "This is your own referral code — you can't use it on your own bookings.",
+        "referralDuplicate": "You've already used this referral code.",
+        "referralNotFirstRental": "The referral discount is for your first booking only."
+      },
+      "appliedReferral": "Referral code {code} applied"
     },
     "referral": {
       "discount": "Referral discount"
@@ -657,8 +661,12 @@
       "description": "Share your link and earn rewards when your referrals book",
       "inactive": "Your affiliate account is currently inactive.",
       "notEnrolled": {
-        "body": "Earn rewards every time someone books through your personal link. Enrolment is invite-based for now — get in touch and we'll set you up.",
-        "cta": "Contact us"
+        "body": "Earn rewards every time someone books with your code. Generate your code and start sharing it.",
+        "cta": "Contact us",
+        "generate": "Generate my code",
+        "generating": "Generating...",
+        "generateFailed": "The code could not be generated. Please try again.",
+        "closedBody": "The referral program isn't open right now. Get in touch if you'd like to know more."
       },
       "yourLink": "Your referral link",
       "copyLink": "Copy referral link",
@@ -672,8 +680,14 @@
       "status": {
         "pending": "Pending",
         "confirmed": "Confirmed",
-        "voided": "Voided"
-      }
+        "voided": "Voided",
+        "awaitingApproval": "Awaiting approval",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "yourCode": "Your referral code",
+      "copyCode": "Copy referral code",
+      "codeInfo": "Your friends can enter this code straight into the promo code field at checkout."
     }
   },
   "footer": {

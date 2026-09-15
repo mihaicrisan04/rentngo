@@ -207,6 +207,67 @@ schema reject documents still carrying the v1 shape.
 
 ---
 
+### 4. `bookingCustomerEmail.ts`
+
+Backfill step of the booking customer-email rollout (RNGO-54, phase 4 of
+RNGO-50).
+
+**Purpose**: fill `reservations.customerEmailNormalized` and
+`transfers.customerEmailNormalized` (lowercased, trimmed `customerInfo.email`)
+so the referral "first rental only" rule can ask "has this customer booked
+before?" through the `by_customer_email_and_status` index instead of scanning.
+
+Until the backfill has run, a returning customer whose bookings all predate the
+widen looks like a first-time customer and would still get the referred
+discount. The discount is capped and the program ships disabled, so this is a
+correctness gap, not a money leak — but run the backfill before enabling the
+program.
+
+**Features**:
+
+- Idempotent (a row whose stored value already matches is skipped, so a re-run
+  reports zero updates)
+- Batched behind a cursor; each call processes at most 1000 documents per table
+  and returns `continueCursor` when more remain
+- `dryRun: true` counts what would change without writing
+- Ships with a read-only `inspect` pre-flight query
+
+**Prerequisites**:
+
+- The widened schema and the writing code must already be deployed
+  (`customerEmailNormalized` optional on both tables, the two new indexes, and
+  the create/update paths writing the field)
+
+**Usage**:
+
+```bash
+# 1. Pre-flight — read-only, shows how many rows still need the field
+npx convex run migrations/bookingCustomerEmail:inspect
+
+# 2. Dry run — writes nothing, reports what would change
+npx convex run migrations/bookingCustomerEmail:backfillReservations '{"dryRun": true}'
+npx convex run migrations/bookingCustomerEmail:backfillTransfers '{"dryRun": true}'
+
+# 3. Apply
+npx convex run migrations/bookingCustomerEmail:backfillReservations
+npx convex run migrations/bookingCustomerEmail:backfillTransfers
+
+# 4. If a response came back with "isDone": false, resume from its cursor
+npx convex run migrations/bookingCustomerEmail:backfillReservations '{"cursor": "<continueCursor>"}'
+
+# 5. Verify — both *NeedingBackfill counts are 0
+npx convex run migrations/bookingCustomerEmail:inspect
+```
+
+Add `--prod` to every command to target production.
+
+**Narrow step (a later deploy, NOT part of this migration)**: once `inspect`
+reports zero rows needing the backfill on every deployment, make
+`customerEmailNormalized` required on both tables. The order is non-negotiable:
+widen → backfill → verify → narrow.
+
+---
+
 ## Migration Order
 
 When setting up a new environment or migrating to the vehicle classes system:

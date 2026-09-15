@@ -11,6 +11,12 @@ import { CheckCircle2, TicketPercent, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface AppliedCoupon {
+  /**
+   * Which code the field matched. Coupons are redeemed through `promoCode`;
+   * referral codes travel as `referralCode` and record an attribution instead
+   * of a redemption, so the booking call must keep them apart.
+   */
+  kind: "coupon" | "referral";
   code: string;
   /** Server-computed advisory amount — display only; redemption recomputes. */
   discountAmount: number;
@@ -37,10 +43,11 @@ interface CouponCodeInputProps {
 }
 
 /**
- * Self-contained coupon field shared by the reservation and transfer
- * checkouts. Validation runs through the reactive `validateCoupon` query, so
- * an applied code is re-checked automatically whenever the subtotal changes
- * (e.g. new dates drop the order below the coupon's minimum).
+ * Self-contained promo/referral code field shared by the reservation and
+ * transfer checkouts. Validation runs through the reactive `validateCoupon`
+ * query — which falls through to an affiliate slug lookup when no coupon
+ * matches — so an applied code is re-checked automatically whenever the
+ * subtotal changes (e.g. new dates drop the order below the coupon's minimum).
  */
 export function CouponCodeInput({
   bookingType,
@@ -69,7 +76,11 @@ export function CouponCodeInput({
   React.useEffect(() => {
     onAppliedChange(
       submittedCode && result?.valid
-        ? { code: result.code, discountAmount: result.discountAmount }
+        ? {
+            kind: result.kind,
+            code: result.code,
+            discountAmount: result.discountAmount,
+          }
         : null,
     );
   }, [result, submittedCode, onAppliedChange]);
@@ -93,7 +104,11 @@ export function CouponCodeInput({
           <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             <span>
-              {t("applied", { code: result.code })}
+              {/* The field uppercases as you type; referral slugs are stored
+                  lowercase, so display them the way they were entered. */}
+              {t(result.kind === "referral" ? "appliedReferral" : "applied", {
+                code: result.code.toUpperCase(),
+              })}
               {": "}
               <span className="font-semibold">
                 −{result.discountAmount} EUR

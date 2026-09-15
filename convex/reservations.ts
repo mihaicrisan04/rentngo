@@ -1,5 +1,5 @@
 import { mutation, query, type MutationCtx } from "./_generated/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import {
   paginationOptsValidator,
   paginationResultValidator,
@@ -29,6 +29,7 @@ import {
 } from "./lib/stats";
 import {
   recordReferralConversion,
+  recordTypedCodeAttribution,
   referralArgValidator,
   resolveAffiliateCandidates,
   syncConversionForBooking,
@@ -36,6 +37,7 @@ import {
 import { redeemWalletCredit, reverseWalletRedemption } from "./wallet";
 import {
   applyDiscountToTotal,
+  normalizeCustomerEmail,
   pickDiscount,
   type AppliedDiscount,
   assertValidReservationExtras,
@@ -68,7 +70,10 @@ const additionalChargeValidator = v.object({
   amount: v.number(),
 });
 
-const reservationDocValidator = v.object({
+// Exported for the drift guard in convex/bookingDocValidators.test.ts: this
+// spells the stored document out by hand, so every schema field must be added
+// here too or reads fail their returns validator.
+export const reservationDocValidator = v.object({
   _id: v.id("reservations"),
   _creationTime: v.number(),
   reservationNumber: v.optional(v.number()),
@@ -90,6 +95,7 @@ const reservationDocValidator = v.object({
     message: v.optional(v.string()),
     flightNumber: v.optional(v.string()),
   }),
+  customerEmailNormalized: v.optional(v.string()),
   promoCode: v.optional(v.string()),
   couponId: v.optional(v.id("coupons")),
   discountAmount: v.optional(v.number()),
@@ -182,6 +188,9 @@ export const createReservation = mutation({
     // an invalid/expired/fabricated pair silently attributes nothing (the
     // referral is automatic, so it never fails the booking)
     referral: v.optional(referralArgValidator),
+    // Affiliate slug the customer typed into the promo field. Beats the
+    // cookie; unlike the cookie an ineligible typed code fails the booking.
+    referralCode: v.optional(v.string()),
     // Wallet credit switch — a boolean only; the server owns the amount and
     // ignores it for guests and while the referral program is off
     useWalletCredit: v.optional(v.boolean()),
@@ -368,10 +377,21 @@ export const createReservation = mutation({
       : null;
     const affiliateCandidates = await resolveAffiliateCandidates(ctx, {
       referral: args.referral,
+      typedCode: args.referralCode,
       currentUser,
       customerEmail: args.customerInfo.email,
       subtotal: totalPrice,
     });
+    // A typed referral code that grants nothing fails the booking, exactly
+    // like an invalid coupon: checkout quoted the discounted price, so
+    // silently charging full price would be a bait-and-switch. The cookie
+    // path stays silent — nothing was promised there.
+    if (affiliateCandidates.typedCodeRejection) {
+      throw new ConvexError({
+        code: "REFERRAL_CODE_INVALID",
+        reason: affiliateCandidates.typedCodeRejection,
+      });
+    }
 
     const couponDiscount: AppliedDiscount | null = redeemedCoupon
       ? {
@@ -413,6 +433,7 @@ export const createReservation = mutation({
       status: "pending" as ReservationStatusType, // Initial status
       totalPrice,
       customerInfo: args.customerInfo,
+      customerEmailNormalized: normalizeCustomerEmail(args.customerInfo.email),
       promoCode: redeemedCoupon?.code,
       couponId: redeemedCoupon?.couponId,
       discountAmount: appliedDiscount?.amount,
@@ -460,7 +481,15 @@ export const createReservation = mutation({
     // even when a coupon won the one-discount rule. Nothing is credited until
     // the rental is completed and an admin approves it.
     if (affiliateCandidates.referred) {
+      const attributionId =
+        affiliateCandidates.referred.attributionSource === "typedCode"
+          ? await recordTypedCodeAttribution(ctx, {
+              affiliateId: affiliateCandidates.referred.affiliateId,
+              slug: affiliateCandidates.referred.slug,
+            })
+          : affiliateCandidates.referred.attributionId;
       const conversionId = await recordReferralConversion(ctx, {
+        attributionId,
         affiliateId: affiliateCandidates.referred.affiliateId,
         bookingType: "reservation",
         referredUserId: currentUser?._id,
@@ -833,7 +862,15 @@ export const updateReservationDetails = mutation({
       });
     }
 
-    await ctx.db.patch(reservationId, updatesToApply);
+    await ctx.db.patch(reservationId, {
+      ...updatesToApply,
+      // Keep the denormalized lookup key in step with customerInfo.email
+      ...(updatesToApply.customerInfo && {
+        customerEmailNormalized: normalizeCustomerEmail(
+          updatesToApply.customerInfo.email,
+        ),
+      }),
+    });
 
     if (updatesToApply.status !== undefined) {
       await recordStatsStatusChange(

@@ -29,6 +29,7 @@ import {
 } from "./lib/stats";
 import {
   recordReferralConversion,
+  recordTypedCodeAttribution,
   referralArgValidator,
   resolveAffiliateCandidates,
   syncConversionForBooking,
@@ -39,6 +40,7 @@ import {
   assertValidTransferDistance,
   computeTransferPricing,
   isWithinDistanceTolerance,
+  normalizeCustomerEmail,
   pickDiscount,
   resolveEditedBookingTotal,
   type AppliedDiscount,
@@ -72,7 +74,9 @@ const customerInfoValidator = v.object({
   flightNumber: v.optional(v.string()),
 });
 
-const transferDocValidator = v.object({
+// Exported for the drift guard in convex/bookingDocValidators.test.ts — see
+// reservationDocValidator.
+export const transferDocValidator = v.object({
   _id: v.id("transfers"),
   _creationTime: v.number(),
   transferNumber: v.optional(v.number()),
@@ -105,6 +109,7 @@ const transferDocValidator = v.object({
   affiliateId: v.optional(v.id("affiliates")),
   walletCreditApplied: v.optional(v.number()),
   customerInfo: customerInfoValidator,
+  customerEmailNormalized: v.optional(v.string()),
   paymentMethod: paymentMethodValidator,
   status: transferStatusValidator,
 });
@@ -176,6 +181,8 @@ const transferBookingValidator = v.object({
   promoCode: v.optional(v.string()),
   // Referral cookie payload — see createReservation; never fails the booking
   referral: v.optional(referralArgValidator),
+  // Affiliate slug typed into the promo field — see createReservation
+  referralCode: v.optional(v.string()),
   // Wallet credit switch — a boolean only; the server owns the amount and
   // ignores it for guests and while the referral program is off
   useWalletCredit: v.optional(v.boolean()),
@@ -280,10 +287,19 @@ async function createTransferHandler(
     : null;
   const affiliateCandidates = await resolveAffiliateCandidates(ctx, {
     referral: args.referral,
+    typedCode: args.referralCode,
     currentUser,
     customerEmail: args.customerInfo.email,
     subtotal: fare.totalPrice,
   });
+  // See createReservation: a typed code that grants nothing fails the booking
+  // rather than silently charging the undiscounted price.
+  if (affiliateCandidates.typedCodeRejection) {
+    throw new ConvexError({
+      code: "REFERRAL_CODE_INVALID",
+      reason: affiliateCandidates.typedCodeRejection,
+    });
+  }
 
   const couponDiscount: AppliedDiscount | null = redeemedCoupon
     ? {
@@ -336,6 +352,7 @@ async function createTransferHandler(
     discountSource: appliedDiscount?.source,
     affiliateId: affiliateCandidates.referred?.affiliateId,
     customerInfo: args.customerInfo,
+    customerEmailNormalized: normalizeCustomerEmail(args.customerInfo.email),
     paymentMethod: args.paymentMethod,
     luggageCount: args.luggageCount,
     status: "pending" as const,
@@ -365,7 +382,15 @@ async function createTransferHandler(
 
   // Conversion lifecycle — see createReservation for the rationale
   if (affiliateCandidates.referred) {
+    const attributionId =
+      affiliateCandidates.referred.attributionSource === "typedCode"
+        ? await recordTypedCodeAttribution(ctx, {
+            affiliateId: affiliateCandidates.referred.affiliateId,
+            slug: affiliateCandidates.referred.slug,
+          })
+        : affiliateCandidates.referred.attributionId;
     const conversionId = await recordReferralConversion(ctx, {
+      attributionId,
       affiliateId: affiliateCandidates.referred.affiliateId,
       bookingType: "transfer",
       referredUserId: currentUser?._id,
@@ -710,7 +735,15 @@ export const updateTransferDetails = mutation({
     }
 
     if (Object.keys(updatesToApply).length > 0) {
-      await ctx.db.patch(transferId, updatesToApply);
+      await ctx.db.patch(transferId, {
+        ...updatesToApply,
+        // Keep the denormalized lookup key in step with customerInfo.email
+        ...(updatesToApply.customerInfo && {
+          customerEmailNormalized: normalizeCustomerEmail(
+            updatesToApply.customerInfo.email,
+          ),
+        }),
+      });
     }
 
     if (updates.status !== undefined) {
