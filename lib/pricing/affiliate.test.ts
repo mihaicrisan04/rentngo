@@ -7,10 +7,12 @@ import {
   generateAffiliateSlug,
   withSettingsDefaults,
   BLOCKING_CONVERSION_STATUSES,
+  isReferralCodeReason,
   isReservedAffiliateSlug,
   isValidAffiliateSlug,
   nextTier,
   normalizeAffiliateSlug,
+  referralCodeReason,
   referredEligibility,
   resolveConversionCredit,
   resolveReferralSource,
@@ -937,6 +939,24 @@ describe("self-service slug generation", () => {
   });
 });
 
+describe("referralCodeReason", () => {
+  it("hides a missing owner behind the neutral notFound", () => {
+    expect(referralCodeReason("missingOwner")).toBe("notFound");
+  });
+
+  it("maps the customer-facing reasons onto their translation keys", () => {
+    expect(referralCodeReason("selfReferral")).toBe("referralSelfReferral");
+    expect(referralCodeReason("duplicate")).toBe("referralDuplicate");
+    expect(referralCodeReason("notFirstRental")).toBe("referralNotFirstRental");
+  });
+
+  it("recognizes only its own reason keys", () => {
+    expect(isReferralCodeReason("referralDuplicate")).toBe(true);
+    expect(isReferralCodeReason("duplicate")).toBe(false);
+    expect(isReferralCodeReason(undefined)).toBe(false);
+  });
+});
+
 describe("resolveReferralSource", () => {
   const cookie = { slug: "rngo51-legacy", visitorKey: "visitor-key-123" };
 
@@ -992,7 +1012,9 @@ describe("resolveReferralSource", () => {
     );
   });
 
-  it("blocks a self-referral typed by the affiliate themselves", () => {
+  it("blocks a typed self-referral when signed in or using the owner's email", () => {
+    // A signed-out affiliate typing their own code with a throwaway email is
+    // NOT caught — see the comment in referredEligibility.
     const source = resolveReferralSource({ typedCode: "RNGO51-LEGACY" });
     expect(source).toEqual({ kind: "typedCode", slug: "rngo51-legacy" });
     expect(

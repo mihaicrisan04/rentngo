@@ -1,5 +1,5 @@
 import { mutation, query, type MutationCtx } from "./_generated/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import {
   paginationOptsValidator,
   paginationResultValidator,
@@ -378,6 +378,16 @@ export const createReservation = mutation({
       customerEmail: args.customerInfo.email,
       subtotal: totalPrice,
     });
+    // A typed referral code that grants nothing fails the booking, exactly
+    // like an invalid coupon: checkout quoted the discounted price, so
+    // silently charging full price would be a bait-and-switch. The cookie
+    // path stays silent — nothing was promised there.
+    if (affiliateCandidates.typedCodeRejection) {
+      throw new ConvexError({
+        code: "REFERRAL_CODE_INVALID",
+        reason: affiliateCandidates.typedCodeRejection,
+      });
+    }
 
     const couponDiscount: AppliedDiscount | null = redeemedCoupon
       ? {
@@ -467,13 +477,15 @@ export const createReservation = mutation({
     // even when a coupon won the one-discount rule. Nothing is credited until
     // the rental is completed and an admin approves it.
     if (affiliateCandidates.referred) {
-      if (affiliateCandidates.referred.attributionSource === "typedCode") {
-        await recordTypedCodeAttribution(ctx, {
-          affiliateId: affiliateCandidates.referred.affiliateId,
-          slug: affiliateCandidates.referred.slug,
-        });
-      }
+      const attributionId =
+        affiliateCandidates.referred.attributionSource === "typedCode"
+          ? await recordTypedCodeAttribution(ctx, {
+              affiliateId: affiliateCandidates.referred.affiliateId,
+              slug: affiliateCandidates.referred.slug,
+            })
+          : affiliateCandidates.referred.attributionId;
       const conversionId = await recordReferralConversion(ctx, {
+        attributionId,
         affiliateId: affiliateCandidates.referred.affiliateId,
         bookingType: "reservation",
         referredUserId: currentUser?._id,

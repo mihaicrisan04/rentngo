@@ -38,6 +38,7 @@ import { useAffiliateDiscount } from "@/hooks/use-affiliate-discount";
 import { useWalletCredit } from "@/hooks/use-wallet-credit";
 import { applyDiscountToTotal, previewDiscountAmount } from "@/lib/pricing";
 import { getStoredReferral } from "@/lib/referral";
+import { isReferralCodeReason } from "@/lib/pricing";
 import type { PaymentMethod } from "@/lib/checkout-payment-methods";
 import { ConvexError } from "convex/values";
 
@@ -256,11 +257,18 @@ export default function TransferBookingPage() {
       router.push(`/transfers/confirmation/${result.transferId}`);
     } catch (error) {
       console.error("Failed to create transfer:", error);
-      const errorCode =
+      const errorData =
         error instanceof ConvexError
-          ? (error.data as { code?: string })?.code
+          ? (error.data as { code?: string; reason?: unknown })
           : undefined;
-      if (errorCode === "COUPON_INVALID") {
+      const errorCode = errorData?.code;
+      if (errorCode === "REFERRAL_CODE_INVALID") {
+        toast.error(
+          isReferralCodeReason(errorData?.reason)
+            ? tCoupon(`errors.${errorData.reason}`)
+            : tCoupon("errors.submitFailed"),
+        );
+      } else if (errorCode === "COUPON_INVALID") {
         toast.error(tCoupon("errors.submitFailed"));
       } else if (errorCode === "ROUTE_CHANGED") {
         toast.error(t("booking.errors.routeChanged"));

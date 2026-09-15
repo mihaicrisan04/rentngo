@@ -289,6 +289,14 @@ async function createTransferHandler(
     customerEmail: args.customerInfo.email,
     subtotal: fare.totalPrice,
   });
+  // See createReservation: a typed code that grants nothing fails the booking
+  // rather than silently charging the undiscounted price.
+  if (affiliateCandidates.typedCodeRejection) {
+    throw new ConvexError({
+      code: "REFERRAL_CODE_INVALID",
+      reason: affiliateCandidates.typedCodeRejection,
+    });
+  }
 
   const couponDiscount: AppliedDiscount | null = redeemedCoupon
     ? {
@@ -371,13 +379,15 @@ async function createTransferHandler(
 
   // Conversion lifecycle — see createReservation for the rationale
   if (affiliateCandidates.referred) {
-    if (affiliateCandidates.referred.attributionSource === "typedCode") {
-      await recordTypedCodeAttribution(ctx, {
-        affiliateId: affiliateCandidates.referred.affiliateId,
-        slug: affiliateCandidates.referred.slug,
-      });
-    }
+    const attributionId =
+      affiliateCandidates.referred.attributionSource === "typedCode"
+        ? await recordTypedCodeAttribution(ctx, {
+            affiliateId: affiliateCandidates.referred.affiliateId,
+            slug: affiliateCandidates.referred.slug,
+          })
+        : affiliateCandidates.referred.attributionId;
     const conversionId = await recordReferralConversion(ctx, {
+      attributionId,
       affiliateId: affiliateCandidates.referred.affiliateId,
       bookingType: "transfer",
       referredUserId: currentUser?._id,

@@ -10,6 +10,7 @@ import {
   evaluateCoupon,
   hasCouponIdentity,
   normalizeCouponCode,
+  referralCodeReason,
   normalizeCustomerEmail,
   type CouponBookingType,
 } from "../lib/pricing";
@@ -228,15 +229,6 @@ const invalidReasonValidator = v.union(
 /** Which kind of code the field matched, so the UI can name it correctly. */
 const codeKindValidator = v.union(v.literal("coupon"), v.literal("referral"));
 
-/** Referral rejections keep their own reason keys so the copy can differ. */
-const REFERRAL_REASON_KEYS = {
-  notFound: "notFound",
-  emailRequired: "emailRequired",
-  selfReferral: "referralSelfReferral",
-  duplicate: "referralDuplicate",
-  notFirstRental: "referralNotFirstRental",
-} as const;
-
 function referralPreviewResult(preview: TypedReferralPreview) {
   // An unknown slug is indistinguishable from an unknown coupon on purpose:
   // the field must not reveal that referral codes exist at all when the
@@ -251,7 +243,10 @@ function referralPreviewResult(preview: TypedReferralPreview) {
       : {
           valid: false as const,
           kind: "referral" as const,
-          reason: REFERRAL_REASON_KEYS[preview.reason],
+          reason:
+            preview.reason === "emailRequired"
+              ? ("emailRequired" as const)
+              : referralCodeReason(preview.reason),
         };
   }
   return {

@@ -20,6 +20,7 @@ import {
   nextTier,
   normalizeAffiliateSlug,
   normalizeCustomerEmail,
+  referralCodeReason,
   resolveConversionCredit,
   resolveReferralSource,
   resolveTierRewardPercent,
@@ -31,6 +32,7 @@ import {
   type ConversionBookingStatus,
   type ConversionStatus,
   type ConversionTransition,
+  type ReferralCodeReason,
   type ReferralSource,
   type ReferredIneligibilityReason,
 } from "../lib/pricing";
@@ -498,6 +500,8 @@ export interface ReferredDiscountCandidate {
    * both paths leave the same trail behind the identical conversion row.
    */
   attributionSource: "typedCode" | "link";
+  /** Set for the link path only; the typed path gets its id at booking time. */
+  attributionId?: Id<"referralAttributions">;
 }
 
 /**
@@ -558,9 +562,13 @@ async function hasPriorRental(
 async function affiliateForSource(
   ctx: QueryCtx | MutationCtx,
   source: ReferralSource,
-): Promise<Doc<"affiliates"> | null> {
+): Promise<{
+  affiliate: Doc<"affiliates"> | null;
+  /** The link path's attribution row; a typed code mints its own at booking. */
+  attributionId?: Id<"referralAttributions">;
+}> {
   if (source.kind === "typedCode") {
-    return await findBySlug(ctx, source.slug);
+    return { affiliate: await findBySlug(ctx, source.slug) };
   }
   const attribution = await ctx.db
     .query("referralAttributions")
@@ -571,9 +579,12 @@ async function affiliateForSource(
     attribution.expiresAt <= Date.now() ||
     attribution.slug !== source.slug
   ) {
-    return null;
+    return { affiliate: null };
   }
-  return await ctx.db.get(attribution.affiliateId);
+  return {
+    affiliate: await ctx.db.get(attribution.affiliateId),
+    attributionId: attribution._id,
+  };
 }
 
 export type ReferredCandidateResult =
@@ -593,6 +604,7 @@ async function evaluateReferredCandidate(
     email: string;
     subtotal: number;
     attributionSource: "typedCode" | "link";
+    attributionId?: Id<"referralAttributions">;
   },
 ): Promise<ReferredCandidateResult> {
   // A soft-deleted owner is treated as missing — eligibility fails closed
@@ -657,6 +669,7 @@ async function evaluateReferredCandidate(
         args.affiliate.rewardPercentOverride,
       ),
       attributionSource: args.attributionSource,
+      attributionId: args.attributionId,
     },
   };
 }
@@ -679,10 +692,24 @@ export async function resolveAffiliateCandidates(
     customerEmail: string;
     subtotal: number;
   },
-): Promise<{ referred: ReferredDiscountCandidate | null }> {
+): Promise<{
+  referred: ReferredDiscountCandidate | null;
+  /**
+   * Why a typed code granted nothing. Non-null ONLY for a code the customer
+   * entered: the booking mutation turns it into a ConvexError, because
+   * checkout showed that discount and silently charging full price would be
+   * a bait-and-switch. The cookie path stays silent — it is automatic, and
+   * the customer was never shown a promise to break.
+   */
+  typedCodeRejection: ReferralCodeReason | null;
+}> {
+  const typedCode = args.typedCode?.trim() ?? "";
   const settings = await loadSettings(ctx);
   if (!settings.enabled) {
-    return { referred: null };
+    return {
+      referred: null,
+      typedCodeRejection: typedCode ? "notFound" : null,
+    };
   }
 
   const email = normalizeCustomerEmail(args.customerEmail);
@@ -699,12 +726,15 @@ export async function resolveAffiliateCandidates(
 
   // A code typed into the promo field wins over the cookie (resolveReferralSource)
   const source = resolveReferralSource({
-    typedCode: args.typedCode,
+    typedCode,
     cookieReferral: args.referral ?? null,
   });
+  // A typed code that did not become the source failed the slug shape check
+  let typedCodeRejection: ReferralCodeReason | null =
+    typedCode && source?.kind !== "typedCode" ? "notFound" : null;
 
   if (source && hasIdentity) {
-    const affiliate = await affiliateForSource(ctx, source);
+    const { affiliate, attributionId } = await affiliateForSource(ctx, source);
     if (affiliate && affiliate.isActive) {
       const result = await evaluateReferredCandidate(ctx, {
         settings,
@@ -713,14 +743,21 @@ export async function resolveAffiliateCandidates(
         email,
         subtotal: args.subtotal,
         attributionSource: source.kind,
+        attributionId,
       });
       if (result.eligible) {
         referred = result.candidate;
+      } else if (source.kind === "typedCode") {
+        typedCodeRejection = referralCodeReason(result.reason);
       }
+    } else if (source.kind === "typedCode") {
+      typedCodeRejection = "notFound";
     }
+  } else if (source?.kind === "typedCode") {
+    typedCodeRejection = "emailRequired";
   }
 
-  return { referred };
+  return { referred, typedCodeRejection };
 }
 
 /**
@@ -768,11 +805,15 @@ export const previewAffiliateDiscount = query({
  * Called by `coupons.validateCoupon` once no coupon matches the code, so the
  * customer sees one field that understands both kinds of code.
  *
- * Neutrality: with the program disabled, an unknown slug, an inactive
- * affiliate or an orphaned owner all collapse to `notFound` — the same answer
- * an unknown coupon gets. Only reasons about the CUSTOMER'S OWN situation
- * (self-referral, already referred, not a first rental) are spelled out, so
- * the field can never be used to probe who is an affiliate.
+ * Neutrality: a disabled program, an unknown slug, an inactive affiliate and
+ * an orphaned owner all collapse to `notFound` — the same answer an unknown
+ * coupon gets — so the field never reveals that referral codes exist, nor
+ * which ones are switched off. It does NOT hide existence in general: the
+ * reasons about the customer's own situation (self-referral, already
+ * referred, not a first rental) are only reachable for a live slug, so a
+ * determined prober can still tell a live code from a dead one. That is
+ * accepted — the alternative is refusing to tell a customer why their code
+ * did not work.
  */
 export type TypedReferralPreview =
   | {
@@ -824,6 +865,9 @@ export async function previewTypedReferralCode(
       ? notFound
       : { valid: false, reason: result.reason };
   }
+  // Mirrors the booking path, which only treats a positive amount as a
+  // discount: never claim a code "applied" for 0 EUR off.
+  if (result.candidate.discountAmount <= 0) return notFound;
 
   const config = referredDiscountConfig(settings, affiliate);
   return {
@@ -859,10 +903,10 @@ export async function previewTypedReferralCode(
 export async function recordTypedCodeAttribution(
   ctx: MutationCtx,
   args: { affiliateId: Id<"affiliates">; slug: string },
-): Promise<void> {
+): Promise<Id<"referralAttributions">> {
   const settings = await loadSettings(ctx);
   const now = Date.now();
-  await ctx.db.insert("referralAttributions", {
+  return await ctx.db.insert("referralAttributions", {
     affiliateId: args.affiliateId,
     slug: args.slug,
     visitorKey: `typed:${crypto.randomUUID()}`,
@@ -880,6 +924,8 @@ export async function recordReferralConversion(
     referredEmail: string;
     referredDiscountAmount: number;
     rewardPercentSnapshot: number;
+    /** Link or typed code — either way the conversion joins back to its row. */
+    attributionId?: Id<"referralAttributions">;
   },
 ): Promise<Id<"referralConversions">> {
   return await ctx.db.insert("referralConversions", {
@@ -887,6 +933,7 @@ export async function recordReferralConversion(
     bookingType: args.bookingType,
     referredUserId: args.referredUserId,
     referredEmail: normalizeCustomerEmail(args.referredEmail),
+    attributionId: args.attributionId,
     status: "pending",
     referredDiscountAmount: args.referredDiscountAmount,
     referrerRewardPercentAtConversion: args.rewardPercentSnapshot,
@@ -1294,10 +1341,10 @@ export const createMyAffiliate = mutation({
       throw new Error("You already have a referral code.");
     }
 
+    // generateAffiliateSlug always yields a valid, non-reserved "<base>-<suffix>"
+    // (see the slug generation tests), so a collision is the only retry reason.
     for (let attempt = 0; attempt < SLUG_GENERATION_ATTEMPTS; attempt++) {
-      const slug = generateAffiliateSlug(user.name, attempt);
-      if (!isValidAffiliateSlug(slug) || isReservedAffiliateSlug(slug))
-        continue;
+      const slug = generateAffiliateSlug(user.firstName || user.name, attempt);
       if (await findBySlug(ctx, slug)) continue;
 
       await ctx.db.insert("affiliates", {

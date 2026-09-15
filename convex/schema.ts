@@ -409,6 +409,10 @@ export default defineSchema({
     transferId: v.optional(v.id("transfers")),
     referredUserId: v.optional(v.id("users")),
     referredEmail: v.string(), // normalized (lowercase, trimmed)
+    // The attribution row this conversion came from — the consent-gated click
+    // for a link, or the row the server minted for a typed code. Optional:
+    // conversions written before this field existed have none.
+    attributionId: v.optional(v.id("referralAttributions")),
     status: v.union(
       v.literal("pending"),
       v.literal("awaitingApproval"),

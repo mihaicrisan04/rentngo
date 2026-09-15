@@ -104,8 +104,10 @@ export function CouponCodeInput({
           <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-400">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             <span>
+              {/* The field uppercases as you type; referral slugs are stored
+                  lowercase, so display them the way they were entered. */}
               {t(result.kind === "referral" ? "appliedReferral" : "applied", {
-                code: result.code,
+                code: result.code.toUpperCase(),
               })}
               {": "}
               <span className="font-semibold">

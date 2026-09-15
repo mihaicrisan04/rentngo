@@ -30,6 +30,7 @@ import { useAffiliateDiscount } from "@/hooks/use-affiliate-discount";
 import { useWalletCredit } from "@/hooks/use-wallet-credit";
 import { applyDiscountToTotal, previewDiscountAmount } from "@/lib/pricing";
 import { getStoredReferral } from "@/lib/referral";
+import { isReferralCodeReason } from "@/lib/pricing";
 import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
 import { ConvexError } from "convex/values";
@@ -292,10 +293,17 @@ function ReservationPageContent() {
       router.push(`/reservation/confirmation?reservationId=${reservationId}`);
     } catch (error) {
       console.error("Error creating reservation:", error);
-      if (
-        error instanceof ConvexError &&
-        (error.data as { code?: string })?.code === "COUPON_INVALID"
-      ) {
+      const errorData =
+        error instanceof ConvexError
+          ? (error.data as { code?: string; reason?: unknown })
+          : undefined;
+      if (errorData?.code === "REFERRAL_CODE_INVALID") {
+        toast.error(
+          isReferralCodeReason(errorData.reason)
+            ? tCoupon(`errors.${errorData.reason}`)
+            : tCoupon("errors.submitFailed"),
+        );
+      } else if (errorData?.code === "COUPON_INVALID") {
         toast.error(tCoupon("errors.submitFailed"));
       } else {
         toast.error(t("reservation.error"));

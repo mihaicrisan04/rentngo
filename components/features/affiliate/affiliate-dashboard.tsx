@@ -63,6 +63,9 @@ export function AffiliateDashboard() {
   // enrolled". Only once the user exists do we trust affiliate === null.
   if (currentUser === undefined || affiliate === undefined) return null;
   if (currentUser === null) return null;
+  // Waiting for `enrolment` too, so the card never flashes the contact link
+  // before flipping to the enrolment CTA (or the other way round).
+  if (affiliate === null && enrolment === undefined) return null;
 
   if (affiliate === null) {
     // Enrolment is gated on the program kill-switch, same as every other part

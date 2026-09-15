@@ -146,7 +146,7 @@ export function affiliateSlugBase(name: string): string {
   const firstName = name.trim().split(/\s+/)[0] ?? "";
   const ascii = firstName
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036F]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "")
     .slice(0, SLUG_BASE_MAX_LENGTH);
@@ -344,6 +344,12 @@ export function referredEligibility(params: {
   if (!params.ownerUser) {
     return { eligible: false, reason: "missingOwner" };
   }
+  // Catches the signed-in affiliate and anyone booking with the owner's
+  // email. A signed-out affiliate typing their own code with a throwaway
+  // email is NOT caught, and deliberately so: requiring sign-in would stop
+  // genuine guests from being referred. Accepted because approval is manual
+  // by default and the admin conversion history shows referrer and referred
+  // email side by side.
   const isSelfReferral =
     params.bookerUserId === params.ownerUser.id ||
     normalizeCustomerEmail(params.ownerUser.email) ===
@@ -358,6 +364,42 @@ export function referredEligibility(params: {
     return { eligible: false, reason: "notFirstRental" };
   }
   return { eligible: true };
+}
+
+/**
+ * Why a typed referral code was refused, as the `common.coupon.errors.*`
+ * translation keys the checkout renders. Shared by the advisory preview
+ * (`validateCoupon`) and the ConvexError the booking mutations throw, so both
+ * speak the same language. `notFound` deliberately absorbs every reason that
+ * would otherwise confirm a slug exists.
+ */
+export const REFERRAL_CODE_REASONS = [
+  "notFound",
+  "emailRequired",
+  "referralSelfReferral",
+  "referralDuplicate",
+  "referralNotFirstRental",
+] as const;
+
+export type ReferralCodeReason = (typeof REFERRAL_CODE_REASONS)[number];
+
+export function isReferralCodeReason(
+  value: unknown,
+): value is ReferralCodeReason {
+  return (REFERRAL_CODE_REASONS as readonly unknown[]).includes(value);
+}
+
+const REFERRAL_CODE_REASON_BY_ELIGIBILITY = {
+  missingOwner: "notFound",
+  selfReferral: "referralSelfReferral",
+  duplicate: "referralDuplicate",
+  notFirstRental: "referralNotFirstRental",
+} as const satisfies Record<ReferredIneligibilityReason, ReferralCodeReason>;
+
+export function referralCodeReason(
+  reason: ReferredIneligibilityReason,
+): ReferralCodeReason {
+  return REFERRAL_CODE_REASON_BY_ELIGIBILITY[reason];
 }
 
 /** Booking statuses (convex/validators.ts) plus the hard-delete case. */
