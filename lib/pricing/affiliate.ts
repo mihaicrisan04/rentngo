@@ -558,7 +558,12 @@ export function validateAffiliateSettings(
   ) {
     return "Attribution window must be a positive whole number of days.";
   }
-  if (settings.referredDiscountValue <= 0) {
+  // NaN slips through every comparison below, and a blank number input
+  // parses to NaN, so finiteness is checked first on every free-text number.
+  if (
+    !Number.isFinite(settings.referredDiscountValue) ||
+    settings.referredDiscountValue <= 0
+  ) {
     return "Referred discount value must be greater than 0.";
   }
   if (
@@ -572,7 +577,11 @@ export function validateAffiliateSettings(
     if (!Number.isInteger(tier.minConversions) || tier.minConversions < 1) {
       return "Tier thresholds must be positive whole numbers.";
     }
-    if (tier.rewardPercent <= 0 || tier.rewardPercent > 100) {
+    if (
+      !Number.isFinite(tier.rewardPercent) ||
+      tier.rewardPercent <= 0 ||
+      tier.rewardPercent > 100
+    ) {
       return "Tier reward percent must be between 0 and 100.";
     }
     if (seen.has(tier.minConversions)) {
@@ -584,6 +593,7 @@ export function validateAffiliateSettings(
     seen.add(tier.minConversions);
   }
   if (
+    !Number.isFinite(settings.maxRedemptionPercent) ||
     settings.maxRedemptionPercent <= 0 ||
     settings.maxRedemptionPercent > 100
   ) {

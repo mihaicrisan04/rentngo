@@ -39,6 +39,7 @@ import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { DEFAULT_PICKUP_TIME } from "@/lib/pricing/constants";
+import { bookingAmountDue } from "@/lib/pricing";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
 import {
@@ -908,6 +909,20 @@ export function EditReservationDialog({
                           <p className="text-xs text-muted-foreground">
                             Updates automatically when pricing factors change
                           </p>
+                          {(reservation?.walletCreditApplied ?? 0) > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              Wallet credit −
+                              {(reservation?.walletCreditApplied ?? 0).toFixed(
+                                2,
+                              )}{" "}
+                              EUR · amount due{" "}
+                              {bookingAmountDue(
+                                Number(field.value) || 0,
+                                reservation?.walletCreditApplied,
+                              ).toFixed(2)}{" "}
+                              EUR
+                            </p>
+                          )}
                           <FormMessage />
                         </FormItem>
                       )}

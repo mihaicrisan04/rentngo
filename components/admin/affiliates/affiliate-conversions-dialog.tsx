@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, usePaginatedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Badge } from "@/components/ui/badge";
@@ -24,9 +24,11 @@ import {
 import { toast } from "sonner";
 import type { FunctionReturnType } from "convex/server";
 
+const CONVERSIONS_PER_PAGE = 25;
+
 type ConversionStatus = FunctionReturnType<
   typeof api.affiliates.listConversions
->[number]["status"];
+>["page"][number]["status"];
 
 const STATUS_VARIANT = {
   approved: "default",
@@ -53,9 +55,15 @@ export function AffiliateConversionsDialog({
   open,
   onOpenChange,
 }: AffiliateConversionsDialogProps) {
-  const conversions = useQuery(api.affiliates.listConversions, {
-    affiliateId,
-  });
+  const {
+    results: conversions,
+    status: paginationStatus,
+    loadMore,
+  } = usePaginatedQuery(
+    api.affiliates.listConversions,
+    { affiliateId },
+    { initialNumItems: CONVERSIONS_PER_PAGE },
+  );
   const voidConversion = useMutation(api.affiliates.voidConversion);
   const [voidingId, setVoidingId] =
     React.useState<Id<"referralConversions"> | null>(null);
@@ -83,7 +91,7 @@ export function AffiliateConversionsDialog({
           <DialogTitle>Conversions — /r/{slug}</DialogTitle>
         </DialogHeader>
         <ScrollArea className="max-h-[60vh]">
-          {conversions === undefined ? (
+          {paginationStatus === "LoadingFirstPage" ? (
             <p className="text-sm text-muted-foreground py-4">Loading...</p>
           ) : conversions.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4">
@@ -141,6 +149,21 @@ export function AffiliateConversionsDialog({
             </Table>
           )}
         </ScrollArea>
+        {paginationStatus !== "Exhausted" &&
+          paginationStatus !== "LoadingFirstPage" && (
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => loadMore(CONVERSIONS_PER_PAGE)}
+                disabled={paginationStatus === "LoadingMore"}
+              >
+                {paginationStatus === "LoadingMore"
+                  ? "Loading..."
+                  : "Load more"}
+              </Button>
+            </div>
+          )}
       </DialogContent>
     </Dialog>
   );

@@ -9,15 +9,21 @@
  * amount still owed is `bookingAmountDue(totalPrice, walletCreditApplied)`.
  */
 
-import { v } from "convex/values";
-import { query, type MutationCtx, type QueryCtx } from "./_generated/server";
+import { ConvexError, v } from "convex/values";
+import {
+  mutation,
+  query,
+  type MutationCtx,
+  type QueryCtx,
+} from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
-import { getCurrentUser } from "./users";
+import { getCurrentUser, requireAdmin } from "./users";
 import {
   computeAvailableBalance,
   computeRedeemable,
   computeRemainingCredits,
   planRedemption,
+  planWalletAdjustment,
   withSettingsDefaults,
   type WalletTransactionData,
 } from "../lib/pricing";
@@ -31,7 +37,7 @@ const walletKindValidator = v.union(
 );
 
 /** The ledger as the pure math wants it: ids as strings, nothing else. */
-function toTransactionData(
+export function toTransactionData(
   rows: Doc<"walletTransactions">[],
 ): WalletTransactionData[] {
   return rows.map((row) => ({
@@ -44,7 +50,7 @@ function toTransactionData(
   }));
 }
 
-async function loadLedger(
+export async function loadLedger(
   ctx: QueryCtx | MutationCtx,
   userId: Id<"users">,
 ): Promise<Doc<"walletTransactions">[]> {
@@ -275,3 +281,155 @@ export async function reverseWalletRedemption(
   }
   return Math.round(restored * 100) / 100;
 }
+
+// --- Admin wallet operations ---
+
+/** How many ledger rows the admin dialog renders; the balance uses them all. */
+const ADMIN_LEDGER_PAGE = 100;
+
+export const listWalletTransactions = query({
+  args: { userId: v.id("users") },
+  returns: v.object({
+    userName: v.string(),
+    userEmail: v.string(),
+    balance: v.number(),
+    maxRedemptionPercent: v.number(),
+    nextExpiry: v.union(
+      v.object({ amount: v.number(), expiresAt: v.number() }),
+      v.null(),
+    ),
+    transactions: v.array(
+      v.object({
+        id: v.id("walletTransactions"),
+        kind: walletKindValidator,
+        amount: v.number(),
+        expiresAt: v.optional(v.number()),
+        note: v.optional(v.string()),
+        createdAt: v.number(),
+      }),
+    ),
+  }),
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const user = await ctx.db.get(args.userId);
+    if (!user) {
+      throw new Error("User not found.");
+    }
+
+    const settings = await loadSettings(ctx);
+    const now = Date.now();
+    const ledger = toTransactionData(await loadLedger(ctx, args.userId));
+    const expiring = computeRemainingCredits(ledger, now).find(
+      (credit) => credit.expiresAt !== undefined,
+    );
+    const recent = await ctx.db
+      .query("walletTransactions")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .order("desc")
+      .take(ADMIN_LEDGER_PAGE);
+
+    return {
+      userName: user.name,
+      userEmail: user.email,
+      balance: computeAvailableBalance(ledger, now),
+      maxRedemptionPercent: settings.maxRedemptionPercent,
+      nextExpiry:
+        expiring?.expiresAt !== undefined
+          ? { amount: expiring.remaining, expiresAt: expiring.expiresAt }
+          : null,
+      transactions: recent.map((row) => ({
+        id: row._id,
+        kind: row.kind,
+        amount: row.amount,
+        expiresAt: row.expiresAt,
+        note: row.note,
+        createdAt: row.createdAt,
+      })),
+    };
+  },
+});
+
+/**
+ * Append one manual movement and return the balance it leaves behind. A
+ * top-up expires like a referral credit; a claw-back carries no expiry and is
+ * refused before anything is written when it would take the wallet below zero,
+ * because the replay would otherwise swallow the shortfall as overdraft.
+ */
+export async function applyWalletAdjustment(
+  ctx: MutationCtx,
+  args: {
+    userId: Id<"users">;
+    amount: number;
+    note: string;
+    adminUserId: Id<"users">;
+  },
+): Promise<{ balance: number }> {
+  const settings = await loadSettings(ctx);
+  const now = Date.now();
+  const ledger = toTransactionData(await loadLedger(ctx, args.userId));
+  const plan = planWalletAdjustment({
+    amount: args.amount,
+    note: args.note,
+    transactions: ledger,
+    now,
+    creditValidityMonths: settings.creditValidityMonths,
+  });
+  if (!plan.ok) {
+    // ConvexError survives production error redaction, so the admin sees why
+    throw new ConvexError({
+      code: "WALLET_ADJUSTMENT_INVALID",
+      reason: plan.error,
+    });
+  }
+
+  const id = await ctx.db.insert("walletTransactions", {
+    userId: args.userId,
+    kind: "manualAdjustment",
+    amount: plan.amount,
+    expiresAt: plan.expiresAt,
+    createdByUserId: args.adminUserId,
+    note: args.note.trim(),
+    createdAt: now,
+  });
+
+  return {
+    balance: computeAvailableBalance(
+      [
+        ...ledger,
+        {
+          id,
+          kind: "manualAdjustment",
+          amount: plan.amount,
+          expiresAt: plan.expiresAt,
+          createdAt: now,
+        },
+      ],
+      now,
+    ),
+  };
+}
+
+/**
+ * Manual top-up or claw-back for offline referrals and corrections. It works
+ * whether or not the program is enabled, because an owner configures the
+ * wallet before flipping the program on.
+ */
+export const adjustWallet = mutation({
+  args: {
+    userId: v.id("users"),
+    amount: v.number(),
+    note: v.string(),
+  },
+  returns: v.object({ balance: v.number() }),
+  handler: async (ctx, args) => {
+    const admin = await requireAdmin(ctx);
+    const user = await ctx.db.get(args.userId);
+    if (!user || user.deletedAt !== undefined) {
+      throw new Error("User not found.");
+    }
+    return await applyWalletAdjustment(ctx, {
+      ...args,
+      adminUserId: admin._id,
+    });
+  },
+});

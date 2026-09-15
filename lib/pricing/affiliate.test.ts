@@ -477,6 +477,29 @@ describe("resolveConversionCredit", () => {
       }).amount,
     ).toBe(0);
   });
+
+  // The approvals queue projects the credit with this same resolver, passing
+  // the conversion's own createdAt rather than reading a clock inside a query.
+  // That is only safe because the amount ignores approvedAt entirely.
+  it("prices identically whatever timestamp the projection passes", () => {
+    const input = {
+      tiers: guideTiers,
+      approvedConversionsBefore: 3,
+      bookingTotal: 400,
+      creditValidityMonths: 12,
+    };
+    const projected = resolveConversionCredit({
+      ...input,
+      approvedAt: Date.UTC(2026, 0, 15),
+    });
+    const minted = resolveConversionCredit({
+      ...input,
+      approvedAt: Date.UTC(2026, 5, 1),
+    });
+    expect(projected.amount).toBe(minted.amount);
+    expect(projected.rewardPercent).toBe(minted.rewardPercent);
+    expect(projected.expiresAt).not.toBe(minted.expiresAt);
+  });
 });
 
 /**
@@ -714,6 +737,23 @@ describe("referredEligibility", () => {
 describe("validateAffiliateSettings", () => {
   it("accepts the seeded defaults", () => {
     expect(validateAffiliateSettings(DEFAULT_AFFILIATE_SETTINGS)).toBeNull();
+  });
+
+  // A cleared number input parses to NaN, which passes every <= / > check
+  it("rejects NaN on every free-text number", () => {
+    const base = DEFAULT_AFFILIATE_SETTINGS;
+    expect(
+      validateAffiliateSettings({ ...base, maxRedemptionPercent: Number.NaN }),
+    ).toBeTruthy();
+    expect(
+      validateAffiliateSettings({ ...base, referredDiscountValue: Number.NaN }),
+    ).toBeTruthy();
+    expect(
+      validateAffiliateSettings({
+        ...base,
+        tiers: [{ minConversions: 1, rewardPercent: Number.NaN }],
+      }),
+    ).toBeTruthy();
   });
 
   it("rejects broken configs", () => {

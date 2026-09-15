@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { formatDate, formatPrice, formatRelativeTime } from "@/lib/format";
+import { bookingAmountDue } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 import { usePeriodicNow } from "@/hooks/use-periodic-now";
 import { getTableLayout } from "@/components/admin/shared/table-layout";
@@ -254,6 +255,18 @@ export function TransfersTable({
                     <div className="font-medium">
                       {formatPrice(transfer.totalPrice)}
                     </div>
+                    {(transfer.walletCreditApplied ?? 0) > 0 && (
+                      <div className="text-xs text-muted-foreground">
+                        Wallet −{formatPrice(transfer.walletCreditApplied ?? 0)}{" "}
+                        · due{" "}
+                        {formatPrice(
+                          bookingAmountDue(
+                            transfer.totalPrice,
+                            transfer.walletCreditApplied,
+                          ),
+                        )}
+                      </div>
+                    )}
                     <div className="text-xs text-muted-foreground capitalize">
                       {transfer.paymentMethod.replace(/_/g, " ")}
                     </div>

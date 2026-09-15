@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import {
   validateAffiliateSettings,
   withSettingsDefaults,
+  DEFAULT_AFFILIATE_SETTINGS,
   type AffiliateTier,
 } from "@/lib/pricing";
 
@@ -45,8 +46,12 @@ export function AffiliateSettingsCard() {
   >("fixed");
   const [discountValue, setDiscountValue] = React.useState("10");
   const [tiers, setTiers] = React.useState<
-    Array<{ minConversions: string; rewardPercent: string; name?: string }>
+    Array<{ minConversions: string; rewardPercent: string; name: string }>
   >([]);
+  const [maxRedemptionPercent, setMaxRedemptionPercent] = React.useState("50");
+  const [creditValidityMonths, setCreditValidityMonths] = React.useState("12");
+  const [autoApprove, setAutoApprove] = React.useState(false);
+  const [firstRentalOnly, setFirstRentalOnly] = React.useState(true);
   const [hydrated, setHydrated] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
 
@@ -62,9 +67,13 @@ export function AffiliateSettingsCard() {
         settings.tiers.map((tier) => ({
           minConversions: String(tier.minConversions),
           rewardPercent: String(tier.rewardPercent),
-          name: tier.name,
+          name: tier.name ?? "",
         })),
       );
+      setMaxRedemptionPercent(String(settings.maxRedemptionPercent));
+      setCreditValidityMonths(String(settings.creditValidityMonths));
+      setAutoApprove(settings.autoApproveOnCompletion);
+      setFirstRentalOnly(settings.referredFirstRentalOnly);
       setHydrated(true);
     }
   }, [settings, hydrated]);
@@ -73,7 +82,7 @@ export function AffiliateSettingsCard() {
     const parsedTiers: AffiliateTier[] = tiers.map((tier) => ({
       minConversions: Number(tier.minConversions),
       rewardPercent: Number(tier.rewardPercent),
-      name: tier.name,
+      name: tier.name.trim() === "" ? undefined : tier.name.trim(),
     }));
     const candidate = {
       enabled,
@@ -81,9 +90,11 @@ export function AffiliateSettingsCard() {
       referredDiscountType: discountType,
       referredDiscountValue: Number(discountValue),
       tiers: parsedTiers,
+      maxRedemptionPercent: Number(maxRedemptionPercent),
+      creditValidityMonths: Number(creditValidityMonths),
+      autoApproveOnCompletion: autoApprove,
+      referredFirstRentalOnly: firstRentalOnly,
     };
-    // The wallet fields are not editable here yet (RNGO-55); validate the
-    // edited fields against the values already stored for them.
     const error = validateAffiliateSettings(
       withSettingsDefaults({ ...settings, ...candidate }),
     );
@@ -109,8 +120,8 @@ export function AffiliateSettingsCard() {
       <CardHeader>
         <CardTitle>Program Settings</CardTitle>
         <CardDescription>
-          Referred-customer discount, attribution window and the reward tiers
-          unlocked by confirmed conversions
+          Referred-customer discount, attribution window, wallet rules and the
+          tiers that set the credit a referrer earns
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -173,13 +184,78 @@ export function AffiliateSettingsCard() {
           </div>
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="max-redemption">Max redemption (% of total)</Label>
+            <Input
+              id="max-redemption"
+              type="number"
+              min={1}
+              max={100}
+              step="0.5"
+              value={maxRedemptionPercent}
+              onChange={(e) => setMaxRedemptionPercent(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              The share of a booking wallet credit may pay for
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="credit-validity">Credit validity (months)</Label>
+            <Input
+              id="credit-validity"
+              type="number"
+              min={1}
+              step="1"
+              value={creditValidityMonths}
+              onChange={(e) => setCreditValidityMonths(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Applies to credit minted from now on; existing credit keeps its
+              own expiry
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between rounded-lg border p-3">
+          <div>
+            <Label htmlFor="first-rental-only">
+              Referred discount on the first rental only
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              A customer who has already rented gets no referred discount
+            </p>
+          </div>
+          <Switch
+            id="first-rental-only"
+            checked={firstRentalOnly}
+            onCheckedChange={setFirstRentalOnly}
+          />
+        </div>
+
+        <div className="flex items-center justify-between rounded-lg border p-3">
+          <div>
+            <Label htmlFor="auto-approve">Auto-approve on completion</Label>
+            <p className="text-sm text-muted-foreground">
+              Skips the approvals queue: marking a rental completed mints the
+              referrer&apos;s credit immediately, with no chance to review it
+            </p>
+          </div>
+          <Switch
+            id="auto-approve"
+            checked={autoApprove}
+            onCheckedChange={setAutoApprove}
+          />
+        </div>
+
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div>
               <Label>Reward tiers</Label>
               <p className="text-sm text-muted-foreground">
-                Confirmed conversions → % discount on the affiliate&apos;s own
-                bookings (highest reached tier applies)
+                Approved conversions → the % of each referred booking&apos;s
+                total the referrer earns as wallet credit (highest reached tier
+                applies)
               </p>
             </div>
             <Button
@@ -189,7 +265,7 @@ export function AffiliateSettingsCard() {
               onClick={() =>
                 setTiers((prev) => [
                   ...prev,
-                  { minConversions: "", rewardPercent: "" },
+                  { minConversions: "", rewardPercent: "", name: "" },
                 ])
               }
             >
@@ -204,6 +280,24 @@ export function AffiliateSettingsCard() {
           )}
           {tiers.map((tier, index) => (
             <div key={index} className="flex items-end gap-3">
+              <div className="space-y-1 flex-1">
+                <Label className="text-xs text-muted-foreground">
+                  Tier name
+                </Label>
+                <Input
+                  placeholder={
+                    DEFAULT_AFFILIATE_SETTINGS.tiers[index]?.name ?? "Optional"
+                  }
+                  value={tier.name}
+                  onChange={(e) =>
+                    setTiers((prev) =>
+                      prev.map((item, i) =>
+                        i === index ? { ...item, name: e.target.value } : item,
+                      ),
+                    )
+                  }
+                />
+              </div>
               <div className="space-y-1 flex-1">
                 <Label className="text-xs text-muted-foreground">
                   Conversions required

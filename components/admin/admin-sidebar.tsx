@@ -12,6 +12,7 @@ import {
   NotepadText,
   TicketPercent,
   Share2,
+  UsersRound,
 } from "lucide-react";
 
 import { NavMain } from "@/components/admin/nav-main";
@@ -59,9 +60,14 @@ const navItems = [
     icon: TicketPercent,
   },
   {
-    title: "Affiliates",
+    title: "Referrals",
     url: "/admin/affiliates",
     icon: Share2,
+  },
+  {
+    title: "Users",
+    url: "/admin/users",
+    icon: UsersRound,
   },
   {
     title: "Blogs",
