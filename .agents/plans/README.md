@@ -16,7 +16,7 @@ Before using a plan, load the `working-with-plans` skill and verify its issue in
 | `active/feature-calendar.md`         | Unlinked          | Blocked on product clarification in the repository snapshot                                            |
 | `active/feature-copy-update.md`      | Unlinked          | Blocked on approved client copy in the repository snapshot                                             |
 | `archive/feature-admin-viewport-shell.md` | RNGO-36      | Shipped 2026-08-06 (PRs #93, #100, #95–#99); archived                                                  |
-| `archive/feature-referral-wallet.md` | RNGO-50           | Shipped 2026-09-15 (PRs #111, #112, #113, #TBD, #TBD, #TBD); supersedes the RNGO-26 reward model; durable notes in `reference/referral-wallet-ledger.md` |
+| `archive/feature-referral-wallet.md` | RNGO-50           | Shipped 2026-09-15 (PRs #111, #112, #113, #114, #115, #116); supersedes the RNGO-26 reward model; durable notes in `reference/referral-wallet-ledger.md` |
 
 Unlinked plans must be connected to a Linear issue before implementation unless the user explicitly directs otherwise.
 
