@@ -4,7 +4,6 @@ import { Doc, Id } from "./_generated/dataModel";
 import { getCurrentUser, getOrCreateCurrentUser, requireAdmin } from "./users";
 import {
   computeReferredDiscount,
-  computeReferrerReward,
   conversionTransition,
   hasCouponIdentity,
   isValidAffiliateSlug,
@@ -14,8 +13,11 @@ import {
   normalizeCustomerEmail,
   resolveTierRewardPercent,
   validateAffiliateSettings,
-  DEFAULT_AFFILIATE_SETTINGS,
+  withSettingsDefaults,
+  BLOCKING_CONVERSION_STATUSES,
   type AffiliateSettingsData,
+  type ConversionBookingStatus,
+  type ConversionTransition,
 } from "../lib/pricing";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -23,6 +25,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const tierValidator = v.object({
   minConversions: v.number(),
   rewardPercent: v.number(),
+  name: v.optional(v.string()),
 });
 
 const referredDiscountValidator = v.object({
@@ -42,20 +45,43 @@ const settingsValidator = v.object({
   referredDiscountType: v.union(v.literal("percentage"), v.literal("fixed")),
   referredDiscountValue: v.number(),
   tiers: v.array(tierValidator),
+  maxRedemptionPercent: v.number(),
+  creditValidityMonths: v.number(),
+  autoApproveOnCompletion: v.boolean(),
+  referredFirstRentalOnly: v.boolean(),
 });
 
 const conversionStatusValidator = v.union(
   v.literal("pending"),
-  v.literal("confirmed"),
+  v.literal("awaitingApproval"),
+  v.literal("approved"),
+  v.literal("rejected"),
   v.literal("voided"),
+  v.literal("confirmed"),
 );
 
-/** Settings doc or the seeded defaults when no admin has saved one yet. */
+/**
+ * Settings doc or the seeded defaults when no admin has saved one yet; a doc
+ * saved before the wallet rollout has its missing fields filled with defaults.
+ */
 async function loadSettings(
   ctx: QueryCtx | MutationCtx,
 ): Promise<AffiliateSettingsData> {
-  const doc = await ctx.db.query("affiliateSettings").first();
-  return doc ?? DEFAULT_AFFILIATE_SETTINGS;
+  return withSettingsDefaults(await ctx.db.query("affiliateSettings").first());
+}
+
+/**
+ * Approved-conversion count. Reads the v1 counter while the wallet migration
+ * widens (convex/migrations/README.md); both are written on every update.
+ */
+function approvedCount(affiliate: Doc<"affiliates">): number {
+  return affiliate.approvedConversions ?? affiliate.confirmedConversions;
+}
+
+/** Keeps the v1 and v2 counters identical until the narrow step drops v1. */
+function counterPatch(next: number) {
+  const value = Math.max(0, next);
+  return { confirmedConversions: value, approvedConversions: value };
 }
 
 async function findBySlug(
@@ -87,14 +113,7 @@ export const getSettings = query({
   returns: settingsValidator,
   handler: async (ctx) => {
     await requireAdmin(ctx);
-    const settings = await loadSettings(ctx);
-    return {
-      enabled: settings.enabled,
-      attributionWindowDays: settings.attributionWindowDays,
-      referredDiscountType: settings.referredDiscountType,
-      referredDiscountValue: settings.referredDiscountValue,
-      tiers: settings.tiers,
-    };
+    return await loadSettings(ctx);
   },
 });
 
@@ -105,30 +124,51 @@ export const updateSettings = mutation({
     referredDiscountType: v.union(v.literal("percentage"), v.literal("fixed")),
     referredDiscountValue: v.number(),
     tiers: v.array(tierValidator),
+    // Wallet fields are optional so a client that predates them keeps the
+    // stored values instead of resetting them to the seeded defaults.
+    maxRedemptionPercent: v.optional(v.number()),
+    creditValidityMonths: v.optional(v.number()),
+    autoApproveOnCompletion: v.optional(v.boolean()),
+    referredFirstRentalOnly: v.optional(v.boolean()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
 
-    const error = validateAffiliateSettings(args);
+    const existing = await ctx.db.query("affiliateSettings").first();
+    const settings: AffiliateSettingsData = {
+      ...withSettingsDefaults(existing),
+      enabled: args.enabled,
+      attributionWindowDays: args.attributionWindowDays,
+      referredDiscountType: args.referredDiscountType,
+      referredDiscountValue: args.referredDiscountValue,
+      tiers: [...args.tiers].sort(
+        (a, b) => a.minConversions - b.minConversions,
+      ),
+      ...(args.maxRedemptionPercent !== undefined && {
+        maxRedemptionPercent: args.maxRedemptionPercent,
+      }),
+      ...(args.creditValidityMonths !== undefined && {
+        creditValidityMonths: args.creditValidityMonths,
+      }),
+      ...(args.autoApproveOnCompletion !== undefined && {
+        autoApproveOnCompletion: args.autoApproveOnCompletion,
+      }),
+      ...(args.referredFirstRentalOnly !== undefined && {
+        referredFirstRentalOnly: args.referredFirstRentalOnly,
+      }),
+    };
+
+    const error = validateAffiliateSettings(settings);
     if (error) {
       throw new Error(error);
     }
 
-    const tiers = [...args.tiers].sort(
-      (a, b) => a.minConversions - b.minConversions,
-    );
-    const existing = await ctx.db.query("affiliateSettings").first();
     if (existing) {
-      await ctx.db.patch(existing._id, {
-        ...args,
-        tiers,
-        updatedAt: Date.now(),
-      });
+      await ctx.db.patch(existing._id, { ...settings, updatedAt: Date.now() });
     } else {
       await ctx.db.insert("affiliateSettings", {
-        ...args,
-        tiers,
+        ...settings,
         updatedAt: Date.now(),
       });
     }
@@ -165,13 +205,13 @@ export const listAffiliates = query({
           _id: affiliate._id,
           slug: affiliate.slug,
           isActive: affiliate.isActive,
-          confirmedConversions: affiliate.confirmedConversions,
+          confirmedConversions: approvedCount(affiliate),
           rewardPercentOverride: affiliate.rewardPercentOverride,
           referredDiscountOverride: affiliate.referredDiscountOverride,
           createdAt: affiliate.createdAt,
           currentRewardPercent: resolveTierRewardPercent(
             settings.tiers,
-            affiliate.confirmedConversions,
+            approvedCount(affiliate),
             affiliate.rewardPercentOverride,
           ),
           userName:
@@ -243,7 +283,7 @@ export const createAffiliate = mutation({
       userId: user._id,
       slug,
       isActive: true,
-      confirmedConversions: 0,
+      ...counterPatch(0),
       createdAt: Date.now(),
     });
   },
@@ -351,20 +391,16 @@ export const voidConversion = mutation({
     if (!conversion) {
       throw new Error("Conversion not found.");
     }
-    if (conversion.status === "voided") {
+    // An admin void is the same transition a cancelled booking triggers, so
+    // it goes through the same table and reverses a minted credit too.
+    const transition = conversionTransition({
+      current: conversion.status,
+      bookingStatus: "cancelled",
+    });
+    if (!transition) {
       throw new Error("Conversion is already voided.");
     }
-
-    await ctx.db.patch(conversion._id, {
-      status: "voided",
-      voidedAt: Date.now(),
-    });
-    const affiliate = await ctx.db.get(conversion.affiliateId);
-    if (affiliate && conversion.status === "confirmed") {
-      await ctx.db.patch(affiliate._id, {
-        confirmedConversions: Math.max(0, affiliate.confirmedConversions - 1),
-      });
-    }
+    await applyConversionTransition(ctx, conversion, transition);
     return null;
   },
 });
@@ -508,13 +544,13 @@ export async function resolveAffiliateCandidates(
       // One referred discount/conversion per customer per affiliate: any
       // live (non-voided) prior conversion blocks a repeat; voided ones (the
       // earlier booking was cancelled) free the slot. Status is in the index,
-      // so each live status is a targeted .first() — no amount of voided
+      // so each blocking status is a targeted .first() — no amount of voided
       // history can hide an existing live conversion. Race-safe like the
       // coupon checks: a losing OCC transaction re-runs this read after the
       // winner's insert.
       const livePrior = (
         await Promise.all(
-          (["confirmed", "pending"] as const).map((status) =>
+          BLOCKING_CONVERSION_STATUSES.map((status) =>
             ctx.db
               .query("referralConversions")
               .withIndex("by_affiliate_email_status", (q) =>
@@ -548,7 +584,7 @@ export async function resolveAffiliateCandidates(
           ),
           rewardPercentSnapshot: resolveTierRewardPercent(
             settings.tiers,
-            affiliate.confirmedConversions,
+            approvedCount(affiliate),
             affiliate.rewardPercentOverride,
           ),
         };
@@ -565,13 +601,16 @@ export async function resolveAffiliateCandidates(
     if (ownAffiliate && ownAffiliate.isActive) {
       const rewardPercent = resolveTierRewardPercent(
         settings.tiers,
-        ownAffiliate.confirmedConversions,
+        approvedCount(ownAffiliate),
         ownAffiliate.rewardPercentOverride,
       );
-      const discountAmount = computeReferrerReward(
-        args.subtotal,
-        rewardPercent,
-      );
+      // Superseded by wallet redemption in RNGO-53; kept unchanged here so
+      // phase 1 is a pure widen. rewardPercent is 0 unless an admin set an
+      // override or the affiliate reached a tier.
+      const discountAmount = computeReferredDiscount(args.subtotal, {
+        type: "percentage",
+        value: rewardPercent,
+      });
       if (discountAmount > 0) {
         ownReward = {
           affiliateId: ownAffiliate._id,
@@ -636,17 +675,14 @@ export const previewAffiliateDiscount = query({
 // --- Conversion lifecycle (called inside booking mutations) ---
 
 /**
- * Record a conversion for a referred booking and credit the referrer.
- * Owner decision: a conversion is confirmed the moment the booking is
- * created, and voided if the booking is later cancelled (see
- * syncConversionForBooking).
+ * Record a conversion for a referred booking. A new conversion starts
+ * `pending`: nothing is credited until the booking completes and an admin
+ * approves it (see syncConversionForBooking and conversionTransition), so the
+ * affiliate's counter is not touched here.
  *
- * Concurrency: the counter increment and the conversion insert happen in the
- * booking mutation's transaction. Two bookings racing on the same affiliate
- * both patch the affiliate doc, so Convex OCC commits one and retries the
- * other against the incremented count — the counter can neither skip nor
- * double-count. The per-customer dedupe (resolveAffiliateCandidates) is
- * race-safe the same way: the losing transaction re-runs its index read after
+ * Concurrency: the conversion insert happens in the booking mutation's
+ * transaction, and the per-customer dedupe (resolveAffiliateCandidates) is
+ * race-safe against it — the losing transaction re-runs its index read after
  * the winner's conversion insert.
  */
 export async function recordReferralConversion(
@@ -660,40 +696,100 @@ export async function recordReferralConversion(
     rewardPercentSnapshot: number;
   },
 ): Promise<Id<"referralConversions">> {
-  const conversionId = await ctx.db.insert("referralConversions", {
+  return await ctx.db.insert("referralConversions", {
     affiliateId: args.affiliateId,
     bookingType: args.bookingType,
     referredUserId: args.referredUserId,
     referredEmail: normalizeCustomerEmail(args.referredEmail),
-    status: "confirmed",
+    status: "pending",
     referredDiscountAmount: args.referredDiscountAmount,
     referrerRewardPercentAtConversion: args.rewardPercentSnapshot,
     createdAt: Date.now(),
-    confirmedAt: Date.now(),
   });
-  const affiliate = await ctx.db.get(args.affiliateId);
-  if (affiliate) {
-    await ctx.db.patch(affiliate._id, {
-      confirmedConversions: affiliate.confirmedConversions + 1,
-    });
-  }
-  return conversionId;
 }
 
 /**
- * Keep the conversion (and the referrer's counter) in sync with its booking's
- * status. Call from EVERY path that changes a booking's status or deletes it:
- * cancelled/deleted -> void + decrement; back to any live status -> re-confirm
- * + increment. Idempotent via conversionTransition, so repeated cancels never
- * double-decrement. Same-transaction as the status change, so the counter and
- * the booking can never disagree (OCC retries a racing admin void).
+ * Undo a minted referral credit by appending the compensating negative row,
+ * never by deleting: the ledger is append-only and must stay auditable. A
+ * conversion that never minted anything (or was already reversed) is a no-op.
+ */
+async function reverseConversionCredit(
+  ctx: MutationCtx,
+  conversion: Doc<"referralConversions">,
+): Promise<void> {
+  const rows = await ctx.db
+    .query("walletTransactions")
+    .withIndex("by_conversion", (q) => q.eq("conversionId", conversion._id))
+    .collect();
+  const outstanding = rows.reduce((sum, row) => sum + row.amount, 0);
+  if (outstanding <= 0) return;
+
+  const credit = rows.find((row) => row.kind === "referralCredit");
+  if (!credit) return;
+  await ctx.db.insert("walletTransactions", {
+    userId: credit.userId,
+    kind: "creditReversal",
+    amount: -outstanding,
+    conversionId: conversion._id,
+    createdAt: Date.now(),
+  });
+}
+
+/**
+ * Persist a transition's status flip and side-effects. Shared by the
+ * booking-driven sync and the admin void so the two can never disagree.
+ */
+async function applyConversionTransition(
+  ctx: MutationCtx,
+  conversion: Doc<"referralConversions">,
+  transition: ConversionTransition,
+): Promise<void> {
+  if (transition.mintCredit) {
+    throw new Error(
+      "Minting referral credit is not driven from this path: approval is an " +
+        "admin action landing in RNGO-52. Do not enable autoApproveOnCompletion yet.",
+    );
+  }
+
+  await ctx.db.patch(conversion._id, {
+    status: transition.nextStatus,
+    ...(transition.nextStatus === "voided"
+      ? { voidedAt: Date.now() }
+      : { voidedAt: undefined }),
+  });
+
+  if (transition.reverseCredit) {
+    await reverseConversionCredit(ctx, conversion);
+  }
+  if (transition.counterDelta !== 0) {
+    const affiliate = await ctx.db.get(conversion.affiliateId);
+    if (affiliate) {
+      await ctx.db.patch(
+        affiliate._id,
+        counterPatch(approvedCount(affiliate) + transition.counterDelta),
+      );
+    }
+  }
+}
+
+/**
+ * Keep the conversion (its status, the referrer's counter and any minted
+ * credit) in sync with its booking's status. Call from EVERY path that changes
+ * a booking's status or deletes it. Idempotent via conversionTransition, so
+ * repeated cancels never double-decrement. Same-transaction as the status
+ * change, so the counter and the booking can never disagree (OCC retries a
+ * racing admin void).
+ *
+ * Minting is deliberately not driven from here: approval is an admin action
+ * (RNGO-52), so `autoApproveOnCompletion` is not consulted and a completed
+ * booking only moves the conversion to `awaitingApproval`.
  */
 export async function syncConversionForBooking(
   ctx: MutationCtx,
   args: {
     bookingType: "reservation" | "transfer";
     bookingId: Id<"reservations"> | Id<"transfers">;
-    bookingIsLive: boolean;
+    bookingStatus: ConversionBookingStatus;
   },
 ): Promise<void> {
   const conversion =
@@ -712,27 +808,13 @@ export async function syncConversionForBooking(
           .first();
   if (!conversion) return;
 
-  const transition = conversionTransition(
-    conversion.status,
-    args.bookingIsLive,
-  );
+  const transition = conversionTransition({
+    current: conversion.status,
+    bookingStatus: args.bookingStatus,
+  });
   if (!transition) return;
 
-  await ctx.db.patch(conversion._id, {
-    status: transition.nextStatus,
-    ...(transition.nextStatus === "voided"
-      ? { voidedAt: Date.now() }
-      : { confirmedAt: Date.now(), voidedAt: undefined }),
-  });
-  const affiliate = await ctx.db.get(conversion.affiliateId);
-  if (affiliate) {
-    await ctx.db.patch(affiliate._id, {
-      confirmedConversions: Math.max(
-        0,
-        affiliate.confirmedConversions + transition.counterDelta,
-      ),
-    });
-  }
+  await applyConversionTransition(ctx, conversion, transition);
 }
 
 // --- Affiliate-facing dashboard (owner-scoped) ---
@@ -780,16 +862,16 @@ export const getMyAffiliate = query({
       slug: affiliate.slug,
       isActive: affiliate.isActive,
       programEnabled: settings.enabled,
-      confirmedConversions: affiliate.confirmedConversions,
+      confirmedConversions: approvedCount(affiliate),
       currentRewardPercent: resolveTierRewardPercent(
         settings.tiers,
-        affiliate.confirmedConversions,
+        approvedCount(affiliate),
         affiliate.rewardPercentOverride,
       ),
       nextTier:
         affiliate.rewardPercentOverride !== undefined
           ? null
-          : nextTier(settings.tiers, affiliate.confirmedConversions),
+          : nextTier(settings.tiers, approvedCount(affiliate)),
       tiers: settings.tiers,
       referredDiscount: referredDiscountConfig(settings, affiliate),
       // No referred emails here — the affiliate sees counts and dates only

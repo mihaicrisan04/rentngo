@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   computeReferredDiscount,
-  computeReferrerReward,
   conversionTransition,
+  withSettingsDefaults,
+  BLOCKING_CONVERSION_STATUSES,
   isValidAffiliateSlug,
   nextTier,
   normalizeAffiliateSlug,
@@ -11,6 +12,8 @@ import {
   validateAffiliateSettings,
   DEFAULT_AFFILIATE_SETTINGS,
   type AffiliateTier,
+  type ConversionStatus,
+  type ConversionBookingStatus,
 } from "./affiliate";
 import { pickDiscount, type AppliedDiscount } from "./discount";
 
@@ -90,16 +93,6 @@ describe("computeReferredDiscount", () => {
   });
 });
 
-describe("computeReferrerReward", () => {
-  it("applies the tier percent to the subtotal", () => {
-    expect(computeReferrerReward(200, 5)).toBe(10);
-  });
-
-  it("returns 0 at percent 0 (no unlocked tier)", () => {
-    expect(computeReferrerReward(200, 0)).toBe(0);
-  });
-});
-
 describe("pickDiscount with coupon and affiliate candidates", () => {
   const coupon: AppliedDiscount = {
     source: "coupon",
@@ -131,27 +124,220 @@ describe("pickDiscount with coupon and affiliate candidates", () => {
   });
 });
 
-describe("conversionTransition (void on cancel, re-confirm on un-cancel)", () => {
-  it("voids a confirmed conversion when the booking dies", () => {
-    expect(conversionTransition("confirmed", false)).toEqual({
-      nextStatus: "voided",
-      counterDelta: -1,
-    });
+describe("conversionTransition", () => {
+  const ALL_STATUSES: ConversionStatus[] = [
+    "pending",
+    "awaitingApproval",
+    "approved",
+    "rejected",
+    "voided",
+    "confirmed",
+  ];
+  const ALL_BOOKING_STATUSES: ConversionBookingStatus[] = [
+    "pending",
+    "confirmed",
+    "cancelled",
+    "completed",
+    "deleted",
+  ];
+  const dead: ConversionBookingStatus[] = ["cancelled", "deleted"];
+  const noEffects = {
+    counterDelta: 0,
+    mintCredit: false,
+    reverseCredit: false,
+  };
+
+  it("never writes the legacy status and never mints and reverses at once", () => {
+    for (const current of ALL_STATUSES) {
+      for (const bookingStatus of ALL_BOOKING_STATUSES) {
+        for (const adminAction of [
+          undefined,
+          "approve",
+          "reject",
+        ] as const satisfies readonly ("approve" | "reject" | undefined)[]) {
+          const result = conversionTransition({
+            current,
+            bookingStatus,
+            adminAction,
+          });
+          if (!result) continue;
+          expect(result.nextStatus).not.toBe("confirmed");
+          expect(result.mintCredit && result.reverseCredit).toBe(false);
+          expect(result.nextStatus).not.toBe(
+            current === "confirmed" ? "approved" : current,
+          );
+        }
+      }
+    }
   });
 
-  it("is idempotent: a second cancel never double-decrements", () => {
-    expect(conversionTransition("voided", false)).toBeNull();
+  it("voids and reverses an approved conversion when the booking dies", () => {
+    for (const bookingStatus of dead) {
+      for (const current of ["approved", "confirmed"] as const) {
+        expect(conversionTransition({ current, bookingStatus })).toEqual({
+          nextStatus: "voided",
+          counterDelta: -1,
+          mintCredit: false,
+          reverseCredit: true,
+        });
+      }
+    }
   });
 
-  it("re-confirms a voided conversion when the booking is un-cancelled", () => {
-    expect(conversionTransition("voided", true)).toEqual({
-      nextStatus: "confirmed",
+  it("voids an unapproved conversion without touching the counter", () => {
+    for (const bookingStatus of dead) {
+      for (const current of [
+        "pending",
+        "awaitingApproval",
+        "rejected",
+      ] as const) {
+        expect(conversionTransition({ current, bookingStatus })).toEqual({
+          nextStatus: "voided",
+          ...noEffects,
+        });
+      }
+    }
+  });
+
+  it("is idempotent: a second cancel or delete never double-decrements", () => {
+    for (const bookingStatus of dead) {
+      expect(
+        conversionTransition({ current: "voided", bookingStatus }),
+      ).toBeNull();
+    }
+  });
+
+  it("a completed booking parks the conversion for approval", () => {
+    expect(
+      conversionTransition({ current: "pending", bookingStatus: "completed" }),
+    ).toEqual({ nextStatus: "awaitingApproval", ...noEffects });
+  });
+
+  it("auto-approval mints on completion instead", () => {
+    expect(
+      conversionTransition({
+        current: "pending",
+        bookingStatus: "completed",
+        autoApproveOnCompletion: true,
+      }),
+    ).toEqual({
+      nextStatus: "approved",
       counterDelta: 1,
+      mintCredit: true,
+      reverseCredit: false,
     });
   });
 
-  it("leaves a live confirmed conversion alone on non-cancel status changes", () => {
-    expect(conversionTransition("confirmed", true)).toBeNull();
+  it("completion does not disturb an already decided conversion", () => {
+    for (const current of [
+      "awaitingApproval",
+      "approved",
+      "confirmed",
+      "rejected",
+    ] as const) {
+      expect(
+        conversionTransition({ current, bookingStatus: "completed" }),
+      ).toBeNull();
+    }
+  });
+
+  it("admin approval mints once and is idempotent", () => {
+    expect(
+      conversionTransition({
+        current: "awaitingApproval",
+        bookingStatus: "completed",
+        adminAction: "approve",
+      }),
+    ).toEqual({
+      nextStatus: "approved",
+      counterDelta: 1,
+      mintCredit: true,
+      reverseCredit: false,
+    });
+    for (const current of ["approved", "confirmed"] as const) {
+      expect(
+        conversionTransition({
+          current,
+          bookingStatus: "completed",
+          adminAction: "approve",
+        }),
+      ).toBeNull();
+    }
+  });
+
+  it("admin rejection reverses a credit already minted", () => {
+    expect(
+      conversionTransition({
+        current: "approved",
+        bookingStatus: "completed",
+        adminAction: "reject",
+      }),
+    ).toEqual({
+      nextStatus: "rejected",
+      counterDelta: -1,
+      mintCredit: false,
+      reverseCredit: true,
+    });
+    expect(
+      conversionTransition({
+        current: "awaitingApproval",
+        bookingStatus: "completed",
+        adminAction: "reject",
+      }),
+    ).toEqual({ nextStatus: "rejected", ...noEffects });
+    expect(
+      conversionTransition({
+        current: "rejected",
+        bookingStatus: "completed",
+        adminAction: "reject",
+      }),
+    ).toBeNull();
+  });
+
+  it("a cancelled booking wins over any admin action", () => {
+    expect(
+      conversionTransition({
+        current: "pending",
+        bookingStatus: "cancelled",
+        adminAction: "approve",
+      }),
+    ).toEqual({ nextStatus: "voided", ...noEffects });
+  });
+
+  it("a booking coming back to life revives the conversion by its status", () => {
+    expect(
+      conversionTransition({ current: "voided", bookingStatus: "confirmed" }),
+    ).toEqual({ nextStatus: "pending", ...noEffects });
+    expect(
+      conversionTransition({ current: "voided", bookingStatus: "completed" }),
+    ).toEqual({ nextStatus: "awaitingApproval", ...noEffects });
+  });
+
+  it("un-completing a booking demotes an unapproved conversion but keeps an approval", () => {
+    expect(
+      conversionTransition({
+        current: "awaitingApproval",
+        bookingStatus: "confirmed",
+      }),
+    ).toEqual({ nextStatus: "pending", ...noEffects });
+    for (const current of ["approved", "confirmed", "rejected"] as const) {
+      expect(
+        conversionTransition({ current, bookingStatus: "confirmed" }),
+      ).toBeNull();
+    }
+  });
+});
+
+describe("BLOCKING_CONVERSION_STATUSES", () => {
+  it("is every status except voided, so only voiding frees the customer slot", () => {
+    expect([...BLOCKING_CONVERSION_STATUSES].sort()).toEqual([
+      "approved",
+      "awaitingApproval",
+      "confirmed",
+      "pending",
+      "rejected",
+    ]);
+    expect(BLOCKING_CONVERSION_STATUSES).not.toContain("voided");
   });
 });
 
@@ -209,6 +395,26 @@ describe("referredEligibility", () => {
     });
   });
 
+  it("blocks a repeat customer when the welcome offer is first-rental only", () => {
+    expect(
+      referredEligibility({
+        ...base,
+        hasPriorRental: true,
+        firstRentalOnly: true,
+      }),
+    ).toEqual({ eligible: false, reason: "notFirstRental" });
+  });
+
+  it("ignores prior rentals when the first-rental rule is off", () => {
+    expect(
+      referredEligibility({
+        ...base,
+        hasPriorRental: true,
+        firstRentalOnly: false,
+      }),
+    ).toEqual({ eligible: true });
+  });
+
   it("a guest (no user id) never matches the owner's id", () => {
     expect(referredEligibility({ ...base, bookerUserId: undefined })).toEqual({
       eligible: true,
@@ -251,6 +457,72 @@ describe("validateAffiliateSettings", () => {
         tiers: [{ minConversions: 6, rewardPercent: 0 }],
       }),
     ).toBeTruthy();
+    expect(
+      validateAffiliateSettings({
+        ...base,
+        tiers: [{ minConversions: 6, rewardPercent: 5, name: "  " }],
+      }),
+    ).toBeTruthy();
+    expect(
+      validateAffiliateSettings({ ...base, maxRedemptionPercent: 0 }),
+    ).toBeTruthy();
+    expect(
+      validateAffiliateSettings({ ...base, maxRedemptionPercent: 101 }),
+    ).toBeTruthy();
+    expect(
+      validateAffiliateSettings({ ...base, creditValidityMonths: 0 }),
+    ).toBeTruthy();
+    expect(
+      validateAffiliateSettings({ ...base, creditValidityMonths: 1.5 }),
+    ).toBeTruthy();
+  });
+
+  it("ships the guide's defaults, with the program off", () => {
+    expect(DEFAULT_AFFILIATE_SETTINGS).toMatchObject({
+      enabled: false,
+      referredDiscountType: "percentage",
+      referredDiscountValue: 5,
+      maxRedemptionPercent: 50,
+      creditValidityMonths: 12,
+      autoApproveOnCompletion: false,
+      referredFirstRentalOnly: true,
+      tiers: [
+        { minConversions: 1, rewardPercent: 5, name: "Pionier" },
+        { minConversions: 6, rewardPercent: 10, name: "Ambasador" },
+      ],
+    });
+  });
+});
+
+describe("withSettingsDefaults", () => {
+  it("fills the wallet fields a pre-wallet settings doc lacks", () => {
+    expect(
+      withSettingsDefaults({
+        enabled: true,
+        attributionWindowDays: 45,
+        referredDiscountType: "fixed",
+        referredDiscountValue: 10,
+        tiers: [{ minConversions: 6, rewardPercent: 5 }],
+      }),
+    ).toEqual({
+      enabled: true,
+      attributionWindowDays: 45,
+      referredDiscountType: "fixed",
+      referredDiscountValue: 10,
+      tiers: [{ minConversions: 6, rewardPercent: 5 }],
+      maxRedemptionPercent: 50,
+      creditValidityMonths: 12,
+      autoApproveOnCompletion: false,
+      referredFirstRentalOnly: true,
+    });
+  });
+
+  it("keeps a missing doc on the seeded defaults", () => {
+    expect(withSettingsDefaults(null)).toEqual(DEFAULT_AFFILIATE_SETTINGS);
+  });
+
+  it("keeps `enabled: false` from a stored doc rather than falling back", () => {
+    expect(withSettingsDefaults({ enabled: false }).enabled).toBe(false);
   });
 });
 

@@ -682,6 +682,11 @@ export const updateReservationStatus = mutation({
     if (reservation.userId !== user._id && user.role !== "admin") {
       throw new Error("User not authorized to update this reservation status.");
     }
+    // Completion is what makes a referral conversion claimable, so only staff
+    // may declare a rental finished. Customers keep their own cancellation.
+    if (args.newStatus === "completed" && user.role !== "admin") {
+      throw new Error("Only an admin can mark a reservation completed.");
+    }
 
     await ctx.db.patch(args.reservationId, { status: args.newStatus });
     await recordStatsStatusChange(
@@ -695,7 +700,7 @@ export const updateReservationStatus = mutation({
     await syncConversionForBooking(ctx, {
       bookingType: "reservation",
       bookingId: args.reservationId,
-      bookingIsLive: args.newStatus !== "cancelled",
+      bookingStatus: args.newStatus,
     });
 
     return { success: true };
@@ -753,6 +758,9 @@ export const updateReservationDetails = mutation({
     if (reservation.userId !== user._id && user.role !== "admin") {
       throw new Error("User not authorized to update this reservation.");
     }
+    if (updatesIn.status === "completed" && user.role !== "admin") {
+      throw new Error("Only an admin can mark a reservation completed.");
+    }
 
     const updatesToApply = stripUndefined(updatesIn);
 
@@ -772,7 +780,7 @@ export const updateReservationDetails = mutation({
       await syncConversionForBooking(ctx, {
         bookingType: "reservation",
         bookingId: reservationId,
-        bookingIsLive: updatesToApply.status !== "cancelled",
+        bookingStatus: updatesToApply.status,
       });
     }
 
@@ -827,7 +835,7 @@ export const cancelReservation = mutation({
     await syncConversionForBooking(ctx, {
       bookingType: "reservation",
       bookingId: args.reservationId,
-      bookingIsLive: false,
+      bookingStatus: "cancelled",
     });
 
     return { success: true, message: "Reservation cancelled." };
@@ -857,7 +865,7 @@ export const deleteReservationPermanently = mutation({
     await syncConversionForBooking(ctx, {
       bookingType: "reservation",
       bookingId: args.reservationId,
-      bookingIsLive: false,
+      bookingStatus: "deleted",
     });
     await ctx.db.delete(args.reservationId);
     await recordStatsRemove(ctx, "reservations", reservation.status);

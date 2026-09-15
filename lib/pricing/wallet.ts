@@ -1,0 +1,254 @@
+/**
+ * Wallet credit math — the pure half of the referral wallet (RNGO-50 phase 1).
+ * The ledger itself (`walletTransactions`) is append-only and has no
+ * denormalized balance: every number a user sees is derived here from their
+ * transactions, so a credit expiring is a `expiresAt > now` comparison rather
+ * than a cron that has to run on time.
+ *
+ * Redemption is a PAYMENT, not a discount: it is applied after `pickDiscount`
+ * and is capped at `maxRedemptionPercent` of the post-discount total, so a
+ * booking's `totalPrice` stays the pre-credit price.
+ */
+
+const round2 = (value: number) => Math.round(value * 100) / 100;
+const floor2 = (value: number) => Math.floor(value * 100) / 100;
+
+export type WalletTransactionKind =
+  | "referralCredit"
+  | "creditReversal"
+  | "manualAdjustment"
+  | "redemption"
+  | "redemptionReversal";
+
+/** The subset of a `walletTransactions` document the pure math needs. */
+export interface WalletTransactionData {
+  id: string;
+  kind: WalletTransactionKind;
+  /**
+   * EUR, signed. Positive opens credit (`referralCredit`, a top-up
+   * `manualAdjustment`, `redemptionReversal`); negative spends it
+   * (`redemption`, `creditReversal`, a claw-back `manualAdjustment`).
+   */
+  amount: number;
+  /** Only set on credit-opening rows; absent means it never expires. */
+  expiresAt?: number;
+  /** Ties a `creditReversal` to the `referralCredit` it undoes. */
+  conversionId?: string;
+  createdAt: number;
+}
+
+/** A credit-granting transaction with the part of it still unspent. */
+export interface WalletCredit {
+  id: string;
+  remaining: number;
+  expiresAt?: number;
+  createdAt: number;
+  conversionId?: string;
+}
+
+export interface WalletAllocation {
+  creditId: string;
+  amount: number;
+}
+
+export interface WalletAllocationResult {
+  allocations: WalletAllocation[];
+  allocated: number;
+  /** Requested minus allocated; > 0 means the wallet could not cover it. */
+  unallocated: number;
+}
+
+/** Soonest-expiring first; never-expiring last; ties broken by age. */
+function byExpiryThenAge(a: WalletCredit, b: WalletCredit): number {
+  const aExpiry = a.expiresAt ?? Number.POSITIVE_INFINITY;
+  const bExpiry = b.expiresAt ?? Number.POSITIVE_INFINITY;
+  return aExpiry === bExpiry ? a.createdAt - b.createdAt : aExpiry - bExpiry;
+}
+
+/**
+ * Spend `amount` across `credits`, consuming the soonest-expiring first so a
+ * user never loses value they could have used. Pure: the inputs are not
+ * mutated, and the caller decides what to persist.
+ */
+export function allocateRedemption(
+  credits: WalletCredit[],
+  amount: number,
+): WalletAllocationResult {
+  const allocations: WalletAllocation[] = [];
+  let left = round2(Math.max(0, amount));
+  let allocated = 0;
+
+  for (const credit of [...credits].sort(byExpiryThenAge)) {
+    if (left <= 0) break;
+    const take = round2(Math.min(credit.remaining, left));
+    if (take <= 0) continue;
+    allocations.push({ creditId: credit.id, amount: take });
+    allocated = round2(allocated + take);
+    left = round2(left - take);
+  }
+
+  return { allocations, allocated, unallocated: left };
+}
+
+interface LedgerReplay {
+  credits: WalletCredit[];
+  /** Debits no open credit could absorb; never let them inflate a balance. */
+  overdraft: number;
+}
+
+/** Spend `amount` over `pool`, mutating `remaining`; returns what was left. */
+function drawDown(pool: WalletCredit[], amount: number): number {
+  let left = round2(amount);
+  for (const credit of pool) {
+    if (left <= 0) break;
+    const take = round2(Math.min(credit.remaining, left));
+    if (take <= 0) continue;
+    credit.remaining = round2(credit.remaining - take);
+    left = round2(left - take);
+  }
+  return left;
+}
+
+/**
+ * Replay the ledger in chronological order. Order is authoritative: a debit
+ * may only draw on credit that already existed and had not yet lapsed when it
+ * was recorded, so a spend made after a credit expired can never be charged
+ * back to it. Phase 3 applies the same soonest-expiring-first rule when it
+ * writes a redemption, which is what keeps the replay and the real allocation
+ * in agreement.
+ */
+function replayLedger(transactions: WalletTransactionData[]): LedgerReplay {
+  // Within the same millisecond credit lands before spend — you cannot spend
+  // what has not been credited — and ids break the remaining ties so the
+  // replay is deterministic.
+  const ordered = [...transactions].sort(
+    (a, b) =>
+      a.createdAt - b.createdAt ||
+      Number(a.amount <= 0) - Number(b.amount <= 0) ||
+      a.id.localeCompare(b.id),
+  );
+  const credits: WalletCredit[] = [];
+  let overdraft = 0;
+
+  for (const txn of ordered) {
+    if (txn.amount > 0) {
+      credits.push({
+        id: txn.id,
+        remaining: txn.amount,
+        expiresAt: txn.expiresAt,
+        createdAt: txn.createdAt,
+        conversionId: txn.conversionId,
+      });
+      continue;
+    }
+
+    const spendable = credits
+      .filter(
+        (credit) =>
+          credit.remaining > 0 &&
+          credit.createdAt <= txn.createdAt &&
+          (credit.expiresAt === undefined || credit.expiresAt > txn.createdAt),
+      )
+      .sort(byExpiryThenAge);
+
+    let left = -txn.amount;
+    // A reversal undoes a specific credit, so it takes that credit's own
+    // remaining first; whatever was already spent falls through as a debit.
+    if (txn.kind === "creditReversal" && txn.conversionId !== undefined) {
+      left = drawDown(
+        spendable.filter((c) => c.conversionId === txn.conversionId),
+        left,
+      );
+    }
+    overdraft = round2(overdraft + drawDown(spendable, left));
+  }
+
+  return { credits, overdraft };
+}
+
+/** Credits with their unspent part, soonest-expiring first. */
+export function computeRemainingCredits(
+  transactions: WalletTransactionData[],
+  now: number,
+): WalletCredit[] {
+  return replayLedger(transactions)
+    .credits.filter(
+      (credit) =>
+        credit.remaining > 0 &&
+        (credit.expiresAt === undefined || credit.expiresAt > now),
+    )
+    .sort(byExpiryThenAge);
+}
+
+/** Spendable EUR right now: unspent, unexpired credit. Never negative. */
+export function computeAvailableBalance(
+  transactions: WalletTransactionData[],
+  now: number,
+): number {
+  const { credits, overdraft } = replayLedger(transactions);
+  const total = credits
+    .filter(
+      (credit) => credit.expiresAt === undefined || credit.expiresAt > now,
+    )
+    .reduce((sum, credit) => sum + credit.remaining, 0);
+  return round2(Math.max(0, total - overdraft));
+}
+
+/**
+ * How much of `balance` may be spent on a booking: the admin-configured
+ * percentage cap of the total AFTER any discount, since credit is a payment
+ * towards what is still owed.
+ */
+export function computeRedeemable(
+  balance: number,
+  totalAfterDiscount: number,
+  maxRedemptionPercent: number,
+): number {
+  if (balance <= 0 || totalAfterDiscount <= 0 || maxRedemptionPercent <= 0) {
+    return 0;
+  }
+  // Floored, not rounded: rounding up would let the credit exceed the cap.
+  const cap = floor2(
+    (totalAfterDiscount * Math.min(maxRedemptionPercent, 100)) / 100,
+  );
+  return round2(Math.max(0, Math.min(balance, cap)));
+}
+
+/**
+ * Credit minted for the referrer when a conversion is approved: the tier
+ * percent resolved at approval time applied to the referred booking's
+ * persisted total.
+ */
+export function computeCreditForConversion(
+  bookingTotal: number,
+  rewardPercent: number,
+): number {
+  if (bookingTotal <= 0 || rewardPercent <= 0) return 0;
+  const raw = (bookingTotal * Math.min(rewardPercent, 100)) / 100;
+  return round2(Math.min(raw, bookingTotal));
+}
+
+/**
+ * Expiry timestamp for a credit minted at `approvedAt`. Month arithmetic is
+ * done in UTC and clamps the day, so a credit minted on 31 January with a
+ * one-month validity expires on 28/29 February rather than rolling into March.
+ */
+export function creditExpiry(
+  approvedAt: number,
+  creditValidityMonths: number,
+): number {
+  const granted = new Date(approvedAt);
+  const targetMonth = granted.getUTCMonth() + creditValidityMonths;
+  const daysInTargetMonth = new Date(
+    Date.UTC(granted.getUTCFullYear(), targetMonth + 1, 0),
+  ).getUTCDate();
+  return Date.UTC(
+    granted.getUTCFullYear(),
+    targetMonth,
+    Math.min(granted.getUTCDate(), daysInTargetMonth),
+    granted.getUTCHours(),
+    granted.getUTCMinutes(),
+    granted.getUTCSeconds(),
+    granted.getUTCMilliseconds(),
+  );
+}

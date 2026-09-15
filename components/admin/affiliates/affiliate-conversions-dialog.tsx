@@ -22,6 +22,23 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
+import type { FunctionReturnType } from "convex/server";
+
+type ConversionStatus = FunctionReturnType<
+  typeof api.affiliates.listConversions
+>[number]["status"];
+
+const STATUS_VARIANT = {
+  approved: "default",
+  confirmed: "default", // legacy v1 status, means approved
+  awaitingApproval: "secondary",
+  pending: "secondary",
+  rejected: "destructive",
+  voided: "outline",
+} as const satisfies Record<
+  ConversionStatus,
+  React.ComponentProps<typeof Badge>["variant"]
+>;
 
 interface AffiliateConversionsDialogProps {
   affiliateId: Id<"affiliates">;
@@ -102,13 +119,7 @@ export function AffiliateConversionsDialog({
                         : "—"}
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant={
-                          conversion.status === "confirmed"
-                            ? "default"
-                            : "secondary"
-                        }
-                      >
+                      <Badge variant={STATUS_VARIANT[conversion.status]}>
                         {conversion.status}
                       </Badge>
                     </TableCell>

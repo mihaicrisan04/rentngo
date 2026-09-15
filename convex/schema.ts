@@ -136,6 +136,10 @@ export default defineSchema({
     // single-discount rule), or the booking user's own affiliate when their
     // tier reward was applied.
     affiliateId: v.optional(v.id("affiliates")),
+    // Wallet credit spent on this booking. Credit is a payment, not a
+    // discount: totalPrice stays the pre-credit price and the amount still due
+    // is totalPrice - walletCreditApplied.
+    walletCreditApplied: v.optional(v.number()),
     // Store any additional charges or fees (delivery fees, extras, etc.).
     // New docs carry locale-free `code` + `params` (translated at render
     // time); legacy docs carry only the localized `description` prose.
@@ -237,6 +241,7 @@ export default defineSchema({
       v.union(v.literal("coupon"), v.literal("affiliate")),
     ),
     affiliateId: v.optional(v.id("affiliates")),
+    walletCreditApplied: v.optional(v.number()),
 
     // Customer information
     customerInfo: v.object({
@@ -306,16 +311,19 @@ export default defineSchema({
     .index("by_coupon_user", ["couponId", "userId"]),
 
   // Affiliates - users with a shareable referral link (rngo.ro/r/<slug>).
-  // Rewards are derived dynamically: confirmedConversions -> tier table in
-  // affiliateSettings (or the per-affiliate override), never minted as coupons.
+  // Rewards are derived dynamically: approvedConversions -> tier table in
+  // affiliateSettings (or the per-affiliate override), minted as wallet credit.
   affiliates: defineTable({
     userId: v.id("users"),
     slug: v.string(), // normalized lowercase, unique; ^[a-z0-9-]{3,32}$
     isActive: v.boolean(), // admin kill-switch per affiliate
-    // Denormalized count of non-voided conversions. Maintained inside the
+    // Denormalized count of approved conversions. Maintained inside the
     // booking/cancel mutations (same transaction as the conversion row), so
     // Convex OCC keeps it consistent under concurrency.
+    // confirmedConversions is the v1 name, dual-written until the narrow step
+    // of the wallet migration drops it (convex/migrations/README.md).
     confirmedConversions: v.number(),
+    approvedConversions: v.optional(v.number()),
     // Per-affiliate overrides; undefined falls back to affiliateSettings
     rewardPercentOverride: v.optional(v.number()),
     referredDiscountOverride: v.optional(
@@ -337,14 +345,21 @@ export default defineSchema({
     attributionWindowDays: v.number(),
     referredDiscountType: v.union(v.literal("percentage"), v.literal("fixed")),
     referredDiscountValue: v.number(), // percentage (0-100] or EUR
-    // Tier table: highest tier with minConversions <= confirmedConversions
+    // Tier table: highest tier with minConversions <= approvedConversions
     // wins. Small bounded list, safe to embed.
     tiers: v.array(
       v.object({
         minConversions: v.number(),
         rewardPercent: v.number(),
+        name: v.optional(v.string()),
       }),
     ),
+    // Wallet fields; optional because docs written before the wallet rollout
+    // lack them. Readers fill the gaps via withSettingsDefaults().
+    maxRedemptionPercent: v.optional(v.number()),
+    creditValidityMonths: v.optional(v.number()),
+    autoApproveOnCompletion: v.optional(v.boolean()),
+    referredFirstRentalOnly: v.optional(v.boolean()),
     updatedAt: v.number(),
   }),
 
@@ -361,11 +376,12 @@ export default defineSchema({
     .index("by_visitor_key", ["visitorKey"])
     .index("by_affiliate", ["affiliateId"]),
 
-  // One row per referred booking. Lifecycle (owner decision, RNGO-26):
-  // created = confirmed immediately; voided when the booking is cancelled or
-  // hard-deleted (and re-confirmed if an admin un-cancels), so the referrer's
-  // counter only ever reflects live bookings. "pending" is reserved for a
-  // future explicit confirmation step and is not written today.
+  // One row per referred booking. Lifecycle (lib/pricing/affiliate.ts,
+  // conversionTransition): created = pending; completed booking ->
+  // awaitingApproval; admin approve -> approved (mints wallet credit and bumps
+  // the counter); admin reject -> rejected; cancelled or hard-deleted booking
+  // -> voided (reversing a minted credit). "confirmed" is the v1 status, read
+  // as "approved" until the narrow step of the wallet migration drops it.
   referralConversions: defineTable({
     affiliateId: v.id("affiliates"),
     bookingType: v.union(v.literal("reservation"), v.literal("transfer")),
@@ -375,14 +391,24 @@ export default defineSchema({
     referredEmail: v.string(), // normalized (lowercase, trimmed)
     status: v.union(
       v.literal("pending"),
-      v.literal("confirmed"),
+      v.literal("awaitingApproval"),
+      v.literal("approved"),
+      v.literal("rejected"),
       v.literal("voided"),
+      v.literal("confirmed"), // legacy v1, dropped in the narrow step
     ),
     // EUR discount actually granted to the referred customer (0 when another
     // discount won the one-per-booking rule)
     referredDiscountAmount: v.number(),
     // Snapshot of the referrer's tier reward percent at conversion time (audit)
     referrerRewardPercentAtConversion: v.number(),
+    // Approval snapshot: what was minted, and off which booking total
+    creditAmount: v.optional(v.number()),
+    bookingTotalAtApproval: v.optional(v.number()),
+    approvedAt: v.optional(v.number()),
+    approvedByUserId: v.optional(v.id("users")),
+    rejectedAt: v.optional(v.number()),
+    rejectionReason: v.optional(v.string()),
     createdAt: v.number(),
     confirmedAt: v.optional(v.number()),
     voidedAt: v.optional(v.number()),
@@ -399,6 +425,40 @@ export default defineSchema({
       "referredEmail",
       "status",
     ]),
+
+  // Append-only wallet ledger. There is no denormalized balance and no expiry
+  // cron: the balance is derived from these rows on read (lib/pricing/wallet.ts),
+  // expiry is an `expiresAt > now` comparison, and redemption consumes the
+  // soonest-expiring credit first. Guests cannot hold a wallet.
+  walletTransactions: defineTable({
+    userId: v.id("users"),
+    kind: v.union(
+      v.literal("referralCredit"),
+      v.literal("creditReversal"), // undoes a referralCredit (voided/rejected)
+      v.literal("manualAdjustment"),
+      v.literal("redemption"),
+      v.literal("redemptionReversal"), // gives back a cancelled booking's spend
+    ),
+    // EUR, rounded to cents and signed by direction, not by kind: positive
+    // opens credit (referralCredit, a top-up manualAdjustment,
+    // redemptionReversal), negative spends it (redemption, creditReversal, a
+    // claw-back manualAdjustment).
+    amount: v.number(),
+    // Set on credit-opening rows only; absent means it never expires. A
+    // redemptionReversal carries the expiry of the credit it gives back.
+    expiresAt: v.optional(v.number()),
+    // On a creditReversal this points at the conversion whose credit it undoes.
+    conversionId: v.optional(v.id("referralConversions")),
+    reservationId: v.optional(v.id("reservations")),
+    transferId: v.optional(v.id("transfers")),
+    createdByUserId: v.optional(v.id("users")), // admin, for manual adjustments
+    note: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId", "createdAt"])
+    .index("by_conversion", ["conversionId"])
+    .index("by_reservation", ["reservationId"])
+    .index("by_transfer", ["transferId"]),
 
   // Email logs table - tracks sent emails
   emailLogs: defineTable({

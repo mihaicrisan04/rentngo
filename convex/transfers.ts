@@ -607,7 +607,7 @@ export const updateTransferStatus = mutation({
     await syncConversionForBooking(ctx, {
       bookingType: "transfer",
       bookingId: args.transferId,
-      bookingIsLive: args.newStatus !== "cancelled",
+      bookingStatus: args.newStatus,
     });
 
     return { success: true };
@@ -665,7 +665,7 @@ export const updateTransferDetails = mutation({
       await syncConversionForBooking(ctx, {
         bookingType: "transfer",
         bookingId: transferId,
-        bookingIsLive: updates.status !== "cancelled",
+        bookingStatus: updates.status,
       });
     }
 
@@ -715,7 +715,7 @@ export const cancelTransfer = mutation({
     await syncConversionForBooking(ctx, {
       bookingType: "transfer",
       bookingId: args.transferId,
-      bookingIsLive: false,
+      bookingStatus: "cancelled",
     });
 
     return { success: true, message: "Transfer cancelled successfully" };
@@ -739,7 +739,7 @@ export const deleteTransferPermanently = mutation({
     await syncConversionForBooking(ctx, {
       bookingType: "transfer",
       bookingId: args.transferId,
-      bookingIsLive: false,
+      bookingStatus: "deleted",
     });
     await ctx.db.delete(args.transferId);
     await recordStatsRemove(ctx, "transfers", transfer.status);

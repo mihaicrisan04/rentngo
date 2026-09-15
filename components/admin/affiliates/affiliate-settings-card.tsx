@@ -23,7 +23,11 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { validateAffiliateSettings, type AffiliateTier } from "@/lib/pricing";
+import {
+  validateAffiliateSettings,
+  withSettingsDefaults,
+  type AffiliateTier,
+} from "@/lib/pricing";
 
 /**
  * Global program config + tier editor. Every business number lives here (or
@@ -41,7 +45,7 @@ export function AffiliateSettingsCard() {
   >("fixed");
   const [discountValue, setDiscountValue] = React.useState("10");
   const [tiers, setTiers] = React.useState<
-    Array<{ minConversions: string; rewardPercent: string }>
+    Array<{ minConversions: string; rewardPercent: string; name?: string }>
   >([]);
   const [hydrated, setHydrated] = React.useState(false);
   const [isSaving, setIsSaving] = React.useState(false);
@@ -58,6 +62,7 @@ export function AffiliateSettingsCard() {
         settings.tiers.map((tier) => ({
           minConversions: String(tier.minConversions),
           rewardPercent: String(tier.rewardPercent),
+          name: tier.name,
         })),
       );
       setHydrated(true);
@@ -68,6 +73,7 @@ export function AffiliateSettingsCard() {
     const parsedTiers: AffiliateTier[] = tiers.map((tier) => ({
       minConversions: Number(tier.minConversions),
       rewardPercent: Number(tier.rewardPercent),
+      name: tier.name,
     }));
     const candidate = {
       enabled,
@@ -76,7 +82,11 @@ export function AffiliateSettingsCard() {
       referredDiscountValue: Number(discountValue),
       tiers: parsedTiers,
     };
-    const error = validateAffiliateSettings(candidate);
+    // The wallet fields are not editable here yet (RNGO-55); validate the
+    // edited fields against the values already stored for them.
+    const error = validateAffiliateSettings(
+      withSettingsDefaults({ ...settings, ...candidate }),
+    );
     if (error) {
       toast.error(error, { position: "bottom-left" });
       return;
