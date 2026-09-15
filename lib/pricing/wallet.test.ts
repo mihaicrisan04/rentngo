@@ -4,8 +4,10 @@ import {
   bookingAmountDue,
   computeAvailableBalance,
   computeCreditForConversion,
+  computeExpiringCredits,
   computeRedeemable,
   computeRemainingCredits,
+  computeRewardsEarned,
   conversionCreditOutstanding,
   conversionCreditState,
   creditExpiry,
@@ -673,5 +675,76 @@ describe("planWalletAdjustment", () => {
       note: "x",
     });
     expect(plan).toEqual({ ok: true, amount: -10 });
+  });
+});
+
+describe("computeExpiringCredits", () => {
+  it("sums everything lapsing inside the window and dates the first of it", () => {
+    const transactions = [
+      credit("c1", 40, NOW + 10 * DAY),
+      credit("c2", 25, NOW + 50 * DAY),
+      credit("c3", 100, NOW + 200 * DAY),
+    ];
+    expect(
+      computeExpiringCredits(computeRemainingCredits(transactions, NOW), NOW),
+    ).toEqual({ amount: 65, expiresAt: NOW + 10 * DAY });
+  });
+
+  it("counts only what is still unspent", () => {
+    const transactions: WalletTransactionData[] = [
+      credit("c1", 40, NOW + 10 * DAY),
+      { id: "r1", kind: "redemption", amount: -30, createdAt: NOW + DAY },
+    ];
+    const then = NOW + 2 * DAY;
+    expect(
+      computeExpiringCredits(computeRemainingCredits(transactions, then), then),
+    ).toEqual({ amount: 10, expiresAt: NOW + 10 * DAY });
+  });
+
+  it("ignores credit that never expires and credit beyond the window", () => {
+    const transactions = [credit("c1", 40), credit("c2", 25, NOW + 90 * DAY)];
+    expect(
+      computeExpiringCredits(computeRemainingCredits(transactions, NOW), NOW),
+    ).toBeNull();
+  });
+
+  it("takes the window in days", () => {
+    const transactions = [credit("c1", 25, NOW + 90 * DAY)];
+    expect(
+      computeExpiringCredits(
+        computeRemainingCredits(transactions, NOW),
+        NOW,
+        120,
+      ),
+    ).toEqual({ amount: 25, expiresAt: NOW + 90 * DAY });
+  });
+});
+
+describe("computeRewardsEarned", () => {
+  it("nets referral credit against its reversals", () => {
+    expect(
+      computeRewardsEarned([
+        { kind: "referralCredit", amount: 30 },
+        { kind: "referralCredit", amount: 12.5 },
+        { kind: "creditReversal", amount: -12.5 },
+      ]),
+    ).toBe(30);
+  });
+
+  it("ignores top-ups and redemptions", () => {
+    expect(
+      computeRewardsEarned([
+        { kind: "referralCredit", amount: 30 },
+        { kind: "manualAdjustment", amount: 100 },
+        { kind: "redemption", amount: -20 },
+        { kind: "redemptionReversal", amount: 20 },
+      ]),
+    ).toBe(30);
+  });
+
+  it("never reports negative earnings", () => {
+    expect(
+      computeRewardsEarned([{ kind: "creditReversal", amount: -30 }]),
+    ).toBe(0);
   });
 });

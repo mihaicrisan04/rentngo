@@ -7,6 +7,19 @@
  * recordReferralAttribution, and all amounts are recomputed on the server.
  */
 
+/** The public referral link for a code: `<origin>/r/<slug>`. */
+export function buildReferralUrl(origin: string, slug: string): string {
+  return `${origin.replace(/\/+$/, "")}/r/${slug}`;
+}
+
+/**
+ * WhatsApp share link. `wa.me` with no phone number opens the contact picker,
+ * which is what a referral share wants on both mobile and web.
+ */
+export function buildWhatsAppShareUrl(message: string): string {
+  return `https://wa.me/?text=${encodeURIComponent(message)}`;
+}
+
 export const CONSENT_COOKIE = "rngo_consent";
 export const REFERRAL_COOKIE = "rngo_ref";
 

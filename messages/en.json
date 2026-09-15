@@ -687,7 +687,33 @@
       },
       "yourCode": "Your referral code",
       "copyCode": "Copy referral code",
-      "codeInfo": "Your friends can enter this code straight into the promo code field at checkout."
+      "codeInfo": "Your friends can enter this code straight into the promo code field at checkout.",
+      "share": {
+        "title": "Recommend a friend",
+        "whatsapp": "Send on WhatsApp",
+        "native": "Share",
+        "message": "Rent a car with Rent'n Go using my code {code} and get a discount on your first booking: {link}"
+      },
+      "wallet": {
+        "title": "My wallet",
+        "balance": "Available credit",
+        "rewardsEarned": "Rewards earned",
+        "expiringSoon": "{amount} EUR expires on {date}. Use it on your next booking.",
+        "ledger": "Credit activity",
+        "empty": "You don't have any wallet credit yet.",
+        "kinds": {
+          "referralCredit": "Referral credit",
+          "creditReversal": "Credit reversed",
+          "manualAdjustment": "Manual adjustment",
+          "redemption": "Credit spent",
+          "redemptionReversal": "Credit returned"
+        }
+      },
+      "tier": {
+        "current": "Your tier: {name}",
+        "none": "You haven't reached the first tier yet",
+        "next": "Next tier: {name} — {count} approved referrals earn you {percent}% credit"
+      }
     }
   },
   "footer": {

@@ -31,6 +31,7 @@ import {
   recordReferralConversion,
   recordTypedCodeAttribution,
   referralArgValidator,
+  referralBlockForBooker,
   resolveAffiliateCandidates,
   syncConversionForBooking,
 } from "./affiliates";
@@ -425,6 +426,10 @@ async function createTransferHandler(
     });
   }
 
+  // Minting the booker's own referral code needs the database, so it happens
+  // here rather than in the email action.
+  const referral = await referralBlockForBooker(ctx, currentUser?._id);
+
   // Schedule email sending
   await ctx.scheduler.runAfter(
     0,
@@ -468,6 +473,7 @@ async function createTransferHandler(
           walletCreditApplied > 0 ? walletCreditApplied : undefined,
       },
       paymentMethod: args.paymentMethod,
+      referral,
       locale: args.locale,
     },
   );

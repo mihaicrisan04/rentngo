@@ -19,6 +19,7 @@ import type * as emails_components_customer_info_section from "../emails/compone
 import type * as emails_components_email_footer from "../emails/components/email_footer.js";
 import type * as emails_components_email_header from "../emails/components/email_header.js";
 import type * as emails_components_pricing_section from "../emails/components/pricing_section.js";
+import type * as emails_components_referral_block from "../emails/components/referral_block.js";
 import type * as emails_components_rental_details_section from "../emails/components/rental_details_section.js";
 import type * as emails_components_transfer_details_section from "../emails/components/transfer_details_section.js";
 import type * as emails_components_transfer_pricing_section from "../emails/components/transfer_pricing_section.js";
@@ -77,6 +78,7 @@ declare const fullApi: ApiFromModules<{
   "emails/components/email_footer": typeof emails_components_email_footer;
   "emails/components/email_header": typeof emails_components_email_header;
   "emails/components/pricing_section": typeof emails_components_pricing_section;
+  "emails/components/referral_block": typeof emails_components_referral_block;
   "emails/components/rental_details_section": typeof emails_components_rental_details_section;
   "emails/components/transfer_details_section": typeof emails_components_transfer_details_section;
   "emails/components/transfer_pricing_section": typeof emails_components_transfer_pricing_section;

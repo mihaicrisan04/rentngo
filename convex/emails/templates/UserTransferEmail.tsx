@@ -10,6 +10,7 @@ import {
 import { TransferEmailData } from "../types";
 import { EmailHeader } from "../components/email_header";
 import { EmailFooter } from "../components/email_footer";
+import { ReferralBlock } from "../components/referral_block";
 import { CustomerInfoSection } from "../components/customer_info_section";
 import { VehicleInfoSection } from "../components/vehicle_info_section";
 import { TransferDetailsSection } from "../components/transfer_details_section";
@@ -179,6 +180,8 @@ export const UserTransferEmail: React.FC<UserTransferEmailProps> = ({
               paymentMethod: t.pricing.paymentMethod,
             }}
           />
+
+          <ReferralBlock referral={data.referral} locale={isRo ? "ro" : "en"} />
 
           <EmailFooter customMessage={t.footerMessage} />
         </Body>

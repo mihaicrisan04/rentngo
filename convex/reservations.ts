@@ -31,6 +31,7 @@ import {
   recordReferralConversion,
   recordTypedCodeAttribution,
   referralArgValidator,
+  referralBlockForBooker,
   resolveAffiliateCandidates,
   syncConversionForBooking,
 } from "./affiliates";
@@ -508,6 +509,9 @@ export const createReservation = mutation({
 
     // Schedule email sending if vehicle info is provided
     if (args.vehicleInfo) {
+      // Minting the booker's own referral code needs the database, so it
+      // happens here rather than in the email action.
+      const referral = await referralBlockForBooker(ctx, currentUser?._id);
       // Format dates for email
       const timeZone = "Europe/Bucharest";
       const startDateString = new Date(args.startDate).toLocaleDateString(
@@ -561,6 +565,7 @@ export const createReservation = mutation({
             protectionCost:
               pricing.protectionCost > 0 ? pricing.protectionCost : undefined,
           },
+          referral,
           locale: args.locale,
         },
       );

@@ -20,8 +20,10 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { getCurrentUser, requireAdmin } from "./users";
 import {
   computeAvailableBalance,
+  computeExpiringCredits,
   computeRedeemable,
   computeRemainingCredits,
+  computeRewardsEarned,
   planRedemption,
   planWalletAdjustment,
   withSettingsDefaults,
@@ -72,11 +74,13 @@ export const getMyWallet = query({
     v.object({
       balance: v.number(),
       maxRedemptionPercent: v.number(),
-      /** Soonest-expiring unspent credit, for the "use it before" nudge. */
-      nextExpiry: v.union(
+      /** Unspent credit lapsing soon, for the "use it before" nudge. */
+      expiringSoon: v.union(
         v.object({ amount: v.number(), expiresAt: v.number() }),
         v.null(),
       ),
+      /** Lifetime referral credit minted, net of reversals. */
+      rewardsEarned: v.number(),
       transactions: v.array(
         v.object({
           id: v.id("walletTransactions"),
@@ -102,8 +106,9 @@ export const getMyWallet = query({
     const ledger = toTransactionData(await loadLedger(ctx, user._id));
     // Counts and amounts only — a wallet row never names the referred
     // customer it came from, so there is no other user's PII to leak here.
-    const expiring = computeRemainingCredits(ledger, now).find(
-      (credit) => credit.expiresAt !== undefined,
+    const expiringSoon = computeExpiringCredits(
+      computeRemainingCredits(ledger, now),
+      now,
     );
     const recent = await ctx.db
       .query("walletTransactions")
@@ -114,10 +119,8 @@ export const getMyWallet = query({
     return {
       balance: computeAvailableBalance(ledger, now),
       maxRedemptionPercent: settings.maxRedemptionPercent,
-      nextExpiry:
-        expiring?.expiresAt !== undefined
-          ? { amount: expiring.remaining, expiresAt: expiring.expiresAt }
-          : null,
+      expiringSoon,
+      rewardsEarned: computeRewardsEarned(ledger),
       transactions: recent.map((row) => ({
         id: row._id,
         kind: row.kind,

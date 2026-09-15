@@ -61,12 +61,22 @@ export interface PricingDetails {
   protectionCost?: number;
 }
 
+/**
+ * "Recommend a friend" block in the customer's confirmation email: the
+ * booker's own referral code, or an invitation to create an account when they
+ * booked as a guest. Absent while the referral program is off.
+ */
+export type ReferralEmailBlockData =
+  | { kind: "affiliate"; code: string }
+  | { kind: "guest" };
+
 export interface ReservationEmailData {
   reservationNumber: number;
   customerInfo: CustomerInfo;
   vehicleInfo: VehicleInfo;
   rentalDetails: RentalDetails;
   pricingDetails: PricingDetails;
+  referral?: ReferralEmailBlockData;
   locale?: "en" | "ro";
 }
 
@@ -115,5 +125,6 @@ export interface TransferEmailData {
   estimatedDurationMinutes: number;
   pricingDetails: TransferPricingDetails;
   paymentMethod: "cash_on_delivery" | "card_on_delivery" | "card_online";
+  referral?: ReferralEmailBlockData;
   locale?: "en" | "ro";
 }

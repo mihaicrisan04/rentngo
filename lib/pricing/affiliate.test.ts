@@ -4,6 +4,7 @@ import {
   affiliateSlugSuffix,
   computeReferredDiscount,
   conversionTransition,
+  currentTier,
   generateAffiliateSlug,
   withSettingsDefaults,
   BLOCKING_CONVERSION_STATUSES,
@@ -13,7 +14,9 @@ import {
   nextTier,
   normalizeAffiliateSlug,
   referralCodeReason,
+  referralEmailBlock,
   referredEligibility,
+  shouldCreateReferralCodeForEmail,
   resolveConversionCredit,
   resolveReferralSource,
   resolveTierRewardPercent,
@@ -1065,5 +1068,75 @@ describe("resolveReferralSource", () => {
         hasLiveConversion: false,
       }),
     ).toEqual({ eligible: false, reason: "selfReferral" });
+  });
+});
+
+describe("currentTier", () => {
+  const tiers = [
+    { minConversions: 1, rewardPercent: 5, name: "Pionier" },
+    { minConversions: 6, rewardPercent: 10, name: "Ambasador" },
+  ];
+
+  it("is null below the first threshold", () => {
+    expect(currentTier(tiers, 0)).toBeNull();
+  });
+
+  it("picks the highest threshold reached", () => {
+    expect(currentTier(tiers, 1)?.name).toBe("Pionier");
+    expect(currentTier(tiers, 5)?.name).toBe("Pionier");
+    expect(currentTier(tiers, 6)?.name).toBe("Ambasador");
+    expect(currentTier(tiers, 99)?.name).toBe("Ambasador");
+  });
+
+  it("does not assume the table is sorted", () => {
+    expect(currentTier([...tiers].reverse(), 6)?.name).toBe("Ambasador");
+  });
+});
+
+describe("referral block in the confirmation email", () => {
+  it("has no block at all while the program is off", () => {
+    expect(
+      referralEmailBlock({ programEnabled: false, code: "ana-x7" }),
+    ).toBeUndefined();
+    expect(
+      shouldCreateReferralCodeForEmail({
+        programEnabled: false,
+        hasAccount: true,
+      }),
+    ).toBe(false);
+  });
+
+  it("shows the booker's own code", () => {
+    expect(
+      referralEmailBlock({ programEnabled: true, code: "ana-x7" }),
+    ).toEqual({ kind: "affiliate", code: "ana-x7" });
+  });
+
+  it("invites a guest to create an account", () => {
+    expect(referralEmailBlock({ programEnabled: true })).toEqual({
+      kind: "guest",
+    });
+  });
+
+  it("mints a code only for a signed-in booker without one", () => {
+    expect(
+      shouldCreateReferralCodeForEmail({
+        programEnabled: true,
+        hasAccount: true,
+      }),
+    ).toBe(true);
+    expect(
+      shouldCreateReferralCodeForEmail({
+        programEnabled: true,
+        hasAccount: true,
+        existingCode: "ana-x7",
+      }),
+    ).toBe(false);
+    expect(
+      shouldCreateReferralCodeForEmail({
+        programEnabled: true,
+        hasAccount: false,
+      }),
+    ).toBe(false);
   });
 });

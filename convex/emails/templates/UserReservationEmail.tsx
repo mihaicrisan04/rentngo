@@ -10,6 +10,7 @@ import {
 import { ReservationEmailData } from "../types";
 import { EmailHeader } from "../components/email_header";
 import { EmailFooter } from "../components/email_footer";
+import { ReferralBlock } from "../components/referral_block";
 import { CustomerInfoSection } from "../components/customer_info_section";
 import { RentalDetailsSection } from "../components/rental_details_section";
 import { VehicleInfoSection } from "../components/vehicle_info_section";
@@ -150,6 +151,8 @@ export const UserReservationEmail: React.FC<UserReservationEmailProps> = ({
               warrantyText: t.pricing.warrantyText,
             }}
           />
+
+          <ReferralBlock referral={data.referral} locale={isRo ? "ro" : "en"} />
 
           <EmailFooter customMessage={t.footerMessage} />
         </Body>

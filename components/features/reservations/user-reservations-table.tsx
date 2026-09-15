@@ -5,6 +5,7 @@ import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { formatDate, formatPrice } from "@/lib/format";
+import { bookingAmountDue } from "@/lib/pricing";
 import {
   Table,
   TableBody,
@@ -20,6 +21,7 @@ const ITEMS_PER_PAGE = 10;
 
 export function UserReservationsTable() {
   const t = useTranslations("profile");
+  const tWallet = useTranslations("common.wallet");
 
   const {
     results: reservations,
@@ -117,6 +119,21 @@ export function UserReservationsTable() {
                   {reservation.promoCode && (
                     <div className="text-xs text-muted-foreground">
                       {t("table.promoLabel")} {reservation.promoCode}
+                    </div>
+                  )}
+                  {/* Credit is a payment, not a discount: totalPrice above
+                      stays pre-credit, so the amount due is spelled out */}
+                  {(reservation.walletCreditApplied ?? 0) > 0 && (
+                    <div className="text-xs text-green-600">
+                      {tWallet("creditApplied")} −
+                      {formatPrice(reservation.walletCreditApplied ?? 0)} ·{" "}
+                      {tWallet("amountDue")}{" "}
+                      {formatPrice(
+                        bookingAmountDue(
+                          reservation.totalPrice,
+                          reservation.walletCreditApplied,
+                        ),
+                      )}
                     </div>
                   )}
                   {reservation.isSCDWSelected ? (
