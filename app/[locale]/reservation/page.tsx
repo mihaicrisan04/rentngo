@@ -154,7 +154,7 @@ function ReservationPageContent() {
   });
   const { breakdown } = pricing;
 
-  // Automatic affiliate discount (referral cookie or own tier reward) —
+  // Automatic referred-customer discount from the referral cookie —
   // advisory; the server re-resolves it and an explicit coupon wins
   const { referral, affiliateDiscount } = useAffiliateDiscount({
     subtotal: breakdown?.totalPrice ?? null,

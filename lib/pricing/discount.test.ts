@@ -8,6 +8,7 @@ import {
   normalizeCouponCode,
   normalizeCustomerEmail,
   pickDiscount,
+  resolveEditedBookingTotal,
   type AppliedDiscount,
   type CouponData,
 } from "./discount";
@@ -215,5 +216,58 @@ describe("pickDiscount", () => {
   it("prefers an explicit coupon and never stacks", () => {
     const other = { ...coupon, code: "B" };
     expect(pickDiscount([other, coupon])).toBe(other);
+  });
+});
+
+describe("resolveEditedBookingTotal", () => {
+  const booking = { storedTotal: 85.5, discountAmount: 4.5 };
+
+  it("keeps the stored total when the pricing inputs did not change", () => {
+    // The admin dialog fills the field with a pre-discount recompute even when
+    // only the status is being changed — taking it would re-charge the 4.50
+    expect(
+      resolveEditedBookingTotal({
+        ...booking,
+        submittedTotal: 90,
+        pricingChanged: false,
+      }),
+    ).toBe(85.5);
+  });
+
+  it("re-applies the discount to a genuinely repriced booking", () => {
+    expect(
+      resolveEditedBookingTotal({
+        ...booking,
+        submittedTotal: 120,
+        pricingChanged: true,
+      }),
+    ).toBe(115.5);
+  });
+
+  it("leaves an undiscounted booking's new total alone", () => {
+    expect(
+      resolveEditedBookingTotal({
+        storedTotal: 90,
+        submittedTotal: 120,
+        pricingChanged: true,
+      }),
+    ).toBe(120);
+  });
+
+  it("keeps the stored total when no total was submitted", () => {
+    expect(
+      resolveEditedBookingTotal({ ...booking, pricingChanged: true }),
+    ).toBe(85.5);
+  });
+
+  it("never goes negative when the discount exceeds the new total", () => {
+    expect(
+      resolveEditedBookingTotal({
+        storedTotal: 85.5,
+        discountAmount: 200,
+        submittedTotal: 90,
+        pricingChanged: true,
+      }),
+    ).toBe(0);
   });
 });

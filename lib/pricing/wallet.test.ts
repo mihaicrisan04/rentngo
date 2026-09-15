@@ -6,6 +6,7 @@ import {
   computeCreditForConversion,
   computeRedeemable,
   computeRemainingCredits,
+  conversionCreditOutstanding,
   creditExpiry,
   planRedemption,
   type WalletCredit,
@@ -481,5 +482,34 @@ describe("planRedemption", () => {
     expect(
       computeAvailableBalance([...ledger, ...debits, ...reversals], NOW + 1),
     ).toBe(computeAvailableBalance(ledger, NOW + 1));
+  });
+});
+
+describe("conversion credit guards", () => {
+  const minted: WalletTransactionData[] = [
+    { ...credit("c1", 50, NOW + 365 * DAY), conversionId: "conv1" },
+  ];
+  const reversal: WalletTransactionData = {
+    id: "rev",
+    kind: "creditReversal",
+    amount: -50,
+    conversionId: "conv1",
+    createdAt: NOW + DAY,
+  };
+  const reversed = [...minted, reversal];
+
+  it("blocks a second credit while one is outstanding", () => {
+    expect(conversionCreditOutstanding([])).toBe(0);
+    expect(conversionCreditOutstanding(minted)).toBe(50);
+  });
+
+  it("reverses exactly once, and frees the conversion to mint again", () => {
+    expect(conversionCreditOutstanding(reversed)).toBe(0);
+    expect(
+      conversionCreditOutstanding([
+        ...reversed,
+        { ...credit("c2", 50, NOW + 400 * DAY), conversionId: "conv1" },
+      ]),
+    ).toBe(50);
   });
 });

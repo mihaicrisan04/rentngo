@@ -195,6 +195,19 @@ export function computeAvailableBalance(
 }
 
 /**
+ * What a conversion's credit is still worth on the ledger: the signed sum of
+ * every row carrying its id (only credits and their reversals do). A void or a
+ * rejection appends a reversal for exactly this amount, so once it reaches 0 a
+ * repeated void writes nothing — and a re-approval may mint afresh, since the
+ * conversion no longer holds anything.
+ */
+export function conversionCreditOutstanding(
+  transactions: Pick<WalletTransactionData, "amount">[],
+): number {
+  return round2(transactions.reduce((sum, txn) => sum + txn.amount, 0));
+}
+
+/**
  * How much of `balance` may be spent on a booking: the admin-configured
  * percentage cap of the total AFTER any discount, since credit is a payment
  * towards what is still owed.

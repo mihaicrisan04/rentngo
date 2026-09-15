@@ -108,7 +108,7 @@ export default function TransferBookingPage() {
       : "skip",
   );
 
-  // Automatic affiliate discount (referral cookie or own tier reward) —
+  // Automatic referred-customer discount from the referral cookie —
   // advisory; the server re-resolves it and an explicit coupon wins
   const { referral, affiliateDiscount } = useAffiliateDiscount({
     subtotal: pricing?.totalPrice ?? null,

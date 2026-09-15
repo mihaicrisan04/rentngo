@@ -12,6 +12,7 @@
  */
 
 import { computeCouponDiscount, normalizeCustomerEmail } from "./discount";
+import { computeCreditForConversion, creditExpiry } from "./wallet";
 
 export interface AffiliateTier {
   /** Approved conversions required to unlock this tier. */
@@ -309,7 +310,9 @@ export function conversionTransition(
   }
 
   if (input.adminAction === "approve") {
-    if (wasApproved) return null;
+    // Credit is earned by a finished rental: an admin cannot approve a booking
+    // that has not been completed yet, however much they want to.
+    if (wasApproved || input.bookingStatus !== "completed") return null;
     return {
       nextStatus: "approved",
       counterDelta: +1,
@@ -344,6 +347,43 @@ export function conversionTransition(
     return { nextStatus: "pending", ...NO_EFFECTS };
   }
   return null;
+}
+
+export interface ConversionCreditInput {
+  tiers: AffiliateTier[];
+  /** The affiliate's counter BEFORE this approval is counted. */
+  approvedConversionsBefore: number;
+  rewardPercentOverride?: number;
+  /** The referred booking's persisted total. */
+  bookingTotal: number;
+  approvedAt: number;
+  creditValidityMonths: number;
+}
+
+export interface ConversionCredit {
+  rewardPercent: number;
+  amount: number;
+  expiresAt: number;
+}
+
+/**
+ * What an approval mints. The conversion being approved counts towards its own
+ * tier — otherwise the first conversion would resolve against a counter of 0
+ * and fall below every threshold — so the Nth approval is priced at tier N.
+ */
+export function resolveConversionCredit(
+  input: ConversionCreditInput,
+): ConversionCredit {
+  const rewardPercent = resolveTierRewardPercent(
+    input.tiers,
+    input.approvedConversionsBefore + 1,
+    input.rewardPercentOverride,
+  );
+  return {
+    rewardPercent,
+    amount: computeCreditForConversion(input.bookingTotal, rewardPercent),
+    expiresAt: creditExpiry(input.approvedAt, input.creditValidityMonths),
+  };
 }
 
 /** Validation shared by the admin settings mutation and the tier editor. */

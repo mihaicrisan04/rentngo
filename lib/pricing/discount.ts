@@ -128,6 +128,31 @@ export function applyDiscountToTotal(
 }
 
 /**
+ * The total to persist when an admin edits a booking. The admin dialog fills
+ * the price field from the pricing formula, which knows nothing about the
+ * coupon or referral discount already granted, so taking its number verbatim
+ * quietly re-charges the customer the discount — and inflates the referral
+ * credit computed off the total. A submitted total is therefore only honoured
+ * when the pricing inputs actually changed (otherwise the stored total
+ * stands), and the booking's persisted discount is re-applied to it, exactly
+ * as the booking mutation did when the price was first set.
+ */
+export function resolveEditedBookingTotal(params: {
+  submittedTotal?: number;
+  storedTotal: number;
+  discountAmount?: number;
+  pricingChanged: boolean;
+}): number {
+  if (params.submittedTotal === undefined || !params.pricingChanged) {
+    return params.storedTotal;
+  }
+  return applyDiscountToTotal(
+    params.submittedTotal,
+    params.discountAmount ?? 0,
+  );
+}
+
+/**
  * Run every check that needs only the coupon doc and the order context.
  * `subtotal` is always the server-recomputed authoritative total — a
  * client-sent number is only ever used for the advisory preview.
