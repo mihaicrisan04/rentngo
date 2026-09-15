@@ -30,6 +30,19 @@ export function pickDiscount(
   return present.find((d) => d.source === "coupon") ?? present[0] ?? null;
 }
 
+/**
+ * The EUR discount the checkout previews before the server decides: the same
+ * precedence `pickDiscount` applies, expressed over amounts the client has
+ * already computed. Summary cards and the wallet-credit preview must agree on
+ * the post-discount total, so the rule lives here rather than in each of them.
+ */
+export function previewDiscountAmount(
+  coupon: { discountAmount: number } | null | undefined,
+  affiliate: { discountAmount: number } | null | undefined,
+): number {
+  return coupon?.discountAmount ?? affiliate?.discountAmount ?? 0;
+}
+
 export type CouponBookingType = "rentals" | "transfers";
 
 /** The subset of a coupon document the pure checks need. */

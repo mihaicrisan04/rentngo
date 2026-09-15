@@ -10,18 +10,21 @@ import {
 } from "@/lib/referral";
 
 export interface AffiliateDiscountPreview {
-  kind: "referred" | "reward";
+  kind: "referred";
   slug: string;
   /** Advisory amount — the booking mutation recomputes server-side. */
   discountAmount: number;
 }
 
 /**
- * Automatic affiliate discount for the checkout: the referral cookie's
- * {slug, visitorKey} pair (validated server-side against the recorded
- * attribution) or the signed-in user's own tier reward. Advisory only; the
- * caller passes `referral` into the booking mutation, which re-resolves
- * everything and lets an explicit coupon win the single-discount rule.
+ * Automatic referred-customer discount for the checkout: the referral
+ * cookie's {slug, visitorKey} pair, validated server-side against the
+ * recorded attribution. Advisory only; the caller passes `referral` into the
+ * booking mutation, which re-resolves everything and lets an explicit coupon
+ * win the single-discount rule.
+ *
+ * A referrer's own reward is no longer a discount here — it accrues as wallet
+ * credit and is redeemed through useWalletCredit (RNGO-50).
  */
 export function useAffiliateDiscount({
   subtotal,
@@ -58,5 +61,11 @@ export function useAffiliateDiscount({
       : "skip",
   );
 
-  return { referral, affiliateDiscount: preview ?? null };
+  // The own-tier reward the backend can still answer with is ignored: v2 pays
+  // referrers in wallet credit, so only the referred-customer discount is a
+  // discount. The branch goes away with the backend's `reward` kind.
+  return {
+    referral,
+    affiliateDiscount: preview?.kind === "referred" ? preview : null,
+  };
 }

@@ -33,6 +33,7 @@ import Link from "next/link";
 import { COMPANY } from "@/lib/company";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { paymentMethodLabelKey } from "@/lib/checkout-payment-methods";
+import { bookingAmountDue } from "@/lib/pricing";
 import { TransferRouteMap } from "@/components/features/transfers/transfer-route-map";
 
 function TransferConfirmationInner() {
@@ -41,6 +42,7 @@ function TransferConfirmationInner() {
   const t = useTranslations("transferPage");
   const tConfirmation = useTranslations("confirmationPage");
   const tPaymentMethods = useTranslations("reservationPage.payment.methods");
+  const tWallet = useTranslations("common.wallet");
   const locale = useLocale();
 
   const transferId = params.transferId as Id<"transfers">;
@@ -395,6 +397,28 @@ function TransferConfirmationInner() {
                 €{transfer.totalPrice.toFixed(2)}
               </span>
             </div>
+            {/* Wallet credit pays part of the total rather than discounting
+                it, so it sits under the total with an explicit amount due */}
+            {(transfer.walletCreditApplied ?? 0) > 0 && (
+              <>
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>{tWallet("creditApplied")}</span>
+                  <span>
+                    −€{(transfer.walletCreditApplied ?? 0).toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-baseline">
+                  <span className="font-semibold">{tWallet("amountDue")}</span>
+                  <span className="text-xl font-bold">
+                    €
+                    {bookingAmountDue(
+                      transfer.totalPrice,
+                      transfer.walletCreditApplied,
+                    ).toFixed(2)}
+                  </span>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 

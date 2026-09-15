@@ -23,12 +23,19 @@ import {
 import { LocationData } from "@/lib/transfer-storage";
 import { cn } from "@/lib/utils";
 import { TransferRouteMap } from "@/components/features/transfers/transfer-route-map";
-import { applyDiscountToTotal } from "@/lib/pricing";
+import {
+  applyDiscountToTotal,
+  bookingAmountDue,
+  previewDiscountAmount,
+} from "@/lib/pricing";
 import {
   CouponCodeInput,
   type AppliedCoupon,
 } from "@/components/features/checkout/coupon-code-input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import type { AffiliateDiscountPreview } from "@/hooks/use-affiliate-discount";
+import type { WalletCreditSelection } from "@/hooks/use-wallet-credit";
 import { formatDuration } from "@/lib/mapbox";
 
 interface Coordinates {
@@ -66,6 +73,8 @@ interface TransferSummaryCardProps {
   onCouponAppliedChange?: (coupon: AppliedCoupon | null) => void;
   /** Automatic affiliate discount; an explicit coupon always beats it. */
   appliedAffiliateDiscount?: AffiliateDiscountPreview | null;
+  /** Wallet credit switch; absent for guests and while the program is off. */
+  walletCredit?: WalletCreditSelection;
   className?: string;
 }
 
@@ -88,22 +97,29 @@ export function TransferSummaryCard({
   customerEmail,
   onCouponAppliedChange,
   appliedAffiliateDiscount,
+  walletCredit,
   className,
 }: TransferSummaryCardProps) {
   const t = useTranslations("transferPage");
   const tCoupon = useTranslations("common.coupon");
   const tReferral = useTranslations("common.referral");
+  const tWallet = useTranslations("common.wallet");
   const locale = useLocale();
 
   // One discount per booking: an explicit coupon beats the automatic
   // affiliate discount (mirrors the server's pickDiscount)
   const affiliateDiscount = appliedCoupon ? null : appliedAffiliateDiscount;
-  const discountAmount =
-    appliedCoupon?.discountAmount ?? affiliateDiscount?.discountAmount ?? 0;
+  const discountAmount = previewDiscountAmount(
+    appliedCoupon,
+    affiliateDiscount,
+  );
   const displayedTotal =
     discountAmount > 0
       ? applyDiscountToTotal(totalPrice, discountAmount)
       : totalPrice;
+  // Credit is a payment, not a discount: the total stays where it is and only
+  // the amount due moves (mirrors the server's bookingAmountDue)
+  const creditApplied = walletCredit?.applied ?? 0;
 
   return (
     <Card className={cn("w-full", className)}>
@@ -284,6 +300,25 @@ export function TransferSummaryCard({
             onAppliedChange={onCouponAppliedChange}
           />
         )}
+        {walletCredit?.canRedeem && (
+          <div className="space-y-1">
+            <div className="flex items-center justify-between gap-3">
+              <Label htmlFor="wallet-credit-toggle" className="text-sm">
+                {tWallet("useCredit", { amount: walletCredit.balance })}
+              </Label>
+              <Switch
+                id="wallet-credit-toggle"
+                checked={walletCredit.selected}
+                onCheckedChange={walletCredit.setSelected}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {tWallet("capNote", {
+                percent: walletCredit.maxRedemptionPercent,
+              })}
+            </p>
+          </div>
+        )}
         <div className="flex flex-col gap-2">
           {appliedCoupon && discountAmount > 0 && (
             <div className="flex justify-between items-baseline text-sm text-green-600">
@@ -295,11 +330,7 @@ export function TransferSummaryCard({
           )}
           {affiliateDiscount && discountAmount > 0 && (
             <div className="flex justify-between items-baseline text-sm text-green-600">
-              <span>
-                {affiliateDiscount.kind === "referred"
-                  ? tReferral("discount")
-                  : tReferral("reward")}
-              </span>
+              <span>{tReferral("discount")}</span>
               <span>−€{discountAmount.toFixed(2)}</span>
             </div>
           )}
@@ -309,6 +340,20 @@ export function TransferSummaryCard({
               €{displayedTotal.toFixed(2)}
             </span>
           </div>
+          {creditApplied > 0 && (
+            <>
+              <div className="flex justify-between items-baseline text-sm text-green-600">
+                <span>{tWallet("creditApplied")}</span>
+                <span>−€{creditApplied.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-baseline">
+                <span className="font-semibold">{tWallet("amountDue")}</span>
+                <span className="text-xl font-bold">
+                  €{bookingAmountDue(displayedTotal, creditApplied).toFixed(2)}
+                </span>
+              </div>
+            </>
+          )}
         </div>
       </CardFooter>
     </Card>

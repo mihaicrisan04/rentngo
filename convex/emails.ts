@@ -69,6 +69,9 @@ const pricingDetailsValidator = v.object({
   // True when the discount came from the affiliate program (referral link or
   // referrer tier reward) rather than a typed coupon code — changes the label
   isReferralDiscount: v.optional(v.boolean()),
+  // Wallet credit spent on the booking; totalPrice stays pre-credit, so the
+  // amount due is totalPrice - walletCreditApplied
+  walletCreditApplied: v.optional(v.number()),
   additionalCharges: v.optional(
     v.array(
       v.object({
@@ -169,6 +172,7 @@ const transferPricingDetailsValidator = v.object({
   promoCode: v.optional(v.string()),
   discountAmount: v.optional(v.number()),
   isReferralDiscount: v.optional(v.boolean()),
+  walletCreditApplied: v.optional(v.number()),
 });
 
 // Send transfer confirmation emails (customer + admin)

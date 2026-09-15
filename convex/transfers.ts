@@ -33,6 +33,7 @@ import {
   resolveAffiliateCandidates,
   syncConversionForBooking,
 } from "./affiliates";
+import { redeemWalletCredit, reverseWalletRedemption } from "./wallet";
 import {
   applyDiscountToTotal,
   assertValidTransferDistance,
@@ -101,6 +102,7 @@ const transferDocValidator = v.object({
     v.union(v.literal("coupon"), v.literal("affiliate")),
   ),
   affiliateId: v.optional(v.id("affiliates")),
+  walletCreditApplied: v.optional(v.number()),
   customerInfo: customerInfoValidator,
   paymentMethod: paymentMethodValidator,
   status: transferStatusValidator,
@@ -173,6 +175,9 @@ const transferBookingValidator = v.object({
   promoCode: v.optional(v.string()),
   // Referral cookie payload — see createReservation; never fails the booking
   referral: v.optional(referralArgValidator),
+  // Wallet credit switch — a boolean only; the server owns the amount and
+  // ignores it for guests and while the referral program is off
+  useWalletCredit: v.optional(v.boolean()),
   locale: v.optional(v.string()),
 });
 
@@ -205,6 +210,24 @@ const successMessageValidator = v.object({
   success: v.boolean(),
   message: v.string(),
 });
+
+/**
+ * Cancelling gives the wallet credit back, so the booking must stop claiming
+ * it was paid with credit — otherwise an un-cancel would show a credit line
+ * for money that is spendable again. Idempotent, like the reversal itself.
+ */
+async function refundWalletCredit(
+  ctx: MutationCtx,
+  transferId: Id<"transfers">,
+): Promise<void> {
+  const restored = await reverseWalletRedemption(ctx, {
+    bookingType: "transfer",
+    bookingId: transferId,
+  });
+  if (restored > 0) {
+    await ctx.db.patch(transferId, { walletCreditApplied: undefined });
+  }
+}
 
 type TransferWriteArgs = Infer<typeof transferWriteValidator>;
 interface TransferResult {
@@ -341,6 +364,20 @@ async function createTransferHandler(
     await ctx.db.patch(redeemedCoupon.redemptionId, { transferId });
   }
 
+  // Wallet credit is a payment on top of the single discount, so it is taken
+  // from the already-discounted total. totalPrice stays pre-credit; the
+  // amount still due is totalPrice - walletCreditApplied.
+  const walletCreditApplied = await redeemWalletCredit(ctx, {
+    bookingType: "transfer",
+    bookingId: transferId,
+    userId: currentUser?._id,
+    totalAfterDiscount: totalPrice,
+    requested: args.useWalletCredit === true,
+  });
+  if (walletCreditApplied > 0) {
+    await ctx.db.patch(transferId, { walletCreditApplied });
+  }
+
   // Conversion lifecycle — see createReservation for the rationale
   if (affiliateCandidates.referred) {
     const conversionId = await recordReferralConversion(ctx, {
@@ -417,6 +454,8 @@ async function createTransferHandler(
         promoCode: appliedDiscount?.code,
         discountAmount: appliedDiscount?.amount,
         isReferralDiscount: appliedDiscount?.source === "affiliate",
+        walletCreditApplied:
+          walletCreditApplied > 0 ? walletCreditApplied : undefined,
       },
       paymentMethod: args.paymentMethod,
       locale: args.locale,
@@ -609,6 +648,9 @@ export const updateTransferStatus = mutation({
       bookingId: args.transferId,
       bookingStatus: args.newStatus,
     });
+    if (args.newStatus === "cancelled") {
+      await refundWalletCredit(ctx, args.transferId);
+    }
 
     return { success: true };
   },
@@ -667,6 +709,9 @@ export const updateTransferDetails = mutation({
         bookingId: transferId,
         bookingStatus: updates.status,
       });
+      if (updates.status === "cancelled") {
+        await refundWalletCredit(ctx, transferId);
+      }
     }
 
     return { success: true };
@@ -717,6 +762,7 @@ export const cancelTransfer = mutation({
       bookingId: args.transferId,
       bookingStatus: "cancelled",
     });
+    await refundWalletCredit(ctx, args.transferId);
 
     return { success: true, message: "Transfer cancelled successfully" };
   },
@@ -740,6 +786,11 @@ export const deleteTransferPermanently = mutation({
       bookingType: "transfer",
       bookingId: args.transferId,
       bookingStatus: "deleted",
+    });
+    await reverseWalletRedemption(ctx, {
+      bookingType: "transfer",
+      bookingId: args.transferId,
+      note: "booking deleted",
     });
     await ctx.db.delete(args.transferId);
     await recordStatsRemove(ctx, "transfers", transfer.status);

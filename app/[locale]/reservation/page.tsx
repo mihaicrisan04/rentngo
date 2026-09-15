@@ -27,6 +27,8 @@ import {
 } from "@/components/features/reservations";
 import type { AppliedCoupon } from "@/components/features/checkout/coupon-code-input";
 import { useAffiliateDiscount } from "@/hooks/use-affiliate-discount";
+import { useWalletCredit } from "@/hooks/use-wallet-credit";
+import { applyDiscountToTotal, previewDiscountAmount } from "@/lib/pricing";
 import { getStoredReferral } from "@/lib/referral";
 import { useTranslations, useLocale } from "next-intl";
 import { toast } from "sonner";
@@ -159,6 +161,18 @@ function ReservationPageContent() {
     email: personalInfo.email,
   });
 
+  // Wallet credit is a payment on the post-discount total, so the preview
+  // needs the same total the server will redeem against
+  const walletCredit = useWalletCredit({
+    totalAfterDiscount:
+      breakdown !== null
+        ? applyDiscountToTotal(
+            breakdown.totalPrice,
+            previewDiscountAmount(appliedCoupon, affiliateDiscount),
+          )
+        : null,
+  });
+
   // Handle reservation submission
   const handleSendReservation = async () => {
     const formErrors = validate();
@@ -229,6 +243,8 @@ function ReservationPageContent() {
         // Referral attribution — read the cookie fresh at submit so a
         // capture that landed after mount is never dropped; server-validated
         referral: getStoredReferral() ?? referral ?? undefined,
+        // Only the intent travels; the server computes the amount
+        useWalletCredit: walletCredit.submitValue,
         additionalCharges:
           additionalCharges.length > 0 ? additionalCharges : undefined,
         isSCDWSelected: isSCDWSelected,
@@ -448,6 +464,7 @@ function ReservationPageContent() {
           customerEmail={personalInfo.email}
           onCouponAppliedChange={setAppliedCoupon}
           appliedAffiliateDiscount={affiliateDiscount}
+          walletCredit={walletCredit}
           isSubmitting={isSubmitting}
           onSubmit={handleSendReservation}
         />

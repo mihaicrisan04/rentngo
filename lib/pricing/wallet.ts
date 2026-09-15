@@ -252,3 +252,71 @@ export function creditExpiry(
     granted.getUTCMilliseconds(),
   );
 }
+
+/**
+ * What a booking still costs after the wallet paid part of it. `totalPrice` on
+ * a booking is always the PRE-credit price — credit is a payment, not a
+ * discount — so this is the single definition of "amount due" shared by the
+ * checkout, the confirmation pages and the emails.
+ */
+export function bookingAmountDue(
+  totalPrice: number,
+  walletCreditApplied?: number,
+): number {
+  return round2(Math.max(0, totalPrice - (walletCreditApplied ?? 0)));
+}
+
+/** One credit a redemption draws on, with the expiry it has to give back. */
+export interface RedemptionEntry {
+  creditId: string;
+  amount: number;
+  expiresAt?: number;
+}
+
+export interface RedemptionPlan {
+  /** EUR actually redeemable — 0 when nothing may or can be spent. */
+  amount: number;
+  /** Per-credit split; the caller persists one debit row per entry. */
+  entries: RedemptionEntry[];
+}
+
+/**
+ * The whole redemption decision for one booking, kept pure so the cap, the
+ * expiry rule and the per-credit split are testable without a database. The
+ * caller supplies the user's full ledger; guests have no wallet and never get
+ * here.
+ */
+export function planRedemption(input: {
+  /** The client's `useWalletCredit` switch — advisory, never an amount. */
+  requested: boolean;
+  /** The wallet is part of the referral program and dies with it. */
+  programEnabled: boolean;
+  transactions: WalletTransactionData[];
+  totalAfterDiscount: number;
+  maxRedemptionPercent: number;
+  now: number;
+}): RedemptionPlan {
+  if (!input.requested || !input.programEnabled) {
+    return { amount: 0, entries: [] };
+  }
+
+  const redeemable = computeRedeemable(
+    computeAvailableBalance(input.transactions, input.now),
+    input.totalAfterDiscount,
+    input.maxRedemptionPercent,
+  );
+  if (redeemable <= 0) return { amount: 0, entries: [] };
+
+  const credits = computeRemainingCredits(input.transactions, input.now);
+  const { allocations, allocated } = allocateRedemption(credits, redeemable);
+  const expiryOf = new Map(credits.map((c) => [c.id, c.expiresAt]));
+
+  return {
+    amount: allocated,
+    entries: allocations.map((allocation) => ({
+      creditId: allocation.creditId,
+      amount: allocation.amount,
+      expiresAt: expiryOf.get(allocation.creditId),
+    })),
+  };
+}

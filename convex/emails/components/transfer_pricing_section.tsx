@@ -9,6 +9,7 @@ import {
 } from "@react-email/components";
 import { TransferPricingDetails } from "../types";
 import { getPaymentMethodLabel, formatCurrency } from "../utils";
+import { bookingAmountDue } from "../../../lib/pricing";
 
 interface TransferPricingSectionProps {
   pricingDetails: TransferPricingDetails;
@@ -21,6 +22,8 @@ interface TransferPricingSectionProps {
     roundTrip?: string;
     discount?: string;
     totalAmount?: string;
+    walletCredit?: string;
+    amountDue?: string;
     paymentMethod?: string;
   };
 }
@@ -87,6 +90,42 @@ export const TransferPricingSection: React.FC<TransferPricingSectionProps> = ({
           </Text>
         </Column>
       </Row>
+
+      {/* Wallet credit pays part of the total rather than discounting it, so
+          it lands under the total and leaves an explicit amount due */}
+      {(pricingDetails.walletCreditApplied || 0) > 0 && (
+        <>
+          <Row className="mb-[8px]">
+            <Column className="w-2/3">
+              <Text className="text-[16px] text-green-600 m-0">
+                {labels?.walletCredit ?? "Wallet credit:"}
+              </Text>
+            </Column>
+            <Column className="w-1/3 text-right">
+              <Text className="text-[16px] text-green-600 m-0">
+                −{formatCurrency(pricingDetails.walletCreditApplied || 0)}
+              </Text>
+            </Column>
+          </Row>
+          <Row className="mb-[12px]">
+            <Column className="w-2/3">
+              <Text className="text-[18px] font-bold text-gray-800 m-0">
+                {labels?.amountDue ?? "Amount Due:"}
+              </Text>
+            </Column>
+            <Column className="w-1/3 text-right">
+              <Text className="text-[18px] font-bold text-gray-800 m-0">
+                {formatCurrency(
+                  bookingAmountDue(
+                    pricingDetails.totalPrice,
+                    pricingDetails.walletCreditApplied,
+                  ),
+                )}
+              </Text>
+            </Column>
+          </Row>
+        </>
+      )}
 
       <Row>
         <Column>

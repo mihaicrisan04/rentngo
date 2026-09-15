@@ -42,6 +42,8 @@ export interface PricingDetails {
   promoCode?: string;
   discountAmount?: number;
   isReferralDiscount?: boolean;
+  /** Wallet credit spent; `totalPrice` above is always the pre-credit price. */
+  walletCreditApplied?: number;
   additionalCharges?: Array<{
     description?: string;
     code?:
@@ -92,6 +94,8 @@ export interface TransferPricingDetails {
   promoCode?: string;
   discountAmount?: number;
   isReferralDiscount?: boolean;
+  /** Wallet credit spent; `totalPrice` above is always the pre-credit price. */
+  walletCreditApplied?: number;
 }
 
 export interface TransferEmailData {

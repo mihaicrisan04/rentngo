@@ -551,8 +551,13 @@
       }
     },
     "referral": {
-      "discount": "Reducere recomandare",
-      "reward": "Recompensă afiliat"
+      "discount": "Reducere recomandare"
+    },
+    "wallet": {
+      "useCredit": "Folosește creditul ({amount} EUR disponibil)",
+      "creditApplied": "Credit aplicat",
+      "amountDue": "De plată",
+      "capNote": "Poți acoperi cel mult {percent}% din valoarea rezervării."
     },
     "consent": {
       "title": "Cookie-uri",

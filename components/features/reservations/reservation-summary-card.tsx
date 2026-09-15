@@ -10,11 +10,14 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import { formatPrice } from "@/lib/format";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
   applyDiscountToTotal,
+  bookingAmountDue,
   calculateIncludedKilometers,
+  previewDiscountAmount,
 } from "@/lib/pricing";
 import type { UseReservationPricingResult } from "@/hooks/use-reservation-pricing";
 import {
@@ -22,6 +25,7 @@ import {
   type AppliedCoupon,
 } from "@/components/features/checkout/coupon-code-input";
 import type { AffiliateDiscountPreview } from "@/hooks/use-affiliate-discount";
+import type { WalletCreditSelection } from "@/hooks/use-wallet-credit";
 import type { Vehicle } from "@/types/vehicle";
 
 interface ReservationSummaryCardProps {
@@ -47,6 +51,8 @@ interface ReservationSummaryCardProps {
   onCouponAppliedChange: (coupon: AppliedCoupon | null) => void;
   /** Automatic affiliate discount; an explicit coupon always beats it. */
   appliedAffiliateDiscount?: AffiliateDiscountPreview | null;
+  /** Wallet credit switch; absent for guests and while the program is off. */
+  walletCredit?: WalletCreditSelection;
   isSubmitting: boolean;
   onSubmit: () => void;
 }
@@ -72,12 +78,14 @@ export const ReservationSummaryCard = React.memo(
     customerEmail,
     onCouponAppliedChange,
     appliedAffiliateDiscount,
+    walletCredit,
     isSubmitting,
     onSubmit,
   }: ReservationSummaryCardProps) {
     const t = useTranslations("reservationPage");
     const tCoupon = useTranslations("common.coupon");
     const tReferral = useTranslations("common.referral");
+    const tWallet = useTranslations("common.wallet");
     const locale = useLocale();
 
     const {
@@ -94,12 +102,17 @@ export const ReservationSummaryCard = React.memo(
     // amount inside createReservation. One discount per booking: an explicit
     // coupon beats the automatic affiliate discount (mirrors pickDiscount)
     const affiliateDiscount = appliedCoupon ? null : appliedAffiliateDiscount;
-    const discountAmount =
-      appliedCoupon?.discountAmount ?? affiliateDiscount?.discountAmount ?? 0;
+    const discountAmount = previewDiscountAmount(
+      appliedCoupon,
+      affiliateDiscount,
+    );
     const totalPrice =
       breakdown !== null
         ? applyDiscountToTotal(breakdown.totalPrice, discountAmount)
         : null;
+    // Credit is a payment, not a discount: the total stays where it is and
+    // only the amount due moves (mirrors the server's bookingAmountDue)
+    const creditApplied = walletCredit?.applied ?? 0;
     const deliveryFee = breakdown?.deliveryFee ?? 0;
     const returnFee = breakdown?.returnFee ?? 0;
     const totalLocationFees = breakdown?.totalLocationFees ?? 0;
@@ -304,6 +317,26 @@ export const ReservationSummaryCard = React.memo(
               />
             </div>
 
+            {walletCredit?.canRedeem && (
+              <div className="border-t pt-4 space-y-1">
+                <div className="flex items-center justify-between gap-3">
+                  <Label htmlFor="wallet-credit-toggle" className="text-sm">
+                    {tWallet("useCredit", { amount: walletCredit.balance })}
+                  </Label>
+                  <Switch
+                    id="wallet-credit-toggle"
+                    checked={walletCredit.selected}
+                    onCheckedChange={walletCredit.setSelected}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {tWallet("capNote", {
+                    percent: walletCredit.maxRedemptionPercent,
+                  })}
+                </p>
+              </div>
+            )}
+
             {/* Pricing Summary */}
             <div className="border-t pt-4 space-y-2">
               <div className="flex justify-between text-sm">
@@ -389,12 +422,7 @@ export const ReservationSummaryCard = React.memo(
 
               {affiliateDiscount && discountAmount > 0 && (
                 <div className="flex justify-between text-sm text-green-600">
-                  <span>
-                    {affiliateDiscount.kind === "referred"
-                      ? tReferral("discount")
-                      : tReferral("reward")}
-                    :
-                  </span>
+                  <span>{tReferral("discount")}:</span>
                   <span>−{discountAmount} EUR</span>
                 </div>
               )}
@@ -415,6 +443,22 @@ export const ReservationSummaryCard = React.memo(
                 {!isSCDWSelected && warrantyAmount > 0 && (
                   <div className="text-right text-xs text-muted-foreground mt-1">
                     {t("reservationSummary.warrantyRefundable")}
+                  </div>
+                )}
+                {creditApplied > 0 && (
+                  <div className="mt-2 space-y-1">
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>{tWallet("creditApplied")}:</span>
+                      <span>−{formatPrice(creditApplied)}</span>
+                    </div>
+                    <div className="flex justify-between font-semibold">
+                      <span>{tWallet("amountDue")}:</span>
+                      <span>
+                        {formatPrice(
+                          bookingAmountDue(totalPrice ?? 0, creditApplied),
+                        )}
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
