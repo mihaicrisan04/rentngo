@@ -10,6 +10,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import { formatPrice } from "@/lib/format";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -448,12 +449,14 @@ export const ReservationSummaryCard = React.memo(
                   <div className="mt-2 space-y-1">
                     <div className="flex justify-between text-sm text-green-600">
                       <span>{tWallet("creditApplied")}:</span>
-                      <span>−{creditApplied} EUR</span>
+                      <span>−{formatPrice(creditApplied)}</span>
                     </div>
                     <div className="flex justify-between font-semibold">
                       <span>{tWallet("amountDue")}:</span>
                       <span>
-                        {bookingAmountDue(totalPrice ?? 0, creditApplied)} EUR
+                        {formatPrice(
+                          bookingAmountDue(totalPrice ?? 0, creditApplied),
+                        )}
                       </span>
                     </div>
                   </div>

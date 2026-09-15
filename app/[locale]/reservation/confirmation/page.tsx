@@ -11,6 +11,7 @@ import Link from "next/link";
 import { COMPANY } from "@/lib/company";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { paymentMethodLabelKey } from "@/lib/checkout-payment-methods";
+import { formatPrice } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -475,16 +476,19 @@ function ReservationConfirmationContent() {
                 <>
                   <div className="flex justify-between items-center text-sm text-green-600">
                     <span>{tWallet("creditApplied")}</span>
-                    <span>−{reservation.walletCreditApplied} EUR</span>
+                    <span>
+                      −{formatPrice(reservation.walletCreditApplied ?? 0)}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center text-lg font-bold">
                     <span>{tWallet("amountDue")}</span>
                     <span>
-                      {bookingAmountDue(
-                        reservation.totalPrice,
-                        reservation.walletCreditApplied,
-                      )}{" "}
-                      EUR
+                      {formatPrice(
+                        bookingAmountDue(
+                          reservation.totalPrice,
+                          reservation.walletCreditApplied,
+                        ),
+                      )}
                     </span>
                   </div>
                 </>
