@@ -23,7 +23,11 @@ import {
 import { LocationData } from "@/lib/transfer-storage";
 import { cn } from "@/lib/utils";
 import { TransferRouteMap } from "@/components/features/transfers/transfer-route-map";
-import { applyDiscountToTotal, bookingAmountDue } from "@/lib/pricing";
+import {
+  applyDiscountToTotal,
+  bookingAmountDue,
+  previewDiscountAmount,
+} from "@/lib/pricing";
 import {
   CouponCodeInput,
   type AppliedCoupon,
@@ -105,8 +109,10 @@ export function TransferSummaryCard({
   // One discount per booking: an explicit coupon beats the automatic
   // affiliate discount (mirrors the server's pickDiscount)
   const affiliateDiscount = appliedCoupon ? null : appliedAffiliateDiscount;
-  const discountAmount =
-    appliedCoupon?.discountAmount ?? affiliateDiscount?.discountAmount ?? 0;
+  const discountAmount = previewDiscountAmount(
+    appliedCoupon,
+    affiliateDiscount,
+  );
   const displayedTotal =
     discountAmount > 0
       ? applyDiscountToTotal(totalPrice, discountAmount)

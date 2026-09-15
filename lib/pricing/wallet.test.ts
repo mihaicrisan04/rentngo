@@ -437,4 +437,49 @@ describe("planRedemption", () => {
       plan([credit("c1", 100, NOW + 30 * DAY)], { totalAfterDiscount: 0 }),
     ).toEqual({ amount: 0, entries: [] });
   });
+
+  // The write path persists one debit row per entry and the reversal one
+  // credit row per debit; if the replay disagreed with either, a balance would
+  // drift every time a booking was made or cancelled.
+  it("agrees with the ledger replay, and reversing restores the balance", () => {
+    const ledger: WalletTransactionData[] = [
+      credit("soon", 60, NOW + 10 * DAY, NOW - 2 * DAY),
+      credit("late", 150, NOW + 90 * DAY, NOW - DAY),
+      credit("never", 40, undefined, NOW - DAY),
+    ];
+    const before = computeRemainingCredits(ledger, NOW);
+    const result = plan(ledger);
+    expect(result.amount).toBe(200);
+
+    const debits: WalletTransactionData[] = result.entries.map((entry, i) => ({
+      id: `d${i}`,
+      kind: "redemption",
+      amount: -entry.amount,
+      expiresAt: entry.expiresAt,
+      createdAt: NOW,
+    }));
+    const spentById = new Map(
+      result.entries.map((entry) => [entry.creditId, entry.amount]),
+    );
+    expect(computeRemainingCredits([...ledger, ...debits], NOW)).toEqual(
+      before
+        .map((c) => ({
+          ...c,
+          remaining: c.remaining - (spentById.get(c.id) ?? 0),
+        }))
+        .filter((c) => c.remaining > 0),
+    );
+    expect(computeAvailableBalance([...ledger, ...debits], NOW)).toBe(50);
+
+    const reversals: WalletTransactionData[] = debits.map((debit, i) => ({
+      id: `rr${i}`,
+      kind: "redemptionReversal",
+      amount: -debit.amount,
+      expiresAt: debit.expiresAt,
+      createdAt: NOW + 1,
+    }));
+    expect(
+      computeAvailableBalance([...ledger, ...debits, ...reversals], NOW + 1),
+    ).toBe(computeAvailableBalance(ledger, NOW + 1));
+  });
 });

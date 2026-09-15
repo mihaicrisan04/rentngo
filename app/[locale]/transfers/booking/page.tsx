@@ -36,7 +36,7 @@ import {
 import type { AppliedCoupon } from "@/components/features/checkout/coupon-code-input";
 import { useAffiliateDiscount } from "@/hooks/use-affiliate-discount";
 import { useWalletCredit } from "@/hooks/use-wallet-credit";
-import { applyDiscountToTotal } from "@/lib/pricing";
+import { applyDiscountToTotal, previewDiscountAmount } from "@/lib/pricing";
 import { getStoredReferral } from "@/lib/referral";
 import type { PaymentMethod } from "@/lib/checkout-payment-methods";
 import { ConvexError } from "convex/values";
@@ -116,16 +116,13 @@ export default function TransferBookingPage() {
   });
 
   // Wallet credit is a payment on the post-discount total, so the preview
-  // needs the same total the server will redeem against (coupon beats the
-  // automatic affiliate discount, mirroring pickDiscount)
+  // needs the same total the server will redeem against
   const walletCredit = useWalletCredit({
     totalAfterDiscount:
       pricing !== undefined && pricing !== null
         ? applyDiscountToTotal(
             pricing.totalPrice,
-            appliedCoupon?.discountAmount ??
-              affiliateDiscount?.discountAmount ??
-              0,
+            previewDiscountAmount(appliedCoupon, affiliateDiscount),
           )
         : null,
   });
@@ -239,7 +236,7 @@ export default function TransferBookingPage() {
         // capture that landed after mount is never dropped; server-validated
         referral: getStoredReferral() ?? referral ?? undefined,
         // Only the intent travels; the server computes the amount
-        useWalletCredit: walletCredit.selected || undefined,
+        useWalletCredit: walletCredit.submitValue,
         locale,
       });
 

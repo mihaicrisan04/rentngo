@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useQuery } from "convex/react";
+import { useConvexAuth, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 
 export interface WalletCreditSelection {
@@ -15,6 +15,8 @@ export interface WalletCreditSelection {
   canRedeem: boolean;
   selected: boolean;
   setSelected: (selected: boolean) => void;
+  /** What the booking mutation receives — never `true` without a preview. */
+  submitValue: true | undefined;
 }
 
 /**
@@ -32,10 +34,13 @@ export function useWalletCredit({
   totalAfterDiscount: number | null;
 }): WalletCreditSelection {
   const [selected, setSelected] = React.useState(false);
+  // Guests have no wallet, so an unauthenticated subscription would only ever
+  // answer zeroes for every visitor on the page.
+  const { isAuthenticated } = useConvexAuth();
 
   const preview = useQuery(
     api.wallet.previewRedemption,
-    totalAfterDiscount !== null && totalAfterDiscount > 0
+    isAuthenticated && totalAfterDiscount !== null && totalAfterDiscount > 0
       ? { totalAfterDiscount }
       : "skip",
   );
@@ -43,12 +48,22 @@ export function useWalletCredit({
   const canRedeem =
     (preview?.programEnabled && preview.redeemable > 0) ?? false;
 
+  // A total change re-runs the preview; a preview that comes back with
+  // nothing to redeem clears the switch during render (React's documented
+  // alternative to an effect) so a later change cannot silently re-enable it.
+  if (selected && preview !== undefined && preview.redeemable <= 0) {
+    setSelected(false);
+  }
+
+  const active = canRedeem && selected;
+
   return {
     balance: preview?.balance ?? 0,
-    applied: canRedeem && selected ? (preview?.redeemable ?? 0) : 0,
+    applied: active ? (preview?.redeemable ?? 0) : 0,
     maxRedemptionPercent: preview?.maxRedemptionPercent ?? 0,
     canRedeem,
     selected,
     setSelected,
+    submitValue: active ? true : undefined,
   };
 }

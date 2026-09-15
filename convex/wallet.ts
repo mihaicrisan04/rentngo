@@ -64,7 +64,6 @@ export const getMyWallet = query({
   args: {},
   returns: v.union(
     v.object({
-      programEnabled: v.boolean(),
       balance: v.number(),
       maxRedemptionPercent: v.number(),
       /** Soonest-expiring unspent credit, for the "use it before" nudge. */
@@ -86,35 +85,40 @@ export const getMyWallet = query({
   ),
   handler: async (ctx) => {
     const user = await getCurrentUser(ctx);
-    if (!user) return null;
-
     const settings = await loadSettings(ctx);
-    const rows = await loadLedger(ctx, user._id);
-    const ledger = toTransactionData(rows);
+    // The wallet is part of the referral program: while that is off there is
+    // no wallet to show, the same way there is no switch at checkout.
+    if (!user || !settings.enabled) return null;
+
     const now = Date.now();
+    // The balance is a replay, so it needs the whole ledger; the list the UI
+    // renders is bounded separately.
+    const ledger = toTransactionData(await loadLedger(ctx, user._id));
     // Counts and amounts only — a wallet row never names the referred
     // customer it came from, so there is no other user's PII to leak here.
     const expiring = computeRemainingCredits(ledger, now).find(
       (credit) => credit.expiresAt !== undefined,
     );
+    const recent = await ctx.db
+      .query("walletTransactions")
+      .withIndex("by_user", (q) => q.eq("userId", user._id))
+      .order("desc")
+      .take(50);
 
     return {
-      programEnabled: settings.enabled,
       balance: computeAvailableBalance(ledger, now),
       maxRedemptionPercent: settings.maxRedemptionPercent,
       nextExpiry:
         expiring?.expiresAt !== undefined
           ? { amount: expiring.remaining, expiresAt: expiring.expiresAt }
           : null,
-      transactions: rows
-        .sort((a, b) => b.createdAt - a.createdAt)
-        .map((row) => ({
-          id: row._id,
-          kind: row.kind,
-          amount: row.amount,
-          expiresAt: row.expiresAt,
-          createdAt: row.createdAt,
-        })),
+      transactions: recent.map((row) => ({
+        id: row._id,
+        kind: row.kind,
+        amount: row.amount,
+        expiresAt: row.expiresAt,
+        createdAt: row.createdAt,
+      })),
     };
   },
 });
@@ -133,28 +137,31 @@ export const previewRedemption = query({
     maxRedemptionPercent: v.number(),
   }),
   handler: async (ctx, args) => {
-    const settings = await loadSettings(ctx);
-    const user = await getCurrentUser(ctx);
-    const empty = {
-      programEnabled: settings.enabled,
+    // Nothing about the program's configuration is answered while it is off
+    // or to a visitor without a wallet — not even the cap.
+    const off = {
+      programEnabled: false,
       balance: 0,
       redeemable: 0,
-      maxRedemptionPercent: settings.maxRedemptionPercent,
+      maxRedemptionPercent: 0,
     };
-    if (!user || !settings.enabled) return empty;
+    const settings = await loadSettings(ctx);
+    const user = await getCurrentUser(ctx);
+    if (!user || !settings.enabled) return off;
 
     const balance = computeAvailableBalance(
       toTransactionData(await loadLedger(ctx, user._id)),
       Date.now(),
     );
     return {
-      ...empty,
+      programEnabled: true,
       balance,
       redeemable: computeRedeemable(
         balance,
         args.totalAfterDiscount,
         settings.maxRedemptionPercent,
       ),
+      maxRedemptionPercent: settings.maxRedemptionPercent,
     };
   },
 });
@@ -247,21 +254,22 @@ export async function redeemWalletCredit(
  */
 export async function reverseWalletRedemption(
   ctx: MutationCtx,
-  ref: BookingRef,
+  ref: BookingRef & { note?: string },
 ): Promise<number> {
   const rows = await loadBookingLedgerRows(ctx, ref);
   if (rows.some((row) => row.kind === "redemptionReversal")) return 0;
 
-  const redemptions = rows.filter((row) => row.kind === "redemption");
+  const now = Date.now();
   let restored = 0;
-  for (const redemption of redemptions) {
+  for (const redemption of rows.filter((row) => row.kind === "redemption")) {
     await ctx.db.insert("walletTransactions", {
       userId: redemption.userId,
       kind: "redemptionReversal",
       amount: Math.abs(redemption.amount),
       expiresAt: redemption.expiresAt,
       ...bookingLink(ref),
-      createdAt: Date.now(),
+      note: ref.note,
+      createdAt: now,
     });
     restored += Math.abs(redemption.amount);
   }

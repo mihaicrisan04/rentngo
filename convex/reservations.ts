@@ -1,4 +1,4 @@
-import { mutation, query } from "./_generated/server";
+import { mutation, query, type MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import {
   paginationOptsValidator,
@@ -135,6 +135,24 @@ const successMessageValidator = v.object({
   success: v.boolean(),
   message: v.string(),
 });
+
+/**
+ * Cancelling gives the wallet credit back, so the booking must stop claiming
+ * it was paid with credit — otherwise an un-cancel would show a credit line
+ * for money that is spendable again. Idempotent, like the reversal itself.
+ */
+async function refundWalletCredit(
+  ctx: MutationCtx,
+  reservationId: Id<"reservations">,
+): Promise<void> {
+  const restored = await reverseWalletRedemption(ctx, {
+    bookingType: "reservation",
+    bookingId: reservationId,
+  });
+  if (restored > 0) {
+    await ctx.db.patch(reservationId, { walletCreditApplied: undefined });
+  }
+}
 
 // --- CREATE ---
 export const createReservation = mutation({
@@ -724,10 +742,7 @@ export const updateReservationStatus = mutation({
       bookingStatus: args.newStatus,
     });
     if (args.newStatus === "cancelled") {
-      await reverseWalletRedemption(ctx, {
-        bookingType: "reservation",
-        bookingId: args.reservationId,
-      });
+      await refundWalletCredit(ctx, args.reservationId);
     }
 
     return { success: true };
@@ -810,10 +825,7 @@ export const updateReservationDetails = mutation({
         bookingStatus: updatesToApply.status,
       });
       if (updatesToApply.status === "cancelled") {
-        await reverseWalletRedemption(ctx, {
-          bookingType: "reservation",
-          bookingId: reservationId,
-        });
+        await refundWalletCredit(ctx, reservationId);
       }
     }
 
@@ -870,12 +882,7 @@ export const cancelReservation = mutation({
       bookingId: args.reservationId,
       bookingStatus: "cancelled",
     });
-    // Give back the wallet credit the booking spent (no-op the second time
-    // round; un-cancelling never re-redeems)
-    await reverseWalletRedemption(ctx, {
-      bookingType: "reservation",
-      bookingId: args.reservationId,
-    });
+    await refundWalletCredit(ctx, args.reservationId);
 
     return { success: true, message: "Reservation cancelled." };
   },
@@ -909,6 +916,7 @@ export const deleteReservationPermanently = mutation({
     await reverseWalletRedemption(ctx, {
       bookingType: "reservation",
       bookingId: args.reservationId,
+      note: "booking deleted",
     });
     await ctx.db.delete(args.reservationId);
     await recordStatsRemove(ctx, "reservations", reservation.status);

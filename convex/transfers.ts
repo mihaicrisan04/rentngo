@@ -211,6 +211,24 @@ const successMessageValidator = v.object({
   message: v.string(),
 });
 
+/**
+ * Cancelling gives the wallet credit back, so the booking must stop claiming
+ * it was paid with credit — otherwise an un-cancel would show a credit line
+ * for money that is spendable again. Idempotent, like the reversal itself.
+ */
+async function refundWalletCredit(
+  ctx: MutationCtx,
+  transferId: Id<"transfers">,
+): Promise<void> {
+  const restored = await reverseWalletRedemption(ctx, {
+    bookingType: "transfer",
+    bookingId: transferId,
+  });
+  if (restored > 0) {
+    await ctx.db.patch(transferId, { walletCreditApplied: undefined });
+  }
+}
+
 type TransferWriteArgs = Infer<typeof transferWriteValidator>;
 interface TransferResult {
   transferId: Id<"transfers">;
@@ -631,10 +649,7 @@ export const updateTransferStatus = mutation({
       bookingStatus: args.newStatus,
     });
     if (args.newStatus === "cancelled") {
-      await reverseWalletRedemption(ctx, {
-        bookingType: "transfer",
-        bookingId: args.transferId,
-      });
+      await refundWalletCredit(ctx, args.transferId);
     }
 
     return { success: true };
@@ -695,10 +710,7 @@ export const updateTransferDetails = mutation({
         bookingStatus: updates.status,
       });
       if (updates.status === "cancelled") {
-        await reverseWalletRedemption(ctx, {
-          bookingType: "transfer",
-          bookingId: transferId,
-        });
+        await refundWalletCredit(ctx, transferId);
       }
     }
 
@@ -750,12 +762,7 @@ export const cancelTransfer = mutation({
       bookingId: args.transferId,
       bookingStatus: "cancelled",
     });
-    // Give back the wallet credit the booking spent (no-op the second time
-    // round; un-cancelling never re-redeems)
-    await reverseWalletRedemption(ctx, {
-      bookingType: "transfer",
-      bookingId: args.transferId,
-    });
+    await refundWalletCredit(ctx, args.transferId);
 
     return { success: true, message: "Transfer cancelled successfully" };
   },
@@ -783,6 +790,7 @@ export const deleteTransferPermanently = mutation({
     await reverseWalletRedemption(ctx, {
       bookingType: "transfer",
       bookingId: args.transferId,
+      note: "booking deleted",
     });
     await ctx.db.delete(args.transferId);
     await recordStatsRemove(ctx, "transfers", transfer.status);

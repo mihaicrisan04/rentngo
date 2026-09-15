@@ -16,6 +16,7 @@ import {
   applyDiscountToTotal,
   bookingAmountDue,
   calculateIncludedKilometers,
+  previewDiscountAmount,
 } from "@/lib/pricing";
 import type { UseReservationPricingResult } from "@/hooks/use-reservation-pricing";
 import {
@@ -100,8 +101,10 @@ export const ReservationSummaryCard = React.memo(
     // amount inside createReservation. One discount per booking: an explicit
     // coupon beats the automatic affiliate discount (mirrors pickDiscount)
     const affiliateDiscount = appliedCoupon ? null : appliedAffiliateDiscount;
-    const discountAmount =
-      appliedCoupon?.discountAmount ?? affiliateDiscount?.discountAmount ?? 0;
+    const discountAmount = previewDiscountAmount(
+      appliedCoupon,
+      affiliateDiscount,
+    );
     const totalPrice =
       breakdown !== null
         ? applyDiscountToTotal(breakdown.totalPrice, discountAmount)
