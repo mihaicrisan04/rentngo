@@ -359,7 +359,9 @@ export const createReservation = mutation({
 
     // Single-discount seam: gather every candidate against the
     // server-recomputed total, then pickDiscount applies exactly one
-    // (explicit coupon > referred discount > own affiliate tier reward).
+    // (explicit coupon > referred discount). The referrer is not discounted
+    // here: their tier percent is minted as wallet credit when an admin
+    // approves the conversion.
     //
     // Coupon: validation, the redemption-count increment and the audit row
     // all happen inside this mutation's transaction, so a capped code cannot

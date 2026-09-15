@@ -200,6 +200,64 @@ export const get = query({
   },
 });
 
+/** Admin user lookup result — identity and contact only, no booking history. */
+const userSearchResultValidator = v.object({
+  _id: v.id("users"),
+  name: v.string(),
+  email: v.string(),
+  phone: v.optional(v.string()),
+  role: v.union(v.literal("renter"), v.literal("admin")),
+});
+
+const USER_SEARCH_LIMIT = 20;
+
+/**
+ * Admin search over name and email, for wallet top-ups on offline referrals.
+ * Two search indexes rather than one because Convex search matches a single
+ * field: `search_name` cannot find "@gmail.com" and `search_email` cannot find
+ * "Ionescu". An empty query returns the newest users instead of everything.
+ */
+export const searchUsers = query({
+  args: { query: v.string() },
+  returns: v.array(userSearchResultValidator),
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const term = args.query.trim();
+
+    const matches =
+      term.length === 0
+        ? await ctx.db.query("users").order("desc").take(USER_SEARCH_LIMIT)
+        : (
+            await Promise.all([
+              ctx.db
+                .query("users")
+                .withSearchIndex("search_name", (q) => q.search("name", term))
+                .take(USER_SEARCH_LIMIT),
+              ctx.db
+                .query("users")
+                .withSearchIndex("search_email", (q) => q.search("email", term))
+                .take(USER_SEARCH_LIMIT),
+            ])
+          ).flat();
+
+    const seen = new Set<string>();
+    const results: Doc<"users">[] = [];
+    for (const user of matches) {
+      if (user.deletedAt !== undefined || seen.has(user._id)) continue;
+      seen.add(user._id);
+      results.push(user);
+      if (results.length === USER_SEARCH_LIMIT) break;
+    }
+    return results.map((user) => ({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+    }));
+  },
+});
+
 /**
  * Updates the current authenticated user's profile.
  * Allows updating name, firstName, lastName, phone, and preferences according to the schema.

@@ -1,5 +1,9 @@
 import { v } from "convex/values";
 import {
+  paginationOptsValidator,
+  paginationResultValidator,
+} from "convex/server";
+import {
   internalMutation,
   mutation,
   query,
@@ -11,6 +15,7 @@ import { getCurrentUser, getOrCreateCurrentUser, requireAdmin } from "./users";
 import {
   computeReferredDiscount,
   conversionCreditOutstanding,
+  conversionCreditState,
   conversionTransition,
   generateAffiliateSlug,
   hasCouponIdentity,
@@ -35,6 +40,7 @@ import {
   type ReferralCodeReason,
   type ReferralSource,
   type ReferredIneligibilityReason,
+  type WalletTransactionData,
 } from "../lib/pricing";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -209,6 +215,7 @@ export const updateSettings = mutation({
 
 const affiliateListItemValidator = v.object({
   _id: v.id("affiliates"),
+  userId: v.id("users"),
   slug: v.string(),
   isActive: v.boolean(),
   confirmedConversions: v.number(),
@@ -232,6 +239,7 @@ export const listAffiliates = query({
         const user = await ctx.db.get(affiliate.userId);
         return {
           _id: affiliate._id,
+          userId: affiliate.userId,
           slug: affiliate.slug,
           isActive: affiliate.isActive,
           confirmedConversions: approvedCount(affiliate),
@@ -374,26 +382,42 @@ const conversionListItemValidator = v.object({
 });
 
 export const listConversions = query({
-  args: { affiliateId: v.id("affiliates") },
-  returns: v.array(conversionListItemValidator),
+  args: {
+    affiliateId: v.id("affiliates"),
+    status: v.optional(conversionStatusValidator),
+    paginationOpts: paginationOptsValidator,
+  },
+  returns: paginationResultValidator(conversionListItemValidator),
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
-    const conversions = await ctx.db
+    const status = args.status;
+    const base = ctx.db
       .query("referralConversions")
-      .withIndex("by_affiliate", (q) => q.eq("affiliateId", args.affiliateId))
+      .withIndex("by_affiliate", (q) => q.eq("affiliateId", args.affiliateId));
+    // One affiliate's conversions are already a bounded slice, so the status
+    // predicate rides along as a filter rather than earning its own index.
+    const result = await (
+      status === undefined
+        ? base
+        : base.filter((q) => q.eq(q.field("status"), status))
+    )
       .order("desc")
-      .take(200);
-    return conversions.map((c) => ({
-      _id: c._id,
-      bookingType: c.bookingType,
-      reservationId: c.reservationId,
-      transferId: c.transferId,
-      referredEmail: c.referredEmail,
-      status: c.status,
-      referredDiscountAmount: c.referredDiscountAmount,
-      createdAt: c.createdAt,
-      voidedAt: c.voidedAt,
-    }));
+      .paginate(args.paginationOpts);
+
+    return {
+      ...result,
+      page: result.page.map((c) => ({
+        _id: c._id,
+        bookingType: c.bookingType,
+        reservationId: c.reservationId,
+        transferId: c.transferId,
+        referredEmail: c.referredEmail,
+        status: c.status,
+        referredDiscountAmount: c.referredDiscountAmount,
+        createdAt: c.createdAt,
+        voidedAt: c.voidedAt,
+      })),
+    };
   },
 });
 
@@ -1224,6 +1248,209 @@ export const decideConversionAsAdmin = internalMutation({
   returns: decisionResultValidator,
   handler: async (ctx, args) => {
     return { status: await decideConversion(ctx, args) };
+  },
+});
+
+// --- Admin approvals queue and referral history ---
+
+/** Booking identity the admin recognises: its number and what it cost. */
+async function conversionBookingSummary(
+  ctx: QueryCtx,
+  conversion: Doc<"referralConversions">,
+): Promise<{ bookingNumber: number | null; bookingTotal: number | null }> {
+  const booking = await conversionBooking(ctx, conversion);
+  if (!booking) return { bookingNumber: null, bookingTotal: null };
+  // Both numbers are optional fields, so `in` cannot discriminate the union.
+  const bookingNumber =
+    conversion.bookingType === "reservation"
+      ? (booking as Doc<"reservations">).reservationNumber
+      : (booking as Doc<"transfers">).transferNumber;
+  return {
+    bookingNumber: bookingNumber ?? null,
+    bookingTotal: booking.totalPrice,
+  };
+}
+
+/** Per-page memo so several rows sharing a referrer replay one ledger read. */
+function ledgerCache(ctx: QueryCtx) {
+  const cache = new Map<Id<"users">, Promise<WalletTransactionData[]>>();
+  return (userId: Id<"users">) => {
+    const cached = cache.get(userId);
+    if (cached) return cached;
+    const loading = ctx.db
+      .query("walletTransactions")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect()
+      .then((rows) =>
+        rows.map((row) => ({
+          id: row._id as string,
+          kind: row.kind,
+          amount: row.amount,
+          expiresAt: row.expiresAt,
+          conversionId: row.conversionId as string | undefined,
+          createdAt: row.createdAt,
+        })),
+      );
+    cache.set(userId, loading);
+    return loading;
+  };
+}
+
+const pendingApprovalValidator = v.object({
+  _id: v.id("referralConversions"),
+  createdAt: v.number(),
+  referrerName: v.string(),
+  referrerSlug: v.string(),
+  referredEmail: v.string(),
+  bookingType: v.union(v.literal("reservation"), v.literal("transfer")),
+  bookingNumber: v.union(v.number(), v.null()),
+  bookingTotal: v.union(v.number(), v.null()),
+  /** Tier % × total as the mint would resolve it today — not yet granted. */
+  projectedCredit: v.number(),
+  projectedRewardPercent: v.number(),
+});
+
+/** The queue is a manual gate; it is short by design, so a take() bounds it. */
+const APPROVALS_LIMIT = 100;
+
+export const listPendingApprovals = query({
+  args: {},
+  returns: v.array(pendingApprovalValidator),
+  handler: async (ctx) => {
+    await requireAdmin(ctx);
+    const settings = await loadSettings(ctx);
+    // Oldest first: the queue is worked front to back.
+    const conversions = await ctx.db
+      .query("referralConversions")
+      .withIndex("by_status_createdAt", (q) =>
+        q.eq("status", "awaitingApproval"),
+      )
+      .take(APPROVALS_LIMIT);
+
+    const rows = await Promise.all(
+      conversions.map(async (conversion) => {
+        const affiliate = await ctx.db.get(conversion.affiliateId);
+        const referrer = affiliate ? await ctx.db.get(affiliate.userId) : null;
+        const { bookingNumber, bookingTotal } = await conversionBookingSummary(
+          ctx,
+          conversion,
+        );
+        // Same resolver the mint uses, so the number shown is the number
+        // granted unless the tier or the booking total moves meanwhile.
+        const projected = affiliate
+          ? resolveConversionCredit({
+              tiers: settings.tiers,
+              approvedConversionsBefore: approvedCount(affiliate),
+              rewardPercentOverride: affiliate.rewardPercentOverride,
+              bookingTotal: bookingTotal ?? 0,
+              approvedAt: conversion.createdAt,
+              creditValidityMonths: settings.creditValidityMonths,
+            })
+          : null;
+
+        return {
+          _id: conversion._id,
+          createdAt: conversion.createdAt,
+          referrerName: referrer?.name ?? "(deleted user)",
+          referrerSlug: affiliate?.slug ?? "",
+          referredEmail: conversion.referredEmail,
+          bookingType: conversion.bookingType,
+          bookingNumber,
+          bookingTotal,
+          projectedCredit: projected?.amount ?? 0,
+          projectedRewardPercent: projected?.rewardPercent ?? 0,
+        };
+      }),
+    );
+    return rows;
+  },
+});
+
+const referralHistoryRowValidator = pendingApprovalValidator.extend({
+  status: conversionStatusValidator,
+  /** The referrer spent this conversion's credit down to nothing. */
+  creditConsumed: v.boolean(),
+  creditAmount: v.number(),
+  reservationId: v.optional(v.id("reservations")),
+  transferId: v.optional(v.id("transfers")),
+  rejectionReason: v.optional(v.string()),
+});
+
+/**
+ * The guide's referral table: who referred whom, off which booking, for how
+ * much credit, and where that credit stands. "Consumed" is derived at read
+ * time from the referrer's own ledger replay — there is no second allocator
+ * and no denormalized flag that could drift.
+ */
+export const getReferralHistory = query({
+  args: {
+    status: v.optional(conversionStatusValidator),
+    paginationOpts: paginationOptsValidator,
+  },
+  returns: paginationResultValidator(referralHistoryRowValidator),
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const settings = await loadSettings(ctx);
+    const status = args.status;
+    const result = await (
+      status === undefined
+        ? ctx.db.query("referralConversions")
+        : ctx.db
+            .query("referralConversions")
+            .withIndex("by_status_createdAt", (q) => q.eq("status", status))
+    )
+      .order("desc")
+      .paginate(args.paginationOpts);
+
+    const ledgerFor = ledgerCache(ctx);
+    const page = await Promise.all(
+      result.page.map(async (conversion) => {
+        const affiliate = await ctx.db.get(conversion.affiliateId);
+        const referrer = affiliate ? await ctx.db.get(affiliate.userId) : null;
+        const { bookingNumber, bookingTotal } = await conversionBookingSummary(
+          ctx,
+          conversion,
+        );
+        const creditAmount = conversion.creditAmount ?? 0;
+        const projected = affiliate
+          ? resolveConversionCredit({
+              tiers: settings.tiers,
+              approvedConversionsBefore: approvedCount(affiliate),
+              rewardPercentOverride: affiliate.rewardPercentOverride,
+              bookingTotal: bookingTotal ?? 0,
+              approvedAt: conversion.createdAt,
+              creditValidityMonths: settings.creditValidityMonths,
+            })
+          : null;
+        const creditConsumed =
+          creditAmount > 0 && referrer
+            ? conversionCreditState({
+                transactions: await ledgerFor(referrer._id),
+                conversionId: conversion._id,
+              }) === "consumed"
+            : false;
+
+        return {
+          _id: conversion._id,
+          createdAt: conversion.createdAt,
+          status: conversion.status,
+          creditConsumed,
+          creditAmount,
+          referrerName: referrer?.name ?? "(deleted user)",
+          referrerSlug: affiliate?.slug ?? "",
+          referredEmail: conversion.referredEmail,
+          bookingType: conversion.bookingType,
+          bookingNumber,
+          bookingTotal: conversion.bookingTotalAtApproval ?? bookingTotal,
+          reservationId: conversion.reservationId,
+          transferId: conversion.transferId,
+          projectedCredit: projected?.amount ?? 0,
+          projectedRewardPercent: projected?.rewardPercent ?? 0,
+          rejectionReason: conversion.rejectionReason,
+        };
+      }),
+    );
+    return { ...result, page };
   },
 });
 

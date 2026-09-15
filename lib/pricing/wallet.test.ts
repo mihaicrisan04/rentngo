@@ -7,8 +7,10 @@ import {
   computeRedeemable,
   computeRemainingCredits,
   conversionCreditOutstanding,
+  conversionCreditState,
   creditExpiry,
   planRedemption,
+  planWalletAdjustment,
   type WalletCredit,
   type WalletTransactionData,
 } from "./wallet";
@@ -511,5 +513,113 @@ describe("conversion credit guards", () => {
         { ...credit("c2", 50, NOW + 400 * DAY), conversionId: "conv1" },
       ]),
     ).toBe(50);
+  });
+
+  it("reports a fully spent credit as consumed", () => {
+    expect(
+      conversionCreditState({ transactions: minted, conversionId: "conv1" }),
+    ).toBe("outstanding");
+    expect(
+      conversionCreditState({
+        transactions: [...minted, redemption("r1", 20, NOW + DAY)],
+        conversionId: "conv1",
+      }),
+    ).toBe("outstanding");
+    expect(
+      conversionCreditState({
+        transactions: [...minted, redemption("r1", 50, NOW + DAY)],
+        conversionId: "conv1",
+      }),
+    ).toBe("consumed");
+  });
+
+  it("never calls a reversed credit consumed, and knows nothing was minted", () => {
+    expect(
+      conversionCreditState({ transactions: reversed, conversionId: "conv1" }),
+    ).toBe("reversed");
+    expect(
+      conversionCreditState({ transactions: minted, conversionId: "conv2" }),
+    ).toBe("none");
+  });
+
+  it("charges a spend to the credit that was open when it happened", () => {
+    // Another referrer's credit lands later; the earlier spend cannot be
+    // re-attributed to it, so conv1 stays consumed.
+    const transactions = [
+      ...minted,
+      redemption("r1", 50, NOW + DAY),
+      {
+        ...credit("c9", 80, NOW + 400 * DAY, NOW + 2 * DAY),
+        conversionId: "conv9",
+      },
+    ];
+    expect(conversionCreditState({ transactions, conversionId: "conv1" })).toBe(
+      "consumed",
+    );
+    expect(conversionCreditState({ transactions, conversionId: "conv9" })).toBe(
+      "outstanding",
+    );
+  });
+});
+
+describe("planWalletAdjustment", () => {
+  const base = {
+    transactions: [] as WalletTransactionData[],
+    now: NOW,
+    creditValidityMonths: 12,
+  };
+
+  it("gives a top-up the configured expiry", () => {
+    expect(
+      planWalletAdjustment({ ...base, amount: 25.004, note: "offline ref" }),
+    ).toEqual({
+      ok: true,
+      amount: 25,
+      expiresAt: creditExpiry(NOW, 12),
+    });
+  });
+
+  it("refuses a blank note, a zero amount and a non-number", () => {
+    expect(planWalletAdjustment({ ...base, amount: 10, note: "   " }).ok).toBe(
+      false,
+    );
+    expect(planWalletAdjustment({ ...base, amount: 0.001, note: "x" })).toEqual(
+      { ok: false, error: "Amount must not be zero." },
+    );
+    expect(
+      planWalletAdjustment({ ...base, amount: Number.NaN, note: "x" }).ok,
+    ).toBe(false);
+  });
+
+  it("allows a claw-back down to zero but never below it", () => {
+    const transactions = [credit("c1", 40, NOW + 365 * DAY)];
+    expect(
+      planWalletAdjustment({ ...base, transactions, amount: -40, note: "x" }),
+    ).toEqual({ ok: true, amount: -40 });
+    const refused = planWalletAdjustment({
+      ...base,
+      transactions,
+      amount: -40.01,
+      note: "x",
+    });
+    expect(refused.ok).toBe(false);
+  });
+
+  it("ignores expired credit when sizing a claw-back", () => {
+    const transactions = [credit("c1", 40, NOW - DAY)];
+    expect(
+      planWalletAdjustment({ ...base, transactions, amount: -1, note: "x" }).ok,
+    ).toBe(false);
+  });
+
+  it("never gives a claw-back an expiry", () => {
+    const transactions = [credit("c1", 40, NOW + 365 * DAY)];
+    const plan = planWalletAdjustment({
+      ...base,
+      transactions,
+      amount: -10,
+      note: "x",
+    });
+    expect(plan).toEqual({ ok: true, amount: -10 });
   });
 });

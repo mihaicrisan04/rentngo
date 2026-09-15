@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import type { MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
-import { redeemWalletCredit, reverseWalletRedemption } from "./wallet";
+import {
+  applyWalletAdjustment,
+  redeemWalletCredit,
+  reverseWalletRedemption,
+} from "./wallet";
 
 const USER = "user-1" as Id<"users">;
 const RESERVATION = "reservation-1" as Id<"reservations">;
@@ -178,6 +182,55 @@ describe("reverseWalletRedemption", () => {
     const { ctx, insert } = createContext({ bookingRows: [] });
 
     await expect(reverse(ctx)).resolves.toBe(0);
+    expect(insert).not.toHaveBeenCalled();
+  });
+});
+
+describe("applyWalletAdjustment", () => {
+  const ADMIN = "admin-1" as Id<"users">;
+  const adjust = (ctx: MutationCtx, amount: number, note = "offline ref") =>
+    applyWalletAdjustment(ctx, {
+      userId: USER,
+      amount,
+      note,
+      adminUserId: ADMIN,
+    });
+
+  it("stamps a top-up with the admin, the note and the configured expiry", async () => {
+    const { ctx, insert } = createContext({ ledger: [] });
+
+    const { balance } = await adjust(ctx, 25.004, "  offline referral  ");
+    expect(balance).toBe(25);
+    expect(insert).toHaveBeenCalledTimes(1);
+    expect(insert.mock.calls[0][1]).toMatchObject({
+      userId: USER,
+      kind: "manualAdjustment",
+      amount: 25,
+      createdByUserId: ADMIN,
+      note: "offline referral",
+    });
+    expect(insert.mock.calls[0][1].expiresAt).toBeGreaterThan(Date.now());
+  });
+
+  it("claws credit back down to zero", async () => {
+    const { ctx, insert } = createContext({ ledger: [credit("c1", 90)] });
+
+    await expect(adjust(ctx, -90)).resolves.toEqual({ balance: 0 });
+    expect(insert.mock.calls[0][1]).toMatchObject({ amount: -90 });
+    expect(insert.mock.calls[0][1].expiresAt).toBeUndefined();
+  });
+
+  it("writes nothing when the claw-back would go below zero", async () => {
+    const { ctx, insert } = createContext({ ledger: [credit("c1", 90)] });
+
+    await expect(adjust(ctx, -90.01)).rejects.toThrow(/available balance/);
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("writes nothing without a note", async () => {
+    const { ctx, insert } = createContext({ ledger: [] });
+
+    await expect(adjust(ctx, 10, "   ")).rejects.toThrow(/note is required/);
     expect(insert).not.toHaveBeenCalled();
   });
 });

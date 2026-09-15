@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { List, Pencil, Users } from "lucide-react";
+import { List, Pencil, Users, Wallet } from "lucide-react";
 import { EmptyState } from "@/components/admin/shared/empty-state";
 import { toastWithUndo } from "@/components/admin/shared/undo-toast";
 import { formatRelativeTime } from "@/lib/format";
@@ -23,6 +23,7 @@ import { usePeriodicNow } from "@/hooks/use-periodic-now";
 import { toast } from "sonner";
 import { EditAffiliateDialog } from "@/components/admin/affiliates/edit-affiliate-dialog";
 import { AffiliateConversionsDialog } from "@/components/admin/affiliates/affiliate-conversions-dialog";
+import { WalletDialog } from "@/components/admin/shared/wallet-dialog";
 
 interface AffiliatesTableProps {
   onCreate?: () => void;
@@ -47,6 +48,9 @@ export function AffiliatesTable({ onCreate }: AffiliatesTableProps) {
   const [editing, setEditing] = React.useState<Id<"affiliates"> | null>(null);
   const [viewingConversions, setViewingConversions] =
     React.useState<Id<"affiliates"> | null>(null);
+  const [viewingWallet, setViewingWallet] = React.useState<Id<"users"> | null>(
+    null,
+  );
 
   if (affiliates === undefined) {
     return <p className="text-sm text-muted-foreground">Loading...</p>;
@@ -154,6 +158,14 @@ export function AffiliatesTable({ onCreate }: AffiliatesTableProps) {
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label="Open wallet"
+                    onClick={() => setViewingWallet(affiliate.userId)}
+                  >
+                    <Wallet className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     aria-label="View conversions"
                     onClick={() => setViewingConversions(affiliate._id)}
                   >
@@ -179,6 +191,13 @@ export function AffiliatesTable({ onCreate }: AffiliatesTableProps) {
           affiliate={editingAffiliate}
           open
           onOpenChange={(open) => !open && setEditing(null)}
+        />
+      )}
+      {viewingWallet && (
+        <WalletDialog
+          userId={viewingWallet}
+          open
+          onOpenChange={(open) => !open && setViewingWallet(null)}
         />
       )}
       {conversionsAffiliate && (

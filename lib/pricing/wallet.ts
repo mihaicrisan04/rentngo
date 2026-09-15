@@ -333,3 +333,80 @@ export function planRedemption(input: {
     })),
   };
 }
+
+export type WalletAdjustmentPlan =
+  | { ok: true; amount: number; expiresAt?: number }
+  | { ok: false; error: string };
+
+/**
+ * An admin's manual wallet movement, decided before anything is written.
+ * A top-up opens credit and therefore expires like a referral credit; a
+ * claw-back is a debit and may never push the wallet below zero, because the
+ * ledger replay treats an uncovered debit as overdraft that would silently
+ * swallow future credit instead of being visible as a negative balance.
+ */
+export function planWalletAdjustment(input: {
+  amount: number;
+  note: string;
+  transactions: WalletTransactionData[];
+  now: number;
+  creditValidityMonths: number;
+}): WalletAdjustmentPlan {
+  if (input.note.trim().length === 0) {
+    return { ok: false, error: "A note is required for a manual adjustment." };
+  }
+  if (!Number.isFinite(input.amount)) {
+    return { ok: false, error: "Amount must be a number." };
+  }
+
+  const amount = round2(input.amount);
+  if (amount === 0) {
+    return { ok: false, error: "Amount must not be zero." };
+  }
+  if (amount > 0) {
+    return {
+      ok: true,
+      amount,
+      expiresAt: creditExpiry(input.now, input.creditValidityMonths),
+    };
+  }
+
+  const balance = computeAvailableBalance(input.transactions, input.now);
+  if (-amount > balance) {
+    return {
+      ok: false,
+      error: `Cannot deduct ${(-amount).toFixed(2)} EUR — the available balance is ${balance.toFixed(2)} EUR.`,
+    };
+  }
+  return { ok: true, amount };
+}
+
+/**
+ * What became of one conversion's minted credit, read off the same
+ * chronological replay the balance uses — there is no second allocator.
+ * `consumed` is the guide's "Consumat": the credit was spent down to nothing
+ * and was never reversed.
+ */
+export type ConversionCreditState =
+  | "none"
+  | "reversed"
+  | "consumed"
+  | "outstanding";
+
+export function conversionCreditState(input: {
+  transactions: WalletTransactionData[];
+  conversionId: string;
+}): ConversionCreditState {
+  const own = input.transactions.filter(
+    (txn) => txn.conversionId === input.conversionId,
+  );
+  if (!own.some((txn) => txn.kind === "referralCredit")) return "none";
+  if (conversionCreditOutstanding(own) <= 0) return "reversed";
+
+  const credit = replayLedger(input.transactions).credits.find(
+    (entry) => entry.conversionId === input.conversionId,
+  );
+  return credit === undefined || credit.remaining <= 0
+    ? "consumed"
+    : "outstanding";
+}

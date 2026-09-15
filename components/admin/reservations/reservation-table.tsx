@@ -8,6 +8,7 @@ import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { formatDate, formatPrice, formatRelativeTime } from "@/lib/format";
+import { bookingAmountDue } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 import { usePeriodicNow } from "@/hooks/use-periodic-now";
 import { getTableLayout } from "@/components/admin/shared/table-layout";
@@ -263,6 +264,19 @@ export function ReservationsTable({
                     <div className="font-medium">
                       {formatPrice(reservation.totalPrice)}
                     </div>
+                    {(reservation.walletCreditApplied ?? 0) > 0 && (
+                      <div className="text-xs text-muted-foreground">
+                        Wallet −
+                        {formatPrice(reservation.walletCreditApplied ?? 0)} ·
+                        due{" "}
+                        {formatPrice(
+                          bookingAmountDue(
+                            reservation.totalPrice,
+                            reservation.walletCreditApplied,
+                          ),
+                        )}
+                      </div>
+                    )}
                     {reservation.promoCode && (
                       <div className="text-xs text-muted-foreground">
                         Promo: {reservation.promoCode}

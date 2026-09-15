@@ -51,7 +51,11 @@ export default defineSchema({
     deletedAt: v.optional(v.number()),
   })
     .index("by_email", ["email"])
-    .index("by_clerk_id", ["clerkId"]),
+    .index("by_clerk_id", ["clerkId"])
+    // Admin user search (referral top-ups for offline referrals). Two search
+    // indexes rather than one: a name index cannot match an email fragment.
+    .searchIndex("search_name", { searchField: "name" })
+    .searchIndex("search_email", { searchField: "email" }),
 
   // Vehicles table - stores car inventory
   vehicles: defineTable({
@@ -448,7 +452,9 @@ export default defineSchema({
       "affiliateId",
       "referredEmail",
       "status",
-    ]),
+    ])
+    // Admin approvals queue and the status-filtered history table
+    .index("by_status_createdAt", ["status", "createdAt"]),
 
   // Append-only wallet ledger. There is no denormalized balance and no expiry
   // cron: the balance is derived from these rows on read (lib/pricing/wallet.ts),
