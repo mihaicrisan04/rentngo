@@ -1,0 +1,13 @@
+=== decideConversionAsAdmin approve on VOIDED (m978g60...) ===
+{
+  "status": "voided"
+}
+
+=== txn count before double-approve ===
+14
+=== decideConversionAsAdmin approve on ALREADY-APPROVED (m97bny23...) ===
+{
+  "status": "approved"
+}
+=== txn count after ===
+14
