@@ -760,6 +760,7 @@
   "vehicleCard": {
     "or": "or",
     "perDay": "/ day",
+    "fromPrice": "from",
     "features": "Features",
     "viewDetails": "View Details",
     "bookNow": "Book Now",
