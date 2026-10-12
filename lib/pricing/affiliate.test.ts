@@ -14,6 +14,7 @@ import {
   nextTier,
   normalizeAffiliateSlug,
   referralCodeReason,
+  referralDiscountableAmount,
   referredEligibility,
   resolveConversionCredit,
   resolveReferralSource,
@@ -26,6 +27,7 @@ import {
   type ConversionBookingStatus,
 } from "./affiliate";
 import { pickDiscount, type AppliedDiscount } from "./discount";
+import { computeReservationPricing } from "./reservation";
 import { conversionCreditOutstanding } from "./wallet";
 
 const tiers: AffiliateTier[] = [
@@ -101,6 +103,56 @@ describe("computeReferredDiscount", () => {
     expect(computeReferredDiscount(-5, { type: "percentage", value: 50 })).toBe(
       0,
     );
+  });
+});
+
+describe("referralDiscountableAmount", () => {
+  const rental = (isSCDWSelected: boolean) =>
+    computeReservationPricing({
+      vehicle: {
+        pricingTiers: [{ minDays: 1, maxDays: 30, pricePerDay: 100 }],
+        warranty: 200,
+      },
+      startDate: new Date(2026, 10, 10),
+      endDate: new Date(2026, 10, 15),
+      pickupTime: "10:00",
+      restitutionTime: "10:00",
+      pickupLocation: "Cluj-Napoca",
+      restitutionLocation: "Aeroport Cluj-Napoca",
+      seasonalMultiplier: 1,
+      isSCDWSelected,
+      extras: {
+        snowChains: true,
+        childSeat1to4: 1,
+        childSeat5to12: 0,
+        extraKilometers: 0,
+      },
+    });
+  const fivePercent = { type: "percentage", value: 5 } as const;
+
+  it("discounts the rental only, never SCDW, extras or location fees", () => {
+    const pricing = rental(true);
+    expect(pricing.basePrice).toBe(500);
+    expect(pricing.totalPrice).toBeGreaterThan(pricing.basePrice);
+    expect(
+      computeReferredDiscount(referralDiscountableAmount(pricing), fivePercent),
+    ).toBe(25);
+  });
+
+  it("gives the same discount with and without SCDW", () => {
+    const withScdw = referralDiscountableAmount(rental(true));
+    const withoutScdw = referralDiscountableAmount(rental(false));
+    expect(withScdw).toBe(withoutScdw);
+  });
+
+  it("clamps a fixed discount to the rental price, not the total", () => {
+    const pricing = rental(true);
+    expect(
+      computeReferredDiscount(referralDiscountableAmount(pricing), {
+        type: "fixed",
+        value: 10_000,
+      }),
+    ).toBe(500);
   });
 });
 

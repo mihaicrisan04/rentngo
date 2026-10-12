@@ -156,7 +156,7 @@ Historical implementation plans live under `.agents/plans/`. Check Linear before
 
 - Referrer credit: 5 % of the referred booking (10 % from the 6th approved referral), minted on completion + admin approval
 - Credit expires 12 months after it is minted and pays at most 50 % of a booking
-- Referred customer: 5 % off, first rental only, via typed code or referral link
+- Referred customer: 5 % off the rental price (not SCDW, extras or location fees), first rental only, via typed code or referral link
 - One discount per booking; a coupon beats a referral discount
 - Wallet credit is a payment, not a discount: the booking total stays pre-credit
 

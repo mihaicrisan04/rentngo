@@ -28,7 +28,11 @@ import {
 import type { AppliedCoupon } from "@/components/features/checkout/coupon-code-input";
 import { useAffiliateDiscount } from "@/hooks/use-affiliate-discount";
 import { useWalletCredit } from "@/hooks/use-wallet-credit";
-import { applyDiscountToTotal, previewDiscountAmount } from "@/lib/pricing";
+import {
+  applyDiscountToTotal,
+  previewDiscountAmount,
+  referralDiscountableAmount,
+} from "@/lib/pricing";
 import { getStoredReferral } from "@/lib/referral";
 import { isReferralCodeReason } from "@/lib/pricing";
 import { useTranslations, useLocale } from "next-intl";
@@ -158,7 +162,7 @@ function ReservationPageContent() {
   // Automatic referred-customer discount from the referral cookie —
   // advisory; the server re-resolves it and an explicit coupon wins
   const { referral, affiliateDiscount } = useAffiliateDiscount({
-    subtotal: breakdown?.totalPrice ?? null,
+    subtotal: breakdown ? referralDiscountableAmount(breakdown) : null,
     email: personalInfo.email,
   });
 

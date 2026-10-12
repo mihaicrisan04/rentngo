@@ -26,6 +26,8 @@ interface CouponCodeInputProps {
   bookingType: "rentals" | "transfers";
   /** Pre-discount total from the price breakdown; null while not computable. */
   subtotal: number | null;
+  /** What a referral code discounts, when that is less than `subtotal`. */
+  referralSubtotal?: number;
   /** Customer email, so the once-per-user check also runs in the preview. */
   email?: string;
   /**
@@ -52,6 +54,7 @@ interface CouponCodeInputProps {
 export function CouponCodeInput({
   bookingType,
   subtotal,
+  referralSubtotal,
   email,
   onAppliedChange,
   className,
@@ -68,6 +71,7 @@ export function CouponCodeInput({
           code: submittedCode,
           bookingType,
           subtotal,
+          referralSubtotal,
           email: email?.trim() || undefined,
         }
       : "skip",

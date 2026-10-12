@@ -48,6 +48,7 @@ import {
   extractLegacyExtras,
   isKnownLocation,
   msToDateString,
+  referralDiscountableAmount,
   resolveEditedBookingTotal,
   DEFAULT_ADDITIONAL_50KM_PRICE,
 } from "../lib/pricing";
@@ -383,7 +384,7 @@ export const createReservation = mutation({
       typedCode: args.referralCode,
       currentUser,
       customerEmail: args.customerInfo.email,
-      subtotal: totalPrice,
+      subtotal: referralDiscountableAmount(pricing),
     });
     // A typed referral code that grants nothing fails the booking, exactly
     // like an invalid coupon: checkout quoted the discounted price, so

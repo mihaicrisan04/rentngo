@@ -18,6 +18,7 @@ import {
   bookingAmountDue,
   calculateIncludedKilometers,
   previewDiscountAmount,
+  referralDiscountableAmount,
 } from "@/lib/pricing";
 import type { UseReservationPricingResult } from "@/hooks/use-reservation-pricing";
 import {
@@ -312,6 +313,9 @@ export const ReservationSummaryCard = React.memo(
                 variant="embedded"
                 bookingType="rentals"
                 subtotal={breakdown?.totalPrice ?? null}
+                referralSubtotal={
+                  breakdown ? referralDiscountableAmount(breakdown) : undefined
+                }
                 email={customerEmail}
                 onAppliedChange={onCouponAppliedChange}
               />

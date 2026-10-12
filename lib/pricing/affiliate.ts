@@ -12,6 +12,7 @@
  */
 
 import { computeCouponDiscount, normalizeCustomerEmail } from "./discount";
+import type { ReservationPricingBreakdown } from "./types";
 import { computeCreditForConversion, creditExpiry } from "./wallet";
 
 export interface AffiliateTier {
@@ -283,6 +284,17 @@ export function currentTier(
 export type ReferralEmailBlock =
   | { kind: "affiliate"; code: string }
   | { kind: "guest" };
+
+/**
+ * The part of a car rental the referred discount applies to: the rental
+ * itself. SCDW, extras and location fees are add-ons and stay full price
+ * (owner decision, 2026-10-12).
+ */
+export function referralDiscountableAmount(
+  pricing: Pick<ReservationPricingBreakdown, "basePrice">,
+): number {
+  return pricing.basePrice;
+}
 
 /**
  * EUR discount for the referred customer. Same clamping semantics as coupons:
