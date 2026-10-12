@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { ArrowLeft, ArrowRight, Clock, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -19,6 +19,7 @@ import type { TransferVehicle } from "@/components/features/transfers/transfer-v
 
 export default function TransferVehiclesPage() {
   const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations("transferPage");
   const tCommon = useTranslations("common");
 
@@ -52,12 +53,12 @@ export default function TransferVehiclesPage() {
   }, [selectedVehicleId, isHydrated]);
 
   const handleBack = () => {
-    router.push("/transfers");
+    router.push(`/${locale}/transfers`);
   };
 
   const handleContinue = () => {
     if (selectedVehicleId) {
-      router.push("/transfers/booking");
+      router.push(`/${locale}/transfers/booking`);
     }
   };
 

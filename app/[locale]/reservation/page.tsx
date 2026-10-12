@@ -295,7 +295,9 @@ function ReservationPageContent() {
       // Clear storage (form data + the reserved vehicle) and redirect
       searchStorage.clear();
       reservationVehicle.clear();
-      router.push(`/reservation/confirmation?reservationId=${reservationId}`);
+      router.push(
+        `/${locale}/reservation/confirmation?reservationId=${reservationId}`,
+      );
     } catch (error) {
       console.error("Error creating reservation:", error);
       const errorData =

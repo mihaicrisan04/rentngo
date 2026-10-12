@@ -89,6 +89,14 @@ export function buildMetadata({
   };
 }
 
+/** Booking steps and other per-visitor pages that must stay out of search. */
+export const NO_INDEX_METADATA: Metadata = {
+  robots: { index: false, follow: false },
+  // Drop the canonical inherited from the parent page: noindex plus a
+  // canonical pointing elsewhere sends Google two conflicting signals
+  alternates: {},
+};
+
 /**
  * Safely serialize JSON-LD with XSS protection.
  * Use this for all dangerouslySetInnerHTML JSON-LD scripts.

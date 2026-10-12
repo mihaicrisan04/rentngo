@@ -98,7 +98,7 @@ function TransferConfirmationInner() {
           <p className="text-muted-foreground mb-6">
             {t("emptyState.notFoundBody")}
           </p>
-          <Button onClick={() => router.push("/transfers")}>
+          <Button onClick={() => router.push(`/${locale}/transfers`)}>
             <Home className="h-4 w-4 mr-2" />
             {t("confirmation.bookAnother")}
           </Button>
@@ -505,13 +505,15 @@ function TransferConfirmationInner() {
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button variant="outline" className="rounded-xl h-12 px-6" asChild>
-            <Link href="/">
+            <Link href={`/${locale}`}>
               <Home className="h-4 w-4 mr-2" />
               {tConfirmation("goBack")}
             </Link>
           </Button>
           <Button className="rounded-xl h-12 px-6" asChild>
-            <Link href="/transfers">{t("confirmation.bookAnother")}</Link>
+            <Link href={`/${locale}/transfers`}>
+              {t("confirmation.bookAnother")}
+            </Link>
           </Button>
         </div>
       </div>

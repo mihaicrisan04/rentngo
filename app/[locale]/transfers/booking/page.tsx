@@ -144,7 +144,7 @@ export default function TransferBookingPage() {
   }, [user, currentUser, isHydrated]);
 
   const handleBack = () => {
-    router.push("/transfers/vehicles");
+    router.push(`/${locale}/transfers/vehicles`);
   };
 
   const validateForm = (): boolean => {
@@ -254,7 +254,7 @@ export default function TransferBookingPage() {
         }),
       });
 
-      router.push(`/transfers/confirmation/${result.transferId}`);
+      router.push(`/${locale}/transfers/confirmation/${result.transferId}`);
     } catch (error) {
       console.error("Failed to create transfer:", error);
       const errorData =
@@ -311,7 +311,7 @@ export default function TransferBookingPage() {
           <p className="text-muted-foreground mb-6">
             {t("emptyState.bookingBody")}
           </p>
-          <Button onClick={() => router.push("/transfers")}>
+          <Button onClick={() => router.push(`/${locale}/transfers`)}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             {t("emptyState.startOver")}
           </Button>

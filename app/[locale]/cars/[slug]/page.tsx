@@ -3,8 +3,12 @@ import { fetchStaticQuery } from "@/lib/convex-static";
 import { api } from "@/convex/_generated/api";
 import { CarDetailClient } from "./car-detail-client";
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { buildMetadata, jsonLdScriptContent } from "@/lib/metadata";
+import { notFound, permanentRedirect } from "next/navigation";
+import {
+  buildMetadata,
+  jsonLdScriptContent,
+  NO_INDEX_METADATA,
+} from "@/lib/metadata";
 import { COMPANY } from "@/lib/company";
 import { buildAutoRentalSellerSchema } from "@/lib/structured-data";
 import { cacheLife } from "next/cache";
@@ -167,6 +171,7 @@ export async function generateMetadata({
 
     if (!vehicle) {
       return {
+        ...NO_INDEX_METADATA,
         title: locale === "ro" ? "Vehicul Negăsit" : "Vehicle Not Found",
       };
     }
@@ -232,6 +237,10 @@ export default async function CarDetailPage({ params }: PageProps) {
   const vehicle = await fetchStaticQuery(api.vehicles.getBySlug, { slug });
 
   if (!vehicle) {
+    const legacySlug = await fetchStaticQuery(api.vehicles.getSlugByLegacyId, {
+      id: slug,
+    });
+    if (legacySlug) permanentRedirect(carsPath(locale, legacySlug));
     notFound();
   }
 

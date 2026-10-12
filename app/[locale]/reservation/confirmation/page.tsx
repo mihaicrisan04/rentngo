@@ -84,7 +84,7 @@ function ReservationConfirmationContent() {
                 {t("bookAnotherCar")}
               </Button>
             </Link>
-            <Link href="/">
+            <Link href={`/${locale}`}>
               <Button variant="outline">
                 <Home className="mr-2 h-4 w-4" />
                 Home
@@ -125,7 +125,7 @@ function ReservationConfirmationContent() {
                 {t("bookAnotherCar")}
               </Button>
             </Link>
-            <Link href="/">
+            <Link href={`/${locale}`}>
               <Button variant="outline">
                 <Home className="mr-2 h-4 w-4" />
                 Home
@@ -611,7 +611,7 @@ function ReservationConfirmationContent() {
                     {t("questionsAboutReservation")}
                   </p>
                   <Link
-                    href="/terms"
+                    href={`/${locale}/terms`}
                     className="text-primary hover:underline text-sm"
                   >
                     {t("viewTermsConditions")}

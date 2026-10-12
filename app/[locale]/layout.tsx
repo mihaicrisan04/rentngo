@@ -84,14 +84,6 @@ export const metadata: Metadata = {
     shortcut: "/favicon.ico",
     apple: "/favicon.ico",
   },
-  alternates: {
-    canonical: "https://rngo.ro/ro",
-    languages: {
-      "ro-RO": "https://rngo.ro/ro",
-      "en-US": "https://rngo.ro/en",
-      "x-default": "https://rngo.ro/ro",
-    },
-  },
 };
 
 // Root layout for the public site. `<html lang>` is derived from the [locale]

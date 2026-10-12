@@ -8,7 +8,7 @@ import {
   BreadcrumbStructuredData,
 } from "@/components/features/blog/blog-structured-data";
 import { notFound } from "next/navigation";
-import { buildMetadata } from "@/lib/metadata";
+import { buildMetadata, NO_INDEX_METADATA } from "@/lib/metadata";
 import { cacheLife } from "next/cache";
 import { isLocale } from "@/i18n";
 
@@ -30,6 +30,7 @@ export async function generateMetadata({
 
   if (!blog) {
     return {
+      ...NO_INDEX_METADATA,
       title: "Blog Post Not Found",
     };
   }

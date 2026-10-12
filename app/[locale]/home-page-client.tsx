@@ -348,7 +348,7 @@ export function HomePageClient({
                         className="group"
                         asChild
                       >
-                        <Link href="/about">
+                        <Link href={`/${locale}/about`}>
                           {tAbout("mission.buttonText")}
                           <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                         </Link>
@@ -441,7 +441,7 @@ export function HomePageClient({
                   className="px-8 h-13 text-base"
                   asChild
                 >
-                  <Link href="/contact">{t("faq.contact")}</Link>
+                  <Link href={`/${locale}/contact`}>{t("faq.contact")}</Link>
                 </Button>
               </div>
             </div>

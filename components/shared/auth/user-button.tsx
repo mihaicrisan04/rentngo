@@ -3,7 +3,7 @@
 import { LogOut, User } from "lucide-react";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -20,6 +20,7 @@ export function UserButton() {
   const { user } = useUser();
   const { signOut } = useClerk();
   const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations("navigation");
 
   if (!user) {
@@ -39,7 +40,7 @@ export function UserButton() {
   };
 
   const handleProfileClick = () => {
-    router.push("/profile");
+    router.push(`/${locale}/profile`);
   };
 
   return (

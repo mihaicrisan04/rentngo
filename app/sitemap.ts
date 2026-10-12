@@ -5,181 +5,104 @@ import { carsPathWithoutLocale } from "@/lib/localized-routes";
 
 const BASE_URL = "https://rngo.ro";
 
-// Helper to create bilingual sitemap entries
-function createBilingualEntry(
-  path: string | { ro: string; en: string },
-  options: {
-    lastModified?: Date;
-    changeFrequency:
-      | "always"
-      | "hourly"
-      | "daily"
-      | "weekly"
-      | "monthly"
-      | "yearly"
-      | "never";
-    priority: number;
-  },
-): MetadataRoute.Sitemap {
-  const { lastModified = new Date(), changeFrequency, priority } = options;
-  const roPath = typeof path === "string" ? path : path.ro;
-  const enPath = typeof path === "string" ? path : path.en;
-
-  return [
-    {
-      url: `${BASE_URL}/en${enPath}`,
-      lastModified,
-      changeFrequency,
-      priority,
-      alternates: {
-        languages: {
-          en: `${BASE_URL}/en${enPath}`,
-          ro: `${BASE_URL}/ro${roPath}`,
-        },
-      },
-    },
-    {
-      url: `${BASE_URL}/ro${roPath}`,
-      lastModified,
-      changeFrequency,
-      priority,
-      alternates: {
-        languages: {
-          en: `${BASE_URL}/en${enPath}`,
-          ro: `${BASE_URL}/ro${roPath}`,
-        },
-      },
-    },
-  ];
+interface LocalizedPaths {
+  ro: string;
+  en: string;
 }
 
-function carsPaths(slug?: string) {
+function samePath(path: string): LocalizedPaths {
+  return { ro: path, en: path };
+}
+
+function carsPaths(slug?: string): LocalizedPaths {
   return {
     ro: carsPathWithoutLocale("ro", slug),
     en: carsPathWithoutLocale("en", slug),
   };
 }
 
+/**
+ * One URL per locale, each listing both as alternates with the same hreflang
+ * codes the pages declare in their <head>. `lastModified` is only set where a
+ * real date exists; a fresh timestamp on every fetch teaches Google to ignore it.
+ */
+function bilingualEntry(
+  paths: LocalizedPaths,
+  options: {
+    lastModified?: Date;
+    changeFrequency: NonNullable<
+      MetadataRoute.Sitemap[number]["changeFrequency"]
+    >;
+    priority: number;
+  },
+): MetadataRoute.Sitemap {
+  const roUrl = `${BASE_URL}/ro${paths.ro}`;
+  const enUrl = `${BASE_URL}/en${paths.en}`;
+  const alternates = {
+    languages: { "ro-RO": roUrl, "en-US": enUrl, "x-default": roUrl },
+  };
+  return [roUrl, enUrl].map((url) => ({ url, alternates, ...options }));
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // Fetch dynamic content
   const [blogSlugs, vehicles] = await Promise.all([
     fetchQuery(api.blogs.getAlternateSlugs),
     fetchQuery(api.vehicles.getAllVehicles),
   ]);
 
-  // Generate blog URLs with correct locale-specific slugs
-  const blogUrls = blogSlugs.flatMap((blog) => {
-    const lastModified = blog.publishedAt
-      ? new Date(blog.publishedAt)
-      : new Date(blog._creationTime);
-
-    return [
+  const blogUrls = blogSlugs.flatMap((blog) =>
+    bilingualEntry(
+      { ro: `/blog/${blog.slugRo}`, en: `/blog/${blog.slugEn}` },
       {
-        url: `${BASE_URL}/ro/blog/${blog.slugRo}`,
-        lastModified,
-        changeFrequency: "monthly" as const,
+        lastModified: new Date(blog.publishedAt ?? blog._creationTime),
+        changeFrequency: "monthly",
         priority: 0.8,
-        alternates: {
-          languages: {
-            en: `${BASE_URL}/en/blog/${blog.slugEn}`,
-            ro: `${BASE_URL}/ro/blog/${blog.slugRo}`,
-          },
-        },
       },
-      {
-        url: `${BASE_URL}/en/blog/${blog.slugEn}`,
-        lastModified,
-        changeFrequency: "monthly" as const,
-        priority: 0.8,
-        alternates: {
-          languages: {
-            en: `${BASE_URL}/en/blog/${blog.slugEn}`,
-            ro: `${BASE_URL}/ro/blog/${blog.slugRo}`,
-          },
-        },
-      },
-    ];
-  });
+    ),
+  );
 
-  // Generate vehicle/car detail URLs using slug (falls back to _id for backwards compatibility)
+  // A vehicle without a slug has no public URL
   const vehicleUrls = vehicles.flatMap((vehicle) =>
-    createBilingualEntry(carsPaths(vehicle.slug || vehicle._id), {
-      lastModified: new Date(vehicle._creationTime),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    }),
+    vehicle.slug
+      ? bilingualEntry(carsPaths(vehicle.slug), {
+          lastModified: new Date(vehicle._creationTime),
+          changeFrequency: "weekly",
+          priority: 0.8,
+        })
+      : [],
   );
 
   return [
-    // Homepage (root redirect)
-    {
-      url: BASE_URL,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 1.0,
-      alternates: {
-        languages: {
-          en: `${BASE_URL}/en`,
-          ro: `${BASE_URL}/ro`,
-        },
-      },
-    },
-
-    // Main pages - High priority
-    ...createBilingualEntry("", {
-      changeFrequency: "daily",
-      priority: 1.0,
-    }),
-
-    // Cars listing page
-    ...createBilingualEntry(carsPaths(), {
-      changeFrequency: "daily",
-      priority: 0.9,
-    }),
-
-    // Transfers page
-    ...createBilingualEntry("/transfers", {
+    ...bilingualEntry(samePath(""), { changeFrequency: "daily", priority: 1 }),
+    ...bilingualEntry(carsPaths(), { changeFrequency: "daily", priority: 0.9 }),
+    ...bilingualEntry(samePath("/transfers"), {
       changeFrequency: "weekly",
       priority: 0.9,
     }),
-
-    // Blog listing page
-    ...createBilingualEntry("/blog", {
+    ...bilingualEntry(samePath("/blog"), {
       changeFrequency: "daily",
       priority: 0.9,
     }),
-
-    // About page
-    ...createBilingualEntry("/about", {
+    ...bilingualEntry(samePath("/about"), {
       changeFrequency: "monthly",
       priority: 0.7,
     }),
-
-    // Contact page
-    ...createBilingualEntry("/contact", {
+    ...bilingualEntry(samePath("/contact"), {
       changeFrequency: "monthly",
       priority: 0.7,
     }),
-
-    // FAQ page
-    ...createBilingualEntry("/faq", {
+    ...bilingualEntry(samePath("/faq"), {
       changeFrequency: "monthly",
       priority: 0.7,
     }),
-
-    // Terms and Conditions
-    ...createBilingualEntry("/terms", {
+    ...bilingualEntry(samePath("/terms"), {
       changeFrequency: "yearly",
       priority: 0.5,
     }),
-
-    // Privacy Policy
-    ...createBilingualEntry("/privacy", {
+    ...bilingualEntry(samePath("/privacy"), {
       changeFrequency: "yearly",
       priority: 0.5,
     }),
-
-    // Dynamic content
     ...vehicleUrls,
     ...blogUrls,
   ];
