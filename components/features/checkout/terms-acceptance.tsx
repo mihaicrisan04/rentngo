@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { AlertCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -18,9 +18,10 @@ export function TermsAcceptance({
   error,
 }: TermsAcceptanceProps) {
   const t = useTranslations("common");
+  const locale = useLocale();
   const termsLink = (chunks: ReactNode) => (
     <Link
-      href="/terms"
+      href={`/${locale}/terms`}
       target="_blank"
       rel="noopener noreferrer"
       className="text-primary hover:text-primary/80 underline"
@@ -30,7 +31,7 @@ export function TermsAcceptance({
   );
   const privacyLink = (chunks: ReactNode) => (
     <Link
-      href="/privacy"
+      href={`/${locale}/privacy`}
       target="_blank"
       rel="noopener noreferrer"
       className="text-primary hover:text-primary/80 underline"

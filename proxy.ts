@@ -25,6 +25,9 @@ const intlMiddleware = createMiddleware({
   defaultLocale: "ro",
   localePrefix: "always", // Both /ro and /en will have explicit prefixes
   pathnames: LOCALIZED_PATHNAMES,
+  // The pages declare hreflang themselves; next-intl's Link header disagreed
+  // with them (unprefixed x-default, wrong per-locale blog slugs).
+  alternateLinks: false,
 });
 
 export default clerkMiddleware(async (auth, req) => {

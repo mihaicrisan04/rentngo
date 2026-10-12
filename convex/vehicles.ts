@@ -111,6 +111,18 @@ export const getById = query({
   },
 });
 
+// Car pages were addressed by vehicle id before slugs existed (Jan 2026)
+export const getSlugByLegacyId = query({
+  args: { id: v.string() },
+  returns: v.union(v.string(), v.null()),
+  handler: async (ctx, args) => {
+    const id = ctx.db.normalizeId("vehicles", args.id);
+    if (!id) return null;
+    const vehicle = await ctx.db.get(id);
+    return vehicle?.slug ?? null;
+  },
+});
+
 // Get vehicle by slug
 export const getBySlug = query({
   args: { slug: v.string() },

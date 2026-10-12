@@ -4,7 +4,7 @@ import * as React from "react";
 import { useToday } from "@/hooks/use-today";
 import { useRouter } from "next/navigation";
 import { Search, Users, ArrowRight, Loader2 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -37,6 +37,7 @@ export function TransferSearchForm({
   onRouteCalculated,
 }: TransferSearchFormProps) {
   const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations("transferPage");
 
   const today = useToday();
@@ -239,7 +240,7 @@ export function TransferSearchForm({
       selectedVehicleId: undefined,
     });
 
-    router.push("/transfers/vehicles");
+    router.push(`/${locale}/transfers/vehicles`);
   };
 
   const canSearch =

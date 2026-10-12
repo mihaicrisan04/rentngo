@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 export default function LocaleError({
   reset,
@@ -11,6 +11,7 @@ export default function LocaleError({
   reset: () => void;
 }) {
   const t = useTranslations("errorPage");
+  const locale = useLocale();
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
       <div className="text-center space-y-4 p-8">
@@ -21,7 +22,7 @@ export default function LocaleError({
             {t("tryAgain")}
           </Button>
           <Button asChild variant="outline">
-            <Link href="/">{t("goHome")}</Link>
+            <Link href={`/${locale}`}>{t("goHome")}</Link>
           </Button>
         </div>
       </div>

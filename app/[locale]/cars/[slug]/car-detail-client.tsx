@@ -66,7 +66,7 @@ export function CarDetailClient({
   const currency = "EUR";
   // Carry the vehicle in the href so new-tab/cmd-click works; the reservation
   // page moves it into per-tab storage and strips it back to a bare URL.
-  const reservationUrl = `/reservation?vehicleId=${vehicle._id}`;
+  const reservationUrl = `/${locale}/reservation?vehicleId=${vehicle._id}`;
 
   const vehicleName = formatVehicleName(
     vehicle.make,
@@ -83,7 +83,7 @@ export function CarDetailClient({
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link href="/">{tCommon("home")}</Link>
+                  <Link href={`/${locale}`}>{tCommon("home")}</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
@@ -155,7 +155,9 @@ export function CarDetailClient({
                 className="w-full bg-[#055E3B] hover:bg-[#055E3B]/80 text-white font-bold py-4 text-lg rounded-xl h-14"
                 asChild
               >
-                <Link href={reservationUrl}>{t("reserveThisCar")}</Link>
+                <Link href={reservationUrl} rel="nofollow">
+                  {t("reserveThisCar")}
+                </Link>
               </Button>
               <p className="text-sm text-muted-foreground text-center">
                 {t("reserveDescription")}

@@ -96,7 +96,7 @@ export function VehicleCardWithPreloadedImage({
   // Carry the vehicle in the href so new-tab/cmd-click works; the reservation
   // page moves it into per-tab storage and strips it back to a bare URL.
   const reservationUrl = vehicle
-    ? `/reservation?vehicleId=${vehicle._id}`
+    ? `/${locale}/reservation?vehicleId=${vehicle._id}`
     : "#";
   const carDetailsUrl = vehicle
     ? carsPath(locale, vehicle.slug || vehicle._id)
@@ -191,7 +191,9 @@ export function VehicleCardWithPreloadedImage({
           className="w-full bg-[#055E3B] hover:bg-[#055E3B]/80 text-white font-bold py-2 rounded-xl text-xs"
           asChild
         >
-          <Link href={reservationUrl}>{t("bookNow")}</Link>
+          <Link href={reservationUrl} rel="nofollow">
+            {t("bookNow")}
+          </Link>
         </Button>
       </div>
 

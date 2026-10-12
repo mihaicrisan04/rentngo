@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 import createMDX from "@next/mdx";
-import { CARS_SEGMENT } from "./lib/localized-routes";
+import { permanentRedirects } from "./lib/seo-redirects";
 
 const withNextIntl = createNextIntlPlugin("./i18n.ts");
 
@@ -32,24 +32,16 @@ const nextConfig: NextConfig = {
     ],
   },
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
-  // Permanent so search engines move the old /cars rankings over; the
-  // middleware would only answer these with a temporary 307.
+  // Next streams metadata into <body> for crawlers outside its bot list, and
+  // plain Googlebot is not on it; Google ignores a canonical or hreflang found
+  // there. Next's default list (html-bots.ts) plus Googlebot, which costs
+  // Googlebot the prerendered shell in exchange for complete <head> tags.
+  htmlLimitedBots:
+    /Googlebot|[\w-]+-Google|Google-[\w-]+|Chrome-Lighthouse|Slurp|DuckDuckBot|baiduspider|yandex|sogou|bitlybot|tumblr|vkShare|quora link preview|redditbot|ia_archiver|Bingbot|BingPreview|applebot|facebookexternalhit|facebookcatalog|Twitterbot|LinkedInBot|Slackbot|Discordbot|WhatsApp|SkypeUriPreview|Yeti|googleweblight/i,
+  // Permanent so search engines move old rankings over; the middleware
+  // would only answer these URLs with a temporary 307 or a 404.
   async redirects() {
-    return [
-      {
-        source: "/cars/:path*",
-        destination: `/ro/${CARS_SEGMENT.ro}/:path*`,
-        permanent: true,
-      },
-      ...(["ro", "en"] as const).flatMap((locale) => {
-        const otherLocale = locale === "ro" ? "en" : "ro";
-        return [`cars`, CARS_SEGMENT[otherLocale]].map((segment) => ({
-          source: `/${locale}/${segment}/:path*`,
-          destination: `/${locale}/${CARS_SEGMENT[locale]}/:path*`,
-          permanent: true,
-        }));
-      }),
-    ];
+    return permanentRedirects();
   },
 };
 
