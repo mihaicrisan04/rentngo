@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/progressive-carousel";
 import { Vehicle } from "@/types/vehicle";
 import { sectionAnimationVariants } from "@/lib/animations";
+import { GOOGLE_RATING, GOOGLE_REVIEWS_URL } from "@/lib/google-reviews";
 import { useTranslations } from "next-intl";
 import { useVehicleSearch } from "@/hooks/use-vehicle-search";
 import { SearchData } from "@/lib/search-storage";
@@ -82,7 +83,6 @@ export function HomePageClient({
 }: HomePageClientProps) {
   const t = useTranslations("homepage");
   const tAbout = useTranslations("aboutPage");
-  const tTestimonials = useTranslations("testimonials");
   const tFaq = useTranslations("faq");
 
   const { searchState, updateSearchField } = useVehicleSearch();
@@ -174,8 +174,13 @@ export function HomePageClient({
               {[
                 {
                   icon: Star,
-                  label: t("trustBar.rating"),
-                  value: t("trustBar.ratingDesc"),
+                  label: t("trustBar.rating", {
+                    score: GOOGLE_RATING.score.toFixed(1),
+                  }),
+                  value: t("trustBar.ratingDesc", {
+                    count: GOOGLE_RATING.reviewCount,
+                  }),
+                  href: GOOGLE_REVIEWS_URL,
                 },
                 {
                   icon: Plane,
@@ -192,22 +197,30 @@ export function HomePageClient({
                   label: t("trustBar.roadside"),
                   value: t("trustBar.roadsideDesc"),
                 },
-              ].map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 px-5 py-4 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm"
-                >
-                  <item.icon className="w-5 h-5 text-primary flex-shrink-0" />
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-foreground truncate">
-                      {item.label}
+              ].map((item, i) => {
+                const TrustItem = item.href ? "a" : "div";
+                return (
+                  <TrustItem
+                    key={i}
+                    {...(item.href && {
+                      href: item.href,
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                    })}
+                    className="flex items-center gap-3 px-5 py-4 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm transition-colors [a&]:hover:bg-card"
+                  >
+                    <item.icon className="w-5 h-5 text-primary flex-shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-foreground truncate">
+                        {item.label}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {item.value}
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {item.value}
-                    </div>
-                  </div>
-                </div>
-              ))}
+                  </TrustItem>
+                );
+              })}
             </div>
           </div>
         </AnimatedGroup>
@@ -384,10 +397,7 @@ export function HomePageClient({
           threshold={0.2}
           triggerOnce={true}
         >
-          <TestimonialsSection
-            title={tTestimonials("title")}
-            description={tTestimonials("description")}
-          />
+          <TestimonialsSection />
         </AnimatedGroup>
 
         <div className="section-divider max-w-5xl mx-auto w-full"></div>

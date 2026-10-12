@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { contactAnimationVariants as sectionAnimationVariants } from "@/lib/animations";
+import { GOOGLE_RATING } from "@/lib/google-reviews";
 
 const AboutPage = () => {
   const t = useTranslations("aboutPage");
@@ -29,7 +30,11 @@ const AboutPage = () => {
     { icon: Car, label: t("stats.vehicles"), value: "20+" },
     { icon: Users, label: t("stats.customers"), value: "200+" },
     { icon: Award, label: t("stats.experience"), value: "5+" },
-    { icon: Star, label: t("stats.rating"), value: "4.9" },
+    {
+      icon: Star,
+      label: t("stats.rating"),
+      value: GOOGLE_RATING.score.toFixed(1),
+    },
   ];
 
   const values = [
