@@ -75,6 +75,24 @@ export function getPriceForDurationWithSeason(
   return Math.round(basePrice * seasonalMultiplier);
 }
 
+/**
+ * The advertised "from" daily rate: the longest-duration tier's (highest
+ * minDays) rate, with the season applied and rounded like any daily rate.
+ */
+export function getLongestTierPricePerDayWithSeason(
+  vehicle: VehiclePricingData,
+  seasonalMultiplier: number = 1.0,
+): number | null {
+  if (!vehicle.pricingTiers || vehicle.pricingTiers.length === 0) {
+    return null;
+  }
+
+  const longestTier = vehicle.pricingTiers.reduce((prev, current) =>
+    current.minDays > prev.minDays ? current : prev,
+  );
+  return Math.round(longestTier.pricePerDay * seasonalMultiplier);
+}
+
 /** Total rental price (no season/extras) for a duration. */
 export function getTotalPrice(
   vehicle: VehiclePricingData,

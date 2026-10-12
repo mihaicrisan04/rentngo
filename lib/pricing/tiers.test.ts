@@ -4,6 +4,7 @@ import {
   getBasePriceTier,
   getPriceForDuration,
   getPriceForDurationWithSeason,
+  getLongestTierPricePerDayWithSeason,
 } from "./tiers";
 import type { VehiclePricingData } from "./types";
 
@@ -89,5 +90,45 @@ describe("seasonal multiplier on the daily rate", () => {
   it("supports low-season discounts (multiplier < 1)", () => {
     // 50 × 0.8 = 40
     expect(getPriceForDurationWithSeason(vehicle, 2, 0.8)).toBe(40);
+  });
+});
+
+describe('longest-tier "from" daily rate', () => {
+  it("uses the tier with the highest minDays", () => {
+    expect(getLongestTierPricePerDayWithSeason(vehicle)).toBe(30);
+  });
+
+  it("does not depend on tier order", () => {
+    const shuffled: VehiclePricingData = {
+      pricingTiers: [
+        { minDays: 8, maxDays: 30, pricePerDay: 30 },
+        { minDays: 1, maxDays: 3, pricePerDay: 50 },
+        { minDays: 4, maxDays: 7, pricePerDay: 40 },
+      ],
+    };
+    expect(getLongestTierPricePerDayWithSeason(shuffled)).toBe(30);
+  });
+
+  it("uses the longest tier even when it overlaps a shorter one", () => {
+    const overlapping: VehiclePricingData = {
+      pricingTiers: [
+        { minDays: 1, maxDays: 3, pricePerDay: 50 },
+        { minDays: 3, maxDays: 999, pricePerDay: 45 },
+      ],
+    };
+    expect(getLongestTierPricePerDayWithSeason(overlapping)).toBe(45);
+  });
+
+  it("applies the seasonal multiplier and rounds like the daily rate", () => {
+    // 30 × 1.35 = 40.5 → 41
+    expect(getLongestTierPricePerDayWithSeason(vehicle, 1.35)).toBe(41);
+    expect(getLongestTierPricePerDayWithSeason(vehicle, 0.8)).toBe(24);
+  });
+
+  it("returns null when the vehicle has no pricing tiers", () => {
+    expect(
+      getLongestTierPricePerDayWithSeason({ pricingTiers: [] }),
+    ).toBeNull();
+    expect(getLongestTierPricePerDayWithSeason({})).toBeNull();
   });
 });

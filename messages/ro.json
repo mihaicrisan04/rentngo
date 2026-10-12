@@ -760,6 +760,7 @@
   "vehicleCard": {
     "or": "sau",
     "perDay": "/ zi",
+    "fromPrice": "de la",
     "features": "Caracteristici",
     "viewDetails": "Vezi Detalii",
     "bookNow": "Rezervă Acum",
