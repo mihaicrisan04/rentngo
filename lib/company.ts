@@ -12,6 +12,12 @@
  * translation strings cannot import this module and stay manually synced —
  * update them together with any change here.
  */
+const SOCIAL_PROFILES = {
+  facebook: "https://www.facebook.com/share/1Ad82uMtP3/?mibextid=wwXIfr",
+  instagram: "https://www.instagram.com/rentn_go.ro",
+  tiktok: "https://www.tiktok.com/@rentn.go",
+} as const;
+
 export const COMPANY = {
   name: "Rent'n Go",
   alternateName: "Rent'n Go Cluj-Napoca",
@@ -55,9 +61,10 @@ export const COMPANY = {
   priceRange: "€€",
   currenciesAccepted: "EUR, RON",
   paymentAccepted: "Cash, Credit Card",
-  sameAs: [
-    "https://www.facebook.com/share/1Ad82uMtP3/?mibextid=wwXIfr",
-    "https://www.instagram.com/rentn_go.ro",
-    "https://www.tiktok.com/@rentn.go",
-  ],
+  social: SOCIAL_PROFILES,
+  sameAs: Object.values(SOCIAL_PROFILES),
 } as const;
+
+export function whatsAppChatUrl(message: string): string {
+  return `https://wa.me/${COMPANY.phone.tel.replace("+", "")}?text=${encodeURIComponent(message)}`;
+}

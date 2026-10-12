@@ -568,6 +568,14 @@
       "description": "Folosim un cookie pentru a reține cine te-a recomandat, ca reducerea ta de recomandare să poată fi aplicată. Acceptă pentru a-l activa — dacă refuzi, nu te urmărim și reducerea nu se aplică.",
       "accept": "Accept",
       "decline": "Refuz"
+    },
+    "quickContact": {
+      "label": "Contact rapid",
+      "whatsapp": "Scrie-ne pe WhatsApp",
+      "instagram": "Instagram",
+      "tiktok": "TikTok",
+      "phone": "Sună-ne",
+      "email": "Trimite-ne un email"
     }
   },
   "navigation": {

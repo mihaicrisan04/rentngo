@@ -10,6 +10,7 @@ import { fontClassNames } from "../fonts";
 import { Providers, LocaleProviders } from "../providers";
 import { PublicLayout } from "@/components/layout/public-layout";
 import { CookieConsentBanner } from "@/components/shared/consent/cookie-consent-banner";
+import { QuickContactBubbles } from "@/components/shared/contact/quick-contact-bubbles";
 import { ReferralCapture } from "@/components/shared/referral/referral-capture";
 import { IS_PRODUCTION_DEPLOYMENT } from "@/lib/env";
 import { locales, isLocale } from "@/i18n";
@@ -123,6 +124,7 @@ export default async function LocaleLayout({
         <Providers>
           <LocaleProviders locale={locale} messages={messages}>
             <PublicLayout>{children}</PublicLayout>
+            <QuickContactBubbles />
             {/* Consent gate + consent-gated referral capture (RNGO-26) */}
             <CookieConsentBanner />
             <ReferralCapture />
