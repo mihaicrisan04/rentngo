@@ -20,8 +20,8 @@
     "ourLatestCars": "Cele Mai Noi Mașini",
     "noCarsAvailable": "Nicio Mașină Disponibilă",
     "trustBar": {
-      "rating": "4.9 rating",
-      "ratingDesc": "200+ recenzii",
+      "rating": "{score} pe Google",
+      "ratingDesc": "{count} recenzii",
       "airport": "Preluare aeroport",
       "airportDesc": "Cluj-Napoca",
       "support": "24/7",
@@ -827,7 +827,10 @@
   },
   "testimonials": {
     "title": "Ce Spun Clienții Noștri",
-    "description": "Citește ce au de spus clienții noștri despre noi."
+    "description": "Recenzii de la clienții noștri",
+    "reviewCount": "{count} recenzii",
+    "seeAllOnGoogle": "Vezi toate recenziile pe Google",
+    "writeReview": "Lasă o recenzie"
   },
   "faqPage": {
     "title": "Întrebări frecvente",

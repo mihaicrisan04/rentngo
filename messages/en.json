@@ -20,8 +20,8 @@
     "ourLatestCars": "Our Latest Cars",
     "noCarsAvailable": "No Cars Available",
     "trustBar": {
-      "rating": "4.9 rating",
-      "ratingDesc": "200+ reviews",
+      "rating": "{score} on Google",
+      "ratingDesc": "{count} reviews",
       "airport": "Airport pickup",
       "airportDesc": "Cluj-Napoca",
       "support": "24/7",
@@ -827,7 +827,10 @@
   },
   "testimonials": {
     "title": "What Our Customers Say",
-    "description": "Read what our customers have to say about us."
+    "description": "Reviews from our customers",
+    "reviewCount": "{count} reviews",
+    "seeAllOnGoogle": "See all reviews on Google",
+    "writeReview": "Leave a review"
   },
   "faqPage": {
     "title": "Frequently Asked Questions",
