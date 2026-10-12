@@ -269,6 +269,9 @@ export const validateCoupon = query({
     code: v.string(),
     bookingType: bookingTypeValidator,
     subtotal: v.number(),
+    // What a referral code discounts when it differs from the coupon
+    // subtotal (a car rental's add-ons stay full price)
+    referralSubtotal: v.optional(v.number()),
     // Guest checkouts pass the entered email so the once-per-user check can
     // run in the preview too; it is re-enforced at redemption regardless.
     email: v.optional(v.string()),
@@ -306,7 +309,7 @@ export const validateCoupon = query({
       return referralPreviewResult(
         await previewTypedReferralCode(ctx, {
           code: args.code,
-          subtotal: args.subtotal,
+          subtotal: args.referralSubtotal ?? args.subtotal,
           email: args.email,
         }),
       );
