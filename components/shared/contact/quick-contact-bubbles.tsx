@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   IconBrandInstagram,
@@ -27,7 +28,13 @@ interface QuickContactLink {
   desktopOnly?: boolean;
 }
 
+// Checkout steps keep their own sticky bottom bars (e.g. the transfer
+// Continue button), which the mobile bubbles would sit on top of
+const BOOKING_FLOW_PATH =
+  /^\/(ro|en)\/(reservation|transfers\/(vehicles|booking))(\/|$)/;
+
 export function QuickContactBubbles() {
+  const pathname = usePathname();
   const t = useTranslations("common.quickContact");
   const tContact = useTranslations("contactPage");
 
@@ -75,7 +82,10 @@ export function QuickContactBubbles() {
   return (
     <nav
       aria-label={t("label")}
-      className="fixed right-3 bottom-4 z-40 flex flex-col gap-2.5 md:right-4 md:bottom-auto md:top-1/2 md:-translate-y-1/2 print:hidden"
+      className={cn(
+        "fixed right-3 bottom-4 z-40 flex flex-col gap-2.5 md:right-4 md:bottom-auto md:top-1/2 md:-translate-y-1/2 print:hidden",
+        BOOKING_FLOW_PATH.test(pathname) && "max-md:hidden",
+      )}
     >
       {links.map(
         ({ key, href, icon: LinkIcon, className, external, desktopOnly }) => (
