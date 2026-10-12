@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 import createMDX from "@next/mdx";
+import { CARS_SEGMENT } from "./lib/localized-routes";
 
 const withNextIntl = createNextIntlPlugin("./i18n.ts");
 
@@ -31,6 +32,25 @@ const nextConfig: NextConfig = {
     ],
   },
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
+  // Permanent so search engines move the old /cars rankings over; the
+  // middleware would only answer these with a temporary 307.
+  async redirects() {
+    return [
+      {
+        source: "/cars/:path*",
+        destination: `/ro/${CARS_SEGMENT.ro}/:path*`,
+        permanent: true,
+      },
+      ...(["ro", "en"] as const).flatMap((locale) => {
+        const otherLocale = locale === "ro" ? "en" : "ro";
+        return [`cars`, CARS_SEGMENT[otherLocale]].map((segment) => ({
+          source: `/${locale}/${segment}/:path*`,
+          destination: `/${locale}/${CARS_SEGMENT[locale]}/:path*`,
+          permanent: true,
+        }));
+      }),
+    ];
+  },
 };
 
 // Plugins are referenced by name (not imported function) so the options stay

@@ -12,6 +12,7 @@ import { COMPANY } from "@/lib/company";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { paymentMethodLabelKey } from "@/lib/checkout-payment-methods";
 import { formatPrice } from "@/lib/format";
+import { carsPath } from "@/lib/localized-routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -77,7 +78,7 @@ function ReservationConfirmationContent() {
             {t("noReservationDescription")}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/cars">
+            <Link href={carsPath(locale)}>
               <Button>
                 <Car className="mr-2 h-4 w-4" />
                 {t("bookAnotherCar")}
@@ -118,7 +119,7 @@ function ReservationConfirmationContent() {
             {t("reservationNotFoundDescription")}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/cars">
+            <Link href={carsPath(locale)}>
               <Button>
                 <Car className="mr-2 h-4 w-4" />
                 {t("bookAnotherCar")}
@@ -510,7 +511,7 @@ function ReservationConfirmationContent() {
 
         {/* Action Buttons */}
         <div className="flex justify-center mb-10">
-          <Link href="/cars">
+          <Link href={carsPath(locale)}>
             <Button className="px-8 rounded-xl h-12">
               <Car className="mr-2 h-4 w-4" />
               {t("bookAnotherCar")}

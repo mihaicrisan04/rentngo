@@ -4,7 +4,7 @@ import * as React from "react";
 import { useToday } from "@/hooks/use-today";
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { LocationPicker } from "@/components/shared/search-filters/location-picker";
 import { DateTimePicker } from "@/components/shared/search-filters/date-time-picker";
 import { SearchData } from "@/lib/search-storage";
+import { carsPath } from "@/lib/localized-routes";
 
 interface VehicleSearchFilterFormProps {
   searchState: SearchData & { isHydrated: boolean };
@@ -35,6 +36,7 @@ export function VehicleSearchFilterForm({
 
   const router = useRouter();
   const t = useTranslations("search");
+  const locale = useLocale();
 
   const deliveryLocation = searchState.deliveryLocation ?? "";
   const restitutionLocation = searchState.restitutionLocation ?? "";
@@ -71,7 +73,7 @@ export function VehicleSearchFilterForm({
     }
 
     // Navigate to cars page regardless of completeness - the cars page will handle partial data
-    router.push("/cars");
+    router.push(carsPath(locale));
 
     setTimeout(() => {
       setIsLoading(false);

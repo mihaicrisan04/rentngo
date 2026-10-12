@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { SignInButton, Show } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
+import { carsPath, switchLocalePath } from "@/lib/localized-routes";
 import { usePathname, useRouter } from "next/navigation";
 import { LanguageSelector } from "@/components/shared/navigation/language-selector";
 import { useLocale, useTranslations } from "next-intl";
@@ -21,14 +22,16 @@ export function Header({ logo }: HeaderProps) {
   const [open, setOpen] = React.useState(false);
   const scrolled = useScroll(10);
   const locale = useLocale();
-  const pathname = usePathname();
+  // The server renders fleet pages under their internal /cars route while the
+  // browser sees the localized URL; normalize so active states hydrate alike
+  const pathname = switchLocalePath(usePathname(), locale);
   const router = useRouter();
   const t = useTranslations("common");
   const tNav = useTranslations("navigation");
 
   const links = [
     { name: t("home"), href: `/${locale}`, icon: Home },
-    { name: t("cars"), href: `/${locale}/cars`, icon: Car },
+    { name: t("cars"), href: carsPath(locale), icon: Car },
     {
       name: t("transfers"),
       href: `/${locale}/transfers`,

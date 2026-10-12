@@ -21,7 +21,8 @@ import {
   calculateVehiclePricingWithSeason,
 } from "@/lib/vehicle-utils";
 import { RentalDetails } from "@/components/shared/navigation/rental-details";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { carsPath } from "@/lib/localized-routes";
 import { Vehicle } from "@/types/vehicle";
 import React from "react";
 import { useVehicleSearch } from "@/hooks/use-vehicle-search";
@@ -39,6 +40,7 @@ export function CarDetailClient({
   imageUrls,
 }: CarDetailClientProps) {
   const t = useTranslations("carDetailPage");
+  const locale = useLocale();
   const tCommon = useTranslations("common");
 
   const { searchState: rentalState, updateSearchFields } = useVehicleSearch({
@@ -87,7 +89,7 @@ export function CarDetailClient({
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link href="/cars">{tCommon("cars")}</Link>
+                  <Link href={carsPath(locale)}>{tCommon("cars")}</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />

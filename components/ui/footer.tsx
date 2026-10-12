@@ -6,6 +6,7 @@ import { SocialIcon } from "react-social-icons";
 import { useTranslations } from "next-intl";
 import { useLocale } from "next-intl";
 import { COMPANY } from "@/lib/company";
+import { carsPath } from "@/lib/localized-routes";
 
 interface FooterProps {
   logo: React.ReactNode;
@@ -55,7 +56,7 @@ export function Footer({ logo, brandName }: FooterProps) {
 
   const mainLinks = [
     { href: `/${locale}`, label: t("home") },
-    { href: `/${locale}/cars`, label: t("cars") },
+    { href: carsPath(locale), label: t("cars") },
     { href: `/${locale}/transfers`, label: t("transfers") },
     { href: `/${locale}/about`, label: t("about") },
     { href: `/${locale}/contact`, label: t("contact") },

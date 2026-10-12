@@ -1,12 +1,13 @@
 import { MetadataRoute } from "next";
 import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
+import { carsPathWithoutLocale } from "@/lib/localized-routes";
 
 const BASE_URL = "https://rngo.ro";
 
 // Helper to create bilingual sitemap entries
 function createBilingualEntry(
-  path: string,
+  path: string | { ro: string; en: string },
   options: {
     lastModified?: Date;
     changeFrequency:
@@ -21,33 +22,42 @@ function createBilingualEntry(
   },
 ): MetadataRoute.Sitemap {
   const { lastModified = new Date(), changeFrequency, priority } = options;
+  const roPath = typeof path === "string" ? path : path.ro;
+  const enPath = typeof path === "string" ? path : path.en;
 
   return [
     {
-      url: `${BASE_URL}/en${path}`,
+      url: `${BASE_URL}/en${enPath}`,
       lastModified,
       changeFrequency,
       priority,
       alternates: {
         languages: {
-          en: `${BASE_URL}/en${path}`,
-          ro: `${BASE_URL}/ro${path}`,
+          en: `${BASE_URL}/en${enPath}`,
+          ro: `${BASE_URL}/ro${roPath}`,
         },
       },
     },
     {
-      url: `${BASE_URL}/ro${path}`,
+      url: `${BASE_URL}/ro${roPath}`,
       lastModified,
       changeFrequency,
       priority,
       alternates: {
         languages: {
-          en: `${BASE_URL}/en${path}`,
-          ro: `${BASE_URL}/ro${path}`,
+          en: `${BASE_URL}/en${enPath}`,
+          ro: `${BASE_URL}/ro${roPath}`,
         },
       },
     },
   ];
+}
+
+function carsPaths(slug?: string) {
+  return {
+    ro: carsPathWithoutLocale("ro", slug),
+    en: carsPathWithoutLocale("en", slug),
+  };
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -93,7 +103,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Generate vehicle/car detail URLs using slug (falls back to _id for backwards compatibility)
   const vehicleUrls = vehicles.flatMap((vehicle) =>
-    createBilingualEntry(`/cars/${vehicle.slug || vehicle._id}`, {
+    createBilingualEntry(carsPaths(vehicle.slug || vehicle._id), {
       lastModified: new Date(vehicle._creationTime),
       changeFrequency: "weekly",
       priority: 0.8,
@@ -122,7 +132,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
 
     // Cars listing page
-    ...createBilingualEntry("/cars", {
+    ...createBilingualEntry(carsPaths(), {
       changeFrequency: "daily",
       priority: 0.9,
     }),

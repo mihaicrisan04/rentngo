@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
+import { LOCALIZED_PATHNAMES } from "@/lib/localized-routes";
 
 // Admin routes that require admin role
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
@@ -23,6 +24,7 @@ const intlMiddleware = createMiddleware({
   locales: ["ro", "en"],
   defaultLocale: "ro",
   localePrefix: "always", // Both /ro and /en will have explicit prefixes
+  pathnames: LOCALIZED_PATHNAMES,
 });
 
 export default clerkMiddleware(async (auth, req) => {

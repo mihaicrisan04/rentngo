@@ -33,6 +33,7 @@ import {
   previewDiscountAmount,
   referralDiscountableAmount,
 } from "@/lib/pricing";
+import { carsPath } from "@/lib/localized-routes";
 import { getStoredReferral } from "@/lib/referral";
 import { isReferralCodeReason } from "@/lib/pricing";
 import { useTranslations, useLocale } from "next-intl";
@@ -337,7 +338,7 @@ function ReservationPageContent() {
           <p className="text-muted-foreground mb-6">
             {t("reservation.invalid.description")}
           </p>
-          <Link href="/cars">
+          <Link href={carsPath(locale)}>
             <Button>
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t("reservation.invalid.browseCars")}
@@ -368,7 +369,7 @@ function ReservationPageContent() {
           <p className="text-muted-foreground mb-6">
             {t("reservation.vehicleNotFound.description")}
           </p>
-          <Link href="/cars">
+          <Link href={carsPath(locale)}>
             <Button>
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t("reservation.vehicleNotFound.browseCars")}
@@ -383,7 +384,7 @@ function ReservationPageContent() {
     <div className="grow py-8 px-4 md:px-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <Link href={`/cars/${vehicle?.slug || vehicleId}`}>
+          <Link href={carsPath(locale, vehicle?.slug || vehicleId)}>
             <Button variant="outline" size="sm" className="rounded-xl">
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t("backToVehicleDetails")}

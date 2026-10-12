@@ -609,7 +609,7 @@ export function EditVehicleDialog({
                           </div>
                           <p className="text-xs text-muted-foreground">
                             SEO-friendly URL slug. Used in car detail pages:
-                            /cars/[slug]
+                            /ro/masini-de-inchiriat-cluj-napoca/[slug]
                           </p>
                           {isCheckingSlug && (
                             <p className="text-xs text-muted-foreground">

@@ -1,3 +1,4 @@
+import { carsPath, carsPathWithoutLocale } from "@/lib/localized-routes";
 import { fetchStaticQuery } from "@/lib/convex-static";
 import { api } from "@/convex/_generated/api";
 import { CarDetailClient } from "./car-detail-client";
@@ -81,7 +82,7 @@ function VehicleStructuredData({
         .toISOString()
         .split("T")[0],
       availability: "https://schema.org/InStock",
-      url: `${COMPANY.baseUrl}/${locale}/cars/${urlSlug}`,
+      url: `${COMPANY.baseUrl}${carsPath(locale, urlSlug)}`,
       seller: buildAutoRentalSellerSchema(),
       itemCondition: "https://schema.org/UsedCondition",
       priceSpecification: {
@@ -135,13 +136,13 @@ function BreadcrumbStructuredData({
         "@type": "ListItem",
         position: 2,
         name: isRomanian ? "Mașini" : "Cars",
-        item: `${COMPANY.baseUrl}/${locale}/cars`,
+        item: `${COMPANY.baseUrl}${carsPath(locale)}`,
       },
       {
         "@type": "ListItem",
         position: 3,
         name: vehicleName,
-        item: `${COMPANY.baseUrl}/${locale}/cars/${slug}`,
+        item: `${COMPANY.baseUrl}${carsPath(locale, slug)}`,
       },
     ],
   };
@@ -187,7 +188,10 @@ export async function generateMetadata({
 
     return buildMetadata({
       locale,
-      path: `/cars/${slug}`,
+      path: {
+        ro: carsPathWithoutLocale("ro", slug),
+        en: carsPathWithoutLocale("en", slug),
+      },
       title: {
         ro: `${vehicleName} - Masini de Inchiriat Cluj-Napoca`,
         en: `${vehicleName} - Car Rentals Cluj-Napoca`,
