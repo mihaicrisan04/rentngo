@@ -124,7 +124,7 @@ export function HomePageClient({
     <>
       <BackgroundImage bottomGradient={true} />
 
-      <div className="relative z-10 flex flex-col">
+      <div className="relative z-10 flex flex-col overflow-x-clip">
         {/* ═══════════════════════════════════════════
             HERO — cinematic, full-impact
         ═══════════════════════════════════════════ */}
