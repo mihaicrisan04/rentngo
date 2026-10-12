@@ -116,7 +116,10 @@ export default async function LocaleLayout({
         <Providers>
           <LocaleProviders locale={locale} messages={messages}>
             <PublicLayout>{children}</PublicLayout>
-            <QuickContactBubbles />
+            {/* Reads the pathname; see the Header's Suspense note */}
+            <Suspense fallback={null}>
+              <QuickContactBubbles />
+            </Suspense>
             {/* Consent gate + consent-gated referral capture (RNGO-26) */}
             <CookieConsentBanner />
             <ReferralCapture />

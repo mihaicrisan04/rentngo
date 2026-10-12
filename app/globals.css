@@ -192,6 +192,10 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* No page may scroll sideways, whatever bleeds past the edge. On body, not
+       html, so Radix's scroll lock (overflow on body) keeps working; clip,
+       unlike hidden, keeps sticky headers working */
+    overflow-x: clip;
     font-feature-settings: "cv11", "ss01";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

@@ -13,6 +13,20 @@ export const validateAndFixDate = (
   return date;
 };
 
+/**
+ * A saved search with a date before today is from an earlier visit. Snapping
+ * it to today would leave a half-filled search the visitor never chose, so
+ * the dates are dropped and the visitor starts without dates.
+ */
+export function isStaleSearch(
+  dates: readonly (Date | undefined)[],
+  now: Date,
+): boolean {
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  return dates.some((date) => date !== undefined && date < today);
+}
+
 interface LocalStorageConfig<T extends object> {
   key: string;
   label: string;
@@ -68,12 +82,16 @@ export function createLocalStorage<T extends object>(
       const stored = localStorage.getItem(key);
       const parsed: T = stored ? JSON.parse(stored) : {};
 
-      for (const field of dateFields) {
+      const storedDates = dateFields.map((field) => {
         const value = parsed[field];
-        parsed[field] = validateAndFixDate(
-          value ? new Date(value as string) : undefined,
-        ) as T[typeof field];
-      }
+        return value ? new Date(value as string) : undefined;
+      });
+      const dates = isStaleSearch(storedDates, new Date())
+        ? storedDates.map(() => undefined)
+        : storedDates;
+      dateFields.forEach((field, index) => {
+        parsed[field] = dates[index] as T[typeof field];
+      });
 
       return applyDefaults(parsed);
     } catch (error) {
