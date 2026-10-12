@@ -568,6 +568,14 @@
       "description": "We use a cookie to remember who referred you, so your referral discount can be applied. Accept to enable it — declining means no tracking and no referral discount.",
       "accept": "Accept",
       "decline": "Decline"
+    },
+    "quickContact": {
+      "label": "Quick contact",
+      "whatsapp": "Message us on WhatsApp",
+      "instagram": "Instagram",
+      "tiktok": "TikTok",
+      "phone": "Call us",
+      "email": "Email us"
     }
   },
   "navigation": {

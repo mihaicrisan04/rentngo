@@ -21,7 +21,7 @@ import {
 import { SocialIcon } from "react-social-icons";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { COMPANY } from "@/lib/company";
+import { COMPANY, whatsAppChatUrl } from "@/lib/company";
 
 const ContactPage = () => {
   const t = useTranslations("contactPage");
@@ -32,8 +32,7 @@ const ContactPage = () => {
   };
 
   const handleWhatsAppClick = () => {
-    const whatsappUrl = `https://wa.me/${COMPANY.phone.tel.replace("+", "")}?text=${encodeURIComponent(t("whatsappMessage"))}`;
-    window.open(whatsappUrl, "_blank");
+    window.open(whatsAppChatUrl(t("whatsappMessage")), "_blank");
   };
 
   const handlePhoneClick = () => {
@@ -167,19 +166,19 @@ const ContactPage = () => {
                   </h3>
                   <div className="flex justify-center gap-4">
                     <SocialIcon
-                      url="https://www.tiktok.com/@rentn.go"
+                      url={COMPANY.social.tiktok}
                       style={{ height: 40, width: 40 }}
                       borderRadius={"0.75rem"}
                       className="hover:scale-110 transition-transform"
                     />
                     <SocialIcon
-                      url="https://www.instagram.com/rentn_go.ro"
+                      url={COMPANY.social.instagram}
                       style={{ height: 40, width: 40 }}
                       borderRadius={"0.75rem"}
                       className="hover:scale-110 transition-transform"
                     />
                     <SocialIcon
-                      url="https://www.facebook.com/share/1Ad82uMtP3/?mibextid=wwXIfr"
+                      url={COMPANY.social.facebook}
                       style={{ height: 40, width: 40 }}
                       borderRadius={"0.75rem"}
                       className="hover:scale-110 transition-transform"

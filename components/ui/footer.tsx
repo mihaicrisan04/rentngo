@@ -5,6 +5,7 @@ import Link from "next/link";
 import { SocialIcon } from "react-social-icons";
 import { useTranslations } from "next-intl";
 import { useLocale } from "next-intl";
+import { COMPANY } from "@/lib/company";
 
 interface FooterProps {
   logo: React.ReactNode;
@@ -15,34 +16,34 @@ const socialLinks = [
   {
     icon: (
       <SocialIcon
-        url="https://www.tiktok.com/@rentn.go"
+        url={COMPANY.social.tiktok}
         style={{ height: 36, width: 36 }}
         borderRadius={"0.5rem"}
       />
     ),
-    href: "https://www.tiktok.com/@rentngo",
+    href: COMPANY.social.tiktok,
     label: "TikTok",
   },
   {
     icon: (
       <SocialIcon
-        url="https://www.instagram.com/rentn_go.ro"
+        url={COMPANY.social.instagram}
         style={{ height: 36, width: 36 }}
         borderRadius={"0.5rem"}
       />
     ),
-    href: "https://www.instagram.com/rentn_go.ro",
+    href: COMPANY.social.instagram,
     label: "Instagram",
   },
   {
     icon: (
       <SocialIcon
-        url="https://www.facebook.com/share/1Ad82uMtP3/?mibextid=wwXIfr"
+        url={COMPANY.social.facebook}
         style={{ height: 36, width: 36 }}
         borderRadius={"0.5rem"}
       />
     ),
-    href: "https://www.facebook.com/share/1Ad82uMtP3/?mibextid=wwXIfr",
+    href: COMPANY.social.facebook,
     label: "Facebook",
   },
 ];
