@@ -11,7 +11,7 @@ function redirectFor(pathname: string): string | null {
     })(pathname);
     if (params) {
       const rest = [params.path ?? []].flat().join("/");
-      return rule.destination.replace("/:path*", rest ? `/${rest}` : "");
+      return rule.destination.replace(":path+", rest);
     }
   }
   return null;

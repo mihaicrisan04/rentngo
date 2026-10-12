@@ -7,21 +7,33 @@ type Redirect = Awaited<
 
 const LOCALES = ["ro", "en"] as const;
 
+/**
+ * A moved section and everything below it. The bare path gets its own rule:
+ * `:path*` would leave a trailing slash on it and cost a second redirect.
+ */
+function movedSection(from: string, to: string): Redirect[] {
+  return [
+    { source: from, destination: to, permanent: true },
+    {
+      source: `${from}/:path+`,
+      destination: `${to}/:path+`,
+      permanent: true,
+    },
+  ];
+}
+
 /** Every old /cars URL, and the other locale's fleet segment, to the localized one. */
 function fleetRedirects(): Redirect[] {
   return [
-    {
-      source: "/cars/:path*",
-      destination: `/ro/${CARS_SEGMENT.ro}/:path*`,
-      permanent: true,
-    },
+    ...movedSection("/cars", `/ro/${CARS_SEGMENT.ro}`),
     ...LOCALES.flatMap((locale) => {
       const otherLocale = locale === "ro" ? "en" : "ro";
-      return ["cars", CARS_SEGMENT[otherLocale]].map((segment) => ({
-        source: `/${locale}/${segment}/:path*`,
-        destination: `/${locale}/${CARS_SEGMENT[locale]}/:path*`,
-        permanent: true,
-      }));
+      return ["cars", CARS_SEGMENT[otherLocale]].flatMap((segment) =>
+        movedSection(
+          `/${locale}/${segment}`,
+          `/${locale}/${CARS_SEGMENT[locale]}`,
+        ),
+      );
     }),
   ];
 }
