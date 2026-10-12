@@ -3,6 +3,7 @@ import { api } from "@/convex/_generated/api";
 import { CarsPageClient } from "./cars-page-client";
 import { Metadata } from "next";
 import { buildMetadata } from "@/lib/metadata";
+import { carsPathWithoutLocale } from "@/lib/localized-routes";
 import { cacheLife } from "next/cache";
 
 interface CarsPageProps {
@@ -16,7 +17,10 @@ export async function generateMetadata({
 
   return buildMetadata({
     locale,
-    path: "/cars",
+    path: {
+      ro: carsPathWithoutLocale("ro"),
+      en: carsPathWithoutLocale("en"),
+    },
     title: {
       ro: "Mașini de Închiriat Cluj-Napoca",
       en: "Car Rentals Cluj-Napoca",

@@ -22,7 +22,8 @@ import {
 import { Vehicle } from "@/types/vehicle";
 import { sectionAnimationVariants } from "@/lib/animations";
 import { GOOGLE_RATING, GOOGLE_REVIEWS_URL } from "@/lib/google-reviews";
-import { useTranslations } from "next-intl";
+import { carsPath } from "@/lib/localized-routes";
+import { useLocale, useTranslations } from "next-intl";
 import { useVehicleSearch } from "@/hooks/use-vehicle-search";
 import { SearchData } from "@/lib/search-storage";
 
@@ -82,6 +83,7 @@ export function HomePageClient({
   initialTitle,
 }: HomePageClientProps) {
   const t = useTranslations("homepage");
+  const locale = useLocale();
   const tAbout = useTranslations("aboutPage");
   const tFaq = useTranslations("faq");
 
@@ -252,7 +254,7 @@ export function HomePageClient({
                   className="bg-primary hover:bg-primary/90 text-white group px-8 h-12 text-base"
                   asChild
                 >
-                  <Link href="/cars">
+                  <Link href={carsPath(locale)}>
                     {t("viewAllCars")}
                     <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Link>
@@ -428,7 +430,7 @@ export function HomePageClient({
                   className="bg-primary hover:bg-primary/90 text-primary-foreground group px-8 h-13 text-base shadow-lg shadow-primary/20"
                   asChild
                 >
-                  <Link href="/cars">
+                  <Link href={carsPath(locale)}>
                     {t("faq.cta.buttonText")}
                     <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Link>

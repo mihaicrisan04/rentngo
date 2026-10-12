@@ -121,6 +121,8 @@ export const RESERVED_AFFILIATE_SLUGS: readonly string[] = [
   "about",
   "blog",
   "cars",
+  "masini-de-inchiriat-cluj-napoca",
+  "car-rental-cluj-napoca",
   "contact",
   "faq",
   "privacy",

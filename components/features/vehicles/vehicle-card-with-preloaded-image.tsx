@@ -10,6 +10,7 @@ import { Cog, Fuel, CarFront, Icon } from "lucide-react";
 import { gearbox } from "@lucide/lab";
 import { Vehicle } from "@/types/vehicle";
 import { calculateVehiclePricingWithSeason } from "@/lib/vehicle-utils";
+import { carsPath } from "@/lib/localized-routes";
 import { getBasePricePerDay } from "@/types/vehicle";
 import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
 import { useTranslations, useLocale } from "next-intl";
@@ -28,13 +29,6 @@ interface VehicleCardWithPreloadedImageProps {
    * the rest lazy-load so they don't compete with LCP content.
    */
   imagePriority?: boolean;
-}
-
-function buildCarDetailsUrl(
-  vehicleSlug: string | undefined,
-  vehicleId: string,
-): string {
-  return `/cars/${vehicleSlug || vehicleId}`;
 }
 
 export function VehicleCardWithPreloadedImage({
@@ -105,7 +99,7 @@ export function VehicleCardWithPreloadedImage({
     ? `/reservation?vehicleId=${vehicle._id}`
     : "#";
   const carDetailsUrl = vehicle
-    ? buildCarDetailsUrl(vehicle.slug, vehicle._id)
+    ? carsPath(locale, vehicle.slug || vehicle._id)
     : "#";
 
   if (!vehicle || typeof vehicle._id !== "string") {

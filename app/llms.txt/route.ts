@@ -1,3 +1,4 @@
+import { carsPath } from "@/lib/localized-routes";
 import { fetchQuery } from "convex/nextjs";
 import { api } from "@/convex/_generated/api";
 import { COMPANY } from "@/lib/company";
@@ -57,7 +58,7 @@ function formatVehicleLine(vehicle: {
   const suffix = details ? `: ${details}` : "";
 
   if (vehicle.slug) {
-    return `- [${label}](${COMPANY.baseUrl}/en/cars/${vehicle.slug})${suffix}`;
+    return `- [${label}](${COMPANY.baseUrl}${carsPath("en", vehicle.slug)})${suffix}`;
   }
   return `- ${label}${suffix}`;
 }
@@ -93,7 +94,7 @@ Pricing model: daily rates are tiered by rental length (longer rentals get lower
 
 ${fleetSection}## Services
 
-- [Car rental](${COMPANY.baseUrl}/en/cars): browse the fleet with tiered daily rates, filters by class, transmission and fuel, and online booking with pickup at Cluj airport or delivery on request.
+- [Car rental](${COMPANY.baseUrl}${carsPath("en")}): browse the fleet with tiered daily rates, filters by class, transmission and fuel, and online booking with pickup at Cluj airport or delivery on request.
 - [VIP & airport transfers](${COMPANY.baseUrl}/en/transfers): private airport, city and business transfers in and around Cluj with professional drivers, priced by distance.
 
 ## Pages

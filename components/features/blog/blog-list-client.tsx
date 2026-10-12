@@ -7,6 +7,7 @@ import { BlogCard } from "@/components/features/blog/blog-card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { carsPath } from "@/lib/localized-routes";
 import { BlogListItem } from "@/types/blog";
 import type { Locale } from "@/i18n";
 import Link from "next/link";
@@ -142,7 +143,7 @@ export function BlogListClient({
               className="bg-primary hover:bg-primary/90 text-primary-foreground group px-8 h-13 text-base rounded-xl shadow-lg shadow-primary/20"
               asChild
             >
-              <Link href={`/${locale}/cars`}>
+              <Link href={carsPath(locale)}>
                 {t("cta.button")}
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Link>

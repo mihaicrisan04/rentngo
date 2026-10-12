@@ -11,6 +11,7 @@ import {
 import { useLocale } from "next-intl";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
+import { switchLocalePath } from "@/lib/localized-routes";
 
 const languages = {
   ro: { name: "Română", flag: "🇷🇴" },
@@ -35,19 +36,13 @@ export function LanguageSelector() {
   );
 
   const handleLanguageChange = (newLocale: string) => {
-    // Remove current locale from pathname if it exists
-    const pathnameWithoutLocale = pathname.replace(/^\/[a-z]{2}/, "") || "/";
-
     // For blog detail pages, swap to the alternate locale slug
     if (blogSlug && alternateSlug) {
       router.push(`/${newLocale}/blog/${alternateSlug}`);
       return;
     }
 
-    // All other pages: same path, different locale prefix
-    const newPath = `/${newLocale}${pathnameWithoutLocale}`;
-
-    router.push(newPath);
+    router.push(switchLocalePath(pathname, newLocale));
   };
 
   return (
