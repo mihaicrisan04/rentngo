@@ -55,6 +55,20 @@ for (const skill of requiredSkills) {
   );
 }
 
+const installedSkills = (
+  await readdir(path.join(root, ".agents/skills"), { withFileTypes: true })
+)
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name)
+  .filter((skill) => !requiredSkills.includes(skill));
+
+for (const skill of installedSkills) {
+  await requireSymlink(
+    `.claude/skills/${skill}`,
+    `../../.agents/skills/${skill}`,
+  );
+}
+
 for (const skill of requiredSkills.filter((name) =>
   name.startsWith("convex"),
 )) {
