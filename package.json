@@ -3,7 +3,7 @@
   "version": "2.4.0",
   "private": true,
   "engines": {
-    "node": "22.x",
+    "node": "24.x",
     "bun": ">=1"
   },
   "scripts": {
@@ -95,7 +95,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
-    "@types/node": "^22.20.5",
+    "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "oxfmt": "^0.73.0",
