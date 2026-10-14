@@ -24,16 +24,37 @@ import { sectionAnimationVariants } from "@/lib/animations";
 import { GOOGLE_RATING, GOOGLE_REVIEWS_URL } from "@/lib/google-reviews";
 import { carsPath } from "@/lib/localized-routes";
 import { useLocale, useTranslations } from "next-intl";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { useVehicleSearch } from "@/hooks/use-vehicle-search";
 import { SearchData } from "@/lib/search-storage";
+import {
+  HomepageVehicles,
+  pickHomepageVehicles,
+} from "@/lib/homepage-vehicles";
 
 interface VehicleWithImageUrl extends Vehicle {
   imageUrl: string | null;
 }
 
 interface HomePageClientProps {
-  initialVehicles: VehicleWithImageUrl[];
-  initialTitle: string;
+  initialVehicles: HomepageVehicles<VehicleWithImageUrl>;
+}
+
+function useLiveHomepageVehicles(
+  initialVehicles: HomepageVehicles<VehicleWithImageUrl>,
+): HomepageVehicles<VehicleWithImageUrl> {
+  const featuredVehicles = useQuery(api.featuredCars.getFeaturedVehicles);
+  const allVehicles = useQuery(
+    api.vehicles.getAllVehiclesWithClasses,
+    featuredVehicles?.length === 0 ? {} : "skip",
+  );
+
+  if (featuredVehicles === undefined) return initialVehicles;
+  if (featuredVehicles.length === 0 && allVehicles === undefined) {
+    return initialVehicles;
+  }
+  return pickHomepageVehicles(featuredVehicles, allVehicles ?? []);
 }
 
 function VehicleList({
@@ -78,16 +99,14 @@ function VehicleList({
   );
 }
 
-export function HomePageClient({
-  initialVehicles,
-  initialTitle,
-}: HomePageClientProps) {
+export function HomePageClient({ initialVehicles }: HomePageClientProps) {
   const t = useTranslations("homepage");
   const locale = useLocale();
   const tAbout = useTranslations("aboutPage");
   const tFaq = useTranslations("faq");
 
   const { searchState, updateSearchField } = useVehicleSearch();
+  const { vehicles, titleKey } = useLiveHomepageVehicles(initialVehicles);
 
   const faqItems = [
     {
@@ -240,13 +259,10 @@ export function HomePageClient({
               <div className="flex flex-col items-center gap-3 mb-10">
                 <div className="accent-line"></div>
                 <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-center tracking-tight">
-                  {initialTitle}
+                  {t(titleKey)}
                 </h2>
               </div>
-              <VehicleList
-                vehicles={initialVehicles}
-                searchState={searchState}
-              />
+              <VehicleList vehicles={vehicles} searchState={searchState} />
               <div className="flex justify-center mt-14">
                 <Button
                   variant="default"
