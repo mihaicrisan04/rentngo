@@ -20,7 +20,7 @@ export async function generateMetadata({
   params,
 }: BlogDetailPageProps): Promise<Metadata> {
   "use cache";
-  cacheLife("hours");
+  cacheLife("minutes");
   const { locale, slug } = await params;
   if (!isLocale(locale)) notFound();
   const blog = await fetchStaticQuery(api.blogs.getBySlug, {
@@ -74,11 +74,11 @@ export async function generateStaticParams() {
   ];
 }
 
-// Cached per slug+locale; re-generated in the background so post edits show
-// up without a redeploy.
+// Cached per slug+locale; the body is server-rendered so it cannot follow a
+// live subscription, hence the short lifetime for post edits to show up quickly.
 export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
   "use cache";
-  cacheLife("hours");
+  cacheLife("minutes");
   const { locale, slug } = await params;
   if (!isLocale(locale)) notFound();
   const blog = await fetchStaticQuery(api.blogs.getBySlug, {

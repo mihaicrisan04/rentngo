@@ -4,7 +4,7 @@ import { HomePageClient } from "./home-page-client";
 import { Metadata } from "next";
 import { buildMetadata, jsonLdScriptContent } from "@/lib/metadata";
 import { buildAutoRentalSchema } from "@/lib/structured-data";
-import { getTranslations } from "next-intl/server";
+import { pickHomepageVehicles } from "@/lib/homepage-vehicles";
 import { cacheLife } from "next/cache";
 
 interface HomePageProps {
@@ -51,27 +51,20 @@ export default async function HomePage({ params }: HomePageProps) {
   "use cache";
   cacheLife("hours");
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "homepage" });
   const featuredVehicles = await fetchStaticQuery(
     api.featuredCars.getFeaturedVehicles,
   );
-
-  let vehicles = featuredVehicles;
-  let title = t("featuredCars");
-
-  if (!vehicles || vehicles.length === 0) {
-    const allVehicles = await fetchStaticQuery(
-      api.vehicles.getAllVehiclesWithClasses,
-      {},
-    );
-    vehicles = allVehicles.slice(0, 3);
-    title = vehicles.length > 0 ? t("ourLatestCars") : t("noCarsAvailable");
-  }
+  const allVehicles =
+    featuredVehicles.length > 0
+      ? []
+      : await fetchStaticQuery(api.vehicles.getAllVehiclesWithClasses, {});
 
   return (
     <>
       <CarRentalSchema locale={locale} />
-      <HomePageClient initialVehicles={vehicles} initialTitle={title} />
+      <HomePageClient
+        initialVehicles={pickHomepageVehicles(featuredVehicles, allVehicles)}
+      />
     </>
   );
 }

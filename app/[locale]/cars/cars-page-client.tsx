@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { VehicleFilters } from "@/components/features/vehicles/vehicle-filters";
 import { VehicleSearchForm } from "@/components/features/vehicles/vehicle-search-form";
 import { VehicleListDisplayWithPreloadedImages } from "@/components/features/vehicles/vehicle-list-display-with-preloaded-images";
@@ -23,8 +25,10 @@ interface CarsPageClientProps {
 export function CarsPageClient({ initialVehicles }: CarsPageClientProps) {
   const [isMounted, setIsMounted] = useState(false);
   const { searchState, updateSearchField } = useVehicleSearch();
-  const { filteredVehicles, ...filters } = useVehicleFilters(initialVehicles);
-  const displayedVehicles = filteredVehicles ?? initialVehicles;
+  const liveVehicles = useQuery(api.vehicles.getAllVehiclesWithClasses, {});
+  const vehicles = liveVehicles ?? initialVehicles;
+  const { filteredVehicles, ...filters } = useVehicleFilters(vehicles);
+  const displayedVehicles = filteredVehicles ?? vehicles;
 
   useEffect(() => {
     setIsMounted(true);
@@ -60,7 +64,7 @@ export function CarsPageClient({ initialVehicles }: CarsPageClientProps) {
           </div>
         )}
 
-        <VehicleFilters allVehicles={initialVehicles} {...filters} />
+        <VehicleFilters allVehicles={vehicles} {...filters} />
 
         <VehicleListDisplayWithPreloadedImages
           vehicles={displayedVehicles}
