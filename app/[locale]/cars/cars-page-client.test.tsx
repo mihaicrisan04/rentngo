@@ -34,21 +34,28 @@ const renderPage = () =>
     </NextIntlClientProvider>,
   );
 
-describe("CarsPageClient vehicle list", () => {
-  beforeEach(() => liveQueryResults.clear());
+const fromPriceBadge = (html: string) =>
+  html.match(/tabular-nums tracking-tight">(\d+)</)?.[1];
 
-  it("renders the cached vehicles until the live subscription loads", () => {
-    expect(renderPage()).toContain("Kuga");
+describe("CarsPageClient vehicle list", () => {
+  beforeEach(() => {
+    liveQueryResults.clear();
+    liveQueryResults.set("seasons:getActive", []);
+    liveQueryResults.set("seasons:getCurrent", { season: null });
   });
 
-  it("renders the live vehicles once an admin edit reaches the subscription", () => {
+  it("renders the cached prices until the live subscription loads", () => {
+    expect(fromPriceBadge(renderPage())).toBe("80");
+  });
+
+  it("renders the live prices once an admin edit reaches the subscription", () => {
     liveQueryResults.set("vehicles:getAllVehiclesWithClasses", [
-      { ...cachedVehicle, model: "Puma" },
+      {
+        ...cachedVehicle,
+        pricingTiers: [{ minDays: 1, maxDays: 999, pricePerDay: 81 }],
+      },
     ]);
 
-    const html = renderPage();
-
-    expect(html).toContain("Puma");
-    expect(html).not.toContain("Kuga");
+    expect(fromPriceBadge(renderPage())).toBe("81");
   });
 });
