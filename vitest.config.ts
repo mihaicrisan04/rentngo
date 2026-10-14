@@ -11,6 +11,7 @@ export default defineConfig({
       "lib/**/*.test.ts",
       "convex/**/*.test.ts",
       "components/**/*.test.tsx",
+      "app/**/*.test.tsx",
     ],
     environment: "node",
   },

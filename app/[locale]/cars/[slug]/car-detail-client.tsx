@@ -22,6 +22,8 @@ import {
 } from "@/lib/vehicle-utils";
 import { RentalDetails } from "@/components/shared/navigation/rental-details";
 import { useLocale, useTranslations } from "next-intl";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { carsPath } from "@/lib/localized-routes";
 import { Vehicle } from "@/types/vehicle";
 import React from "react";
@@ -29,16 +31,20 @@ import { useVehicleSearch } from "@/hooks/use-vehicle-search";
 import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
 
 interface CarDetailClientProps {
-  vehicle: Vehicle;
+  initialVehicle: Vehicle;
   mainImageUrl: string | null;
   imageUrls: Record<string, string>;
 }
 
 export function CarDetailClient({
-  vehicle,
+  initialVehicle,
   mainImageUrl,
   imageUrls,
 }: CarDetailClientProps) {
+  const liveVehicle = useQuery(api.vehicles.getById, {
+    id: initialVehicle._id,
+  });
+  const vehicle = liveVehicle ?? initialVehicle;
   const t = useTranslations("carDetailPage");
   const locale = useLocale();
   const tCommon = useTranslations("common");
@@ -117,8 +123,8 @@ export function CarDetailClient({
           <div className="space-y-6">
             <div className="rounded-2xl overflow-hidden">
               <VehicleImageCarouselWithPreloadedImages
-                images={vehicle.images}
-                mainImageId={vehicle.mainImageId}
+                images={initialVehicle.images}
+                mainImageId={initialVehicle.mainImageId}
                 vehicleName={vehicleName}
                 mainImageUrl={mainImageUrl}
                 imageUrls={imageUrls}

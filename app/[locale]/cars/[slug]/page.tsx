@@ -295,7 +295,7 @@ export default async function CarDetailPage({ params }: PageProps) {
         locale={locale}
       />
       <CarDetailClient
-        vehicle={vehicle}
+        initialVehicle={vehicle}
         mainImageUrl={mainImageUrl}
         imageUrls={imageUrls}
       />
