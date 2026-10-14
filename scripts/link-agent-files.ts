@@ -1,19 +1,11 @@
-import { lstat, rm, symlink, writeFile } from "node:fs/promises";
+import { lstat, readdir, rm, symlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const root = process.cwd();
-const skills = [
-  "agent-browser",
-  "dia-browser",
-  "working-with-convex",
-  "working-with-plans",
-  "convex",
-  "convex-create-component",
-  "convex-migration-helper",
-  "convex-performance-audit",
-  "convex-quickstart",
-  "convex-setup-auth",
-];
+const skillsPath = path.join(root, ".agents/skills");
+const skills = (await readdir(skillsPath, { withFileTypes: true }))
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name);
 
 async function createAdapter(
   relativePath: string,
