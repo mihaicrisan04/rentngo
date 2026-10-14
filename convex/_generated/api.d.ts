@@ -11,6 +11,7 @@
 import type * as affiliates from "../affiliates.js";
 import type * as auth from "../auth.js";
 import type * as blogs from "../blogs.js";
+import type * as clerkWebhook from "../clerkWebhook.js";
 import type * as counters from "../counters.js";
 import type * as coupons from "../coupons.js";
 import type * as crons from "../crons.js";
@@ -70,6 +71,7 @@ declare const fullApi: ApiFromModules<{
   affiliates: typeof affiliates;
   auth: typeof auth;
   blogs: typeof blogs;
+  clerkWebhook: typeof clerkWebhook;
   counters: typeof counters;
   coupons: typeof coupons;
   crons: typeof crons;

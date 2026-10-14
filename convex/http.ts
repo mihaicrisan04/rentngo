@@ -1,8 +1,7 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { Webhook } from "svix";
-import type { WebhookEvent } from "@clerk/nextjs/server";
+import { verifyClerkWebhook } from "./clerkWebhook";
 
 const http = httpRouter();
 
@@ -44,31 +43,12 @@ http.route({
   }),
 });
 
-/**
- * Verify the Svix signature on an incoming Clerk webhook request.
- * Returns the parsed event, or null when verification fails.
- */
-async function validateRequest(request: Request): Promise<WebhookEvent | null> {
+async function validateRequest(request: Request) {
   const secret = process.env.CLERK_WEBHOOK_SECRET;
   if (!secret) {
     throw new Error("CLERK_WEBHOOK_SECRET environment variable is not set");
   }
-
-  const payload = await request.text();
-  const svixHeaders = {
-    "svix-id": request.headers.get("svix-id") ?? "",
-    "svix-timestamp": request.headers.get("svix-timestamp") ?? "",
-    "svix-signature": request.headers.get("svix-signature") ?? "",
-  };
-
-  try {
-    return new Webhook(secret).verify(
-      payload,
-      svixHeaders,
-    ) as unknown as WebhookEvent;
-  } catch {
-    return null;
-  }
+  return verifyClerkWebhook(request, secret);
 }
 
 export default http;
