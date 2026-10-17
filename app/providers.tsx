@@ -6,6 +6,14 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { NextIntlClientProvider } from "next-intl";
 
+// next-themes' anti-flash script only needs to run from the server HTML.
+// React 19 warns when it renders an executable <script> on the client (e.g. the
+// root layout remounting on a locale switch), so mark it inert there.
+const themeScriptProps =
+  typeof window === "undefined"
+    ? undefined
+    : ({ type: "application/json" } as const);
+
 // Root providers without locale-specific features
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +24,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           defaultTheme="dark"
           enableSystem
           disableTransitionOnChange={false}
+          scriptProps={themeScriptProps}
         >
           {children}
           <Toaster />
