@@ -1,6 +1,7 @@
 "use client";
 
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import Image from "next/image";
 import Link from "next/link";
 import { SocialIcon } from "react-social-icons";
 import { useTranslations } from "next-intl";
@@ -48,6 +49,19 @@ const socialLinks = [
     label: "Facebook",
   },
 ];
+
+const consumerProtectionLinks = [
+  {
+    href: "https://www.anpc.ro/sal",
+    src: "/anpc/sal.webp",
+    labelKey: "anpcSal",
+  },
+  {
+    href: "https://consumer-redress.ec.europa.eu/index_ro",
+    src: "/anpc/sol.webp",
+    labelKey: "anpcSol",
+  },
+] as const;
 
 export function Footer({ logo, brandName }: FooterProps) {
   const t = useTranslations("common");
@@ -123,9 +137,9 @@ export function Footer({ logo, brandName }: FooterProps) {
             </ul>
           </nav>
 
-          {/* Legal links */}
-          <div className="lg:col-start-5 lg:col-span-6 xl:col-start-6 xl:col-span-5 mb-5 lg:mb-0">
-            <ul className="list-none flex flex-wrap gap-x-5 gap-y-2 lg:justify-end">
+          {/* Legal links + consumer protection (ANPC) */}
+          <div className="lg:col-start-5 lg:col-span-6 xl:col-start-6 xl:col-span-5 mb-5 lg:mb-0 flex flex-col gap-4 sm:flex-row sm:items-center lg:justify-end">
+            <ul className="list-none flex flex-wrap gap-x-5 gap-y-2">
               {legalLinks.map((link, i) => (
                 <li key={i} className="shrink-0">
                   <Link
@@ -133,6 +147,27 @@ export function Footer({ logo, brandName }: FooterProps) {
                     className="text-sm text-muted-foreground hover:text-primary transition-colors"
                   >
                     {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <div className="hidden sm:block w-px h-6 bg-border/50"></div>
+            <ul className="list-none flex gap-2">
+              {consumerProtectionLinks.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block rounded-md transition-transform duration-200 hover:scale-105"
+                  >
+                    <Image
+                      src={link.src}
+                      alt={tFooter(link.labelKey)}
+                      width={251}
+                      height={64}
+                      className="h-9 w-auto"
+                    />
                   </Link>
                 </li>
               ))}
