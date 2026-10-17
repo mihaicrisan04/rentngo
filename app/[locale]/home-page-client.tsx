@@ -21,17 +21,40 @@ import {
 } from "@/components/ui/progressive-carousel";
 import { Vehicle } from "@/types/vehicle";
 import { sectionAnimationVariants } from "@/lib/animations";
-import { useTranslations } from "next-intl";
+import { GOOGLE_RATING, GOOGLE_REVIEWS_URL } from "@/lib/google-reviews";
+import { carsPath } from "@/lib/localized-routes";
+import { useLocale, useTranslations } from "next-intl";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import { useVehicleSearch } from "@/hooks/use-vehicle-search";
 import { SearchData } from "@/lib/search-storage";
+import {
+  HomepageVehicles,
+  pickHomepageVehicles,
+} from "@/lib/homepage-vehicles";
 
 interface VehicleWithImageUrl extends Vehicle {
   imageUrl: string | null;
 }
 
 interface HomePageClientProps {
-  initialVehicles: VehicleWithImageUrl[];
-  initialTitle: string;
+  initialVehicles: HomepageVehicles<VehicleWithImageUrl>;
+}
+
+function useLiveHomepageVehicles(
+  initialVehicles: HomepageVehicles<VehicleWithImageUrl>,
+): HomepageVehicles<VehicleWithImageUrl> {
+  const featuredVehicles = useQuery(api.featuredCars.getFeaturedVehicles);
+  const allVehicles = useQuery(
+    api.vehicles.getAllVehiclesWithClasses,
+    featuredVehicles?.length === 0 ? {} : "skip",
+  );
+
+  if (featuredVehicles === undefined) return initialVehicles;
+  if (featuredVehicles.length === 0 && allVehicles === undefined) {
+    return initialVehicles;
+  }
+  return pickHomepageVehicles(featuredVehicles, allVehicles ?? []);
 }
 
 function VehicleList({
@@ -53,7 +76,7 @@ function VehicleList({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {vehicles.map((vehicle) => {
+      {vehicles.map((vehicle, index) => {
         if (!vehicle || typeof vehicle._id !== "string") {
           return null;
         }
@@ -68,6 +91,7 @@ function VehicleList({
             restitutionLocation={searchState.restitutionLocation}
             pickupTime={searchState.pickupTime}
             returnTime={searchState.returnTime}
+            imagePriority={index < 4}
           />
         );
       })}
@@ -75,16 +99,14 @@ function VehicleList({
   );
 }
 
-export function HomePageClient({
-  initialVehicles,
-  initialTitle,
-}: HomePageClientProps) {
+export function HomePageClient({ initialVehicles }: HomePageClientProps) {
   const t = useTranslations("homepage");
+  const locale = useLocale();
   const tAbout = useTranslations("aboutPage");
-  const tTestimonials = useTranslations("testimonials");
   const tFaq = useTranslations("faq");
 
   const { searchState, updateSearchField } = useVehicleSearch();
+  const { vehicles, titleKey } = useLiveHomepageVehicles(initialVehicles);
 
   const faqItems = [
     {
@@ -121,7 +143,7 @@ export function HomePageClient({
     <>
       <BackgroundImage bottomGradient={true} />
 
-      <div className="relative z-10 flex flex-col">
+      <div className="relative z-10 flex flex-col overflow-x-clip">
         {/* ═══════════════════════════════════════════
             HERO — cinematic, full-impact
         ═══════════════════════════════════════════ */}
@@ -171,26 +193,55 @@ export function HomePageClient({
           <div className="max-w-5xl mx-auto w-full px-4 mt-4 mb-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { icon: Star, label: t("trustBar.rating"), value: t("trustBar.ratingDesc") },
-                { icon: Plane, label: t("trustBar.airport"), value: t("trustBar.airportDesc") },
-                { icon: Clock, label: t("trustBar.support"), value: t("trustBar.supportDesc") },
-                { icon: Headphones, label: t("trustBar.roadside"), value: t("trustBar.roadsideDesc") },
-              ].map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 px-5 py-4 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm"
-                >
-                  <item.icon className="w-5 h-5 text-primary flex-shrink-0" />
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-foreground truncate">
-                      {item.label}
+                {
+                  icon: Star,
+                  label: t("trustBar.rating", {
+                    score: GOOGLE_RATING.score.toFixed(1),
+                  }),
+                  value: t("trustBar.ratingDesc", {
+                    count: GOOGLE_RATING.reviewCount,
+                  }),
+                  href: GOOGLE_REVIEWS_URL,
+                },
+                {
+                  icon: Plane,
+                  label: t("trustBar.airport"),
+                  value: t("trustBar.airportDesc"),
+                },
+                {
+                  icon: Clock,
+                  label: t("trustBar.support"),
+                  value: t("trustBar.supportDesc"),
+                },
+                {
+                  icon: Headphones,
+                  label: t("trustBar.roadside"),
+                  value: t("trustBar.roadsideDesc"),
+                },
+              ].map((item, i) => {
+                const TrustItem = item.href ? "a" : "div";
+                return (
+                  <TrustItem
+                    key={i}
+                    {...(item.href && {
+                      href: item.href,
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                    })}
+                    className="flex items-center gap-3 px-5 py-4 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm transition-colors [a&]:hover:bg-card"
+                  >
+                    <item.icon className="w-5 h-5 text-primary flex-shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-foreground truncate">
+                        {item.label}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {item.value}
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {item.value}
-                    </div>
-                  </div>
-                </div>
-              ))}
+                  </TrustItem>
+                );
+              })}
             </div>
           </div>
         </AnimatedGroup>
@@ -208,13 +259,10 @@ export function HomePageClient({
               <div className="flex flex-col items-center gap-3 mb-10">
                 <div className="accent-line"></div>
                 <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-center tracking-tight">
-                  {initialTitle}
+                  {t(titleKey)}
                 </h2>
               </div>
-              <VehicleList
-                vehicles={initialVehicles}
-                searchState={searchState}
-              />
+              <VehicleList vehicles={vehicles} searchState={searchState} />
               <div className="flex justify-center mt-14">
                 <Button
                   variant="default"
@@ -222,7 +270,7 @@ export function HomePageClient({
                   className="bg-primary hover:bg-primary/90 text-white group px-8 h-12 text-base"
                   asChild
                 >
-                  <Link href="/cars">
+                  <Link href={carsPath(locale)}>
                     {t("viewAllCars")}
                     <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Link>
@@ -310,8 +358,13 @@ export function HomePageClient({
                       {tAbout("ourStory.description3")}
                     </p>
                     <div className="pt-4">
-                      <Button variant="outline" size="lg" className="group" asChild>
-                        <Link href="/about">
+                      <Button
+                        variant="outline"
+                        size="lg"
+                        className="group"
+                        asChild
+                      >
+                        <Link href={`/${locale}/about`}>
                           {tAbout("mission.buttonText")}
                           <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                         </Link>
@@ -362,10 +415,7 @@ export function HomePageClient({
           threshold={0.2}
           triggerOnce={true}
         >
-          <TestimonialsSection
-            title={tTestimonials("title")}
-            description={tTestimonials("description")}
-          />
+          <TestimonialsSection />
         </AnimatedGroup>
 
         <div className="section-divider max-w-5xl mx-auto w-full"></div>
@@ -396,7 +446,7 @@ export function HomePageClient({
                   className="bg-primary hover:bg-primary/90 text-primary-foreground group px-8 h-13 text-base shadow-lg shadow-primary/20"
                   asChild
                 >
-                  <Link href="/cars">
+                  <Link href={carsPath(locale)}>
                     {t("faq.cta.buttonText")}
                     <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </Link>
@@ -407,9 +457,7 @@ export function HomePageClient({
                   className="px-8 h-13 text-base"
                   asChild
                 >
-                  <Link href="/contact">
-                    {t("faq.contact")}
-                  </Link>
+                  <Link href={`/${locale}/contact`}>{t("faq.contact")}</Link>
                 </Button>
               </div>
             </div>

@@ -1,13 +1,55 @@
 import { v } from "convex/values";
-import { query, mutation, action, internalMutation } from "./_generated/server";
-import { api } from "./_generated/api";
-import { paginationOptsValidator } from "convex/server";
+import { query, mutation, internalMutation } from "./_generated/server";
+import {
+  paginationOptsValidator,
+  paginationResultValidator,
+} from "convex/server";
+import { requireAdmin } from "./users";
+import {
+  getTableStats,
+  recordStatsInsert,
+  recordStatsRemove,
+  recordStatsStatusChange,
+} from "./tableStats";
+import {
+  fuelTypeValidator,
+  transmissionValidator,
+  vehicleStatusValidator,
+  vehicleTypeValidator,
+} from "./validators";
 
 // Pricing tier validator
 const pricingTierValidator = v.object({
   minDays: v.number(),
   maxDays: v.number(),
   pricePerDay: v.number(),
+});
+const vehicleDocValidator = v.object({
+  _id: v.id("vehicles"),
+  _creationTime: v.number(),
+  make: v.string(),
+  model: v.string(),
+  year: v.optional(v.number()),
+  type: v.optional(vehicleTypeValidator),
+  classId: v.optional(v.id("vehicleClasses")),
+  classSortIndex: v.optional(v.number()),
+  seats: v.optional(v.number()),
+  transmission: v.optional(transmissionValidator),
+  fuelType: v.optional(fuelTypeValidator),
+  engineCapacity: v.optional(v.number()),
+  engineType: v.optional(v.string()),
+  pricingTiers: v.optional(v.array(pricingTierValidator)),
+  warranty: v.optional(v.number()),
+  isOwner: v.optional(v.boolean()),
+  location: v.optional(v.string()),
+  features: v.optional(v.array(v.string())),
+  status: vehicleStatusValidator,
+  images: v.optional(v.array(v.id("_storage"))),
+  mainImageId: v.optional(v.id("_storage")),
+  isTransferVehicle: v.optional(v.boolean()),
+  transferPricePerKm: v.optional(v.number()),
+  transferSeats: v.optional(v.number()),
+  slug: v.optional(v.string()),
 });
 
 // Get all vehicles with pagination and filters
@@ -16,49 +58,20 @@ export const getAll = query({
     paginationOpts: paginationOptsValidator,
     filters: v.optional(
       v.object({
-        type: v.optional(
-          v.union(
-            v.literal("sedan"),
-            v.literal("suv"),
-            v.literal("hatchback"),
-            v.literal("sports"),
-            v.literal("truck"),
-            v.literal("van"),
-          ),
-        ),
-        transmission: v.optional(
-          v.union(v.literal("automatic"), v.literal("manual")),
-        ),
-        fuelType: v.optional(
-          v.union(
-            v.literal("petrol"),
-            v.literal("diesel"),
-            v.literal("electric"),
-            v.literal("hybrid"),
-            v.literal("benzina"),
-          ),
-        ),
-        status: v.optional(
-          v.union(
-            v.literal("available"),
-            v.literal("rented"),
-            v.literal("maintenance"),
-          ),
-        ),
+        type: v.optional(vehicleTypeValidator),
+        transmission: v.optional(transmissionValidator),
+        fuelType: v.optional(fuelTypeValidator),
+        status: v.optional(vehicleStatusValidator),
       }),
     ),
   },
+  returns: paginationResultValidator(vehicleDocValidator),
   handler: async (ctx, args) => {
     let query = ctx.db.query("vehicles");
 
     // Apply filters if they exist
     if (args.filters) {
-      const {
-        type,
-        transmission,
-        fuelType,
-        status,
-      } = args.filters;
+      const { type, transmission, fuelType, status } = args.filters;
 
       if (type) {
         query = query.filter((q) => q.eq(q.field("type"), type));
@@ -83,6 +96,7 @@ export const getAll = query({
 // Get all vehicles (deprecated - use getAll with pagination instead)
 export const getAllVehicles = query({
   args: {},
+  returns: v.array(vehicleDocValidator),
   handler: async (ctx) => {
     return await ctx.db.query("vehicles").collect();
   },
@@ -91,14 +105,28 @@ export const getAllVehicles = query({
 // Get vehicle by ID
 export const getById = query({
   args: { id: v.id("vehicles") },
+  returns: v.union(vehicleDocValidator, v.null()),
   handler: async (ctx, args) => {
     return await ctx.db.get(args.id);
+  },
+});
+
+// Car pages were addressed by vehicle id before slugs existed (Jan 2026)
+export const getSlugByLegacyId = query({
+  args: { id: v.string() },
+  returns: v.union(v.string(), v.null()),
+  handler: async (ctx, args) => {
+    const id = ctx.db.normalizeId("vehicles", args.id);
+    if (!id) return null;
+    const vehicle = await ctx.db.get(id);
+    return vehicle?.slug ?? null;
   },
 });
 
 // Get vehicle by slug
 export const getBySlug = query({
   args: { slug: v.string() },
+  returns: v.union(vehicleDocValidator, v.null()),
   handler: async (ctx, args) => {
     const vehicle = await ctx.db
       .query("vehicles")
@@ -142,30 +170,12 @@ export const create = mutation({
     make: v.string(),
     model: v.string(),
     year: v.optional(v.number()),
-    type: v.optional(
-      v.union(
-        v.literal("sedan"),
-        v.literal("suv"),
-        v.literal("hatchback"),
-        v.literal("sports"),
-        v.literal("truck"),
-        v.literal("van"),
-      ),
-    ),
+    type: v.optional(vehicleTypeValidator),
     classId: v.optional(v.id("vehicleClasses")), // Reference to vehicle class
     classSortIndex: v.optional(v.number()), // For custom sorting within a class
     seats: v.optional(v.number()),
-    transmission: v.optional(
-      v.union(v.literal("automatic"), v.literal("manual")),
-    ),
-    fuelType: v.optional(
-      v.union(
-        v.literal("diesel"),
-        v.literal("electric"),
-        v.literal("hybrid"),
-        v.literal("benzina"),
-      ),
-    ),
+    transmission: v.optional(transmissionValidator),
+    fuelType: v.optional(fuelTypeValidator),
     engineCapacity: v.optional(v.number()),
     engineType: v.optional(v.string()),
     pricingTiers: v.array(pricingTierValidator),
@@ -173,17 +183,16 @@ export const create = mutation({
     isOwner: v.optional(v.boolean()),
     location: v.optional(v.string()),
     features: v.optional(v.array(v.string())),
-    status: v.union(
-      v.literal("available"),
-      v.literal("rented"),
-      v.literal("maintenance"),
-    ),
+    status: vehicleStatusValidator,
     isTransferVehicle: v.optional(v.boolean()),
     transferPricePerKm: v.optional(v.number()),
     transferSeats: v.optional(v.number()),
     slug: v.optional(v.string()),
   },
+  returns: v.id("vehicles"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     // Validate slug uniqueness if provided
     if (args.slug) {
       const existing = await ctx.db
@@ -195,7 +204,7 @@ export const create = mutation({
       }
     }
 
-    return await ctx.db.insert("vehicles", {
+    const vehicleId = await ctx.db.insert("vehicles", {
       ...args,
       isOwner: args.isOwner ?? false, // Default to false if not provided
       images: [], // Initialize empty images array
@@ -204,6 +213,8 @@ export const create = mutation({
       transferSeats: args.transferSeats,
       slug: args.slug,
     });
+    await recordStatsInsert(ctx, "vehicles", args.status);
+    return vehicleId;
   },
 });
 
@@ -214,30 +225,12 @@ export const update = mutation({
     make: v.optional(v.string()),
     model: v.optional(v.string()),
     year: v.optional(v.number()),
-    type: v.optional(
-      v.union(
-        v.literal("sedan"),
-        v.literal("suv"),
-        v.literal("hatchback"),
-        v.literal("sports"),
-        v.literal("truck"),
-        v.literal("van"),
-      ),
-    ),
+    type: v.optional(vehicleTypeValidator),
     classId: v.optional(v.id("vehicleClasses")), // Reference to vehicle class
     classSortIndex: v.optional(v.number()), // For custom sorting within a class
     seats: v.optional(v.number()),
-    transmission: v.optional(
-      v.union(v.literal("automatic"), v.literal("manual")),
-    ),
-    fuelType: v.optional(
-      v.union(
-        v.literal("diesel"),
-        v.literal("electric"),
-        v.literal("hybrid"),
-        v.literal("benzina"),
-      ),
-    ),
+    transmission: v.optional(transmissionValidator),
+    fuelType: v.optional(fuelTypeValidator),
     engineCapacity: v.optional(v.number()),
     engineType: v.optional(v.string()),
     pricingTiers: v.optional(v.array(pricingTierValidator)),
@@ -245,13 +238,7 @@ export const update = mutation({
     isOwner: v.optional(v.boolean()),
     location: v.optional(v.string()),
     features: v.optional(v.array(v.string())),
-    status: v.optional(
-      v.union(
-        v.literal("available"),
-        v.literal("rented"),
-        v.literal("maintenance"),
-      ),
-    ),
+    status: v.optional(vehicleStatusValidator),
     images: v.optional(v.array(v.id("_storage"))),
     mainImageId: v.optional(v.id("_storage")),
     isTransferVehicle: v.optional(v.boolean()),
@@ -259,7 +246,10 @@ export const update = mutation({
     transferSeats: v.optional(v.number()),
     slug: v.optional(v.string()),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { id, ...updates } = args;
 
     // Validate slug uniqueness if provided and changed
@@ -273,14 +263,27 @@ export const update = mutation({
       }
     }
 
-    return await ctx.db.patch(id, updates);
+    const previous = updates.status === undefined ? null : await ctx.db.get(id);
+    await ctx.db.patch(id, updates);
+    if (updates.status !== undefined && previous) {
+      await recordStatsStatusChange(
+        ctx,
+        "vehicles",
+        previous.status,
+        updates.status,
+      );
+    }
+    return null;
   },
 });
 
 // Delete a vehicle
 export const remove = mutation({
   args: { id: v.id("vehicles") },
+  returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     // First, get the vehicle to check for images
     const vehicle = await ctx.db.get(args.id);
     if (!vehicle) {
@@ -296,31 +299,28 @@ export const remove = mutation({
 
     // Delete the vehicle
     await ctx.db.delete(args.id);
+    await recordStatsRemove(ctx, "vehicles", vehicle.status);
     return null;
   },
 });
 
-// Upload vehicle images
-export const uploadImages = action({
+// Attach already-uploaded storage IDs to a vehicle (files are uploaded
+// directly to storage via files.generateUploadUrl)
+export const addImages = mutation({
   args: {
     vehicleId: v.id("vehicles"),
-    images: v.array(v.bytes()),
+    imageIds: v.array(v.id("_storage")),
     insertAtIndex: v.optional(v.number()), // Optional: where to insert the images in the order
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
-    const { vehicleId, images, insertAtIndex } = args;
+    await requireAdmin(ctx);
 
-    // Get the current vehicle
-    const vehicle = await ctx.runQuery(api.vehicles.getById, { id: vehicleId });
+    const { vehicleId, imageIds, insertAtIndex } = args;
+
+    const vehicle = await ctx.db.get(vehicleId);
     if (!vehicle) {
       throw new Error("Vehicle not found");
-    }
-
-    // Upload each image to storage
-    const imageIds = [];
-    for (const imageBytes of images) {
-      const imageId = await ctx.storage.store(new Blob([imageBytes]));
-      imageIds.push(imageId);
     }
 
     // Update the vehicle with new image IDs in the specified order
@@ -343,12 +343,9 @@ export const uploadImages = action({
       newImages = [...currentImages, ...imageIds];
     }
 
-    await ctx.runMutation(api.vehicles.update, {
-      id: vehicleId,
-      images: newImages,
-    });
+    await ctx.db.patch(vehicleId, { images: newImages });
 
-    return imageIds;
+    return null;
   },
 });
 
@@ -360,6 +357,8 @@ export const reorderImages = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { vehicleId, imageIds } = args;
 
     // Get the current vehicle
@@ -397,6 +396,8 @@ export const removeImage = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { vehicleId, imageId } = args;
 
     // Get the current vehicle
@@ -438,7 +439,10 @@ export const setMainImage = mutation({
     vehicleId: v.id("vehicles"),
     imageId: v.id("_storage"),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { vehicleId, imageId } = args;
 
     // Verify the image exists in the vehicle's images array
@@ -452,9 +456,10 @@ export const setMainImage = mutation({
     }
 
     // Set as main image
-    return await ctx.db.patch(vehicleId, {
+    await ctx.db.patch(vehicleId, {
       mainImageId: imageId,
     });
+    return null;
   },
 });
 
@@ -463,69 +468,9 @@ export const getImageUrl = query({
   args: {
     imageId: v.id("_storage"),
   },
+  returns: v.union(v.string(), v.null()),
   handler: async (ctx, args) => {
     return await ctx.storage.getUrl(args.imageId);
-  },
-});
-
-// Query to search for available vehicles based on date range and location
-export const searchAvailableVehicles = query({
-  args: {
-    startDate: v.number(), // Unix timestamp
-    endDate: v.number(), // Unix timestamp
-    deliveryLocation: v.optional(v.string()),
-
-    // Optional filters
-    type: v.optional(
-      v.union(
-        v.literal("sedan"),
-        v.literal("suv"),
-        v.literal("hatchback"),
-        v.literal("sports"),
-        v.literal("truck"),
-        v.literal("van"),
-      ),
-    ),
-    transmission: v.optional(
-      v.union(v.literal("automatic"), v.literal("manual")),
-    ),
-    fuelType: v.optional(
-      v.union(
-        v.literal("petrol"),
-        v.literal("diesel"),
-        v.literal("electric"),
-        v.literal("hybrid"),
-        v.literal("benzina"),
-      ),
-    ),
-  },
-  handler: async (ctx, args) => {
-    const {
-      type,
-      transmission,
-      fuelType,
-    } = args;
-
-    let vehicleQuery = ctx.db
-      .query("vehicles")
-      .filter((q) => q.eq(q.field("status"), "available"));
-
-    // Apply optional filters
-    if (type) {
-      vehicleQuery = vehicleQuery.filter((q) => q.eq(q.field("type"), type));
-    }
-    if (transmission) {
-      vehicleQuery = vehicleQuery.filter((q) =>
-        q.eq(q.field("transmission"), transmission),
-      );
-    }
-    if (fuelType) {
-      vehicleQuery = vehicleQuery.filter((q) =>
-        q.eq(q.field("fuelType"), fuelType),
-      );
-    }
-
-    return await vehicleQuery.collect();
   },
 });
 
@@ -543,11 +488,7 @@ export const getByClass = query({
       make: v.string(),
       model: v.string(),
       year: v.optional(v.number()),
-      status: v.union(
-        v.literal("available"),
-        v.literal("rented"),
-        v.literal("maintenance"),
-      ),
+      status: vehicleStatusValidator,
       classSortIndex: v.optional(v.number()),
       mainImageId: v.optional(v.id("_storage")),
     }),
@@ -555,10 +496,10 @@ export const getByClass = query({
   handler: async (ctx, args) => {
     const vehicles = await ctx.db
       .query("vehicles")
-      .filter((q) => q.eq(q.field("classId"), args.classId))
+      .withIndex("by_class_and_sort", (q) => q.eq("classId", args.classId))
+      .order("asc")
       .collect();
 
-    // Sort by classSortIndex
     return vehicles
       .map((v) => ({
         _id: v._id,
@@ -586,6 +527,8 @@ export const reorder = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { updates } = args;
 
     // Update each vehicle with its new classSortIndex
@@ -614,16 +557,7 @@ export const getAllVehiclesWithClasses = query({
       make: v.string(),
       model: v.string(),
       year: v.optional(v.number()),
-      type: v.optional(
-        v.union(
-          v.literal("sedan"),
-          v.literal("suv"),
-          v.literal("hatchback"),
-          v.literal("sports"),
-          v.literal("truck"),
-          v.literal("van"),
-        ),
-      ),
+      type: v.optional(vehicleTypeValidator),
       class: v.optional(
         v.union(
           v.literal("economy"),
@@ -646,38 +580,17 @@ export const getAllVehiclesWithClasses = query({
       classId: v.optional(v.id("vehicleClasses")),
       classSortIndex: v.optional(v.number()),
       seats: v.optional(v.number()),
-      transmission: v.optional(
-        v.union(v.literal("automatic"), v.literal("manual")),
-      ),
-      fuelType: v.optional(
-        v.union(
-          v.literal("diesel"),
-          v.literal("electric"),
-          v.literal("hybrid"),
-          v.literal("benzina"),
-        ),
-      ),
+      transmission: v.optional(transmissionValidator),
+      fuelType: v.optional(fuelTypeValidator),
       engineCapacity: v.optional(v.number()),
       engineType: v.optional(v.string()),
       pricePerDay: v.optional(v.number()),
-      pricingTiers: v.optional(
-        v.array(
-          v.object({
-            minDays: v.number(),
-            maxDays: v.number(),
-            pricePerDay: v.number(),
-          }),
-        ),
-      ),
+      pricingTiers: v.optional(v.array(pricingTierValidator)),
       warranty: v.optional(v.number()),
       isOwner: v.optional(v.boolean()),
       location: v.optional(v.string()),
       features: v.optional(v.array(v.string())),
-      status: v.union(
-        v.literal("available"),
-        v.literal("rented"),
-        v.literal("maintenance"),
-      ),
+      status: vehicleStatusValidator,
       images: v.optional(v.array(v.id("_storage"))),
       mainImageId: v.optional(v.id("_storage")),
       // Transfer-related fields
@@ -723,7 +636,7 @@ export const getAllVehiclesWithClasses = query({
           classDisplayName: vehicleClass?.displayName,
           classSortIndexFromClass: vehicleClass?.sortIndex,
         };
-      })
+      }),
     );
 
     // Sort vehicles by class sortIndex (ascending), then by vehicle classSortIndex (ascending)
@@ -745,8 +658,89 @@ export const getAllVehiclesWithClasses = query({
   },
 });
 
+// Slim public fleet summary for SEO surfaces (llms.txt). Returns only the
+// fields needed to describe the fleet — no images, no storage lookups.
+export const getFleetSummary = query({
+  args: {},
+  returns: v.array(
+    v.object({
+      make: v.string(),
+      model: v.string(),
+      year: v.optional(v.number()),
+      slug: v.optional(v.string()),
+      seats: v.optional(v.number()),
+      transmission: v.optional(transmissionValidator),
+      fuelType: v.optional(fuelTypeValidator),
+      pricePerDayFrom: v.union(v.number(), v.null()),
+      className: v.optional(v.string()),
+    }),
+  ),
+  handler: async (ctx) => {
+    const [vehicles, vehicleClasses] = await Promise.all([
+      ctx.db.query("vehicles").take(500),
+      ctx.db.query("vehicleClasses").take(100),
+    ]);
+    const classMap = new Map(vehicleClasses.map((c) => [c._id, c]));
+
+    // Exclude transfer-only inventory: those records describe VIP transfer
+    // vehicles (no rental daily price / rental page) and must not be published
+    // in llms.txt's rental Fleet section.
+    const rentalVehicles = vehicles.filter(
+      (vehicle) => !vehicle.isTransferVehicle,
+    );
+
+    return rentalVehicles.map((vehicle) => {
+      const vehicleClass = vehicle.classId
+        ? classMap.get(vehicle.classId)
+        : undefined;
+      const pricePerDayFrom = vehicle.pricingTiers?.length
+        ? Math.min(...vehicle.pricingTiers.map((tier) => tier.pricePerDay))
+        : null;
+
+      return {
+        make: vehicle.make,
+        model: vehicle.model,
+        year: vehicle.year,
+        slug: vehicle.slug,
+        seats: vehicle.seats,
+        transmission: vehicle.transmission,
+        fuelType: vehicle.fuelType,
+        pricePerDayFrom,
+        className: vehicleClass?.displayName ?? vehicleClass?.name,
+      };
+    });
+  },
+});
+
+export const getFleetStats = query({
+  args: {},
+  returns: v.object({ totalVehicles: v.number() }),
+  handler: async (ctx) => {
+    await requireAdmin(ctx);
+
+    const stats = await getTableStats(ctx, "vehicles");
+    if (stats) {
+      return { totalVehicles: stats.total };
+    }
+
+    // Aggregates not seeded yet (migrations/seedTableStats): keep the count
+    // scan until the seed migration has run.
+    let totalVehicles = 0;
+    for await (const _vehicle of ctx.db.query("vehicles")) {
+      void _vehicle;
+      totalVehicles += 1;
+    }
+
+    return { totalVehicles };
+  },
+});
+
 // Helper function to generate a URL-friendly slug from vehicle make, model, and year
-function generateVehicleSlug(make: string, model: string, year?: number): string {
+function generateVehicleSlug(
+  make: string,
+  model: string,
+  year?: number,
+): string {
   const parts = [make, model];
   if (year) {
     parts.push(year.toString());
@@ -757,8 +751,8 @@ function generateVehicleSlug(make: string, model: string, year?: number): string
     .toLowerCase()
     .trim()
     .replace(/[^\w\s-]/g, "") // Remove special characters except hyphens
-    .replace(/[\s_]+/g, "-")  // Replace spaces and underscores with hyphens
-    .replace(/-+/g, "-")      // Collapse multiple hyphens
+    .replace(/[\s_]+/g, "-") // Replace spaces and underscores with hyphens
+    .replace(/-+/g, "-") // Collapse multiple hyphens
     .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
 }
 
@@ -810,7 +804,9 @@ export const generateSlugsForAllVehicles = internalMutation({
       }
 
       if (existingVehicle) {
-        errors.push(`Failed to generate unique slug for ${vehicle.make} ${vehicle.model} (${vehicle._id})`);
+        errors.push(
+          `Failed to generate unique slug for ${vehicle.make} ${vehicle.model} (${vehicle._id})`,
+        );
         continue;
       }
 

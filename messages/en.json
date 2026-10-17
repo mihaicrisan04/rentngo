@@ -20,8 +20,8 @@
     "ourLatestCars": "Our Latest Cars",
     "noCarsAvailable": "No Cars Available",
     "trustBar": {
-      "rating": "4.9 rating",
-      "ratingDesc": "200+ reviews",
+      "rating": "{score} on Google",
+      "ratingDesc": "{count} reviews",
       "airport": "Airport pickup",
       "airportDesc": "Cluj-Napoca",
       "support": "24/7",
@@ -133,7 +133,9 @@
       "title": "Business Hours",
       "mondayToSunday": "Monday - Sunday",
       "mondayToSundayTime": "24/7"
-    }
+    },
+    "phoneCopied": "Phone number copied to clipboard!",
+    "whatsappMessage": "Hello! I'm interested in your rental services."
   },
   "reservationPage": {
     "backToVehicleDetails": "Back to Vehicle Details",
@@ -171,7 +173,9 @@
       "title": "Vehicle Details",
       "noImage": "No Image",
       "rateFor": "Rate for",
-      "rental": "rental"
+      "rental": "rental",
+      "pricePerDay": "{price} EUR / day",
+      "rateForDays": "Rate for a {days, plural, one {# day} other {# days}} rental"
     },
     "additionalFeatures": {
       "title": "Additional Features",
@@ -234,8 +238,8 @@
       "flight": "Flight",
       "notSelected": "Not selected",
       "notCalculated": "Not calculated",
-      "daysCount": "{days} day{plural}",
-      "basePrice": "Base price ({days} day{plural})",
+      "daysCount": "{days, plural, one {# day} other {# days}}",
+      "basePrice": "Base price ({days, plural, one {# day} other {# days}})",
       "pickupLocationFee": "Pick-up location fee",
       "returnLocationFee": "Return location fee",
       "totalLocationFees": "Total relocation fees",
@@ -314,6 +318,7 @@
     "paymentMethod": "Payment Method:",
     "additionalCharges": "Additional Charges:",
     "totalAmount": "Total Amount:",
+    "discountLine": "Discount ({code})",
     "scdwLine": "SCDW (zero deductible)",
     "warrantyLine": "Warranty (deductible)",
     "baseRentalLine": "Rental ({days} {days, plural, one {day} other {days}} × {price} EUR/day)",
@@ -338,17 +343,7 @@
     "transmission": "Transmission:",
     "fuel": "Fuel:",
     "browseCars": "Browse Cars",
-    "goBack": "Go Back",
-    "paymentMethods": {
-      "cashOnDelivery": "Cash on Delivery",
-      "cardOnDelivery": "Card Payment on Delivery",
-      "cardOnline": "Card Payment Online"
-    },
-    "status": {
-      "pending": "Pending",
-      "confirmed": "Confirmed",
-      "cancelled": "Cancelled"
-    }
+    "goBack": "Go Back"
   },
   "transferPage": {
     "title": "Transfer Services",
@@ -366,7 +361,9 @@
       "oneWay": "One Way",
       "roundTrip": "Round Trip",
       "searchTransfers": "Search Transfers",
-      "searching": "Searching..."
+      "searching": "Searching...",
+      "passengerTip": "For 4+ passengers, consider booking 2 vehicles or a van for more comfort.",
+      "calculatingRoute": "Calculating route..."
     },
     "vehicleSelection": {
       "title": "Select Your Vehicle",
@@ -378,7 +375,14 @@
       "passengers": "{count} passengers max",
       "noVehiclesFound": "No Vehicles Available",
       "routeEstimationNote": "Route estimate only. Actual distance and time may vary.",
-      "selectPrompt": "Select a vehicle to continue"
+      "selectPrompt": "Select a vehicle to continue",
+      "noVehiclesFor": "No vehicles are available for {passengers, plural, one {# passenger} other {# passengers}}. Try reducing the passenger count.",
+      "routeWarning": "Unable to calculate the route distance. Please check your pickup and dropoff locations.",
+      "resultCount": "{count, plural, one {# vehicle available} other {# vehicles available}}",
+      "routeFrom": "From:",
+      "routeTo": "To:",
+      "continue": "Continue",
+      "selected": "Selected"
     },
     "booking": {
       "title": "Complete Your Booking",
@@ -387,7 +391,28 @@
       "paymentMethod": "Payment Method",
       "summary": "Transfer Summary",
       "confirmBooking": "Confirm Transfer",
-      "processing": "Processing..."
+      "processing": "Processing...",
+      "subtitle": "Complete your booking details below",
+      "backToVehicles": "Back to Vehicle Selection",
+      "luggageLabel": "Luggage Count",
+      "luggagePlaceholder": "Number of medium-size bags",
+      "luggageHelp": "Approximate number of medium-size airport bags",
+      "messageTooltip": "Add any special requests: stops along the way, waiting for someone, specific pickup instructions, etc.",
+      "invalidEmail": "Invalid email format",
+      "toasts": {
+        "missingInfo": "Missing required transfer information",
+        "successTitle": "Transfer booked successfully!",
+        "successBody": "Your transfer #{number} has been confirmed.",
+        "failedTitle": "Failed to book transfer",
+        "failedBody": "Please try again or contact support."
+      },
+      "errors": {
+        "routeChanged": "The route or price has changed. Return to the route search and recalculate before booking.",
+        "invalidCoordinates": "Select valid pickup and dropoff locations, then recalculate the route.",
+        "noRoute": "No driving route was found between these locations. Choose a different route.",
+        "providerUnavailable": "We cannot verify the route right now. Please try again shortly.",
+        "clientUpgradeRequired": "This booking page is outdated. Refresh the page and try again."
+      }
     },
     "confirmation": {
       "title": "Transfer Confirmed!",
@@ -396,7 +421,23 @@
       "route": "Route",
       "distance": "Distance",
       "duration": "Estimated Duration",
-      "bookAnother": "Book Another Transfer"
+      "bookAnother": "Book Another Transfer",
+      "pickup": "Pickup",
+      "dropoff": "Dropoff",
+      "date": "Date",
+      "time": "Time",
+      "passengers": "Passengers",
+      "luggage": "Luggage",
+      "bags": "{count, plural, one {# bag} other {# bags}}",
+      "returnTrip": "Return Trip",
+      "returnDate": "Return Date",
+      "returnTime": "Return Time",
+      "seats": "{count, plural, one {# seat} other {# seats}}",
+      "flightPrefix": "Flight:",
+      "driverAssignment": {
+        "title": "Driver Assignment",
+        "description": "A professional driver will be assigned to your transfer and will contact you before pickup."
+      }
     },
     "pricing": {
       "basePrice": "Base Fare",
@@ -418,6 +459,33 @@
         "title": "Confirm & Relax",
         "description": "Complete your booking and we'll handle the rest"
       }
+    },
+    "features": {
+      "premium": {
+        "title": "Premium Vehicles",
+        "description": "Travel in comfort with our luxury fleet"
+      },
+      "safe": {
+        "title": "Safe & Reliable",
+        "description": "Professional drivers with verified backgrounds"
+      },
+      "onTime": {
+        "title": "On-Time Service",
+        "description": "Punctual pickups and drop-offs guaranteed"
+      },
+      "destination": {
+        "title": "Any Destination",
+        "description": "Airport transfers and city-to-city routes"
+      }
+    },
+    "emptyState": {
+      "missingTitle": "Missing Transfer Details",
+      "bookingBody": "Please complete the transfer search and vehicle selection first.",
+      "vehiclesBody": "Please complete the transfer search form first.",
+      "startOver": "Start Over",
+      "backToSearch": "Back to Search",
+      "notFoundTitle": "Transfer Not Found",
+      "notFoundBody": "The transfer you're looking for doesn't exist or has been removed."
     }
   },
   "common": {
@@ -449,11 +517,65 @@
     "optional": "Optional",
     "noImage": "No Image",
     "invalidData": "Invalid data",
+    "termsAcceptance": "I accept the <terms>Terms and Conditions</terms> and <privacy>Privacy Policy</privacy>",
     "status": {
       "confirmed": "Confirmed",
       "pending": "Pending",
       "cancelled": "Cancelled",
-      "completed": "Completed"
+      "completed": "Completed",
+      "available": "Available",
+      "rented": "Rented",
+      "maintenance": "Maintenance",
+      "currentSeason": "Current Season",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "coupon": {
+      "title": "Promo or referral code",
+      "placeholder": "Enter promo or referral code",
+      "apply": "Apply",
+      "checking": "Checking...",
+      "applied": "Coupon {code} applied",
+      "remove": "Remove code",
+      "discount": "Discount",
+      "errors": {
+        "notFound": "This code doesn't exist.",
+        "inactive": "This coupon is no longer active.",
+        "expired": "This coupon has expired.",
+        "exhausted": "This coupon has reached its usage limit.",
+        "wrongBookingType": "This coupon doesn't apply to this type of booking.",
+        "belowMinimum": "The order total is below this coupon's minimum.",
+        "alreadyUsed": "You've already used this coupon.",
+        "emailRequired": "Enter your email address before applying a code.",
+        "submitFailed": "The code could not be applied. Please re-check the code and try again.",
+        "referralSelfReferral": "This is your own referral code — you can't use it on your own bookings.",
+        "referralDuplicate": "You've already used this referral code.",
+        "referralNotFirstRental": "The referral discount is for your first booking only."
+      },
+      "appliedReferral": "Referral code {code} applied"
+    },
+    "referral": {
+      "discount": "Referral discount"
+    },
+    "wallet": {
+      "useCredit": "Use my credit ({amount} EUR available)",
+      "creditApplied": "Credit applied",
+      "amountDue": "Amount due",
+      "capNote": "Credit can cover at most {percent}% of a booking."
+    },
+    "consent": {
+      "title": "Cookies",
+      "description": "We use a cookie to remember who referred you, so your referral discount can be applied. Accept to enable it — declining means no tracking and no referral discount.",
+      "accept": "Accept",
+      "decline": "Decline"
+    },
+    "quickContact": {
+      "label": "Quick contact",
+      "whatsapp": "Message us on WhatsApp",
+      "instagram": "Instagram",
+      "tiktok": "TikTok",
+      "phone": "Call us",
+      "email": "Email us"
     }
   },
   "navigation": {
@@ -486,7 +608,8 @@
       "description": "Book your rental car today and discover everything Transylvania has to offer.",
       "button": "Browse Our Cars"
     },
-    "loadMore": "Load More"
+    "loadMore": "Load More",
+    "postCount": "{count, plural, one {# post} other {# posts}}"
   },
   "blogDetail": {
     "loading": "Loading blog post...",
@@ -526,15 +649,91 @@
       "dates": "Rental Period",
       "locations": "Pickup & Return",
       "totalPrice": "Total Price",
-      "status": "Status"
+      "status": "Status",
+      "fromLabel": "From:",
+      "toLabel": "To:",
+      "pickupLabel": "Pickup:",
+      "returnLabel": "Return:",
+      "promoLabel": "Promo:",
+      "scdwZeroDeductible": "SCDW (zero deductible)",
+      "standardWarranty": "Standard Warranty ({amount} EUR deductible)",
+      "showingRange": "Showing {from} to {to} of {total} reservations",
+      "pageOf": "{page} of {total}",
+      "loading": "Loading...",
+      "loadingReservations": "Loading reservations...",
+      "loadMore": "Load more",
+      "vehicleUnavailable": "Vehicle unavailable"
+    },
+    "affiliate": {
+      "title": "Referral Program",
+      "description": "Share your link and earn rewards when your referrals book",
+      "inactive": "Your affiliate account is currently inactive.",
+      "notEnrolled": {
+        "body": "Earn rewards every time someone books with your code. Generate your code and start sharing it.",
+        "cta": "Contact us",
+        "generate": "Generate my code",
+        "generating": "Generating...",
+        "generateFailed": "The code could not be generated. Please try again.",
+        "closedBody": "The referral program isn't open right now. Get in touch if you'd like to know more."
+      },
+      "yourLink": "Your referral link",
+      "copyLink": "Copy referral link",
+      "referredDiscountInfo": "People who book through your link get {discount} off.",
+      "conversions": "Confirmed bookings",
+      "currentReward": "Your current reward",
+      "nextTier": "Next tier: {count, plural, one {# booking unlocks} other {# bookings unlock}} a {percent}% reward",
+      "history": "Referral history",
+      "bookingRental": "Car rental",
+      "bookingTransfer": "Transfer",
+      "status": {
+        "pending": "Pending",
+        "confirmed": "Confirmed",
+        "voided": "Voided",
+        "awaitingApproval": "Awaiting approval",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "yourCode": "Your referral code",
+      "copyCode": "Copy referral code",
+      "codeInfo": "Your friends can enter this code straight into the promo code field at checkout.",
+      "share": {
+        "title": "Recommend a friend",
+        "whatsapp": "Send on WhatsApp",
+        "native": "Share",
+        "message": "Rent a car with Rent'n Go using my code {code} and get a discount on your first booking: {link}"
+      },
+      "wallet": {
+        "title": "My wallet",
+        "balance": "Available credit",
+        "rewardsEarned": "Rewards earned",
+        "expiringSoon": "{amount} EUR expires on {date}. Use it on your next booking.",
+        "ledger": "Credit activity",
+        "empty": "You don't have any wallet credit yet.",
+        "kinds": {
+          "referralCredit": "Referral credit",
+          "creditReversal": "Credit reversed",
+          "manualAdjustment": "Manual adjustment",
+          "redemption": "Credit spent",
+          "redemptionReversal": "Credit returned"
+        }
+      },
+      "tier": {
+        "current": "Your tier: {name}",
+        "none": "You haven't reached the first tier yet",
+        "next": "Next tier: {name} — {count, plural, one {# approved referral earns} other {# approved referrals earn}} you {percent}% credit",
+        "custom": "You have a separately negotiated reward"
+      }
     }
   },
   "footer": {
+    "faq": "FAQ",
     "privacy": "Privacy",
     "terms": "Terms",
     "copyright": "© 2026 Rent'n Go Cluj",
     "allRightsReserved": "All rights reserved",
-    "builtBy": "Built by"
+    "builtBy": "Built by",
+    "anpcSal": "Alternative dispute resolution (ANPC)",
+    "anpcSol": "Online dispute resolution (European Commission)"
   },
   "search": {
     "pickupLocation": "Pick-up Location",
@@ -550,11 +749,20 @@
     "searchCars": "Search Car Rentals",
     "searchingCars": "Searching Car Rentals...",
     "returnDateAfterPickup": "Return date must be after or the same as pick-up date.",
-    "selectDateFirst": "Select a date first"
+    "selectDateFirst": "Select a date first",
+    "locationRetrieveError": "Couldn't get details for that location. Please try again.",
+    "defaultLocationPlaceholder": "Enter location...",
+    "mapboxTokenMissing": "Mapbox token not configured",
+    "locationSearchPlaceholder": "Search for a location...",
+    "searchingLocations": "Searching locations...",
+    "noLocationsFound": "No locations found.",
+    "minimumCharacters": "Type at least 2 characters to search...",
+    "clearSelection": "Clear selection"
   },
   "vehicleCard": {
     "or": "or",
     "perDay": "/ day",
+    "fromPrice": "from",
     "features": "Features",
     "viewDetails": "View Details",
     "bookNow": "Book Now",
@@ -622,7 +830,69 @@
   },
   "testimonials": {
     "title": "What Our Customers Say",
-    "description": "Read what our customers have to say about us."
+    "description": "Reviews from our customers",
+    "reviewCount": "{count} reviews",
+    "seeAllOnGoogle": "See all reviews on Google",
+    "writeReview": "Leave a review"
+  },
+  "faqPage": {
+    "title": "Frequently Asked Questions",
+    "description": "Answers to the most common questions about car rental and VIP transfers with Rent'n Go Cluj-Napoca.",
+    "questions": {
+      "0": {
+        "question": "What documents do I need to rent a car?",
+        "answer": "A valid driving licence held for at least 2 years, plus a valid ID card or passport. A bank card is needed if you choose to pay or block the security deposit by card."
+      },
+      "1": {
+        "question": "What is the minimum age to rent a car?",
+        "answer": "The minimum driver age is 23 and the driving licence must have been held for at least 2 years."
+      },
+      "2": {
+        "question": "Where can I pick up and return the car?",
+        "answer": "Our main location is Cluj \"Avram Iancu\" International Airport, Strada Traian Vuia 149-151, Cluj-Napoca. Delivery and collection at other locations is possible for an additional fee."
+      },
+      "3": {
+        "question": "Is there a security deposit?",
+        "answer": "Yes. A deposit between €200 and €1,800 (depending on the vehicle's value) is blocked on your card or paid in cash at pickup, and refunded in full when the car is returned undamaged, clean and with all accessories. Alternatively, you can purchase SCDW insurance instead of the deposit."
+      },
+      "4": {
+        "question": "What does the SCDW insurance cover?",
+        "answer": "SCDW (Super Collision Damage Waiver) reduces the security deposit to zero and covers your financial liability for damage. In case of total damage a liability of €1,000–€8,000 still applies, depending on the model. SCDW does not cover fuel, damage to tyres or the underside of the car caused by negligence, or lost accessories."
+      },
+      "5": {
+        "question": "What is the mileage policy?",
+        "answer": "The rental rate covers an average of 200 km per day. Extra distance is charged at €5 per 50 km for standard and business classes and €8 per 50 km for premium."
+      },
+      "6": {
+        "question": "What is the fuel policy?",
+        "answer": "Full-to-full: you receive the car with a full tank and return it full. Missing fuel is charged at €2.5 per litre."
+      },
+      "7": {
+        "question": "Can I drive the car outside Romania?",
+        "answer": "Yes, in EU member states only. You must announce this when confirming the reservation and pay a €50 fee per exit for the territorial extension of the insurance and the driver authorization documents."
+      },
+      "8": {
+        "question": "How do I pay and in what currency?",
+        "answer": "Prices are quoted in EUR and invoiced in RON at the National Bank of Romania sell rate +1% on the contract date. You can pay by card or cash; the security deposit can be blocked on a card or paid in cash."
+      },
+      "9": {
+        "question": "What is the minimum rental period?",
+        "answer": "One day. During holiday periods (Easter, Christmas, New Year) and the summer season (June–September) the minimum rental period is 10 days."
+      },
+      "10": {
+        "question": "How do the VIP and airport transfers work?",
+        "answer": "We provide private airport, city and business transfers in and around Cluj with professional drivers. Prices are calculated by distance — book online on the transfers page or by phone/WhatsApp at +40 773 932 961."
+      },
+      "11": {
+        "question": "What happens if I return the car late?",
+        "answer": "A delay past the return time in the contract is charged as a full extra rental day (for up to 2 hours). Delays of more than 2 hours are charged €100–€300 depending on the vehicle and may be reported to the authorities, unless an exception was explicitly agreed in the contract. Contact us as early as possible if you need to extend your rental."
+      }
+    },
+    "cta": {
+      "title": "Ready to hit the road?",
+      "description": "Browse our fleet and find the right car for your trip to Cluj-Napoca.",
+      "buttonText": "Browse our cars"
+    }
   },
   "faq": {
     "questions": {
@@ -743,5 +1013,19 @@
     "availableCars": "Available Cars",
     "couldNotLoadVehicles": "Could not load vehicles. Please try searching again.",
     "noVehiclesFoundMessage": "No vehicles found matching your criteria. Try broadening your search or check back later."
+  },
+  "reservationCharges": {
+    "pickupLocationFee": "Pick-up location fee ({location})",
+    "returnLocationFee": "Return location fee ({location})",
+    "snowChains": "Snow chains ({days, plural, one {# day} other {# days}})",
+    "childSeat1to4": "Child seat 1-4 years ×{count} ({days, plural, one {# day} other {# days}})",
+    "childSeat5to12": "Child seat 5-12 years ×{count} ({days, plural, one {# day} other {# days}})",
+    "extraKm": "Extra kilometers (+{km} km)"
+  },
+  "errorPage": {
+    "title": "Something went wrong",
+    "description": "We encountered an unexpected error. Please try again or go back to the homepage.",
+    "tryAgain": "Try again",
+    "goHome": "Go home"
   }
 }

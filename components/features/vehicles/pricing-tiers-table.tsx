@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PricingTier } from "@/types/vehicle";
 import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
-import { useTranslations, useLocale } from 'next-intl';
+import { useTranslations, useLocale } from "next-intl";
 
 interface PricingTiersTableProps {
   pricingTiers?: PricingTier[];
@@ -21,15 +21,18 @@ interface PricingTiersTableProps {
   returnDate?: Date | null;
 }
 
-export function PricingTiersTable({ 
-  pricingTiers, 
+export function PricingTiersTable({
+  pricingTiers,
   currentDays,
   pickupDate,
-  returnDate
+  returnDate,
 }: PricingTiersTableProps) {
-  const t = useTranslations('pricingTiersTable');
+  const t = useTranslations("pricingTiersTable");
   const locale = useLocale();
-  const { multiplier: seasonalMultiplier } = useDateBasedSeasonalPricing(pickupDate, returnDate);
+  const { multiplier: seasonalMultiplier } = useDateBasedSeasonalPricing(
+    pickupDate,
+    returnDate,
+  );
 
   // Don't render if no pricing tiers
   if (!pricingTiers || pricingTiers.length === 0) {
@@ -42,21 +45,35 @@ export function PricingTiersTable({
   // Helper function to format day range
   const formatDayRange = (minDays: number, maxDays: number): string => {
     if (maxDays >= 999) {
-      return t('dayRangePlus', { 
-        minDays, 
-        plural: locale === 'ro' ? ((minDays === 1) ? "" : "le") : ((minDays === 1) ? "" : "s") 
+      return t("dayRangePlus", {
+        minDays,
+        plural:
+          locale === "ro"
+            ? minDays === 1
+              ? ""
+              : "le"
+            : minDays === 1
+              ? ""
+              : "s",
       });
     }
     if (minDays === maxDays) {
-      return t('exactDays', { 
-        days: minDays, 
-        plural: locale === 'ro' ? ((minDays === 1) ? "" : "le") : ((minDays === 1) ? "" : "s") 
+      return t("exactDays", {
+        days: minDays,
+        plural:
+          locale === "ro"
+            ? minDays === 1
+              ? ""
+              : "le"
+            : minDays === 1
+              ? ""
+              : "s",
       });
     }
-    return t('dayRange', { 
-      minDays, 
-      maxDays, 
-      plural: locale === 'ro' ? "le" : "s" 
+    return t("dayRange", {
+      minDays,
+      maxDays,
+      plural: locale === "ro" ? "le" : "s",
     });
   };
 
@@ -72,7 +89,9 @@ export function PricingTiersTable({
   };
 
   // Calculate potential savings compared to shortest tier (with final pricing)
-  const basePrice = sortedTiers[0] ? getFinalPrice(sortedTiers[0].pricePerDay) : 0;
+  const basePrice = sortedTiers[0]
+    ? getFinalPrice(sortedTiers[0].pricePerDay)
+    : 0;
   const calculateSavings = (tier: PricingTier): number => {
     const finalPrice = getFinalPrice(tier.pricePerDay);
     return basePrice - finalPrice;
@@ -81,18 +100,16 @@ export function PricingTiersTable({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">{t('title')}</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          {t('subtitle')}
-        </p>
+        <CardTitle className="text-lg">{t("title")}</CardTitle>
+        <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t('rentalPeriod')}</TableHead>
-              <TableHead>{t('pricePerDay')}</TableHead>
-              <TableHead>{t('savings')}</TableHead>
+              <TableHead>{t("rentalPeriod")}</TableHead>
+              <TableHead>{t("pricePerDay")}</TableHead>
+              <TableHead>{t("savings")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -100,9 +117,9 @@ export function PricingTiersTable({
               const finalPrice = getFinalPrice(tier.pricePerDay);
               const savings = calculateSavings(tier);
               const isActive = isActiveTier(tier);
-              
+
               return (
-                <TableRow 
+                <TableRow
                   key={index}
                   className={isActive ? "bg-primary/5 border-primary/20" : ""}
                 >
@@ -111,22 +128,25 @@ export function PricingTiersTable({
                       {formatDayRange(tier.minDays, tier.maxDays)}
                       {isActive && (
                         <Badge variant="default" className="text-xs">
-                          {t('current')}
+                          {t("current")}
                         </Badge>
                       )}
                     </div>
                   </TableCell>
                   <TableCell className="font-semibold">
-                    €{finalPrice.toFixed(2)}/{locale === 'ro' ? 'zi' : 'day'}
+                    €{finalPrice.toFixed(2)}/{locale === "ro" ? "zi" : "day"}
                   </TableCell>
                   <TableCell>
                     {savings > 0 ? (
                       <span className="text-green-600 font-medium">
-                        {t('savingsAmount', { amount: savings.toFixed(2), day: locale === 'ro' ? 'zi' : 'day' })}
+                        {t("savingsAmount", {
+                          amount: savings.toFixed(2),
+                          day: locale === "ro" ? "zi" : "day",
+                        })}
                       </span>
                     ) : (
                       <span className="text-muted-foreground">
-                        {t('baseRate')}
+                        {t("baseRate")}
                       </span>
                     )}
                   </TableCell>
@@ -135,33 +155,49 @@ export function PricingTiersTable({
             })}
           </TableBody>
         </Table>
-        
+
         {currentDays && (
           <div className="mt-4 p-3 bg-muted/50 rounded-lg">
             <p className="text-sm">
-              <span className="font-medium">{t('yourRental', { 
-                days: currentDays, 
-                plural: locale === 'ro' ? ((currentDays === 1) ? "" : "le") : ((currentDays === 1) ? "" : "s") 
-              })}:</span>{' '}
+              <span className="font-medium">
+                {t("yourRental", {
+                  days: currentDays,
+                  plural:
+                    locale === "ro"
+                      ? currentDays === 1
+                        ? ""
+                        : "le"
+                      : currentDays === 1
+                        ? ""
+                        : "s",
+                })}
+                :
+              </span>{" "}
               {(() => {
-                const activeTier = sortedTiers.find(tier => 
-                  currentDays >= tier.minDays && currentDays <= tier.maxDays
+                const activeTier = sortedTiers.find(
+                  (tier) =>
+                    currentDays >= tier.minDays && currentDays <= tier.maxDays,
                 );
                 if (activeTier) {
                   const finalPrice = getFinalPrice(activeTier.pricePerDay);
                   const savings = calculateSavings(activeTier);
                   return (
                     <>
-                      €{finalPrice.toFixed(2)}/{locale === 'ro' ? 'zi' : 'day'}
+                      €{finalPrice.toFixed(2)}/{locale === "ro" ? "zi" : "day"}
                       {savings > 0 && (
                         <span className="text-green-600 ml-2">
-                          ({t('saveAmount', { amount: savings.toFixed(2), day: locale === 'ro' ? 'zi' : 'day' })})
+                          (
+                          {t("saveAmount", {
+                            amount: savings.toFixed(2),
+                            day: locale === "ro" ? "zi" : "day",
+                          })}
+                          )
                         </span>
                       )}
                     </>
                   );
                 }
-                return t('rateNotAvailable');
+                return t("rateNotAvailable");
               })()}
             </p>
           </div>
@@ -169,4 +205,4 @@ export function PricingTiersTable({
       </CardContent>
     </Card>
   );
-} 
+}

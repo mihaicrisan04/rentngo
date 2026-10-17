@@ -61,7 +61,7 @@ export const ALLOWED_DIAL_CODES: string[] = [
 
   // North America
   "+1", // USA/Canada/NANP
-  
+
   // South America
   "+52", // Mexico
   "+54", // Argentina
@@ -171,5 +171,3 @@ export function isValidInternationalPhoneNumber(input: string): boolean {
 export function getAllowedDialCodes(): string[] {
   return [...ALLOWED_DIAL_CODES];
 }
-
-

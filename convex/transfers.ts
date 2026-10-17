@@ -1,13 +1,61 @@
-import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { ConvexError, v, type Infer } from "convex/values";
+import {
+  paginationOptsValidator,
+  paginationResultValidator,
+} from "convex/server";
+import {
+  action,
+  internalMutation,
+  mutation,
+  query,
+  type MutationCtx,
+} from "./_generated/server";
 import { internal } from "./_generated/api";
-
-const transferStatusValidator = v.union(
-  v.literal("pending"),
-  v.literal("confirmed"),
-  v.literal("cancelled"),
-  v.literal("completed"),
-);
+import type { Doc, Id } from "./_generated/dataModel";
+import { getCurrentUser, getOrCreateCurrentUser, requireAdmin } from "./users";
+import { applyAndRedeemCoupon } from "./coupons";
+import { nextBookingNumber, transferNumberCounter } from "./counters";
+import {
+  getTableStats,
+  recordStatsInsert,
+  recordStatsRemove,
+  recordStatsStatusChange,
+} from "./tableStats";
+import {
+  bucketMonthlyStats,
+  calculateGrowth,
+  getMonthRange,
+  getRecentMonthKeys,
+} from "./lib/stats";
+import {
+  recordReferralConversion,
+  recordTypedCodeAttribution,
+  referralArgValidator,
+  referralBlockForBooker,
+  resolveAffiliateCandidates,
+  syncConversionForBooking,
+} from "./affiliates";
+import { redeemWalletCredit, reverseWalletRedemption } from "./wallet";
+import {
+  applyDiscountToTotal,
+  assertValidTransferDistance,
+  computeTransferPricing,
+  isWithinDistanceTolerance,
+  normalizeCustomerEmail,
+  pickDiscount,
+  resolveEditedBookingTotal,
+  type AppliedDiscount,
+} from "../lib/pricing";
+import { resolveRouteDistance } from "./routing";
+import {
+  bookingStatusValidator as transferStatusValidator,
+  fuelTypeValidator,
+  paymentMethodValidator,
+  transmissionValidator,
+  vehicleStatusValidator,
+  vehicleTypeValidator,
+} from "./validators";
+import { stripUndefined } from "./lib/patch";
 
 type TransferStatusType = "pending" | "confirmed" | "cancelled" | "completed";
 
@@ -27,92 +75,369 @@ const customerInfoValidator = v.object({
   flightNumber: v.optional(v.string()),
 });
 
-const paymentMethodValidator = v.union(
-  v.literal("cash_on_delivery"),
-  v.literal("card_on_delivery"),
-  v.literal("card_online"),
-);
+// Exported for the drift guard in convex/bookingDocValidators.test.ts — see
+// reservationDocValidator.
+export const transferDocValidator = v.object({
+  _id: v.id("transfers"),
+  _creationTime: v.number(),
+  transferNumber: v.optional(v.number()),
+  userId: v.optional(v.id("users")),
+  vehicleId: v.id("vehicles"),
+  transferType: v.union(v.literal("one_way"), v.literal("round_trip")),
+  pickupLocation: locationValidator,
+  pickupDate: v.number(),
+  pickupTime: v.string(),
+  dropoffLocation: locationValidator,
+  returnDate: v.optional(v.number()),
+  returnTime: v.optional(v.string()),
+  passengers: v.number(),
+  luggageCount: v.optional(v.number()),
+  distanceKm: v.number(),
+  estimatedDurationMinutes: v.number(),
+  distanceSource: v.optional(
+    v.union(v.literal("server_mapbox"), v.literal("route_cache")),
+  ),
+  baseFare: v.number(),
+  distancePrice: v.number(),
+  totalPrice: v.number(),
+  pricePerKm: v.number(),
+  promoCode: v.optional(v.string()),
+  couponId: v.optional(v.id("coupons")),
+  discountAmount: v.optional(v.number()),
+  discountSource: v.optional(
+    v.union(v.literal("coupon"), v.literal("affiliate")),
+  ),
+  affiliateId: v.optional(v.id("affiliates")),
+  walletCreditApplied: v.optional(v.number()),
+  customerInfo: customerInfoValidator,
+  customerEmailNormalized: v.optional(v.string()),
+  paymentMethod: paymentMethodValidator,
+  status: transferStatusValidator,
+});
 
-export const createTransfer = mutation({
-  args: {
-    userId: v.optional(v.id("users")),
-    vehicleId: v.id("vehicles"),
-    transferType: v.union(v.literal("one_way"), v.literal("round_trip")),
-    pickupLocation: locationValidator,
-    pickupDate: v.number(),
-    pickupTime: v.string(),
-    dropoffLocation: locationValidator,
-    returnDate: v.optional(v.number()),
-    returnTime: v.optional(v.string()),
-    passengers: v.number(),
+const transferListItemValidator = transferDocValidator.extend({
+  vehicle: v.union(
+    v.object({
+      make: v.string(),
+      model: v.string(),
+      year: v.optional(v.number()),
+    }),
+    v.null(),
+  ),
+});
+
+const vehicleDocValidator = v.object({
+  _id: v.id("vehicles"),
+  _creationTime: v.number(),
+  make: v.string(),
+  model: v.string(),
+  year: v.optional(v.number()),
+  type: v.optional(vehicleTypeValidator),
+  classId: v.optional(v.id("vehicleClasses")),
+  classSortIndex: v.optional(v.number()),
+  seats: v.optional(v.number()),
+  transmission: v.optional(transmissionValidator),
+  fuelType: v.optional(fuelTypeValidator),
+  engineCapacity: v.optional(v.number()),
+  engineType: v.optional(v.string()),
+  pricingTiers: v.optional(
+    v.array(
+      v.object({
+        minDays: v.number(),
+        maxDays: v.number(),
+        pricePerDay: v.number(),
+      }),
+    ),
+  ),
+  warranty: v.optional(v.number()),
+  isOwner: v.optional(v.boolean()),
+  location: v.optional(v.string()),
+  features: v.optional(v.array(v.string())),
+  status: vehicleStatusValidator,
+  images: v.optional(v.array(v.id("_storage"))),
+  mainImageId: v.optional(v.id("_storage")),
+  isTransferVehicle: v.optional(v.boolean()),
+  transferPricePerKm: v.optional(v.number()),
+  transferSeats: v.optional(v.number()),
+  slug: v.optional(v.string()),
+});
+
+const transferBookingValidator = v.object({
+  vehicleId: v.id("vehicles"),
+  transferType: v.union(v.literal("one_way"), v.literal("round_trip")),
+  pickupLocation: locationValidator,
+  pickupDate: v.number(),
+  pickupTime: v.string(),
+  dropoffLocation: locationValidator,
+  returnDate: v.optional(v.number()),
+  returnTime: v.optional(v.string()),
+  passengers: v.number(),
+  distanceKm: v.number(),
+  estimatedDurationMinutes: v.number(),
+  customerInfo: customerInfoValidator,
+  paymentMethod: paymentMethodValidator,
+  luggageCount: v.optional(v.number()),
+  // Coupon code to redeem — validated server-side; an invalid code fails
+  // the booking
+  promoCode: v.optional(v.string()),
+  // Referral cookie payload — see createReservation; never fails the booking
+  referral: v.optional(referralArgValidator),
+  // Affiliate slug typed into the promo field — see createReservation
+  referralCode: v.optional(v.string()),
+  // Wallet credit switch — a boolean only; the server owns the amount and
+  // ignores it for guests and while the referral program is off
+  useWalletCredit: v.optional(v.boolean()),
+  locale: v.optional(v.string()),
+});
+
+const legacyTransferValidator = transferBookingValidator.extend({
+  userId: v.optional(v.id("users")),
+  baseFare: v.number(),
+  distancePrice: v.number(),
+  totalPrice: v.number(),
+  pricePerKm: v.number(),
+});
+
+const transferWriteValidator = transferBookingValidator
+  .omit("distanceKm", "estimatedDurationMinutes")
+  .extend({
     distanceKm: v.number(),
     estimatedDurationMinutes: v.number(),
-    baseFare: v.number(),
-    distancePrice: v.number(),
-    totalPrice: v.number(),
-    pricePerKm: v.number(),
-    customerInfo: customerInfoValidator,
-    paymentMethod: paymentMethodValidator,
-    luggageCount: v.optional(v.number()),
-    locale: v.optional(v.string()),
-  },
-  returns: v.object({
-    transferId: v.id("transfers"),
-    transferNumber: v.number(),
-  }),
-  handler: async (ctx, args) => {
-    const allTransfers = await ctx.db.query("transfers").collect();
-    const hasAny = allTransfers.length > 0;
-    const maxNumber = hasAny
-      ? Math.max(...allTransfers.map((t) => t.transferNumber ?? 0))
-      : 0;
-    const nextTransferNumber = maxNumber + 1;
+    distanceSource: v.union(
+      v.literal("server_mapbox"),
+      v.literal("route_cache"),
+    ),
+  });
 
-    const newTransferData = {
+const transferResultValidator = v.object({
+  transferId: v.id("transfers"),
+  transferNumber: v.number(),
+});
+
+const successValidator = v.object({ success: v.boolean() });
+const successMessageValidator = v.object({
+  success: v.boolean(),
+  message: v.string(),
+});
+
+/**
+ * Cancelling gives the wallet credit back, so the booking must stop claiming
+ * it was paid with credit — otherwise an un-cancel would show a credit line
+ * for money that is spendable again. Idempotent, like the reversal itself.
+ */
+async function refundWalletCredit(
+  ctx: MutationCtx,
+  transferId: Id<"transfers">,
+): Promise<void> {
+  const restored = await reverseWalletRedemption(ctx, {
+    bookingType: "transfer",
+    bookingId: transferId,
+  });
+  if (restored > 0) {
+    await ctx.db.patch(transferId, { walletCreditApplied: undefined });
+  }
+}
+
+type TransferWriteArgs = Infer<typeof transferWriteValidator>;
+interface TransferResult {
+  transferId: Id<"transfers">;
+  transferNumber: number;
+}
+
+async function createTransferHandler(
+  ctx: MutationCtx,
+  args: TransferWriteArgs,
+): Promise<TransferResult> {
+  // Derive the user from auth — never trust a client-supplied userId.
+  // Creates the row from the JWT when the Clerk webhook sync hasn't
+  // landed yet, so a missed webhook can't block or orphan a booking.
+  const currentUser = await getOrCreateCurrentUser(ctx);
+
+  assertValidTransferDistance(args.distanceKm);
+
+  // Authoritative fare recompute from server data; client-submitted money
+  // fields are never persisted
+  const vehicle = await ctx.db.get(args.vehicleId);
+  if (!vehicle) {
+    throw new Error("Vehicle not found.");
+  }
+  const vehicleClass = vehicle.classId
+    ? await ctx.db.get(vehicle.classId)
+    : null;
+  const tiers = await ctx.db.query("transferPricingTiers").collect();
+
+  const fare = computeTransferPricing({
+    distanceKm: args.distanceKm,
+    transferType: args.transferType,
+    vehicleClass,
+    tiers,
+  });
+
+  // Single-discount seam — same shape as createReservation: coupon
+  // redemption is transactional (see applyAndRedeemCoupon for the OCC
+  // argument) and a present coupon always beats the automatic affiliate
+  // candidates in pickDiscount.
+  const redeemedCoupon = args.promoCode?.trim()
+    ? await applyAndRedeemCoupon(ctx, {
+        code: args.promoCode,
+        bookingType: "transfers",
+        subtotal: fare.totalPrice,
+        userId: currentUser?._id,
+        customerEmail: args.customerInfo.email,
+      })
+    : null;
+  const affiliateCandidates = await resolveAffiliateCandidates(ctx, {
+    referral: args.referral,
+    typedCode: args.referralCode,
+    currentUser,
+    customerEmail: args.customerInfo.email,
+    subtotal: fare.totalPrice,
+  });
+  // See createReservation: a typed code that grants nothing fails the booking
+  // rather than silently charging the undiscounted price.
+  if (affiliateCandidates.typedCodeRejection) {
+    throw new ConvexError({
+      code: "REFERRAL_CODE_INVALID",
+      reason: affiliateCandidates.typedCodeRejection,
+    });
+  }
+
+  const couponDiscount: AppliedDiscount | null = redeemedCoupon
+    ? {
+        source: "coupon",
+        code: redeemedCoupon.code,
+        amount: redeemedCoupon.discountAmount,
+      }
+    : null;
+  const referredDiscount: AppliedDiscount | null =
+    affiliateCandidates.referred &&
+    affiliateCandidates.referred.discountAmount > 0
+      ? {
+          source: "affiliate",
+          code: affiliateCandidates.referred.slug,
+          amount: affiliateCandidates.referred.discountAmount,
+        }
+      : null;
+  const appliedDiscount = pickDiscount([couponDiscount, referredDiscount]);
+  const totalPrice = appliedDiscount
+    ? applyDiscountToTotal(fare.totalPrice, appliedDiscount.amount)
+    : fare.totalPrice;
+
+  const nextTransferNumber = await nextBookingNumber(
+    ctx,
+    transferNumberCounter,
+  );
+
+  const newTransferData = {
+    transferNumber: nextTransferNumber,
+    userId: currentUser?._id ?? undefined,
+    vehicleId: args.vehicleId,
+    transferType: args.transferType,
+    pickupLocation: args.pickupLocation,
+    pickupDate: args.pickupDate,
+    pickupTime: args.pickupTime,
+    dropoffLocation: args.dropoffLocation,
+    returnDate: args.returnDate,
+    returnTime: args.returnTime,
+    passengers: args.passengers,
+    distanceKm: args.distanceKm,
+    estimatedDurationMinutes: args.estimatedDurationMinutes,
+    distanceSource: args.distanceSource,
+    baseFare: fare.baseFare,
+    distancePrice: fare.distanceCharge,
+    totalPrice,
+    pricePerKm: fare.tierPricePerKm,
+    promoCode: redeemedCoupon?.code,
+    couponId: redeemedCoupon?.couponId,
+    discountAmount: appliedDiscount?.amount,
+    discountSource: appliedDiscount?.source,
+    affiliateId: affiliateCandidates.referred?.affiliateId,
+    customerInfo: args.customerInfo,
+    customerEmailNormalized: normalizeCustomerEmail(args.customerInfo.email),
+    paymentMethod: args.paymentMethod,
+    luggageCount: args.luggageCount,
+    status: "pending" as const,
+  };
+
+  const transferId = await ctx.db.insert("transfers", newTransferData);
+  await recordStatsInsert(ctx, "transfers", newTransferData.status);
+
+  // Link the redemption audit row to the booking it paid for
+  if (redeemedCoupon) {
+    await ctx.db.patch(redeemedCoupon.redemptionId, { transferId });
+  }
+
+  // Wallet credit is a payment on top of the single discount, so it is taken
+  // from the already-discounted total. totalPrice stays pre-credit; the
+  // amount still due is totalPrice - walletCreditApplied.
+  const walletCreditApplied = await redeemWalletCredit(ctx, {
+    bookingType: "transfer",
+    bookingId: transferId,
+    userId: currentUser?._id,
+    totalAfterDiscount: totalPrice,
+    requested: args.useWalletCredit === true,
+  });
+  if (walletCreditApplied > 0) {
+    await ctx.db.patch(transferId, { walletCreditApplied });
+  }
+
+  // Conversion lifecycle — see createReservation for the rationale
+  if (affiliateCandidates.referred) {
+    const attributionId =
+      affiliateCandidates.referred.attributionSource === "typedCode"
+        ? await recordTypedCodeAttribution(ctx, {
+            affiliateId: affiliateCandidates.referred.affiliateId,
+            slug: affiliateCandidates.referred.slug,
+          })
+        : affiliateCandidates.referred.attributionId;
+    const conversionId = await recordReferralConversion(ctx, {
+      attributionId,
+      affiliateId: affiliateCandidates.referred.affiliateId,
+      bookingType: "transfer",
+      referredUserId: currentUser?._id,
+      referredEmail: args.customerInfo.email,
+      referredDiscountAmount:
+        referredDiscount && appliedDiscount === referredDiscount
+          ? referredDiscount.amount
+          : 0,
+      rewardPercentSnapshot: affiliateCandidates.referred.rewardPercentSnapshot,
+    });
+    await ctx.db.patch(conversionId, { transferId });
+  }
+
+  // Format pickup date for email
+  const pickupDateObj = new Date(args.pickupDate);
+  const timeZone = "Europe/Bucharest";
+  const pickupDateString = pickupDateObj.toLocaleDateString("en-GB", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone,
+  });
+
+  let returnDateString: string | undefined;
+  if (args.returnDate) {
+    const returnDateObj = new Date(args.returnDate);
+    returnDateString = returnDateObj.toLocaleDateString("en-GB", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      timeZone,
+    });
+  }
+
+  // Minting the booker's own referral code needs the database, so it happens
+  // here rather than in the email action.
+  const referral = await referralBlockForBooker(ctx, currentUser?._id);
+
+  // Schedule email sending
+  await ctx.scheduler.runAfter(
+    0,
+    internal.emails.sendTransferConfirmationEmail,
+    {
       transferNumber: nextTransferNumber,
-      userId: args.userId,
-      vehicleId: args.vehicleId,
-      transferType: args.transferType,
-      pickupLocation: args.pickupLocation,
-      pickupDate: args.pickupDate,
-      pickupTime: args.pickupTime,
-      dropoffLocation: args.dropoffLocation,
-      returnDate: args.returnDate,
-      returnTime: args.returnTime,
-      passengers: args.passengers,
-      distanceKm: args.distanceKm,
-      estimatedDurationMinutes: args.estimatedDurationMinutes,
-      baseFare: args.baseFare,
-      distancePrice: args.distancePrice,
-      totalPrice: args.totalPrice,
-      pricePerKm: args.pricePerKm,
       customerInfo: args.customerInfo,
-      paymentMethod: args.paymentMethod,
-      luggageCount: args.luggageCount,
-      status: "pending" as const,
-    };
-
-    const transferId = await ctx.db.insert("transfers", newTransferData);
-
-    // Format pickup date for email
-    const pickupDateObj = new Date(args.pickupDate);
-    const timeZone = 'Europe/Bucharest';
-    const pickupDateString = pickupDateObj.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone });
-    
-    let returnDateString: string | undefined;
-    if (args.returnDate) {
-      const returnDateObj = new Date(args.returnDate);
-      returnDateString = returnDateObj.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone });
-    }
-
-    // Fetch vehicle info for email
-    const vehicle = await ctx.db.get(args.vehicleId);
-
-    // Schedule email sending
-    await ctx.scheduler.runAfter(0, internal.emails.sendTransferConfirmationEmail, {
-      transferNumber: nextTransferNumber,
-      customerInfo: args.customerInfo,
-      vehicleInfo: vehicle ? {
+      vehicleInfo: {
         make: vehicle.make,
         model: vehicle.model,
         year: vehicle.year,
@@ -120,9 +445,6 @@ export const createTransfer = mutation({
         seats: vehicle.transferSeats ?? vehicle.seats,
         transmission: vehicle.transmission,
         fuelType: vehicle.fuelType,
-      } : {
-        make: "Vehicle",
-        model: "Info",
       },
       pickupLocation: {
         address: args.pickupLocation.address,
@@ -140,19 +462,76 @@ export const createTransfer = mutation({
       distanceKm: args.distanceKm,
       estimatedDurationMinutes: args.estimatedDurationMinutes,
       pricingDetails: {
-        baseFare: args.baseFare,
-        distancePrice: args.distancePrice,
-        totalPrice: args.totalPrice,
-        pricePerKm: args.pricePerKm,
+        baseFare: fare.baseFare,
+        distancePrice: fare.distanceCharge,
+        totalPrice,
+        pricePerKm: fare.tierPricePerKm,
+        promoCode: appliedDiscount?.code,
+        discountAmount: appliedDiscount?.amount,
+        isReferralDiscount: appliedDiscount?.source === "affiliate",
+        walletCreditApplied:
+          walletCreditApplied > 0 ? walletCreditApplied : undefined,
       },
       paymentMethod: args.paymentMethod,
+      referral,
       locale: args.locale,
-    });
+    },
+  );
 
-    return {
-      transferId,
-      transferNumber: nextTransferNumber,
-    };
+  return {
+    transferId,
+    transferNumber: nextTransferNumber,
+  };
+}
+
+export const createTransferInternal = internalMutation({
+  args: transferWriteValidator.fields,
+  returns: transferResultValidator,
+  handler: createTransferHandler,
+});
+
+export const bookTransfer = action({
+  args: transferBookingValidator.fields,
+  returns: transferResultValidator,
+  handler: async (ctx, args): Promise<TransferResult> => {
+    const route = await resolveRouteDistance(ctx, {
+      pickup: args.pickupLocation.coordinates,
+      dropoff: args.dropoffLocation.coordinates,
+    });
+    if (!isWithinDistanceTolerance(args.distanceKm, route.distanceKm)) {
+      throw new ConvexError({
+        code: "ROUTE_CHANGED",
+        message: "The verified route changed. Recalculate it before booking.",
+      });
+    }
+    const {
+      distanceKm: advisoryDistanceKm,
+      estimatedDurationMinutes,
+      ...booking
+    } = args;
+    void advisoryDistanceKm;
+    void estimatedDurationMinutes;
+    const result: TransferResult = await ctx.runMutation(
+      internal.transfers.createTransferInternal,
+      {
+        ...booking,
+        distanceKm: route.distanceKm,
+        estimatedDurationMinutes: route.durationMinutes,
+        distanceSource: route.source,
+      },
+    );
+    return result;
+  },
+});
+
+export const createTransfer = mutation({
+  args: legacyTransferValidator.fields,
+  returns: transferResultValidator,
+  handler: async () => {
+    throw new ConvexError({
+      code: "CLIENT_UPGRADE_REQUIRED",
+      message: "Refresh the application before booking this transfer.",
+    });
   },
 });
 
@@ -160,14 +539,33 @@ export const getTransferById = query({
   args: {
     transferId: v.id("transfers"),
   },
+  returns: v.union(transferDocValidator, v.null()),
   handler: async (ctx, args) => {
     const transfer = await ctx.db.get(args.transferId);
+    if (!transfer) return null;
+
+    // Guest bookings (no userId) stay readable so the public confirmation
+    // page keeps working right after booking. Transfers linked to a user
+    // are only visible to that user or an admin.
+    if (!transfer.userId) {
+      return transfer;
+    }
+
+    const user = await getCurrentUser(ctx);
+    if (!user) {
+      throw new Error("Authentication required to view this transfer.");
+    }
+    if (user.role !== "admin" && transfer.userId !== user._id) {
+      throw new Error("User not authorized to view this transfer.");
+    }
+
     return transfer;
   },
 });
 
 export const getCurrentUserTransfers = query({
   args: {},
+  returns: v.array(transferDocValidator),
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
@@ -196,7 +594,10 @@ export const getTransfersByVehicle = query({
   args: {
     vehicleId: v.id("vehicles"),
   },
+  returns: v.array(transferDocValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const transfers = await ctx.db
       .query("transfers")
       .withIndex("by_vehicle", (q) => q.eq("vehicleId", args.vehicleId))
@@ -205,25 +606,31 @@ export const getTransfersByVehicle = query({
   },
 });
 
-export const getAllTransfers = query({
-  args: {},
-  handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      return [];
-    }
+export const getAllTransfersPaginated = query({
+  args: { paginationOpts: paginationOptsValidator },
+  returns: paginationResultValidator(transferListItemValidator),
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const result = await ctx.db
+      .query("transfers")
+      .withIndex("by_pickup_date")
+      .order("desc")
+      .paginate(args.paginationOpts);
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-
-    if (!user || user.role !== "admin") {
-      return [];
-    }
-
-    const transfers = await ctx.db.query("transfers").collect();
-    return transfers.sort((a, b) => b.pickupDate - a.pickupDate);
+    return {
+      ...result,
+      page: await Promise.all(
+        result.page.map(async (transfer) => {
+          const vehicle = await ctx.db.get(transfer.vehicleId);
+          return {
+            ...transfer,
+            vehicle: vehicle
+              ? { make: vehicle.make, model: vehicle.model, year: vehicle.year }
+              : null,
+          };
+        }),
+      ),
+    };
   },
 });
 
@@ -232,20 +639,9 @@ export const updateTransferStatus = mutation({
     transferId: v.id("transfers"),
     newStatus: transferStatusValidator,
   },
+  returns: successValidator,
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-
-    if (!user || user.role !== "admin") {
-      throw new Error("Not authorized");
-    }
+    await requireAdmin(ctx);
 
     const transfer = await ctx.db.get(args.transferId);
     if (!transfer) {
@@ -255,10 +651,48 @@ export const updateTransferStatus = mutation({
     await ctx.db.patch(args.transferId, {
       status: args.newStatus as TransferStatusType,
     });
+    await recordStatsStatusChange(
+      ctx,
+      "transfers",
+      transfer.status,
+      args.newStatus,
+    );
+
+    // Void the linked referral conversion on cancel (re-confirm on un-cancel)
+    await syncConversionForBooking(ctx, {
+      bookingType: "transfer",
+      bookingId: args.transferId,
+      bookingStatus: args.newStatus,
+    });
+    if (args.newStatus === "cancelled") {
+      await refundWalletCredit(ctx, args.transferId);
+    }
 
     return { success: true };
   },
 });
+
+/** Whether an edit touches anything the transfer fare is computed from. */
+function transferPricingChanged(
+  transfer: Doc<"transfers">,
+  updates: Partial<Doc<"transfers">>,
+): boolean {
+  const priced = [
+    "vehicleId",
+    "transferType",
+    "pickupDate",
+    "returnDate",
+    "passengers",
+    "distanceKm",
+    "baseFare",
+    "distancePrice",
+    "pricePerKm",
+  ] as const;
+  return priced.some(
+    (field) =>
+      updates[field] !== undefined && updates[field] !== transfer[field],
+  );
+}
 
 export const updateTransferDetails = mutation({
   args: {
@@ -284,20 +718,9 @@ export const updateTransferDetails = mutation({
     paymentMethod: v.optional(paymentMethodValidator),
     status: v.optional(transferStatusValidator),
   },
+  returns: successValidator,
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-
-    if (!user || user.role !== "admin") {
-      throw new Error("Not authorized");
-    }
+    await requireAdmin(ctx);
 
     const { transferId, ...updates } = args;
 
@@ -306,15 +729,44 @@ export const updateTransferDetails = mutation({
       throw new Error("Transfer not found");
     }
 
-    const updatesToApply: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(updates)) {
-      if (value !== undefined) {
-        updatesToApply[key] = value;
-      }
+    const updatesToApply = stripUndefined(updates);
+
+    if (updatesToApply.totalPrice !== undefined) {
+      updatesToApply.totalPrice = resolveEditedBookingTotal({
+        submittedTotal: updatesToApply.totalPrice,
+        storedTotal: transfer.totalPrice,
+        discountAmount: transfer.discountAmount,
+        pricingChanged: transferPricingChanged(transfer, updatesToApply),
+      });
     }
 
     if (Object.keys(updatesToApply).length > 0) {
-      await ctx.db.patch(transferId, updatesToApply);
+      await ctx.db.patch(transferId, {
+        ...updatesToApply,
+        // Keep the denormalized lookup key in step with customerInfo.email
+        ...(updatesToApply.customerInfo && {
+          customerEmailNormalized: normalizeCustomerEmail(
+            updatesToApply.customerInfo.email,
+          ),
+        }),
+      });
+    }
+
+    if (updates.status !== undefined) {
+      await recordStatsStatusChange(
+        ctx,
+        "transfers",
+        transfer.status,
+        updates.status,
+      );
+      await syncConversionForBooking(ctx, {
+        bookingType: "transfer",
+        bookingId: transferId,
+        bookingStatus: updates.status,
+      });
+      if (updates.status === "cancelled") {
+        await refundWalletCredit(ctx, transferId);
+      }
     }
 
     return { success: true };
@@ -325,15 +777,21 @@ export const cancelTransfer = mutation({
   args: {
     transferId: v.id("transfers"),
   },
+  returns: successMessageValidator,
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
+    const user = await getOrCreateCurrentUser(ctx);
+    if (!user) {
+      throw new Error("User not authenticated.");
     }
 
     const transfer = await ctx.db.get(args.transferId);
     if (!transfer) {
       throw new Error("Transfer not found");
+    }
+
+    // Only the owner of the transfer or an admin may cancel it
+    if (user.role !== "admin" && transfer.userId !== user._id) {
+      throw new Error("User not authorized to cancel this transfer.");
     }
 
     if (transfer.status === "completed") {
@@ -345,6 +803,21 @@ export const cancelTransfer = mutation({
     }
 
     await ctx.db.patch(args.transferId, { status: "cancelled" });
+    await recordStatsStatusChange(
+      ctx,
+      "transfers",
+      transfer.status,
+      "cancelled",
+    );
+
+    // Owner decision (RNGO-26): void the referral conversion so the
+    // referrer's counter only reflects live bookings
+    await syncConversionForBooking(ctx, {
+      bookingType: "transfer",
+      bookingId: args.transferId,
+      bookingStatus: "cancelled",
+    });
+    await refundWalletCredit(ctx, args.transferId);
 
     return { success: true, message: "Transfer cancelled successfully" };
   },
@@ -354,34 +827,35 @@ export const deleteTransferPermanently = mutation({
   args: {
     transferId: v.id("transfers"),
   },
+  returns: successMessageValidator,
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-
-    if (!user || user.role !== "admin") {
-      throw new Error("Not authorized");
-    }
+    await requireAdmin(ctx);
 
     const transfer = await ctx.db.get(args.transferId);
     if (!transfer) {
       return { success: false, message: "Transfer not found" };
     }
 
+    // A hard-deleted booking is not live: void its conversion first
+    await syncConversionForBooking(ctx, {
+      bookingType: "transfer",
+      bookingId: args.transferId,
+      bookingStatus: "deleted",
+    });
+    await reverseWalletRedemption(ctx, {
+      bookingType: "transfer",
+      bookingId: args.transferId,
+      note: "booking deleted",
+    });
     await ctx.db.delete(args.transferId);
+    await recordStatsRemove(ctx, "transfers", transfer.status);
 
     return { success: true, message: "Transfer deleted permanently" };
   },
 });
 
 export const getTransferStats = query({
-  args: {},
+  args: { now: v.number() },
   returns: v.object({
     totalTransfers: v.number(),
     activeTransfers: v.number(),
@@ -390,102 +864,66 @@ export const getTransferStats = query({
     transferGrowth: v.number(),
     revenueGrowth: v.number(),
   }),
-  handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      return {
-        totalTransfers: 0,
-        activeTransfers: 0,
-        pendingConfirmations: 0,
-        currentMonthRevenue: 0,
-        transferGrowth: 0,
-        revenueGrowth: 0,
-      };
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
+    const stats = await getTableStats(ctx, "transfers");
+    let totalTransfers: number;
+    let pendingConfirmations: number;
+    if (stats) {
+      totalTransfers = stats.total;
+      pendingConfirmations = stats.byStatus.pending ?? 0;
+    } else {
+      // Aggregates not seeded yet (migrations/seedTableStats): keep the
+      // exact-but-slow scan until the seed migration has run.
+      const allTransfers = await ctx.db.query("transfers").collect();
+      totalTransfers = allTransfers.length;
+      pendingConfirmations = allTransfers.filter(
+        (transfer) => transfer.status === "pending",
+      ).length;
     }
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-
-    if (!user || user.role !== "admin") {
-      return {
-        totalTransfers: 0,
-        activeTransfers: 0,
-        pendingConfirmations: 0,
-        currentMonthRevenue: 0,
-        transferGrowth: 0,
-        revenueGrowth: 0,
-      };
-    }
-
-    const allTransfers = await ctx.db.query("transfers").collect();
-
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    const lastMonthStart = new Date(currentYear, currentMonth - 1, 1).getTime();
-    const currentMonthStart = new Date(currentYear, currentMonth, 1).getTime();
-
-    const totalTransfers = allTransfers.length;
-
-    const activeTransfers = allTransfers.filter(
-      (t) => t.status === "confirmed" && t.pickupDate >= Date.now(),
+    const upcomingTransfers = await ctx.db
+      .query("transfers")
+      .withIndex("by_pickup_date", (q) => q.gte("pickupDate", args.now))
+      .collect();
+    const activeTransfers = upcomingTransfers.filter(
+      (transfer) => transfer.status === "confirmed",
     ).length;
 
-    const pendingConfirmations = allTransfers.filter(
-      (t) => t.status === "pending",
-    ).length;
+    const oldestMonth = getRecentMonthKeys(args.now, 2)[0];
+    const currentMonth = getRecentMonthKeys(args.now, 1)[0];
+    const recentTransfers = await ctx.db
+      .query("transfers")
+      .withIndex("by_pickup_date", (q) =>
+        q
+          .gte("pickupDate", getMonthRange(oldestMonth).start)
+          .lt("pickupDate", getMonthRange(currentMonth).end),
+      )
+      .collect();
 
-    const currentMonthTransfers = allTransfers.filter(
-      (t) => t.pickupDate >= currentMonthStart,
+    const [previous, current] = bucketMonthlyStats(
+      recentTransfers.map((transfer) => ({
+        timestamp: transfer.pickupDate,
+        revenue: transfer.totalPrice,
+      })),
+      args.now,
+      2,
     );
-    const currentMonthRevenue = currentMonthTransfers.reduce(
-      (sum, t) => sum + t.totalPrice,
-      0,
-    );
-
-    const lastMonthTransfers = allTransfers.filter(
-      (t) => t.pickupDate >= lastMonthStart && t.pickupDate < currentMonthStart,
-    );
-    const lastMonthRevenue = lastMonthTransfers.reduce(
-      (sum, t) => sum + t.totalPrice,
-      0,
-    );
-
-    const transferGrowth =
-      lastMonthTransfers.length > 0
-        ? Math.round(
-            ((currentMonthTransfers.length - lastMonthTransfers.length) /
-              lastMonthTransfers.length) *
-              100,
-          )
-        : currentMonthTransfers.length > 0
-          ? 100
-          : 0;
-
-    const revenueGrowth =
-      lastMonthRevenue > 0
-        ? Math.round(
-            ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100,
-          )
-        : currentMonthRevenue > 0
-          ? 100
-          : 0;
 
     return {
       totalTransfers,
       activeTransfers,
       pendingConfirmations,
-      currentMonthRevenue: Math.round(currentMonthRevenue),
-      transferGrowth,
-      revenueGrowth,
+      currentMonthRevenue: Math.round(current.revenue),
+      transferGrowth: calculateGrowth(current.count, previous.count, 100),
+      revenueGrowth: calculateGrowth(current.revenue, previous.revenue, 100),
     };
   },
 });
 
 export const getMonthlyTransferChartData = query({
-  args: {},
+  args: { now: v.number() },
   returns: v.array(
     v.object({
       month: v.string(),
@@ -493,52 +931,31 @@ export const getMonthlyTransferChartData = query({
       revenue: v.number(),
     }),
   ),
-  handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      return [];
-    }
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const oldestMonth = getRecentMonthKeys(args.now, 6)[0];
+    const currentMonth = getRecentMonthKeys(args.now, 1)[0];
+    const transfers = await ctx.db
+      .query("transfers")
+      .withIndex("by_pickup_date", (q) =>
+        q
+          .gte("pickupDate", getMonthRange(oldestMonth).start)
+          .lt("pickupDate", getMonthRange(currentMonth).end),
+      )
+      .collect();
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-
-    if (!user || user.role !== "admin") {
-      return [];
-    }
-
-    const allTransfers = await ctx.db.query("transfers").collect();
-
-    const months = [];
-    const now = new Date();
-
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthStart = date.getTime();
-      const monthEnd = new Date(
-        date.getFullYear(),
-        date.getMonth() + 1,
-        0,
-      ).getTime();
-
-      const monthTransfers = allTransfers.filter(
-        (t) => t.pickupDate >= monthStart && t.pickupDate <= monthEnd,
-      );
-
-      const monthRevenue = monthTransfers.reduce(
-        (sum, t) => sum + t.totalPrice,
-        0,
-      );
-
-      months.push({
-        month: date.toLocaleString("default", { month: "short" }),
-        transfers: monthTransfers.length,
-        revenue: Math.round(monthRevenue),
-      });
-    }
-
-    return months;
+    return bucketMonthlyStats(
+      transfers.map((transfer) => ({
+        timestamp: transfer.pickupDate,
+        revenue: transfer.totalPrice,
+      })),
+      args.now,
+      6,
+    ).map((month) => ({
+      month: month.month,
+      transfers: month.count,
+      revenue: Math.round(month.revenue),
+    }));
   },
 });
 
@@ -546,6 +963,7 @@ export const getTransferVehicles = query({
   args: {
     minSeats: v.optional(v.number()),
   },
+  returns: v.array(vehicleDocValidator),
   handler: async (ctx, args) => {
     const vehicles = await ctx.db
       .query("vehicles")
@@ -557,7 +975,7 @@ export const getTransferVehicles = query({
     const minSeats = args.minSeats;
     if (minSeats !== undefined) {
       return availableVehicles.filter((v) => {
-        const effectiveCapacity = v.transferSeats ?? ((v.seats ?? 0) - 2);
+        const effectiveCapacity = v.transferSeats ?? (v.seats ?? 0) - 2;
         return effectiveCapacity >= minSeats;
       });
     }
@@ -570,8 +988,19 @@ export const getTransferVehiclesWithImages = query({
   args: {
     minSeats: v.optional(v.number()),
     distanceKm: v.optional(v.number()),
-    transferType: v.optional(v.union(v.literal("one_way"), v.literal("round_trip"))),
+    transferType: v.optional(
+      v.union(v.literal("one_way"), v.literal("round_trip")),
+    ),
   },
+  returns: v.array(
+    vehicleDocValidator.extend({
+      imageUrl: v.union(v.string(), v.null()),
+      transferBaseFare: v.number(),
+      classMultiplier: v.number(),
+      distanceCharge: v.number(),
+      calculatedPrice: v.number(),
+    }),
+  ),
   handler: async (ctx, args) => {
     const vehicles = await ctx.db
       .query("vehicles")
@@ -582,25 +1011,20 @@ export const getTransferVehiclesWithImages = query({
 
     // Filter by transferSeats (if set) or fallback to seats - 2
     const minSeats = args.minSeats;
-    const filteredVehicles = minSeats !== undefined
-      ? availableVehicles.filter((v) => {
-          const effectiveCapacity = v.transferSeats ?? ((v.seats ?? 0) - 2);
-          return effectiveCapacity >= minSeats;
-        })
-      : availableVehicles;
+    const filteredVehicles =
+      minSeats !== undefined
+        ? availableVehicles.filter((v) => {
+            const effectiveCapacity = v.transferSeats ?? (v.seats ?? 0) - 2;
+            return effectiveCapacity >= minSeats;
+          })
+        : availableVehicles;
 
     // Fetch all vehicle classes for base fare and multiplier lookup
     const vehicleClasses = await ctx.db.query("vehicleClasses").collect();
     const classMap = new Map(vehicleClasses.map((c) => [c._id, c]));
 
-    // Fetch all active pricing tiers
+    // Fetch all pricing tiers (computeTransferPricing filters to active ones)
     const pricingTiers = await ctx.db.query("transferPricingTiers").collect();
-    const activeTiers = pricingTiers.filter((t) => t.isActive);
-
-    const BASE_KM_INCLUDED = 15;
-    const DEFAULT_BASE_FARE = 25;
-    const DEFAULT_MULTIPLIER = 1.0;
-    const DEFAULT_PRICE_PER_KM = 1.0;
 
     const vehiclesWithImages = await Promise.all(
       filteredVehicles.map(async (vehicle) => {
@@ -610,53 +1034,31 @@ export const getTransferVehiclesWithImages = query({
           imageUrl = await ctx.storage.getUrl(imageId);
         }
 
-        // Get base fare and multiplier from vehicle class
-        const vehicleClass = vehicle.classId ? classMap.get(vehicle.classId) : null;
-        const transferBaseFare = vehicleClass?.transferBaseFare ?? DEFAULT_BASE_FARE;
-        const classMultiplier = vehicleClass?.transferMultiplier ?? DEFAULT_MULTIPLIER;
+        const vehicleClass = vehicle.classId
+          ? classMap.get(vehicle.classId)
+          : null;
 
-        // Calculate price using new tiered formula
-        const distanceKm = args.distanceKm ?? 0;
-        const extraKm = Math.max(distanceKm - BASE_KM_INCLUDED, 0);
-
-        let calculatedPrice: number;
-        let distanceCharge = 0;
-
-        if (extraKm === 0) {
-          // Trip within base fare (≤ 15km)
-          calculatedPrice = transferBaseFare;
-        } else {
-          // Find applicable tier based on extra km
-          const tier = activeTiers.find(
-            (t) =>
-              extraKm >= t.minExtraKm &&
-              (t.maxExtraKm === undefined || extraKm < t.maxExtraKm),
-          );
-
-          const tierPricePerKm = tier?.pricePerKm ?? DEFAULT_PRICE_PER_KM;
-
-          // Calculate: baseFare + (extraKm × tierPrice × classMultiplier)
-          distanceCharge = extraKm * tierPricePerKm * classMultiplier;
-          calculatedPrice = transferBaseFare + distanceCharge;
-        }
-
-        // Apply round trip multiplier
-        if (args.transferType === "round_trip") {
-          calculatedPrice = calculatedPrice * 2;
-        }
+        const fare = computeTransferPricing({
+          distanceKm: args.distanceKm ?? 0,
+          transferType: args.transferType ?? "one_way",
+          vehicleClass,
+          tiers: pricingTiers,
+        });
 
         return {
           ...vehicle,
           imageUrl,
-          transferBaseFare,
-          classMultiplier,
-          distanceCharge: Math.round(distanceCharge * 100) / 100,
-          calculatedPrice: Math.round(calculatedPrice * 100) / 100,
+          transferBaseFare: fare.baseFare,
+          classMultiplier: vehicleClass?.transferMultiplier ?? 1.0,
+          distanceCharge: fare.distanceCharge,
+          calculatedPrice: fare.totalPrice,
         };
       }),
     );
 
     // Sort by calculated price (ascending)
-    return vehiclesWithImages.sort((a, b) => a.calculatedPrice - b.calculatedPrice);
+    return vehiclesWithImages.sort(
+      (a, b) => a.calculatedPrice - b.calculatedPrice,
+    );
   },
 });

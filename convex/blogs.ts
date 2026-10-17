@@ -1,7 +1,17 @@
 import { v } from "convex/values";
-import { paginationOptsValidator } from "convex/server";
-import { query, mutation, action } from "./_generated/server";
-import { Id } from "./_generated/dataModel";
+import {
+  paginationOptsValidator,
+  paginationResultValidator,
+} from "convex/server";
+import {
+  query,
+  mutation,
+  type MutationCtx,
+  type QueryCtx,
+} from "./_generated/server";
+import type { Doc } from "./_generated/dataModel";
+import { requireAdmin } from "./users";
+import { getBlogUpdatePatch } from "../lib/blog-cover-update";
 
 const localeValidator = v.union(v.literal("ro"), v.literal("en"));
 
@@ -14,132 +24,120 @@ function resolveSlug(
   return blog.slug_en ?? blog.slug ?? "";
 }
 
+async function findBlogBySlug(
+  ctx: QueryCtx | MutationCtx,
+  slug: string,
+  locale: "ro" | "en",
+): Promise<Doc<"blogs"> | null> {
+  const localizedBlog =
+    locale === "ro"
+      ? await ctx.db
+          .query("blogs")
+          .withIndex("by_slug_ro", (q) => q.eq("slug_ro", slug))
+          .first()
+      : await ctx.db
+          .query("blogs")
+          .withIndex("by_slug_en", (q) => q.eq("slug_en", slug))
+          .first();
+
+  return (
+    localizedBlog ??
+    (await ctx.db
+      .query("blogs")
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .first())
+  );
+}
+
+// Locale projection shared by every public read: picks the localized field
+// with legacy (pre-bilingual) fallback.
+function localizeBlog(blog: Doc<"blogs">, locale: "ro" | "en") {
+  return {
+    _id: blog._id,
+    _creationTime: blog._creationTime,
+    title:
+      (locale === "ro" ? blog.title_ro : blog.title_en) ?? blog.title ?? "",
+    slug: resolveSlug(blog, locale),
+    author: blog.author,
+    description:
+      (locale === "ro" ? blog.description_ro : blog.description_en) ??
+      blog.description ??
+      "",
+    coverImage: blog.coverImage,
+    tags: blog.tags,
+    publishedAt: blog.publishedAt,
+    status: blog.status,
+    readingTime:
+      (locale === "ro" ? blog.readingTime_ro : blog.readingTime_en) ??
+      blog.readingTime,
+    views: blog.views,
+  };
+}
+
+const blogSummaryValidator = v.object({
+  _id: v.id("blogs"),
+  _creationTime: v.number(),
+  title: v.string(),
+  slug: v.string(),
+  author: v.string(),
+  description: v.string(),
+  coverImage: v.optional(v.id("_storage")),
+  tags: v.optional(v.array(v.string())),
+  publishedAt: v.optional(v.number()),
+  status: v.union(v.literal("draft"), v.literal("published")),
+  readingTime: v.optional(v.number()),
+  views: v.optional(v.number()),
+});
+
 export const getAll = query({
   args: { locale: localeValidator },
-  returns: v.array(
-    v.object({
-      _id: v.id("blogs"),
-      _creationTime: v.number(),
-      title: v.string(),
-      slug: v.string(),
-      author: v.string(),
-      description: v.string(),
-      coverImage: v.optional(v.id("_storage")),
-      tags: v.optional(v.array(v.string())),
-      publishedAt: v.optional(v.number()),
-      status: v.union(v.literal("draft"), v.literal("published")),
-      readingTime: v.optional(v.number()),
-      views: v.optional(v.number()),
-    }),
-  ),
+  returns: v.array(blogSummaryValidator),
   handler: async (ctx, args) => {
     const { locale } = args;
     const blogs = await ctx.db
       .query("blogs")
-      .filter((q) => q.eq(q.field("status"), "published"))
+      .withIndex("by_status", (q) => q.eq("status", "published"))
       .order("desc")
       .collect();
 
-    return blogs.map((blog) => ({
-      _id: blog._id,
-      _creationTime: blog._creationTime,
-      title: (locale === "ro" ? blog.title_ro : blog.title_en) ?? blog.title ?? "",
-      slug: resolveSlug(blog, locale),
-      author: blog.author,
-      description: (locale === "ro" ? blog.description_ro : blog.description_en) ?? blog.description ?? "",
-      coverImage: blog.coverImage,
-      tags: blog.tags,
-      publishedAt: blog.publishedAt,
-      status: blog.status,
-      readingTime: (locale === "ro" ? blog.readingTime_ro : blog.readingTime_en) ?? blog.readingTime,
-      views: blog.views,
-    }));
+    return blogs.map((blog) => localizeBlog(blog, locale));
   },
 });
 
 // Get the featured blog post (manually selected by admin)
 export const getFeatured = query({
   args: { locale: localeValidator },
-  returns: v.union(
-    v.object({
-      _id: v.id("blogs"),
-      _creationTime: v.number(),
-      title: v.string(),
-      slug: v.string(),
-      author: v.string(),
-      description: v.string(),
-      coverImage: v.optional(v.id("_storage")),
-      tags: v.optional(v.array(v.string())),
-      publishedAt: v.optional(v.number()),
-      status: v.union(v.literal("draft"), v.literal("published")),
-      readingTime: v.optional(v.number()),
-      views: v.optional(v.number()),
-    }),
-    v.null(),
-  ),
+  returns: v.union(blogSummaryValidator, v.null()),
   handler: async (ctx, args) => {
     const { locale } = args;
     const blog = await ctx.db
       .query("blogs")
-      .filter((q) =>
-        q.and(
-          q.eq(q.field("status"), "published"),
-          q.eq(q.field("isFeatured"), true),
-        ),
-      )
+      .withIndex("by_featured", (q) => q.eq("isFeatured", true))
+      .filter((q) => q.eq(q.field("status"), "published"))
       .first();
 
     if (!blog) return null;
 
-    return {
-      _id: blog._id,
-      _creationTime: blog._creationTime,
-      title: (locale === "ro" ? blog.title_ro : blog.title_en) ?? blog.title ?? "",
-      slug: resolveSlug(blog, locale),
-      author: blog.author,
-      description: (locale === "ro" ? blog.description_ro : blog.description_en) ?? blog.description ?? "",
-      coverImage: blog.coverImage,
-      tags: blog.tags,
-      publishedAt: blog.publishedAt,
-      status: blog.status,
-      readingTime: (locale === "ro" ? blog.readingTime_ro : blog.readingTime_en) ?? blog.readingTime,
-      views: blog.views,
-    };
+    return localizeBlog(blog, locale);
   },
 });
 
 // Get published blogs with server-side pagination (excludes featured)
 export const getPublished = query({
   args: { locale: localeValidator, paginationOpts: paginationOptsValidator },
+  returns: paginationResultValidator(blogSummaryValidator),
   handler: async (ctx, args) => {
     const { locale } = args;
     const result = await ctx.db
       .query("blogs")
-      .filter((q) =>
-        q.and(
-          q.eq(q.field("status"), "published"),
-          q.neq(q.field("isFeatured"), true),
-        ),
-      )
+      .withIndex("by_status", (q) => q.eq("status", "published"))
+      .filter((q) => q.neq(q.field("isFeatured"), true))
       .order("desc")
       .paginate(args.paginationOpts);
 
     return {
       ...result,
-      page: result.page.map((blog) => ({
-        _id: blog._id,
-        _creationTime: blog._creationTime,
-        title: (locale === "ro" ? blog.title_ro : blog.title_en) ?? blog.title ?? "",
-        slug: resolveSlug(blog, locale),
-        author: blog.author,
-        description: (locale === "ro" ? blog.description_ro : blog.description_en) ?? blog.description ?? "",
-        coverImage: blog.coverImage,
-        tags: blog.tags,
-        publishedAt: blog.publishedAt,
-        status: blog.status as "draft" | "published",
-        readingTime: (locale === "ro" ? blog.readingTime_ro : blog.readingTime_en) ?? blog.readingTime,
-        views: blog.views,
-      })),
+      page: result.page.map((blog) => localizeBlog(blog, locale)),
     };
   },
 });
@@ -149,10 +147,12 @@ export const setFeatured = mutation({
   args: { id: v.id("blogs") },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     // Unset any currently featured blog
     const currentFeatured = await ctx.db
       .query("blogs")
-      .filter((q) => q.eq(q.field("isFeatured"), true))
+      .withIndex("by_featured", (q) => q.eq("isFeatured", true))
       .collect();
 
     for (const blog of currentFeatured) {
@@ -171,6 +171,8 @@ export const unsetFeatured = mutation({
   args: { id: v.id("blogs") },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     await ctx.db.patch(args.id, { isFeatured: false });
   },
 });
@@ -248,42 +250,20 @@ export const getBySlug = query({
   handler: async (ctx, args) => {
     const { slug, locale } = args;
 
-    // Try locale-specific slug index first
-    const indexName = locale === "ro" ? "by_slug_ro" : "by_slug_en";
-    const slugField = locale === "ro" ? "slug_ro" : "slug_en";
-    let blog = await ctx.db
-      .query("blogs")
-      .withIndex(indexName as any, (q: any) => q.eq(slugField, slug))
-      .first();
-
-    // Fallback to legacy shared slug
-    if (!blog) {
-      blog = await ctx.db
-        .query("blogs")
-        .withIndex("by_slug", (q) => q.eq("slug", slug))
-        .first();
-    }
+    const blog = await findBlogBySlug(ctx, slug, locale);
 
     if (!blog) return null;
 
     const otherLocale = locale === "ro" ? "en" : "ro";
 
     return {
-      _id: blog._id,
-      _creationTime: blog._creationTime,
-      title: (locale === "ro" ? blog.title_ro : blog.title_en) ?? blog.title ?? "",
-      slug: resolveSlug(blog, locale),
+      ...localizeBlog(blog, locale),
       alternateSlug: resolveSlug(blog, otherLocale),
-      author: blog.author,
-      description: (locale === "ro" ? blog.description_ro : blog.description_en) ?? blog.description ?? "",
-      content: (locale === "ro" ? blog.content_ro : blog.content_en) ?? blog.content ?? "",
-      coverImage: blog.coverImage,
+      content:
+        (locale === "ro" ? blog.content_ro : blog.content_en) ??
+        blog.content ??
+        "",
       images: blog.images,
-      tags: blog.tags,
-      publishedAt: blog.publishedAt,
-      status: blog.status,
-      readingTime: (locale === "ro" ? blog.readingTime_ro : blog.readingTime_en) ?? blog.readingTime,
-      views: blog.views,
     };
   },
 });
@@ -347,6 +327,8 @@ export const create = mutation({
   },
   returns: v.id("blogs"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     // Check both slugs for uniqueness
     const existingRo = await ctx.db
       .query("blogs")
@@ -400,7 +382,7 @@ export const update = mutation({
     description_en: v.optional(v.string()),
     content_ro: v.optional(v.string()),
     content_en: v.optional(v.string()),
-    coverImage: v.optional(v.id("_storage")),
+    coverImage: v.optional(v.union(v.id("_storage"), v.null())),
     images: v.optional(v.array(v.id("_storage"))),
     tags: v.optional(v.array(v.string())),
     publishedAt: v.optional(v.number()),
@@ -410,7 +392,9 @@ export const update = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const { id, ...updates } = args;
+    await requireAdmin(ctx);
+
+    const { id, coverImage, ...updates } = args;
 
     if (updates.slug_ro) {
       const existing = await ctx.db
@@ -432,7 +416,7 @@ export const update = mutation({
       }
     }
 
-    await ctx.db.patch(id, updates);
+    await ctx.db.patch(id, getBlogUpdatePatch(updates, coverImage));
   },
 });
 
@@ -440,6 +424,8 @@ export const remove = mutation({
   args: { id: v.id("blogs") },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const blog = await ctx.db.get(args.id);
 
     if (!blog) {
@@ -460,27 +446,6 @@ export const remove = mutation({
   },
 });
 
-export const uploadImages = action({
-  args: {
-    blogId: v.optional(v.id("blogs")),
-    images: v.array(v.any()),
-  },
-  returns: v.array(v.id("_storage")),
-  handler: async (ctx, args) => {
-    const { images } = args;
-
-    const uploadedImageIds: Id<"_storage">[] = [];
-
-    for (const imageBuffer of images) {
-      const blob = new Blob([imageBuffer]);
-      const storageId = await ctx.storage.store(blob);
-      uploadedImageIds.push(storageId);
-    }
-
-    return uploadedImageIds;
-  },
-});
-
 export const removeImage = mutation({
   args: {
     blogId: v.id("blogs"),
@@ -488,6 +453,8 @@ export const removeImage = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { blogId, imageId } = args;
 
     const blog = await ctx.db.get(blogId);
@@ -529,19 +496,7 @@ export const getAlternateSlug = query({
   handler: async (ctx, args) => {
     const { slug, locale } = args;
 
-    const indexName = locale === "ro" ? "by_slug_ro" : "by_slug_en";
-    const slugField = locale === "ro" ? "slug_ro" : "slug_en";
-    let blog = await ctx.db
-      .query("blogs")
-      .withIndex(indexName as any, (q: any) => q.eq(slugField, slug))
-      .first();
-
-    if (!blog) {
-      blog = await ctx.db
-        .query("blogs")
-        .withIndex("by_slug", (q) => q.eq("slug", slug))
-        .first();
-    }
+    const blog = await findBlogBySlug(ctx, slug, locale);
 
     if (!blog) return null;
 
@@ -564,7 +519,7 @@ export const getAlternateSlugs = query({
   handler: async (ctx) => {
     const blogs = await ctx.db
       .query("blogs")
-      .filter((q) => q.eq(q.field("status"), "published"))
+      .withIndex("by_status", (q) => q.eq("status", "published"))
       .collect();
 
     return blogs.map((blog) => ({
@@ -576,33 +531,39 @@ export const getAlternateSlugs = query({
   },
 });
 
+export const getPublishedSlugs = query({
+  args: {},
+  returns: v.array(
+    v.object({
+      slugRo: v.string(),
+      slugEn: v.string(),
+    }),
+  ),
+  handler: async (ctx) => {
+    const blogs = await ctx.db
+      .query("blogs")
+      .withIndex("by_status", (q) => q.eq("status", "published"))
+      .order("desc")
+      .collect();
+
+    return blogs.map((blog) => ({
+      slugRo: resolveSlug(blog, "ro"),
+      slugEn: resolveSlug(blog, "en"),
+    }));
+  },
+});
+
 export const incrementViews = mutation({
   args: { slug: v.string(), locale: v.optional(localeValidator) },
   returns: v.null(),
   handler: async (ctx, args) => {
     const { slug, locale } = args;
-    let blog = null;
-
-    // Try locale-specific slug if locale is provided
-    if (locale === "ro") {
-      blog = await ctx.db
-        .query("blogs")
-        .withIndex("by_slug_ro", (q) => q.eq("slug_ro", slug))
-        .first();
-    } else if (locale === "en") {
-      blog = await ctx.db
-        .query("blogs")
-        .withIndex("by_slug_en", (q) => q.eq("slug_en", slug))
-        .first();
-    }
-
-    // Fallback to legacy slug
-    if (!blog) {
-      blog = await ctx.db
-        .query("blogs")
-        .withIndex("by_slug", (q) => q.eq("slug", slug))
-        .first();
-    }
+    const blog = locale
+      ? await findBlogBySlug(ctx, slug, locale)
+      : await ctx.db
+          .query("blogs")
+          .withIndex("by_slug", (q) => q.eq("slug", slug))
+          .first();
 
     if (!blog) {
       throw new Error("Blog not found");

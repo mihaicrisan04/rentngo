@@ -18,6 +18,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { useLocale, useTranslations } from "next-intl";
+import {
+  suggestLocations,
+  retrieveLocation,
+  LocationSuggestion,
+} from "@/lib/mapbox";
 
 export interface LocationData {
   address: string;
@@ -25,14 +32,6 @@ export interface LocationData {
     lng: number;
     lat: number;
   };
-}
-
-interface MapboxSuggestion {
-  mapbox_id: string;
-  name: string;
-  full_address?: string;
-  place_formatted?: string;
-  address?: string;
 }
 
 interface MapboxLocationSearchProps {
@@ -49,18 +48,28 @@ interface MapboxLocationSearchProps {
 export function MapboxLocationSearch({
   id,
   label,
-  placeholder = "Enter location...",
+  placeholder,
   value,
   onSelect,
   disabled = false,
   className,
   contentAlign = "start",
 }: MapboxLocationSearchProps) {
+  const t = useTranslations("search");
+  const locale = useLocale();
   const [open, setOpen] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState("");
-  const [suggestions, setSuggestions] = React.useState<MapboxSuggestion[]>([]);
+  const [suggestions, setSuggestions] = React.useState<LocationSuggestion[]>(
+    [],
+  );
   const [loading, setLoading] = React.useState(false);
-  const sessionTokenRef = React.useRef<string>(crypto.randomUUID());
+  // Generated lazily (never during render): a render-time UUID would be baked
+  // into the prerendered shell under `cacheComponents`.
+  const sessionTokenRef = React.useRef<string | null>(null);
+  const getSessionToken = React.useCallback(
+    () => (sessionTokenRef.current ??= crypto.randomUUID()),
+    [],
+  );
 
   const accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
 
@@ -71,97 +80,73 @@ export function MapboxLocationSearch({
       return;
     }
 
-    setLoading(true);
+    // Stale-response guard: without it, fast typing over a slow network can
+    // resolve requests out of order and display suggestions for an older
+    // query. `loading` is only set inside the debounced callback so each
+    // keystroke doesn't flash the loading state before the request even fires.
+    let cancelled = false;
 
     const timer = setTimeout(async () => {
+      setLoading(true);
       try {
-        const params = new URLSearchParams({
-          q: searchValue,
-          access_token: accessToken,
-          session_token: sessionTokenRef.current,
-          language: "en",
-          country: "RO",
-          types: "address,poi,place",
-          proximity: "23.5912,46.7712",
-          limit: "5",
-        });
-
-        const response = await fetch(
-          `https://api.mapbox.com/search/searchbox/v1/suggest?${params}`
+        const results = await suggestLocations(
+          searchValue,
+          getSessionToken(),
+          locale,
         );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch suggestions");
+        if (!cancelled) {
+          setSuggestions(results);
         }
-
-        const data = await response.json();
-        setSuggestions(data.suggestions || []);
       } catch (error) {
-        console.error("Error fetching suggestions:", error);
-        setSuggestions([]);
+        if (!cancelled) {
+          console.error("Error fetching suggestions:", error);
+          setSuggestions([]);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }, 200);
 
-    return () => clearTimeout(timer);
-  }, [searchValue, accessToken]);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [locale, searchValue, getSessionToken]);
 
   const handleSelect = React.useCallback(
-    async (suggestion: MapboxSuggestion) => {
+    async (suggestion: LocationSuggestion) => {
       try {
-        const params = new URLSearchParams({
-          access_token: accessToken,
-          session_token: sessionTokenRef.current,
-        });
-
-        const response = await fetch(
-          `https://api.mapbox.com/search/searchbox/v1/retrieve/${suggestion.mapbox_id}?${params}`
+        const location = await retrieveLocation(
+          suggestion.mapbox_id,
+          getSessionToken(),
+          locale,
         );
-
-        if (!response.ok) {
-          throw new Error("Failed to retrieve location details");
-        }
-
-        const data = await response.json();
-
-        if (data.features && data.features.length > 0) {
-          const feature = data.features[0];
-          const coords = feature.geometry.coordinates;
-          const address =
-            feature.properties.full_address ||
-            feature.properties.place_formatted ||
-            feature.properties.name ||
-            suggestion.full_address ||
-            suggestion.name;
-
-          onSelect({
-            address,
-            coordinates: {
-              lng: coords[0],
-              lat: coords[1],
-            },
-          });
-
-          sessionTokenRef.current = crypto.randomUUID();
-        }
-      } catch (error) {
-        console.error("Error retrieving location:", error);
         const address =
+          location.fullAddress ||
+          location.placeFormatted ||
+          location.name ||
           suggestion.full_address ||
           suggestion.place_formatted ||
           suggestion.name;
+
         onSelect({
           address,
-          coordinates: { lng: 0, lat: 0 },
+          coordinates: location.coordinates,
         });
+
+        sessionTokenRef.current = crypto.randomUUID();
+      } catch (error) {
+        console.error("Error retrieving location:", error);
+        toast.error(t("locationRetrieveError"));
       }
 
       setOpen(false);
       setSearchValue("");
       setSuggestions([]);
     },
-    [accessToken, onSelect]
+    [locale, onSelect, t, getSessionToken],
   );
 
   const handleClear = React.useCallback(() => {
@@ -177,14 +162,14 @@ export function MapboxLocationSearch({
           htmlFor={id}
           className={cn(
             "text-sm font-medium mb-1.5 block",
-            contentAlign === "end" && "text-right"
+            contentAlign === "end" && "text-right",
           )}
         >
           {label}
         </Label>
         <div className="flex items-center gap-2 w-full rounded-md border border-destructive bg-background px-3 py-2 text-destructive">
           <MapPin className="h-4 w-4 shrink-0" />
-          <span className="text-sm">Mapbox token not configured</span>
+          <span className="text-sm">{t("mapboxTokenMissing")}</span>
         </div>
       </div>
     );
@@ -195,14 +180,14 @@ export function MapboxLocationSearch({
       className={cn(
         "w-full",
         contentAlign === "end" && "text-right",
-        className
+        className,
       )}
     >
       <Label
         htmlFor={id}
         className={cn(
           "text-sm font-medium mb-1.5 block",
-          contentAlign === "end" && "text-right"
+          contentAlign === "end" && "text-right",
         )}
       >
         {label}
@@ -217,13 +202,15 @@ export function MapboxLocationSearch({
             disabled={disabled}
             className={cn(
               "w-full justify-between h-[50px] text-base font-normal",
-              !value && "text-muted-foreground"
+              !value && "text-muted-foreground",
             )}
           >
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
               <span className="truncate">
-                {value?.address || placeholder}
+                {value?.address ||
+                  placeholder ||
+                  t("defaultLocationPlaceholder")}
               </span>
             </div>
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -235,7 +222,7 @@ export function MapboxLocationSearch({
         >
           <Command shouldFilter={false}>
             <CommandInput
-              placeholder="Search for a location..."
+              placeholder={t("locationSearchPlaceholder")}
               value={searchValue}
               onValueChange={setSearchValue}
               className="truncate"
@@ -243,17 +230,19 @@ export function MapboxLocationSearch({
             <CommandList>
               {loading && searchValue.length >= 2 && (
                 <div className="py-6 text-center text-sm text-muted-foreground">
-                  Searching locations...
+                  {t("searchingLocations")}
                 </div>
               )}
 
-              {!loading && searchValue.length >= 2 && suggestions.length === 0 && (
-                <CommandEmpty>No locations found.</CommandEmpty>
-              )}
+              {!loading &&
+                searchValue.length >= 2 &&
+                suggestions.length === 0 && (
+                  <CommandEmpty>{t("noLocationsFound")}</CommandEmpty>
+                )}
 
               {!loading && searchValue.length > 0 && searchValue.length < 2 && (
                 <div className="py-6 text-center text-sm text-muted-foreground">
-                  Type at least 2 characters to search...
+                  {t("minimumCharacters")}
                 </div>
               )}
 
@@ -291,7 +280,7 @@ export function MapboxLocationSearch({
                     onSelect={handleClear}
                     className="cursor-pointer text-destructive"
                   >
-                    Clear selection
+                    {t("clearSelection")}
                   </CommandItem>
                 </CommandGroup>
               )}

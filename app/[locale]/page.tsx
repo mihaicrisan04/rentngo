@@ -1,9 +1,11 @@
-import { fetchQuery } from "convex/nextjs";
+import { fetchStaticQuery } from "@/lib/convex-static";
 import { api } from "@/convex/_generated/api";
 import { HomePageClient } from "./home-page-client";
 import { Metadata } from "next";
 import { buildMetadata, jsonLdScriptContent } from "@/lib/metadata";
-import { getTranslations } from "next-intl/server";
+import { buildAutoRentalSchema } from "@/lib/structured-data";
+import { pickHomepageVehicles } from "@/lib/homepage-vehicles";
+import { cacheLife } from "next/cache";
 
 interface HomePageProps {
   params: Promise<{ locale: string }>;
@@ -33,65 +35,7 @@ export async function generateMetadata({
 }
 
 function CarRentalSchema({ locale }: { locale: string }) {
-  const isRomanian = locale === "ro";
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "AutoRental",
-    name: "Rent'n Go",
-    alternateName: "Rent'n Go Cluj-Napoca",
-    description: isRomanian
-      ? "Servicii profesionale de închiriere auto în Cluj-Napoca. Flotă modernă, prețuri competitive, rezervare online."
-      : "Professional car rental services in Cluj-Napoca. Modern fleet, competitive prices, online booking.",
-    url: "https://rngo.ro",
-    logo: "https://rngo.ro/logo.png",
-    image: "https://rngo.ro/logo.png",
-    telephone: "+40-773-932-961",
-    email: "office@rngo.ro",
-    address: {
-      "@type": "PostalAddress",
-      streetAddress:
-        'Cluj "Avram Iancu" International Airport, Strada Traian Vuia 149-151',
-      addressLocality: "Cluj-Napoca",
-      addressRegion: "Cluj",
-      postalCode: "400397",
-      addressCountry: "RO",
-    },
-    geo: {
-      "@type": "GeoCoordinates",
-      latitude: 46.7712,
-      longitude: 23.6236,
-    },
-    openingHoursSpecification: {
-      "@type": "OpeningHoursSpecification",
-      dayOfWeek: [
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday",
-        "Saturday",
-        "Sunday",
-      ],
-      opens: "00:00",
-      closes: "23:59",
-    },
-    priceRange: "€€",
-    currenciesAccepted: "EUR, RON",
-    paymentAccepted: "Cash, Credit Card",
-    areaServed: {
-      "@type": "City",
-      name: "Cluj-Napoca",
-      containedInPlace: {
-        "@type": "Country",
-        name: "Romania",
-      },
-    },
-    sameAs: [
-      "https://www.facebook.com/share/1Ad82uMtP3/?mibextid=wwXIfr",
-      "https://www.instagram.com/rentn_go.ro",
-      "https://www.tiktok.com/@rentn.go",
-    ],
-  };
+  const schema = buildAutoRentalSchema(locale);
 
   return (
     <script
@@ -101,26 +45,25 @@ function CarRentalSchema({ locale }: { locale: string }) {
   );
 }
 
+// Cached per locale; re-generated in the background so featured-car changes
+// show up without a redeploy.
 export default async function HomePage({ params }: HomePageProps) {
+  "use cache";
+  cacheLife("hours");
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "homepage" });
-  const featuredVehicles = await fetchQuery(api.featuredCars.getFeaturedVehicles);
-
-  let vehicles = featuredVehicles;
-  let title = t("featuredCars");
-
-  if (!vehicles || vehicles.length === 0) {
-    const allVehicles = await fetchQuery(api.vehicles.getAllVehiclesWithClasses, {});
-    vehicles = allVehicles.slice(0, 3);
-    title = vehicles.length > 0 ? t("ourLatestCars") : t("noCarsAvailable");
-  }
+  const featuredVehicles = await fetchStaticQuery(
+    api.featuredCars.getFeaturedVehicles,
+  );
+  const allVehicles =
+    featuredVehicles.length > 0
+      ? []
+      : await fetchStaticQuery(api.vehicles.getAllVehiclesWithClasses, {});
 
   return (
     <>
       <CarRentalSchema locale={locale} />
       <HomePageClient
-        initialVehicles={vehicles}
-        initialTitle={title}
+        initialVehicles={pickHomepageVehicles(featuredVehicles, allVehicles)}
       />
     </>
   );

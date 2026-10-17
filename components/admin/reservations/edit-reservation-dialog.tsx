@@ -38,11 +38,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { DEFAULT_PICKUP_TIME } from "@/lib/pricing/constants";
+import { bookingAmountDue } from "@/lib/pricing";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
 import {
   getPriceForDurationWithSeason,
-  calculateVehiclePricing,
+  calculateVehiclePricingWithSeason,
 } from "@/lib/vehicle-utils";
 import { Trash2, Plus } from "lucide-react";
 
@@ -167,8 +169,8 @@ export function EditReservationDialog({
       vehicleId: "",
       startDate: "",
       endDate: "",
-      pickupTime: "10:00",
-      restitutionTime: "10:00",
+      pickupTime: DEFAULT_PICKUP_TIME,
+      restitutionTime: DEFAULT_PICKUP_TIME,
       pickupLocation: "",
       restitutionLocation: "",
       paymentMethod: "cash_on_delivery",
@@ -208,10 +210,11 @@ export function EditReservationDialog({
   const watchedEndDate = form.watch("endDate");
 
   // Get seasonal pricing based on selected dates
-  const { multiplier: currentSeasonalMultiplier, seasonId: currentSeasonId } = useDateBasedSeasonalPricing(
-    watchedStartDate ? new Date(watchedStartDate) : null,
-    watchedEndDate ? new Date(watchedEndDate) : null,
-  );
+  const { multiplier: currentSeasonalMultiplier, seasonId: currentSeasonId } =
+    useDateBasedSeasonalPricing(
+      watchedStartDate ? new Date(watchedStartDate) : null,
+      watchedEndDate ? new Date(watchedEndDate) : null,
+    );
 
   useEffect(() => {
     if (open && reservation) {
@@ -270,8 +273,9 @@ export function EditReservationDialog({
     const pickup = new Date(startDate);
     const restitution = new Date(endDate);
 
-    const priceDetails = calculateVehiclePricing(
+    const priceDetails = calculateVehiclePricingWithSeason(
       selectedVehicle,
+      1.0,
       pickup,
       restitution,
       undefined, // deliveryLocation not used here
@@ -310,8 +314,9 @@ export function EditReservationDialog({
     const pickup = new Date(startDate);
     const restitution = new Date(endDate);
 
-    const priceDetails = calculateVehiclePricing(
+    const priceDetails = calculateVehiclePricingWithSeason(
       selectedVehicle,
+      1.0,
       pickup,
       restitution,
       undefined,
@@ -379,8 +384,9 @@ export function EditReservationDialog({
         const pickup = new Date(startDate);
         const restitution = new Date(endDate);
 
-        const priceDetails = calculateVehiclePricing(
+        const priceDetails = calculateVehiclePricingWithSeason(
           selectedVehicle,
+          1.0,
           pickup,
           restitution,
           undefined,
@@ -606,15 +612,17 @@ export function EditReservationDialog({
                           const pickup = new Date(startDate);
                           const restitution = new Date(endDate);
 
-                          const priceDetails = calculateVehiclePricing(
-                            selectedVehicle,
-                            pickup,
-                            restitution,
-                            undefined,
-                            undefined,
-                            pickupTime,
-                            restitutionTime,
-                          );
+                          const priceDetails =
+                            calculateVehiclePricingWithSeason(
+                              selectedVehicle,
+                              1.0,
+                              pickup,
+                              restitution,
+                              undefined,
+                              undefined,
+                              pickupTime,
+                              restitutionTime,
+                            );
 
                           if (!priceDetails.days) return "";
 
@@ -901,6 +909,20 @@ export function EditReservationDialog({
                           <p className="text-xs text-muted-foreground">
                             Updates automatically when pricing factors change
                           </p>
+                          {(reservation?.walletCreditApplied ?? 0) > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              Wallet credit −
+                              {(reservation?.walletCreditApplied ?? 0).toFixed(
+                                2,
+                              )}{" "}
+                              EUR · amount due{" "}
+                              {bookingAmountDue(
+                                Number(field.value) || 0,
+                                reservation?.walletCreditApplied,
+                              ).toFixed(2)}{" "}
+                              EUR
+                            </p>
+                          )}
                           <FormMessage />
                         </FormItem>
                       )}
@@ -1152,8 +1174,9 @@ export function EditReservationDialog({
                       const pickup = new Date(startDate);
                       const restitution = new Date(endDate);
 
-                      const priceDetails = calculateVehiclePricing(
+                      const priceDetails = calculateVehiclePricingWithSeason(
                         selectedVehicle,
+                        1.0,
                         pickup,
                         restitution,
                         undefined,

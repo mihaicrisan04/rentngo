@@ -1,0 +1,487 @@
+"use client";
+
+import * as React from "react";
+import { useLocale, useTranslations } from "next-intl";
+import { Info, Send } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { formatPrice } from "@/lib/format";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import {
+  applyDiscountToTotal,
+  bookingAmountDue,
+  calculateIncludedKilometers,
+  previewDiscountAmount,
+  referralDiscountableAmount,
+} from "@/lib/pricing";
+import type { UseReservationPricingResult } from "@/hooks/use-reservation-pricing";
+import {
+  CouponCodeInput,
+  type AppliedCoupon,
+} from "@/components/features/checkout/coupon-code-input";
+import type { AffiliateDiscountPreview } from "@/hooks/use-affiliate-discount";
+import type { WalletCreditSelection } from "@/hooks/use-wallet-credit";
+import type { Vehicle } from "@/types/vehicle";
+
+interface ReservationSummaryCardProps {
+  vehicle: Vehicle;
+  deliveryLocation: string;
+  restitutionLocation: string;
+  pickupDate: Date | undefined;
+  pickupTime: string | null;
+  returnDate: Date | undefined;
+  returnTime: string | null;
+  flightNumber: string;
+  snowChainsSelected: boolean;
+  childSeat1to4Count: number;
+  childSeat5to12Count: number;
+  extraKilometersCount: number;
+  isSCDWSelected: boolean;
+  onSCDWChange: (selected: boolean) => void;
+  pricing: UseReservationPricingResult;
+  appliedCoupon: AppliedCoupon | null;
+  /** Customer email, so the coupon once-per-user check runs in the preview. */
+  customerEmail: string;
+  /** Fired when a coupon is applied/removed in the embedded field. */
+  onCouponAppliedChange: (coupon: AppliedCoupon | null) => void;
+  /** Automatic affiliate discount; an explicit coupon always beats it. */
+  appliedAffiliateDiscount?: AffiliateDiscountPreview | null;
+  /** Wallet credit switch; absent for guests and while the program is off. */
+  walletCredit?: WalletCreditSelection;
+  isSubmitting: boolean;
+  onSubmit: () => void;
+}
+
+export const ReservationSummaryCard = React.memo(
+  function ReservationSummaryCard({
+    vehicle,
+    deliveryLocation,
+    restitutionLocation,
+    pickupDate,
+    pickupTime,
+    returnDate,
+    returnTime,
+    flightNumber,
+    snowChainsSelected,
+    childSeat1to4Count,
+    childSeat5to12Count,
+    extraKilometersCount,
+    isSCDWSelected,
+    onSCDWChange,
+    pricing,
+    appliedCoupon,
+    customerEmail,
+    onCouponAppliedChange,
+    appliedAffiliateDiscount,
+    walletCredit,
+    isSubmitting,
+    onSubmit,
+  }: ReservationSummaryCardProps) {
+    const t = useTranslations("reservationPage");
+    const tCoupon = useTranslations("common.coupon");
+    const tReferral = useTranslations("common.referral");
+    const tWallet = useTranslations("common.wallet");
+    const locale = useLocale();
+
+    const {
+      breakdown,
+      snowChainsPrice,
+      childSeat1to4Price,
+      childSeat5to12Price,
+      extraKilometersPrice,
+      totalAdditionalFeatures,
+    } = pricing;
+    const days = breakdown?.rentalDays ?? null;
+    const basePrice = breakdown?.basePrice ?? null;
+    // Advisory discount preview — the server recomputes the authoritative
+    // amount inside createReservation. One discount per booking: an explicit
+    // coupon beats the automatic affiliate discount (mirrors pickDiscount)
+    const affiliateDiscount = appliedCoupon ? null : appliedAffiliateDiscount;
+    const discountAmount = previewDiscountAmount(
+      appliedCoupon,
+      affiliateDiscount,
+    );
+    const totalPrice =
+      breakdown !== null
+        ? applyDiscountToTotal(breakdown.totalPrice, discountAmount)
+        : null;
+    // Credit is a payment, not a discount: the total stays where it is and
+    // only the amount due moves (mirrors the server's bookingAmountDue)
+    const creditApplied = walletCredit?.applied ?? 0;
+    const deliveryFee = breakdown?.deliveryFee ?? 0;
+    const returnFee = breakdown?.returnFee ?? 0;
+    const totalLocationFees = breakdown?.totalLocationFees ?? 0;
+    const warrantyAmount = breakdown?.warrantyAmount ?? 0;
+    const scdwPrice = breakdown?.scdwPrice ?? 0;
+
+    return (
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Send className="h-5 w-5" />
+            <span>{t("reservationSummary.title")}</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Summary Details */}
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-2">
+                <span className="font-medium text-muted-foreground">
+                  {t("reservationSummary.vehicle")}:
+                </span>
+                <span>
+                  {vehicle.make} {vehicle.model} ({vehicle.year})
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <span className="font-medium text-muted-foreground">
+                  {t("reservationSummary.pickup")}:
+                </span>
+                <span>
+                  {deliveryLocation || t("reservationSummary.notSelected")}
+                </span>
+              </div>
+
+              {pickupDate && pickupTime && (
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-muted-foreground">
+                    {t("reservationSummary.pickupDate")}:
+                  </span>
+                  <span>
+                    {pickupDate.toLocaleDateString(locale)} at {pickupTime}
+                  </span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-2">
+                <span className="font-medium text-muted-foreground">
+                  {t("reservationSummary.return")}:
+                </span>
+                <span>
+                  {restitutionLocation || t("reservationSummary.notSelected")}
+                </span>
+              </div>
+
+              {returnDate && returnTime && (
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-muted-foreground">
+                    {t("reservationSummary.returnDate")}:
+                  </span>
+                  <span>
+                    {returnDate.toLocaleDateString(locale)} at {returnTime}
+                  </span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-2">
+                <span className="font-medium text-muted-foreground">
+                  {t("reservationSummary.duration")}:
+                </span>
+                <span>
+                  {days
+                    ? t("reservationSummary.daysCount", { days })
+                    : t("reservationSummary.notCalculated")}
+                </span>
+              </div>
+
+              {days && (
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-muted-foreground">
+                    {t("reservationSummary.totalKilometers")}:
+                  </span>
+                  <span>
+                    {calculateIncludedKilometers(days) +
+                      extraKilometersCount * 50}{" "}
+                    km
+                  </span>
+                </div>
+              )}
+
+              {flightNumber && (
+                <div className="grid grid-cols-2 gap-2">
+                  <span className="font-medium text-muted-foreground">
+                    {t("reservationSummary.flight")}:
+                  </span>
+                  <span>{flightNumber}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Protection Toggle */}
+            <div className="border-t pt-4 space-y-4">
+              <div className="space-y-3">
+                <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                  {t("protectionOptions.title")}
+                </h4>
+                <div className="p-3 bg-muted/50 rounded-lg space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Label className="font-medium">
+                        {isSCDWSelected
+                          ? t("protectionOptions.scdwInsurance")
+                          : t("protectionOptions.standardWarranty")}
+                      </Label>
+                      <HoverCard>
+                        <HoverCardTrigger asChild>
+                          <Info className="h-4 w-4 text-muted-foreground hover:text-foreground cursor-help" />
+                        </HoverCardTrigger>
+                        <HoverCardContent className="w-80">
+                          <div className="space-y-2">
+                            <h4 className="text-sm font-semibold">
+                              {t("protectionOptions.title")}
+                            </h4>
+                            <div className="text-xs text-muted-foreground space-y-2">
+                              <div>
+                                <p className="font-medium">
+                                  {t("protectionOptions.warrantyDefault")}:
+                                </p>
+                                <p>
+                                  • {t("protectionOptions.refundableDeposit")}
+                                </p>
+                                <p>
+                                  • {t("protectionOptions.returnedEndRental")}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="font-medium">
+                                  {t("protectionOptions.scdwInsurance")}:
+                                </p>
+                                <p>
+                                  {t(
+                                    "protectionOptions.superCollisionDamageWaiver",
+                                  )}
+                                </p>
+                                <p>
+                                  {t(
+                                    "protectionOptions.nonRefundableButProvidesAdditionalProtection",
+                                  )}
+                                </p>
+                                <p>
+                                  {t("protectionOptions.noDepositRequired")}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </HoverCardContent>
+                      </HoverCard>
+                    </div>
+                    <p className="text-sm font-medium">
+                      {isSCDWSelected
+                        ? `${scdwPrice || 0} EUR `
+                        : `${warrantyAmount || 0} EUR `}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-center space-x-4">
+                    <Label
+                      className={`text-sm font-medium ${!isSCDWSelected ? "text-foreground" : "text-muted-foreground"}`}
+                    >
+                      {t("protectionOptions.standardWarranty")}
+                    </Label>
+                    <Switch
+                      id="protection-toggle"
+                      checked={isSCDWSelected}
+                      onCheckedChange={onSCDWChange}
+                    />
+                    <Label
+                      className={`text-sm font-medium ${isSCDWSelected ? "text-foreground" : "text-muted-foreground"}`}
+                    >
+                      {t("protectionOptions.scdw")}
+                    </Label>
+                  </div>
+
+                  <p className="text-xs text-center text-muted-foreground">
+                    {isSCDWSelected
+                      ? t("protectionOptions.nonRefundableInsurance")
+                      : t("protectionOptions.refundableIfNoDamages")}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Coupon code */}
+            <div className="border-t pt-4">
+              <CouponCodeInput
+                variant="embedded"
+                bookingType="rentals"
+                subtotal={breakdown?.totalPrice ?? null}
+                referralSubtotal={
+                  breakdown ? referralDiscountableAmount(breakdown) : undefined
+                }
+                email={customerEmail}
+                onAppliedChange={onCouponAppliedChange}
+              />
+            </div>
+
+            {walletCredit?.canRedeem && (
+              <div className="border-t pt-4 space-y-1">
+                <div className="flex items-center justify-between gap-3">
+                  <Label htmlFor="wallet-credit-toggle" className="text-sm">
+                    {tWallet("useCredit", { amount: walletCredit.balance })}
+                  </Label>
+                  <Switch
+                    id="wallet-credit-toggle"
+                    checked={walletCredit.selected}
+                    onCheckedChange={walletCredit.setSelected}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {tWallet("capNote", {
+                    percent: walletCredit.maxRedemptionPercent,
+                  })}
+                </p>
+              </div>
+            )}
+
+            {/* Pricing Summary */}
+            <div className="border-t pt-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>
+                  {t("reservationSummary.basePrice", { days: days || 0 })}:
+                </span>
+                <span>{basePrice || 0} EUR</span>
+              </div>
+
+              {deliveryFee > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>{t("reservationSummary.pickupLocationFee")}:</span>
+                  <span>{deliveryFee} EUR</span>
+                </div>
+              )}
+
+              {returnFee > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>{t("reservationSummary.returnLocationFee")}:</span>
+                  <span>{returnFee} EUR</span>
+                </div>
+              )}
+
+              {totalLocationFees > 0 && (
+                <div className="flex justify-between text-sm text-muted-foreground/60">
+                  <span>{t("reservationSummary.totalLocationFees")}:</span>
+                  <span>{totalLocationFees} EUR</span>
+                </div>
+              )}
+
+              {isSCDWSelected && scdwPrice > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>{t("protectionOptions.scdwInsurance")}:</span>
+                  <span>{scdwPrice} EUR</span>
+                </div>
+              )}
+
+              {snowChainsSelected && snowChainsPrice > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>{t("additionalFeatures.snowChains")}:</span>
+                  <span>{snowChainsPrice} EUR</span>
+                </div>
+              )}
+
+              {childSeat1to4Count > 0 && childSeat1to4Price > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>{t("additionalFeatures.childSeat1to4")}:</span>
+                  <span>{childSeat1to4Price} EUR</span>
+                </div>
+              )}
+
+              {childSeat5to12Count > 0 && childSeat5to12Price > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>{t("additionalFeatures.childSeat5to12")}:</span>
+                  <span>{childSeat5to12Price} EUR</span>
+                </div>
+              )}
+
+              {extraKilometersCount > 0 && (extraKilometersPrice || 0) > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span>{t("additionalFeatures.extraKilometers")}:</span>
+                  <span>{extraKilometersPrice || 0} EUR</span>
+                </div>
+              )}
+
+              {totalAdditionalFeatures > 0 && (
+                <div className="flex justify-between text-sm text-muted-foreground/60">
+                  <span>
+                    {t("reservationSummary.totalAdditionalFeatures")}:
+                  </span>
+                  <span>{totalAdditionalFeatures} EUR</span>
+                </div>
+              )}
+
+              {appliedCoupon && discountAmount > 0 && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>
+                    {tCoupon("discount")} ({appliedCoupon.code}):
+                  </span>
+                  <span>−{discountAmount} EUR</span>
+                </div>
+              )}
+
+              {affiliateDiscount && discountAmount > 0 && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>{tReferral("discount")}:</span>
+                  <span>−{discountAmount} EUR</span>
+                </div>
+              )}
+
+              <div className="border-t pt-2">
+                <div className="flex justify-between font-semibold">
+                  <span>{t("reservationSummary.totalPrice")}:</span>
+                  <span className="text-green-600">
+                    {totalPrice || 0} EUR
+                    {!isSCDWSelected && warrantyAmount > 0 && (
+                      <span className="text-sm font-normal text-muted-foreground ml-2">
+                        + {warrantyAmount} EUR{" "}
+                        {t("reservationSummary.warranty")}
+                      </span>
+                    )}
+                  </span>
+                </div>
+                {!isSCDWSelected && warrantyAmount > 0 && (
+                  <div className="text-right text-xs text-muted-foreground mt-1">
+                    {t("reservationSummary.warrantyRefundable")}
+                  </div>
+                )}
+                {creditApplied > 0 && (
+                  <div className="mt-2 space-y-1">
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>{tWallet("creditApplied")}:</span>
+                      <span>−{formatPrice(creditApplied)}</span>
+                    </div>
+                    <div className="flex justify-between font-semibold">
+                      <span>{tWallet("amountDue")}:</span>
+                      <span>
+                        {formatPrice(
+                          bookingAmountDue(totalPrice ?? 0, creditApplied),
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <Button
+              onClick={onSubmit}
+              size="lg"
+              className="w-full bg-[#055E3B] hover:bg-[#055E3B]/80 text-white font-bold py-4 text-lg rounded-xl h-14"
+              disabled={isSubmitting}
+            >
+              <Send className="mr-2 h-4 w-4" />
+              {isSubmitting
+                ? t("reservationSummary.processing")
+                : t("reservationSummary.sendReservationRequest")}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  },
+);

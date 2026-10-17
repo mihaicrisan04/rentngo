@@ -9,6 +9,7 @@ import {
 } from "@react-email/components";
 import { TransferPricingDetails } from "../types";
 import { getPaymentMethodLabel, formatCurrency } from "../utils";
+import { bookingAmountDue } from "../../../lib/pricing";
 
 interface TransferPricingSectionProps {
   pricingDetails: TransferPricingDetails;
@@ -19,7 +20,10 @@ interface TransferPricingSectionProps {
     heading?: string;
     distance?: string;
     roundTrip?: string;
+    discount?: string;
     totalAmount?: string;
+    walletCredit?: string;
+    amountDue?: string;
     paymentMethod?: string;
   };
 }
@@ -47,11 +51,30 @@ export const TransferPricingSection: React.FC<TransferPricingSectionProps> = ({
           <Text className="text-[16px] text-gray-800 m-0">
             {distanceKm} km
             {transferType === "round_trip" && (
-              <span className="text-gray-600 text-[14px]"> ({labels?.roundTrip ?? "Round Trip"})</span>
+              <span className="text-gray-600 text-[14px]">
+                {" "}
+                ({labels?.roundTrip ?? "Round Trip"})
+              </span>
             )}
           </Text>
         </Column>
       </Row>
+
+      {pricingDetails.promoCode &&
+        pricingDetails.discountAmount !== undefined && (
+          <Row className="mb-[8px]">
+            <Column className="w-2/3">
+              <Text className="text-[16px] text-green-600 m-0">
+                {labels?.discount ?? "Discount:"} {pricingDetails.promoCode}
+              </Text>
+            </Column>
+            <Column className="w-1/3 text-right">
+              <Text className="text-[16px] text-green-600 m-0">
+                −{formatCurrency(pricingDetails.discountAmount)}
+              </Text>
+            </Column>
+          </Row>
+        )}
 
       <Hr className="border-gray-300 my-[12px]" />
 
@@ -68,6 +91,42 @@ export const TransferPricingSection: React.FC<TransferPricingSectionProps> = ({
         </Column>
       </Row>
 
+      {/* Wallet credit pays part of the total rather than discounting it, so
+          it lands under the total and leaves an explicit amount due */}
+      {(pricingDetails.walletCreditApplied || 0) > 0 && (
+        <>
+          <Row className="mb-[8px]">
+            <Column className="w-2/3">
+              <Text className="text-[16px] text-green-600 m-0">
+                {labels?.walletCredit ?? "Wallet credit:"}
+              </Text>
+            </Column>
+            <Column className="w-1/3 text-right">
+              <Text className="text-[16px] text-green-600 m-0">
+                −{formatCurrency(pricingDetails.walletCreditApplied || 0)}
+              </Text>
+            </Column>
+          </Row>
+          <Row className="mb-[12px]">
+            <Column className="w-2/3">
+              <Text className="text-[18px] font-bold text-gray-800 m-0">
+                {labels?.amountDue ?? "Amount Due:"}
+              </Text>
+            </Column>
+            <Column className="w-1/3 text-right">
+              <Text className="text-[18px] font-bold text-gray-800 m-0">
+                {formatCurrency(
+                  bookingAmountDue(
+                    pricingDetails.totalPrice,
+                    pricingDetails.walletCreditApplied,
+                  ),
+                )}
+              </Text>
+            </Column>
+          </Row>
+        </>
+      )}
+
       <Row>
         <Column>
           <Text className="text-[14px] font-semibold text-gray-600 m-0">
@@ -81,4 +140,3 @@ export const TransferPricingSection: React.FC<TransferPricingSectionProps> = ({
     </Section>
   );
 };
-

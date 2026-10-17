@@ -1,5 +1,19 @@
 import { Id, Doc } from "../convex/_generated/dataModel";
 
+// Tier pricing logic lives in the pure pricing engine (single source of
+// truth, shared with the Convex server recompute); re-exported here so
+// existing component imports keep working.
+import type { PricingTier } from "@/lib/pricing";
+
+export {
+  getBasePriceTier,
+  getBasePricePerDay,
+  getPriceForDuration,
+  getTotalPrice,
+  getPriceRange,
+} from "@/lib/pricing";
+export type { PricingTier };
+
 // Use Convex generated vehicle type as the primary vehicle interface
 export type Vehicle = Doc<"vehicles">;
 
@@ -12,13 +26,6 @@ export type TransmissionType = Vehicle["transmission"];
 export type FuelType = Vehicle["fuelType"];
 // export type VehicleStatus = "available" | "rented" | "maintenance";
 export type VehicleStatus = Vehicle["status"];
-
-// Pricing tier interface (matches schema)
-export interface PricingTier {
-  minDays: number;
-  maxDays: number;
-  pricePerDay: number;
-}
 
 // Vehicle filters interface
 export interface VehicleFilters {
@@ -67,84 +74,3 @@ export interface VehicleImageProps {
   sizes?: string;
   priority?: boolean;
 }
-
-/**
- * Get the base price tier (lowest minDays + highest pricePerDay)
- * This represents the "standard" or "base" price for the vehicle
- */
-export function getBasePriceTier(vehicle: Vehicle): PricingTier | null {
-  if (!vehicle.pricingTiers || vehicle.pricingTiers.length === 0) {
-    return null;
-  }
-  
-  // Sort by minDays (ascending), then by pricePerDay (descending)
-  // This gives us the tier with lowest day requirement and highest price
-  const sortedTiers = [...vehicle.pricingTiers].sort((a, b) => {
-    if (a.minDays !== b.minDays) {
-      return a.minDays - b.minDays; // Lower minDays first
-    }
-    return b.pricePerDay - a.pricePerDay; // Higher pricePerDay first
-  });
-  
-  return sortedTiers[0];
-}
-
-/**
- * Get the base price per day for a vehicle
- * Uses the pricing tier with lowest minDays and highest pricePerDay
- */
-export function getBasePricePerDay(vehicle: Vehicle): number {
-  const baseTier = getBasePriceTier(vehicle);
-  if (baseTier) {
-    return baseTier.pricePerDay;
-  }
-
-  throw new Error(`Vehicle ${vehicle._id} has no pricing tiers configured`);
-}
-
-// Helper function to get price for a specific rental duration
-export function getPriceForDuration(vehicle: Vehicle, days: number): number {
-  // If vehicle has pricing tiers, use them
-  if (vehicle.pricingTiers && vehicle.pricingTiers.length > 0) {
-    // Find the appropriate tier for the rental duration
-    const applicableTier = vehicle.pricingTiers.find(
-      tier => days >= tier.minDays && days <= tier.maxDays
-    );
-    
-    if (applicableTier) {
-      return applicableTier.pricePerDay;
-    }
-    
-    // If no exact tier found, use the tier with the highest maxDays
-    const fallbackTier = vehicle.pricingTiers.reduce((prev, current) => 
-      current.maxDays > prev.maxDays ? current : prev
-    );
-    return fallbackTier.pricePerDay;
-  }
-  
-  // Legacy fallback - use the base price per day
-  return getBasePricePerDay(vehicle);
-}
-
-// Helper function to get total price for a rental duration
-export function getTotalPrice(vehicle: Vehicle, days: number): number {
-  return getPriceForDuration(vehicle, days) * days;
-}
-
-// Helper function to get the price range for a vehicle
-export function getPriceRange(vehicle: Vehicle): { min: number; max: number } {
-  if (vehicle.pricingTiers && vehicle.pricingTiers.length > 0) {
-    const prices = vehicle.pricingTiers.map(tier => tier.pricePerDay);
-    return {
-      min: Math.min(...prices),
-      max: Math.max(...prices)
-    };
-  }
-  
-  // Legacy fallback - use base price per day
-  const basePrice = getBasePricePerDay(vehicle);
-  return {
-    min: basePrice,
-    max: basePrice
-  };
-} 

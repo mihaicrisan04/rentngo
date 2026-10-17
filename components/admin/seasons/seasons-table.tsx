@@ -6,7 +6,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/shared/status-badge";
 import {
   Table,
   TableBody,
@@ -15,7 +15,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Edit, Trash2, MoreHorizontal, Play, Square } from "lucide-react";
+import {
+  Edit,
+  Trash2,
+  MoreHorizontal,
+  Play,
+  Square,
+  CalendarRange,
+} from "lucide-react";
+import { EmptyState } from "@/components/admin/shared/empty-state";
+import { toastWithUndo } from "@/components/admin/shared/undo-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,13 +34,22 @@ import {
 import { toast } from "sonner";
 
 const EditSeasonDialog = dynamic(
-  () => import("@/components/admin/seasons/edit-season-dialog").then(m => m.EditSeasonDialog),
-  { ssr: false }
+  () =>
+    import("@/components/admin/seasons/edit-season-dialog").then(
+      (m) => m.EditSeasonDialog,
+    ),
+  { ssr: false },
 );
 
-export function SeasonsTable() {
-  const [editingSeason, setEditingSeason] = useState<Id<"seasons"> | null>(null);
-  
+interface SeasonsTableProps {
+  onCreate?: () => void;
+}
+
+export function SeasonsTable({ onCreate }: SeasonsTableProps) {
+  const [editingSeason, setEditingSeason] = useState<Id<"seasons"> | null>(
+    null,
+  );
+
   const seasons = useQuery(api.seasons.getAll);
   const currentSeason = useQuery(api.seasons.getCurrent);
   const deleteSeason = useMutation(api.seasons.deleteSeason);
@@ -43,7 +61,11 @@ export function SeasonsTable() {
   };
 
   const handleDelete = async (seasonId: Id<"seasons">, seasonName: string) => {
-    if (confirm(`Are you sure you want to delete "${seasonName}"? This action cannot be undone.`)) {
+    if (
+      confirm(
+        `Are you sure you want to delete "${seasonName}"? This action cannot be undone.`,
+      )
+    ) {
       try {
         await deleteSeason({ id: seasonId });
         toast.success("Season deleted successfully", {
@@ -60,12 +82,20 @@ export function SeasonsTable() {
     }
   };
 
-  const handleSetCurrent = async (seasonId: Id<"seasons">, seasonName: string) => {
+  const handleSetCurrent = async (
+    seasonId: Id<"seasons">,
+    seasonName: string,
+  ) => {
+    const previousSeasonId = currentSeason?.seasonId;
     try {
       await setCurrent({ seasonId, setBy: "Admin" });
-      toast.success("Current season updated", {
+      toastWithUndo({
+        message: "Current season updated",
         description: `${seasonName} is now the active season.`,
-        position: "bottom-right",
+        onUndo: () =>
+          previousSeasonId
+            ? setCurrent({ seasonId: previousSeasonId, setBy: "Admin" })
+            : clearCurrent(),
       });
     } catch (error: any) {
       toast.error("Failed to set current season", {
@@ -77,11 +107,16 @@ export function SeasonsTable() {
   };
 
   const handleClearCurrent = async () => {
+    const previousSeasonId = currentSeason?.seasonId;
     try {
       await clearCurrent();
-      toast.success("Season cleared", {
+      toastWithUndo({
+        message: "Season cleared",
         description: "Reverted to base pricing (no season active).",
-        position: "bottom-right",
+        onUndo: () =>
+          previousSeasonId
+            ? setCurrent({ seasonId: previousSeasonId, setBy: "Admin" })
+            : Promise.resolve(),
       });
     } catch (error: any) {
       toast.error("Failed to clear current season", {
@@ -92,40 +127,24 @@ export function SeasonsTable() {
     }
   };
 
-  const getStatusBadge = (season: any) => {
-    const isCurrentSeason = currentSeason?.seasonId === season._id;
-    
-    if (isCurrentSeason) {
-      return (
-        <Badge className="bg-green-100 text-green-800">
-          Current Season
-        </Badge>
-      );
-    } else if (season.isActive) {
-      return (
-        <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-          Active
-        </Badge>
-      );
-    } else {
-      return (
-        <Badge variant="secondary" className="bg-gray-100 text-gray-800">
-          Inactive
-        </Badge>
-      );
-    }
+  const seasonStatus = (season: any) => {
+    if (currentSeason?.seasonId === season._id) return "currentSeason";
+    return season.isActive ? "active" : "inactive";
   };
 
   const formatPeriods = (periods: any[]) => {
     if (!periods || periods.length === 0) return "No periods defined";
-    
+
     return periods.map((period, index) => (
       <div key={index} className="text-sm">
         <div className="font-medium">
-          {new Date(period.startDate).toLocaleDateString('en-GB')} - {new Date(period.endDate).toLocaleDateString('en-GB')}
+          {new Date(period.startDate).toLocaleDateString("en-GB")} -{" "}
+          {new Date(period.endDate).toLocaleDateString("en-GB")}
         </div>
         {period.description && (
-          <div className="text-xs text-muted-foreground">{period.description}</div>
+          <div className="text-xs text-muted-foreground">
+            {period.description}
+          </div>
         )}
       </div>
     ));
@@ -138,8 +157,8 @@ export function SeasonsTable() {
   return (
     <div className="space-y-4">
       <div className="rounded-md border">
-        <Table>
-          <TableHeader>
+        <Table containerClassName="overflow-x-visible">
+          <TableHeader sticky>
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Description</TableHead>
@@ -152,8 +171,13 @@ export function SeasonsTable() {
           <TableBody>
             {seasons.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  No seasons found. Create your first season to get started.
+                <TableCell colSpan={6}>
+                  <EmptyState
+                    icon={CalendarRange}
+                    message="No seasons yet"
+                    actionLabel={onCreate ? "Create season" : undefined}
+                    onAction={onCreate}
+                  />
                 </TableCell>
               </TableRow>
             ) : (
@@ -168,11 +192,13 @@ export function SeasonsTable() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">
-                      {season.multiplier}x
-                    </div>
+                    <div className="font-medium">{season.multiplier}x</div>
                     <div className="text-xs text-muted-foreground">
-                      {season.multiplier > 1 ? "Price increase" : season.multiplier < 1 ? "Price decrease" : "Base price"}
+                      {season.multiplier > 1
+                        ? "Price increase"
+                        : season.multiplier < 1
+                          ? "Price decrease"
+                          : "Base price"}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -180,7 +206,9 @@ export function SeasonsTable() {
                       {formatPeriods(season.periods)}
                     </div>
                   </TableCell>
-                  <TableCell>{getStatusBadge(season)}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={seasonStatus(season)} />
+                  </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -206,7 +234,9 @@ export function SeasonsTable() {
                           </DropdownMenuItem>
                         ) : season.isActive ? (
                           <DropdownMenuItem
-                            onClick={() => handleSetCurrent(season._id, season.name)}
+                            onClick={() =>
+                              handleSetCurrent(season._id, season.name)
+                            }
                             className="cursor-pointer text-green-600 hover:text-green-700"
                           >
                             <Play className="h-4 w-4 mr-2" />
@@ -239,4 +269,4 @@ export function SeasonsTable() {
       )}
     </div>
   );
-} 
+}

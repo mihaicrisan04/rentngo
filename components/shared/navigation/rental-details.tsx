@@ -1,12 +1,13 @@
 "use client";
 
 import * as React from "react";
+import { useToday } from "@/hooks/use-today";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "lucide-react";
 import { LocationPicker } from "@/components/shared/search-filters/location-picker";
 import { DateTimePicker } from "@/components/shared/search-filters/date-time-picker";
 import { SearchData } from "@/lib/search-storage";
-import { useTranslations } from 'next-intl';
+import { useTranslations } from "next-intl";
 
 interface RentalDetailsProps {
   deliveryLocation?: string;
@@ -27,63 +28,27 @@ export function RentalDetails({
   returnTime,
   onUpdateDetails,
 }: RentalDetailsProps) {
-  const t = useTranslations('rentalDetails');
-  
-  // Local state for the components
-  const [localDeliveryLocation, setLocalDeliveryLocation] = React.useState(deliveryLocation || "");
-  const [localPickupDate, setLocalPickupDate] = React.useState<Date | undefined>(pickupDate);
-  const [localPickupTime, setLocalPickupTime] = React.useState(pickupTime || "");
-  const [localRestitutionLocation, setLocalRestitutionLocation] = React.useState(restitutionLocation || "");
-  const [localReturnDate, setLocalReturnDate] = React.useState<Date | undefined>(returnDate);
-  const [localReturnTime, setLocalReturnTime] = React.useState(returnTime || "");
+  const t = useTranslations("rentalDetails");
 
   // Calendar open states for sequential flow
   const [pickupCalendarOpen, setPickupCalendarOpen] = React.useState(false);
   const [returnCalendarOpen, setReturnCalendarOpen] = React.useState(false);
 
-  // Sync local state with props when they change (after localStorage load)
-  React.useEffect(() => {
-    setLocalDeliveryLocation(deliveryLocation || "");
-  }, [deliveryLocation]);
+  const today = useToday();
 
-  React.useEffect(() => {
-    setLocalPickupDate(pickupDate);
-  }, [pickupDate]);
-
-  React.useEffect(() => {
-    setLocalPickupTime(pickupTime || "");
-  }, [pickupTime]);
-
-  React.useEffect(() => {
-    setLocalRestitutionLocation(restitutionLocation || "");
-  }, [restitutionLocation]);
-
-  React.useEffect(() => {
-    setLocalReturnDate(returnDate);
-  }, [returnDate]);
-
-  React.useEffect(() => {
-    setLocalReturnTime(returnTime || "");
-  }, [returnTime]);
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  // Update parent when local state changes
-  const handleUpdate = React.useCallback((field: string, value: string | Date | undefined) => {
-    if (onUpdateDetails) {
-      const updates: Record<string, string | Date | undefined> = {};
-      updates[field] = value;
-      onUpdateDetails(updates);
-    }
-  }, [onUpdateDetails]);
+  const handleUpdate = React.useCallback(
+    (updates: Partial<SearchData>) => {
+      onUpdateDetails?.(updates);
+    },
+    [onUpdateDetails],
+  );
 
   return (
-    <Card className="mb-6">
+    <Card>
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
           <Calendar className="h-5 w-5" />
-          <span>{t('title')}</span>
+          <span>{t("title")}</span>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -91,38 +56,37 @@ export function RentalDetails({
           {/* Pickup Details */}
           <div className="space-y-4">
             <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-              {t('pickupDetails')}
+              {t("pickupDetails")}
             </h4>
             <div className="space-y-4">
               <LocationPicker
                 id="pickup-location"
-                label={t('pickupLocation')}
-                value={localDeliveryLocation}
-                onValueChange={(value) => {
-                  setLocalDeliveryLocation(value);
-                  handleUpdate('deliveryLocation', value);
-                }}
-                placeholder={t('selectPickupLocation')}
+                label={t("pickupLocation")}
+                value={deliveryLocation || ""}
+                onValueChange={(value) =>
+                  handleUpdate({ deliveryLocation: value })
+                }
+                placeholder={t("selectPickupLocation")}
                 disabled={false}
               />
               <DateTimePicker
                 id="pickup-datetime"
-                label={t('pickupDateTime')}
-                dateState={localPickupDate}
+                label={t("pickupDateTime")}
+                dateState={pickupDate}
                 setDateState={(date) => {
-                  setLocalPickupDate(date);
-                  handleUpdate('pickupDate', date);
                   // Auto-adjust return date if needed
-                  if (date && localReturnDate && date.getTime() > localReturnDate.getTime()) {
-                    setLocalReturnDate(date);
-                    handleUpdate('returnDate', date);
+                  if (
+                    date &&
+                    returnDate &&
+                    date.getTime() > returnDate.getTime()
+                  ) {
+                    handleUpdate({ pickupDate: date, returnDate: date });
+                  } else {
+                    handleUpdate({ pickupDate: date });
                   }
                 }}
-                timeState={localPickupTime}
-                setTimeState={(time) => {
-                  setLocalPickupTime(time);
-                  handleUpdate('pickupTime', time);
-                }}
+                timeState={pickupTime || ""}
+                setTimeState={(time) => handleUpdate({ pickupTime: time })}
                 minDate={today}
                 isLoading={false}
                 calendarOpen={pickupCalendarOpen}
@@ -137,47 +101,40 @@ export function RentalDetails({
           {/* Return Details */}
           <div className="space-y-4">
             <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-              {t('returnDetails')}
+              {t("returnDetails")}
             </h4>
             <div className="space-y-4">
               <LocationPicker
                 id="return-location"
-                label={t('returnLocation')}
-                value={localRestitutionLocation}
-                onValueChange={(value) => {
-                  setLocalRestitutionLocation(value);
-                  handleUpdate('restitutionLocation', value);
-                }}
-                placeholder={t('selectReturnLocation')}
+                label={t("returnLocation")}
+                value={restitutionLocation || ""}
+                onValueChange={(value) =>
+                  handleUpdate({ restitutionLocation: value })
+                }
+                placeholder={t("selectReturnLocation")}
                 disabled={false}
               />
               <DateTimePicker
                 id="return-datetime"
-                label={t('returnDateTime')}
-                dateState={localReturnDate}
+                label={t("returnDateTime")}
+                dateState={returnDate}
                 setDateState={(date) => {
-                  if (date) {
-                    if (localPickupDate && date.getTime() < localPickupDate.getTime()) {
-                      setLocalReturnDate(localPickupDate);
-                      handleUpdate('returnDate', localPickupDate);
-                    } else {
-                      setLocalReturnDate(date);
-                      handleUpdate('returnDate', date);
-                    }
+                  if (
+                    date &&
+                    pickupDate &&
+                    date.getTime() < pickupDate.getTime()
+                  ) {
+                    handleUpdate({ returnDate: pickupDate });
                   } else {
-                    setLocalReturnDate(undefined);
-                    handleUpdate('returnDate', undefined);
+                    handleUpdate({ returnDate: date });
                   }
                 }}
-                timeState={localReturnTime}
-                setTimeState={(time) => {
-                  setLocalReturnTime(time);
-                  handleUpdate('returnTime', time);
-                }}
-                minDate={localPickupDate || today}
-                isLoading={!localPickupDate}
-                pickupDate={localPickupDate}
-                pickupTime={localPickupTime}
+                timeState={returnTime || ""}
+                setTimeState={(time) => handleUpdate({ returnTime: time })}
+                minDate={pickupDate || today}
+                isLoading={!pickupDate}
+                pickupDate={pickupDate}
+                pickupTime={pickupTime || ""}
                 calendarOpen={returnCalendarOpen}
                 onCalendarOpenChange={setReturnCalendarOpen}
               />
@@ -187,4 +144,4 @@ export function RentalDetails({
       </CardContent>
     </Card>
   );
-} 
+}

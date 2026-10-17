@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { BlogContent } from "./blog-content";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,13 @@ export function BlogPreview({
   readingTime,
   tags,
 }: BlogPreviewProps) {
+  // Mock publish date for the editor preview; read the clock only after
+  // hydration so the prerendered shell stays time-independent.
+  const [previewDate, setPreviewDate] = useState("");
+  useEffect(() => {
+    setPreviewDate(new Date().toLocaleDateString());
+  }, []);
+
   return (
     <div className="space-y-6">
       <Card className="p-8">
@@ -39,7 +47,7 @@ export function BlogPreview({
 
               <div className="flex items-center gap-1.5">
                 <Calendar className="h-4 w-4" />
-                <span>{new Date().toLocaleDateString()}</span>
+                <span>{previewDate}</span>
               </div>
 
               {readingTime && (

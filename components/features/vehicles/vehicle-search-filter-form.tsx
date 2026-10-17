@@ -1,177 +1,62 @@
 "use client";
 
 import * as React from "react";
+import { useToday } from "@/hooks/use-today";
 import { Search } from "lucide-react";
-import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { LocationPicker } from "@/components/shared/search-filters/location-picker";
 import { DateTimePicker } from "@/components/shared/search-filters/date-time-picker";
-import { searchStorage, SearchData } from "@/lib/search-storage";
-
-
+import { SearchData } from "@/lib/search-storage";
+import { carsPath } from "@/lib/localized-routes";
 
 interface VehicleSearchFilterFormProps {
-  initialDeliveryLocation?: string;
-  initialRestitutionLocation?: string;
-  initialPickupDate?: Date;
-  initialReturnDate?: Date;
-  searchState?: SearchData & { isHydrated: boolean };
-  updateSearchField?: <K extends keyof SearchData>(field: K, value: SearchData[K]) => void;
+  searchState: SearchData & { isHydrated: boolean };
+  updateSearchField: <K extends keyof SearchData>(
+    field: K,
+    value: SearchData[K],
+  ) => void;
 }
 
 export function VehicleSearchFilterForm({
-  initialDeliveryLocation,
-  initialRestitutionLocation,
-  initialPickupDate,
-  initialReturnDate,
   searchState,
   updateSearchField,
 }: VehicleSearchFilterFormProps) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  // Use provided search state or fallback to internal state
-  const [internalDeliveryLocation, setInternalDeliveryLocation] = React.useState<string>("");
-  const [internalRestitutionLocation, setInternalRestitutionLocation] = React.useState<string>("");
-  const [internalPickupDateState, setInternalPickupDateState] = React.useState<Date | undefined>(undefined);
-  const [internalPickupTime, setInternalPickupTime] = React.useState<string | null>(null);
-  const [internalReturnDateState, setInternalReturnDateState] = React.useState<Date | undefined>(undefined);
-  const [internalReturnTime, setInternalReturnTime] = React.useState<string | null>(null);
+  const today = useToday();
 
   const [isLoading, setIsLoading] = React.useState(false);
-  const [isHydrated, setIsHydrated] = React.useState(false);
-  
+
   // Control which picker is open for sequential flow
   const [pickupCalendarOpen, setPickupCalendarOpen] = React.useState(false);
   const [returnCalendarOpen, setReturnCalendarOpen] = React.useState(false);
-  
+
   const router = useRouter();
-  const t = useTranslations('search');
+  const t = useTranslations("search");
+  const locale = useLocale();
 
-  // Determine which state to use
-  const deliveryLocation = searchState?.deliveryLocation ?? internalDeliveryLocation;
-  const restitutionLocation = searchState?.restitutionLocation ?? internalRestitutionLocation;
-  const pickupDateState = searchState?.pickupDate ?? internalPickupDateState;
-  const pickupTime = searchState?.pickupTime ?? internalPickupTime;
-  const returnDateState = searchState?.returnDate ?? internalReturnDateState;
-  const returnTime = searchState?.returnTime ?? internalReturnTime;
+  const deliveryLocation = searchState.deliveryLocation ?? "";
+  const restitutionLocation = searchState.restitutionLocation ?? "";
+  const pickupDateState = searchState.pickupDate;
+  const pickupTime = searchState.pickupTime ?? null;
+  const returnDateState = searchState.returnDate;
+  const returnTime = searchState.returnTime ?? null;
 
-  // Helper functions to update state
-  const setDeliveryLocation = (value: string) => {
-    if (updateSearchField) {
-      updateSearchField('deliveryLocation', value);
-    } else {
-      setInternalDeliveryLocation(value);
-    }
-  };
-
-  const setRestitutionLocation = (value: string) => {
-    if (updateSearchField) {
-      updateSearchField('restitutionLocation', value);
-    } else {
-      setInternalRestitutionLocation(value);
-    }
-  };
-
-  const setPickupDateState = (value: Date | undefined) => {
-    if (updateSearchField) {
-      updateSearchField('pickupDate', value);
-    } else {
-      setInternalPickupDateState(value);
-    }
-  };
-
-  const setPickupTime = (value: string | null) => {
-    if (updateSearchField) {
-      updateSearchField('pickupTime', value);
-    } else {
-      setInternalPickupTime(value);
-    }
-  };
-
-  const setReturnDateState = (value: Date | undefined) => {
-    if (updateSearchField) {
-      updateSearchField('returnDate', value);
-    } else {
-      setInternalReturnDateState(value);
-    }
-  };
-
-  const setReturnTime = (value: string | null) => {
-    if (updateSearchField) {
-      updateSearchField('returnTime', value);
-    } else {
-      setInternalReturnTime(value);
-    }
-  };
-
-  // Load data from localStorage after hydration to prevent SSR mismatch (only when using internal state)
-  React.useEffect(() => {
-    if (searchState && updateSearchField) {
-      // If using external state, don't load from localStorage
-      setIsHydrated(true);
-      return;
-    }
-
-    const storedData = searchStorage.load();
-    
-    // Only update state if there's stored data, otherwise leave empty for user selection
-    if (storedData.deliveryLocation) {
-      setInternalDeliveryLocation(storedData.deliveryLocation);
-    } else if (initialDeliveryLocation) {
-      setInternalDeliveryLocation(initialDeliveryLocation);
-    }
-    
-    if (storedData.restitutionLocation) {
-      setInternalRestitutionLocation(storedData.restitutionLocation);
-    } else if (initialRestitutionLocation) {
-      setInternalRestitutionLocation(initialRestitutionLocation);
-    }
-    
-    if (storedData.pickupDate) {
-      setInternalPickupDateState(storedData.pickupDate);
-    } else if (initialPickupDate) {
-      setInternalPickupDateState(initialPickupDate);
-    }
-    
-    if (storedData.returnDate) {
-      setInternalReturnDateState(storedData.returnDate);
-    } else if (initialReturnDate) {
-      setInternalReturnDateState(initialReturnDate);
-    }
-    
-    if (storedData.pickupTime) {
-      setInternalPickupTime(storedData.pickupTime);
-    }
-    
-    if (storedData.returnTime) {
-      setInternalReturnTime(storedData.returnTime);
-    }
-
-    setIsHydrated(true);
-  }, [initialDeliveryLocation, initialRestitutionLocation, initialPickupDate, initialReturnDate, searchState, updateSearchField]);
-
-  // Save to localStorage when state changes (only after hydration and when using internal state)
-  React.useEffect(() => {
-    if (!isHydrated || (searchState && updateSearchField)) return;
-    
-    searchStorage.save({
-      deliveryLocation: internalDeliveryLocation || undefined,
-      pickupDate: internalPickupDateState,
-      pickupTime: internalPickupTime,
-      restitutionLocation: internalRestitutionLocation || undefined,
-      returnDate: internalReturnDateState,
-      returnTime: internalReturnTime,
-    });
-  }, [internalDeliveryLocation, internalPickupDateState, internalPickupTime, internalRestitutionLocation, internalReturnDateState, internalReturnTime, isHydrated, searchState, updateSearchField]);
+  const setDeliveryLocation = (value: string) =>
+    updateSearchField("deliveryLocation", value);
+  const setRestitutionLocation = (value: string) =>
+    updateSearchField("restitutionLocation", value);
+  const setPickupDateState = (value: Date | undefined) =>
+    updateSearchField("pickupDate", value);
+  const setPickupTime = (value: string | null) =>
+    updateSearchField("pickupTime", value);
+  const setReturnDateState = (value: Date | undefined) =>
+    updateSearchField("returnDate", value);
+  const setReturnTime = (value: string | null) =>
+    updateSearchField("returnTime", value);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -180,7 +65,7 @@ export function VehicleSearchFilterForm({
     // Validate dates if both are provided
     if (pickupDateState && returnDateState) {
       if (returnDateState < pickupDateState) {
-        alert(t('returnDateAfterPickup'));
+        alert(t("returnDateAfterPickup"));
         setIsLoading(false);
         return;
       }
@@ -188,7 +73,7 @@ export function VehicleSearchFilterForm({
     }
 
     // Navigate to cars page regardless of completeness - the cars page will handle partial data
-    router.push("/cars");
+    router.push(carsPath(locale));
 
     setTimeout(() => {
       setIsLoading(false);
@@ -204,22 +89,24 @@ export function VehicleSearchFilterForm({
             <div className="flex flex-col gap-4 w-full lg:w-1/2">
               <LocationPicker
                 id="deliveryLocation"
-                label={t('pickupLocation')}
+                label={t("pickupLocation")}
                 value={deliveryLocation}
                 onValueChange={setDeliveryLocation}
-                placeholder={t('selectPickupLocation')}
+                placeholder={t("selectPickupLocation")}
                 disabled={isLoading}
                 contentAlign="start"
               />
               <DateTimePicker
                 id="pickupDate"
-                label={t('pickupDateTime')}
+                label={t("pickupDateTime")}
                 dateState={pickupDateState}
                 setDateState={setPickupDateState}
                 timeState={pickupTime}
                 setTimeState={setPickupTime}
                 minDate={today}
-                disabledDateRanges={(date: Date) => date < today}
+                disabledDateRanges={(date: Date) =>
+                  today ? date < today : false
+                }
                 popoverAlign="start"
                 contentAlign="start"
                 isLoading={isLoading}
@@ -248,22 +135,25 @@ export function VehicleSearchFilterForm({
             <div className="flex flex-col gap-4 w-full lg:w-1/2">
               <LocationPicker
                 id="restitutionLocation"
-                label={t('returnLocation')}
+                label={t("returnLocation")}
                 value={restitutionLocation}
                 onValueChange={setRestitutionLocation}
-                placeholder={t('selectReturnLocation')}
+                placeholder={t("selectReturnLocation")}
                 disabled={isLoading}
                 contentAlign="start"
               />
               <DateTimePicker
                 id="returnDate"
-                label={t('returnDateTime')}
+                label={t("returnDateTime")}
                 dateState={returnDateState}
                 setDateState={setReturnDateState}
                 timeState={returnTime}
                 setTimeState={setReturnTime}
                 minDate={pickupDateState || today}
-                disabledDateRanges={(date: Date) => date < (pickupDateState || today)}
+                disabledDateRanges={(date: Date) => {
+                  const min = pickupDateState || today;
+                  return min ? date < min : false;
+                }}
                 popoverAlign="start"
                 contentAlign="start"
                 isLoading={isLoading}
@@ -276,9 +166,14 @@ export function VehicleSearchFilterForm({
           </div>
         </CardContent>
         <CardFooter className="flex justify-center pt-4 lg:pt-8 sm:pt-6 lg:p-6 md:pt-8">
-          <Button type="submit" size="lg" className="w-full lg:w-auto lg:px-12 text-base py-3" disabled={isLoading}>
+          <Button
+            type="submit"
+            size="lg"
+            className="w-full lg:w-auto lg:px-12 text-base py-3"
+            disabled={isLoading}
+          >
             <Search className="mr-2 h-5 w-5" />
-            {isLoading ? t('searchingCars') : t('searchCars')}
+            {isLoading ? t("searchingCars") : t("searchCars")}
           </Button>
         </CardFooter>
       </form>
@@ -286,4 +181,4 @@ export function VehicleSearchFilterForm({
   );
 }
 
-export default VehicleSearchFilterForm; 
+export default VehicleSearchFilterForm;

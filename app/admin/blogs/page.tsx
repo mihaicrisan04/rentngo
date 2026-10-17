@@ -8,28 +8,29 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { BlogTable } from "@/components/admin/blog/blog-table";
 import { BlogAdminListItem } from "@/types/blog";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 const CreateBlogDialog = dynamic(
-  () => import("@/components/admin/blog/create-blog-dialog").then(m => m.CreateBlogDialog),
-  { ssr: false }
+  () =>
+    import("@/components/admin/blog/create-blog-dialog").then(
+      (m) => m.CreateBlogDialog,
+    ),
+  { ssr: false },
 );
 
 const EditBlogDialog = dynamic(
-  () => import("@/components/admin/blog/edit-blog-dialog").then(m => m.EditBlogDialog),
-  { ssr: false }
+  () =>
+    import("@/components/admin/blog/edit-blog-dialog").then(
+      (m) => m.EditBlogDialog,
+    ),
+  { ssr: false },
 );
 
 export default function AdminBlogsPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedBlog, setSelectedBlog] = useState<BlogAdminListItem | null>(null);
+  const [selectedBlog, setSelectedBlog] = useState<BlogAdminListItem | null>(
+    null,
+  );
 
   const blogs = useQuery(api.blogs.getAllAdmin);
 
@@ -44,32 +45,33 @@ export default function AdminBlogsPage() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-7xl">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-2xl">Blog Management</CardTitle>
-              <CardDescription>Create and manage blog posts</CardDescription>
-            </div>
-            <Button onClick={() => setCreateDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Blog Post
-            </Button>
+    <div className="flex h-full min-h-0 flex-1 flex-col gap-6">
+      <div className="flex shrink-0 items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Blog Management</h1>
+          <p className="text-muted-foreground">Create and manage blog posts</p>
+        </div>
+        <Button onClick={() => setCreateDialogOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Create Blog Post
+        </Button>
+      </div>
+
+      <div className="flex min-h-[24rem] flex-1 flex-col">
+        {!blogs ? (
+          <div className="flex flex-1 items-center justify-center rounded-md border">
+            <div className="text-muted-foreground">Loading blogs...</div>
           </div>
-        </CardHeader>
-        <CardContent>
-          {!blogs ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="text-muted-foreground">Loading blogs...</div>
-              </div>
-            </div>
-          ) : (
-            <BlogTable blogs={blogs} onEdit={handleEdit} locale="en" />
-          )}
-        </CardContent>
-      </Card>
+        ) : (
+          <BlogTable
+            blogs={blogs}
+            onEdit={handleEdit}
+            locale="en"
+            onCreate={() => setCreateDialogOpen(true)}
+            fullHeight
+          />
+        )}
+      </div>
 
       <CreateBlogDialog
         open={createDialogOpen}

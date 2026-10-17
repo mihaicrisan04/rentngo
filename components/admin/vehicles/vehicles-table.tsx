@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useNumberQueryParam } from "@/hooks/use-query-param";
 import dynamic from "next/dynamic";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
@@ -8,7 +9,9 @@ import { Id } from "@/convex/_generated/dataModel";
 import { Vehicle } from "@/types/vehicle";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/shared/status-badge";
+import { cn } from "@/lib/utils";
+import { getTableLayout } from "@/components/admin/shared/table-layout";
 import {
   Table,
   TableBody,
@@ -17,8 +20,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { Edit, Trash2, MoreHorizontal } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { Edit, Trash2, MoreHorizontal, Car } from "lucide-react";
+import { EmptyState } from "@/components/admin/shared/empty-state";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,19 +39,35 @@ import {
 import { toast } from "sonner";
 
 const EditVehicleDialog = dynamic(
-  () => import("@/components/admin/vehicles/edit-vehicle-dialog").then(m => m.EditVehicleDialog),
-  { ssr: false }
+  () =>
+    import("@/components/admin/vehicles/edit-vehicle-dialog").then(
+      (m) => m.EditVehicleDialog,
+    ),
+  { ssr: false },
 );
 
 const ITEMS_PER_PAGE = 10;
 
-export function VehiclesTable() {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [editingVehicle, setEditingVehicle] = useState<Id<"vehicles"> | null>(null);
+interface VehiclesTableProps {
+  fullHeight?: boolean;
+  onCreate?: () => void;
+}
+
+export function VehiclesTable({
+  fullHeight = false,
+  onCreate,
+}: VehiclesTableProps) {
+  const layout = getTableLayout(fullHeight);
+  const [currentPage, setCurrentPage] = useNumberQueryParam("page", 1);
+  const [editingVehicle, setEditingVehicle] = useState<Id<"vehicles"> | null>(
+    null,
+  );
 
   // Fetch all vehicles and paginate on the client side
   const vehicles = useQuery(api.vehicles.getAllVehicles);
-  const vehicleClasses = useQuery(api.vehicleClasses.list, { activeOnly: false });
+  const vehicleClasses = useQuery(api.vehicleClasses.list, {
+    activeOnly: false,
+  });
 
   const deleteVehicle = useMutation(api.vehicles.remove);
 
@@ -48,24 +75,31 @@ export function VehiclesTable() {
   const classLookup = useMemo(() => {
     if (!vehicleClasses) return new Map<string, string>();
     return new Map(
-      vehicleClasses.map((vc) => [vc._id, vc.displayName || vc.name])
+      vehicleClasses.map((vc) => [vc._id, vc.displayName || vc.name]),
     );
   }, [vehicleClasses]);
 
   const handleNextPage = (totalPages: number) => {
-    setCurrentPage((p) => Math.min(totalPages, p + 1));
+    setCurrentPage(Math.min(totalPages, currentPage + 1));
   };
 
   const handlePreviousPage = () => {
-    setCurrentPage((p) => Math.max(1, p - 1));
+    setCurrentPage(Math.max(1, currentPage - 1));
   };
 
   const handleEdit = (vehicleId: Id<"vehicles">) => {
     setEditingVehicle(vehicleId);
   };
 
-  const handleDelete = async (vehicleId: Id<"vehicles">, vehicleName: string) => {
-    if (confirm(`Are you sure you want to delete ${vehicleName}? This action cannot be undone.`)) {
+  const handleDelete = async (
+    vehicleId: Id<"vehicles">,
+    vehicleName: string,
+  ) => {
+    if (
+      confirm(
+        `Are you sure you want to delete ${vehicleName}? This action cannot be undone.`,
+      )
+    ) {
       try {
         await deleteVehicle({ id: vehicleId });
         toast.success("Vehicle deleted successfully", {
@@ -82,26 +116,10 @@ export function VehiclesTable() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      available: { color: "bg-green-100 text-green-800", label: "Available" },
-      rented: { color: "bg-blue-100 text-blue-800", label: "Rented" },
-      maintenance: { color: "bg-orange-100 text-orange-800", label: "Maintenance" },
-    };
-    
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.available;
-    
-    return (
-      <Badge variant="secondary" className={config.color}>
-        {config.label}
-      </Badge>
-    );
-  };
-
   const VehicleImage = ({ vehicle }: { vehicle: Vehicle }) => {
     const imageUrl = useQuery(
       api.vehicles.getImageUrl,
-      vehicle.mainImageId ? { imageId: vehicle.mainImageId } : "skip"
+      vehicle.mainImageId ? { imageId: vehicle.mainImageId } : "skip",
     );
 
     return (
@@ -133,10 +151,10 @@ export function VehiclesTable() {
   const totalPages = Math.ceil(vehicles.length / ITEMS_PER_PAGE) || 1;
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
+    <div className={layout.root}>
+      <div className={cn("rounded-md border", layout.scrollArea)}>
+        <Table containerClassName="overflow-x-visible" dense>
+          <TableHeader sticky>
             <TableRow>
               <TableHead className="w-20">Image</TableHead>
               <TableHead>Vehicle</TableHead>
@@ -154,8 +172,13 @@ export function VehiclesTable() {
           <TableBody>
             {vehicles.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={11} className="text-center py-8 text-muted-foreground">
-                  No vehicles found. Add your first vehicle to get started.
+                <TableCell colSpan={11}>
+                  <EmptyState
+                    icon={Car}
+                    message="No vehicles yet"
+                    actionLabel={onCreate ? "Add vehicle" : undefined}
+                    onAction={onCreate}
+                  />
                 </TableCell>
               </TableRow>
             ) : (
@@ -185,7 +208,9 @@ export function VehiclesTable() {
                   </TableCell>
                   <TableCell>
                     {vehicle.classId && classLookup.get(vehicle.classId) ? (
-                      <span className="capitalize">{classLookup.get(vehicle.classId)}</span>
+                      <span className="capitalize">
+                        {classLookup.get(vehicle.classId)}
+                      </span>
                     ) : (
                       <span className="text-muted-foreground">-</span>
                     )}
@@ -195,7 +220,9 @@ export function VehiclesTable() {
                     {vehicle.engineCapacity && vehicle.engineType ? (
                       <div className="text-sm">
                         <div>{vehicle.engineCapacity}L</div>
-                        <div className="text-muted-foreground">{vehicle.engineType}</div>
+                        <div className="text-muted-foreground">
+                          {vehicle.engineType}
+                        </div>
                       </div>
                     ) : (
                       <span className="text-muted-foreground">-</span>
@@ -216,14 +243,21 @@ export function VehiclesTable() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">{vehicle.pricingTiers && vehicle.pricingTiers.length > 0 ? vehicle.pricingTiers[0].pricePerDay : 'N/A'} EUR</div>
+                    <div className="font-medium">
+                      {vehicle.pricingTiers && vehicle.pricingTiers.length > 0
+                        ? vehicle.pricingTiers[0].pricePerDay
+                        : "N/A"}{" "}
+                      EUR
+                    </div>
                     {vehicle.warranty && (
                       <div className="text-xs text-muted-foreground">
                         Warranty: {vehicle.warranty} EUR
                       </div>
                     )}
                   </TableCell>
-                  <TableCell>{getStatusBadge(vehicle.status)}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={vehicle.status} fallback="available" />
+                  </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -240,7 +274,12 @@ export function VehiclesTable() {
                           Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleDelete(vehicle._id, `${vehicle.make} ${vehicle.model}`)}
+                          onClick={() =>
+                            handleDelete(
+                              vehicle._id,
+                              `${vehicle.make} ${vehicle.model}`,
+                            )
+                          }
                           className="cursor-pointer text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
@@ -257,16 +296,21 @@ export function VehiclesTable() {
       </div>
 
       {vehicles.length > 0 && (
-        <div className="flex items-center justify-between">
+        <div className={cn("flex items-center justify-between", layout.footer)}>
           <div className="text-sm text-muted-foreground">
-            Showing {startIndex + 1} to {Math.min(endIndex, vehicles.length)} of {vehicles.length} vehicles
+            Showing {startIndex + 1} to {Math.min(endIndex, vehicles.length)} of{" "}
+            {vehicles.length} vehicles
           </div>
           <Pagination>
             <PaginationContent>
               <PaginationItem>
-                <PaginationPrevious 
+                <PaginationPrevious
                   onClick={handlePreviousPage}
-                  className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  className={
+                    currentPage === 1
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
                 />
               </PaginationItem>
               <PaginationItem>
@@ -275,9 +319,13 @@ export function VehiclesTable() {
                 </PaginationLink>
               </PaginationItem>
               <PaginationItem>
-                <PaginationNext 
+                <PaginationNext
                   onClick={() => handleNextPage(totalPages)}
-                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                  className={
+                    currentPage === totalPages
+                      ? "pointer-events-none opacity-50"
+                      : "cursor-pointer"
+                  }
                 />
               </PaginationItem>
             </PaginationContent>
@@ -294,4 +342,4 @@ export function VehiclesTable() {
       )}
     </div>
   );
-} 
+}

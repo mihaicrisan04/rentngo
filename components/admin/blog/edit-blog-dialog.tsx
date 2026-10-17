@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useMutation, useAction, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { BlogAdminListItem } from "@/types/blog";
@@ -38,12 +38,22 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { toast } from "sonner";
-import { Plus, X, Upload, Wand2, Image as ImageIcon, Eye, Star } from "lucide-react";
+import {
+  Plus,
+  X,
+  Upload,
+  Wand2,
+  Image as ImageIcon,
+  Eye,
+  Star,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { generateSlugFromTitle, calculateReadingTime } from "@/lib/blog-utils";
 import { Badge } from "@/components/ui/badge";
 import { BlogPreview } from "@/components/features/blog/blog-preview";
+import { useImageUpload } from "@/hooks/use-image-upload";
+import { getCoverImagePayload } from "@/lib/blog-cover-update";
 
 const Tabs = TabsPrimitive.Root;
 const TabsList = TabsPrimitive.List;
@@ -176,11 +186,7 @@ function ImageThumbnail({
     >
       <div className="aspect-[4/3] bg-muted">
         {url ? (
-          <img
-            src={url}
-            alt=""
-            className="w-full h-full object-cover"
-          />
+          <img src={url} alt="" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <ImageIcon className="h-6 w-6 text-muted-foreground/30" />
@@ -261,7 +267,16 @@ export function EditBlogDialog({
     blog ? { id: blog._id } : "skip",
   );
   const updateBlog = useMutation(api.blogs.update);
-  const uploadImages = useAction(api.blogs.uploadImages);
+  const { uploadFiles, deleteFiles } = useImageUpload();
+
+  // Storage IDs uploaded in this dialog session that are not yet persisted
+  // on the blog (uploadedImageIds also holds the blog's existing images, so
+  // only these may be cleaned up when the dialog is abandoned)
+  const [pendingImageIds, setPendingImageIds] = useState<Id<"_storage">[]>([]);
+
+  // Persisted images the admin removed from the list this session; their
+  // storage is deleted only after updateBlog drops the references
+  const [removedImageIds, setRemovedImageIds] = useState<Id<"_storage">[]>([]);
 
   const form = useForm<BlogFormData>({
     resolver: zodResolver(blogSchema),
@@ -307,10 +322,14 @@ export function EditBlogDialog({
     }
   }, [fullBlog, open, form]);
 
-  function getLocaleStatus(lang: "ro" | "en"): "empty" | "partial" | "complete" {
+  function getLocaleStatus(
+    lang: "ro" | "en",
+  ): "empty" | "partial" | "complete" {
     const title = form.watch(lang === "ro" ? "title_ro" : "title_en");
     const slug = form.watch(lang === "ro" ? "slug_ro" : "slug_en");
-    const description = form.watch(lang === "ro" ? "description_ro" : "description_en");
+    const description = form.watch(
+      lang === "ro" ? "description_ro" : "description_en",
+    );
     const content = form.watch(lang === "ro" ? "content_ro" : "content_en");
     const filled = [title, slug, description, content].filter(
       (v) => v && v.trim().length > 0,
@@ -357,15 +376,9 @@ export function EditBlogDialog({
     }
 
     try {
-      const imageBuffers = await Promise.all(
-        selectedFiles.map(async (file) => {
-          const arrayBuffer = await file.arrayBuffer();
-          return arrayBuffer;
-        }),
-      );
-
-      const imageIds = await uploadImages({ images: imageBuffers });
+      const imageIds = await uploadFiles(selectedFiles);
       setUploadedImageIds((prev) => [...prev, ...imageIds]);
+      setPendingImageIds((prev) => [...prev, ...imageIds]);
       setSelectedFiles([]);
       toast.success(`Uploaded ${imageIds.length} image(s)`);
     } catch (error) {
@@ -402,7 +415,33 @@ export function EditBlogDialog({
     if (coverImageId === imageId) {
       setCoverImageId(undefined);
     }
+    if (pendingImageIds.includes(imageId)) {
+      // Uploaded this session and never saved — nothing references it
+      void deleteFiles([imageId]);
+      setPendingImageIds((prev) => prev.filter((id) => id !== imageId));
+    } else {
+      // Persisted on the blog — the reference is only dropped when the admin
+      // saves, so defer the storage deletion until updateBlog succeeds
+      setRemovedImageIds((prev) => [...prev, imageId]);
+    }
     toast.success("Image removed from list");
+  };
+
+  // Closing without saving abandons this session's uploads — the blog never
+  // referenced them, so remove them from storage again. Removed persisted
+  // images stay: without a save the blog still references them. Every close
+  // path (Cancel, Escape, overlay, X) routes through Radix's onOpenChange,
+  // so a single guard here blocks closing while updateBlog is in flight — it
+  // may still persist the pending IDs, and deleting them would leave the
+  // saved blog referencing dead files.
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen && form.formState.isSubmitting) return;
+    if (!nextOpen) {
+      void deleteFiles(pendingImageIds);
+      setPendingImageIds([]);
+      setRemovedImageIds([]);
+    }
+    onOpenChange(nextOpen);
   };
 
   const onSubmit = async (data: BlogFormData) => {
@@ -427,7 +466,7 @@ export function EditBlogDialog({
         content_en: data.content_en,
         status: data.status,
         tags: data.tags || [],
-        coverImage: coverImageId,
+        coverImage: getCoverImagePayload(coverImageId),
         images: uploadedImageIds,
         publishedAt,
         readingTime_ro: data.readingTime_ro,
@@ -435,6 +474,20 @@ export function EditBlogDialog({
       });
 
       toast.success("Blog post updated successfully");
+      // The uploads are now referenced by the blog — nothing left to clean up
+      setPendingImageIds([]);
+      // The save dropped the removed images from the blog's `images`, so
+      // their storage can go too — except IDs still used inside the markdown
+      // content or the former cover. Client cleanup cannot prove those files
+      // are unreferenced elsewhere, so leave them for storage GC.
+      const deletableIds = removedImageIds.filter(
+        (id) =>
+          id !== fullBlog?.coverImage &&
+          !data.content_ro.includes(id) &&
+          !data.content_en.includes(id),
+      );
+      void deleteFiles(deletableIds);
+      setRemovedImageIds([]);
       onOpenChange(false);
     } catch (error) {
       console.error("Error updating blog:", error);
@@ -445,11 +498,16 @@ export function EditBlogDialog({
   };
 
   const renderContentFields = (lang: "ro" | "en") => {
-    const titleField: "title_ro" | "title_en" = lang === "ro" ? "title_ro" : "title_en";
-    const slugField: "slug_ro" | "slug_en" = lang === "ro" ? "slug_ro" : "slug_en";
-    const descField: "description_ro" | "description_en" = lang === "ro" ? "description_ro" : "description_en";
-    const contentField: "content_ro" | "content_en" = lang === "ro" ? "content_ro" : "content_en";
-    const readingTimeField: "readingTime_ro" | "readingTime_en" = lang === "ro" ? "readingTime_ro" : "readingTime_en";
+    const titleField: "title_ro" | "title_en" =
+      lang === "ro" ? "title_ro" : "title_en";
+    const slugField: "slug_ro" | "slug_en" =
+      lang === "ro" ? "slug_ro" : "slug_en";
+    const descField: "description_ro" | "description_en" =
+      lang === "ro" ? "description_ro" : "description_en";
+    const contentField: "content_ro" | "content_en" =
+      lang === "ro" ? "content_ro" : "content_en";
+    const readingTimeField: "readingTime_ro" | "readingTime_en" =
+      lang === "ro" ? "readingTime_ro" : "readingTime_en";
     const label = lang === "ro" ? "Romanian" : "English";
     const slugPlaceholder = lang === "ro" ? "slug-in-romana" : "english-slug";
     const urlPrefix = lang === "ro" ? "/ro/blog/" : "/en/blog/";
@@ -589,7 +647,7 @@ export function EditBlogDialog({
   if (!blog) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-5xl max-h-[95vh]">
         {/* Header with persistent language toggle */}
         <DialogHeader className="flex flex-row items-center justify-between gap-4 pr-10 space-y-0">
@@ -837,9 +895,7 @@ export function EditBlogDialog({
                       activeLang === "ro" ? "content_ro" : "content_en",
                     )}
                     readingTime={form.watch(
-                      activeLang === "ro"
-                        ? "readingTime_ro"
-                        : "readingTime_en",
+                      activeLang === "ro" ? "readingTime_ro" : "readingTime_en",
                     )}
                     tags={tags}
                   />
@@ -851,7 +907,8 @@ export function EditBlogDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => handleOpenChange(false)}
+                disabled={form.formState.isSubmitting}
               >
                 Cancel
               </Button>

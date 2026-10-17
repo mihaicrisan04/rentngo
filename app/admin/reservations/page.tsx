@@ -3,18 +3,42 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Plus, Calendar, Car, DollarSign, Clock, TrendingUp } from "lucide-react";
+import { ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import {
+  Plus,
+  Calendar,
+  Car,
+  DollarSign,
+  Clock,
+  TrendingUp,
+  BarChart3,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { ReservationsTable } from "@/components/admin/reservations/reservation-table";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line } from "recharts";
+import { StatCard, formatGrowth } from "@/components/admin/shared/stat-card";
+import { ChartCard } from "@/components/admin/shared/chart-card";
+import { DashboardSkeleton } from "@/components/admin/shared/dashboard-skeleton";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+} from "recharts";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Skeleton } from "@/components/ui/skeleton";
+import { usePeriodicNow } from "@/hooks/use-periodic-now";
+import { useBooleanQueryParam } from "@/hooks/use-query-param";
 
 const CreateReservationDialog = dynamic(
-  () => import("@/components/admin/reservations/create-reservation-dialog").then(m => m.CreateReservationDialog),
-  { ssr: false }
+  () =>
+    import("@/components/admin/reservations/create-reservation-dialog").then(
+      (m) => m.CreateReservationDialog,
+    ),
+  { ssr: false },
 );
 
 const chartConfig = {
@@ -30,10 +54,29 @@ const chartConfig = {
 
 export default function ReservationsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  
+  const [showCharts, setShowCharts] = useBooleanQueryParam("analytics");
+  const now = usePeriodicNow();
+  const monthNow =
+    now === null
+      ? null
+      : Date.UTC(new Date(now).getUTCFullYear(), new Date(now).getUTCMonth());
+
   // Fetch real data from Convex
-  const stats = useQuery(api.reservations.getReservationStats);
-  const monthlyData = useQuery(api.reservations.getMonthlyChartData);
+  const stats = useQuery(
+    api.reservations.getReservationStats,
+    now === null ? "skip" : { now },
+  );
+  const monthlyData = useQuery(
+    api.reservations.getMonthlyChartData,
+    monthNow === null ? "skip" : { now: monthNow },
+  );
+  const formattedMonthlyData = monthlyData?.map((item) => ({
+    ...item,
+    month: new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      timeZone: "UTC",
+    }).format(new Date(`${item.month}-01T00:00:00Z`)),
+  }));
 
   // Loading state
   if (stats === undefined || monthlyData === undefined) {
@@ -46,7 +89,7 @@ export default function ReservationsPage() {
               Manage reservations and track performance metrics
             </p>
           </div>
-          <Button 
+          <Button
             onClick={() => setIsCreateDialogOpen(true)}
             className="bg-primary hover:bg-primary/80"
           >
@@ -55,193 +98,124 @@ export default function ReservationsPage() {
           </Button>
         </div>
 
-        {/* Loading Statistics Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-4 w-4" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-16 mb-2" />
-                <Skeleton className="h-3 w-24" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Loading Charts */}
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-48" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-[200px] w-full" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-32" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-[200px] w-full" />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Loading Table */}
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-32" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-64 w-full" />
-          </CardContent>
-        </Card>
+        <DashboardSkeleton />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="flex h-full min-h-0 flex-1 flex-col gap-6">
+      <div className="flex shrink-0 items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Reservations Management</h1>
           <p className="text-muted-foreground">
             Manage reservations and track performance metrics
           </p>
         </div>
-        <Button 
-          onClick={() => setIsCreateDialogOpen(true)}
-          className="bg-primary hover:bg-primary/80"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Reservation
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowCharts(!showCharts)}>
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Analytics
+            {showCharts ? (
+              <ChevronUp className="h-4 w-4 ml-2" />
+            ) : (
+              <ChevronDown className="h-4 w-4 ml-2" />
+            )}
+          </Button>
+          <Button
+            onClick={() => setIsCreateDialogOpen(true)}
+            className="bg-primary hover:bg-primary/80"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Reservation
+          </Button>
+        </div>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Reservations this month</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalReservations}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.reservationGrowth >= 0 ? '+' : ''}{stats.reservationGrowth}% from last month
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Reservations this month</CardTitle>
-            <Car className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.activeReservations}</div>
-            <p className="text-xs text-muted-foreground">
-              Currently ongoing
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">€{stats.currentMonthRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.revenueGrowth >= 0 ? '+' : ''}{stats.revenueGrowth}% from last month
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Confirmations</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.pendingConfirmations}</div>
-            <p className="text-xs text-muted-foreground">
-              Awaiting approval
-            </p>
-          </CardContent>
-        </Card>
+      <div className="grid shrink-0 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Total Reservations this month"
+          icon={Calendar}
+          value={stats.totalReservations}
+          subtext={formatGrowth(stats.reservationGrowth)}
+        />
+        <StatCard
+          title="Active Reservations this month"
+          icon={Car}
+          value={stats.activeReservations}
+          subtext="Currently ongoing"
+        />
+        <StatCard
+          title="Monthly Revenue"
+          icon={DollarSign}
+          value={`€${stats.currentMonthRevenue.toLocaleString()}`}
+          subtext={formatGrowth(stats.revenueGrowth)}
+        />
+        <StatCard
+          title="Pending Confirmations"
+          icon={Clock}
+          value={stats.pendingConfirmations}
+          subtext="Awaiting approval"
+        />
       </div>
 
-      {/* Charts */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Monthly Reservations
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyData}>
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar 
-                    dataKey="reservations" 
-                    fill="var(--color-reservations)" 
-                    radius={[2, 2, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </CardContent>
-        </Card>
+      {/* Charts (collapsed by default so the table gets the vertical space) */}
+      {showCharts && (
+        <div className="grid shrink-0 gap-4 md:grid-cols-2">
+          <ChartCard
+            title="Monthly Reservations"
+            icon={TrendingUp}
+            config={chartConfig}
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={formattedMonthlyData}>
+                <XAxis dataKey="month" />
+                <YAxis />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar
+                  dataKey="reservations"
+                  fill="var(--color-reservations)"
+                  radius={[2, 2, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              Revenue Trend
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ChartContainer config={chartConfig} className="h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthlyData}>
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="revenue" 
-                    stroke="var(--color-reservations)" 
-                    strokeWidth={2}
-                    dot={{ fill: "var(--color-reservations)", strokeWidth: 2, r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </CardContent>
-        </Card>
+          <ChartCard
+            title="Revenue Trend"
+            icon={DollarSign}
+            config={chartConfig}
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={formattedMonthlyData}>
+                <XAxis dataKey="month" />
+                <YAxis />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="var(--color-reservations)"
+                  strokeWidth={2}
+                  dot={{
+                    fill: "var(--color-reservations)",
+                    strokeWidth: 2,
+                    r: 4,
+                  }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        </div>
+      )}
+
+      <div className="flex min-h-[24rem] flex-1 flex-col">
+        <ReservationsTable
+          fullHeight
+          onCreate={() => setIsCreateDialogOpen(true)}
+        />
       </div>
 
-      {/* Reservations Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Reservations</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ReservationsTable />
-        </CardContent>
-      </Card>
-      
       <CreateReservationDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
@@ -251,4 +225,4 @@ export default function ReservationsPage() {
       />
     </div>
   );
-} 
+}

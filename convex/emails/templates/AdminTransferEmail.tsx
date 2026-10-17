@@ -1,5 +1,12 @@
 import * as React from "react";
-import { Body, Head, Html, Preview, Hr, Tailwind } from "@react-email/components";
+import {
+  Body,
+  Head,
+  Html,
+  Preview,
+  Hr,
+  Tailwind,
+} from "@react-email/components";
 import { TransferEmailData } from "../types";
 import { EmailHeader } from "../components/email_header";
 import { EmailFooter } from "../components/email_footer";
@@ -76,7 +83,10 @@ export const AdminTransferEmail: React.FC<AdminTransferEmailProps> = ({
       heading: isRo ? "Detalii Preț" : "Pricing Details",
       distance: isRo ? "Distanță:" : "Distance:",
       roundTrip: isRo ? "Dus-Întors" : "Round Trip",
+      discount: isRo ? "Reducere aplicată:" : "Discount Applied:",
       totalAmount: isRo ? "Sumă Totală:" : "Total Amount:",
+      walletCredit: isRo ? "Credit aplicat:" : "Wallet Credit:",
+      amountDue: isRo ? "De plată:" : "Amount Due:",
       paymentMethod: isRo ? "Metoda de Plată:" : "Payment Method:",
     },
     footerMessage: isRo
@@ -162,7 +172,10 @@ export const AdminTransferEmail: React.FC<AdminTransferEmailProps> = ({
               heading: t.pricing.heading,
               distance: t.pricing.distance,
               roundTrip: t.pricing.roundTrip,
+              discount: t.pricing.discount,
               totalAmount: t.pricing.totalAmount,
+              walletCredit: t.pricing.walletCredit,
+              amountDue: t.pricing.amountDue,
               paymentMethod: t.pricing.paymentMethod,
             }}
           />

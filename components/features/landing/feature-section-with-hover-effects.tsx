@@ -12,7 +12,7 @@ import {
   IconAward,
 } from "@tabler/icons-react";
 import { useTranslations } from "next-intl";
-import { motion, useInView } from "framer-motion";
+import { motion, useInView } from "motion/react";
 import { useRef } from "react";
 
 export function FeaturesSectionWithHoverEffects() {
@@ -109,9 +109,8 @@ const Feature = ({
       }}
       className={cn(
         "flex flex-col lg:border-r md:border-r py-10 relative group/feature border-border",
-        (index === 0 || index === 4) &&
-          "lg:border-l md:border-l border-border",
-        index < 4 && "lg:border-b md:border-b border-border"
+        (index === 0 || index === 4) && "lg:border-l md:border-l border-border",
+        index < 4 && "lg:border-b md:border-b border-border",
       )}
     >
       {index < 4 && (

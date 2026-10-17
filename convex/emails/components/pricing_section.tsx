@@ -12,7 +12,9 @@ import {
   calculatePricingBreakdown,
   getPaymentMethodLabel,
   formatCurrency,
+  formatReservationCharge,
 } from "../utils";
+import { bookingAmountDue } from "../../../lib/pricing";
 
 interface PricingSectionProps {
   pricingDetails: PricingDetails;
@@ -23,21 +25,25 @@ interface PricingSectionProps {
     promoCode?: string;
     additionalCharges?: string;
     totalAmount?: string;
+    walletCredit?: string;
+    amountDue?: string;
     paymentMethod?: string;
     scdwText?: string;
     warrantyText?: string;
   };
+  locale?: "en" | "ro";
 }
 
 export const PricingSection: React.FC<PricingSectionProps> = ({
   pricingDetails,
   rentalDetails,
   labels,
+  locale = "en",
 }) => {
   const { rentalSubtotal } = calculatePricingBreakdown(
     pricingDetails.pricePerDay,
     rentalDetails.numberOfDays,
-    pricingDetails.additionalCharges
+    pricingDetails.additionalCharges,
   );
 
   return (
@@ -52,7 +58,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
             {labels?.rentalLine
               ? labels.rentalLine(
                   rentalDetails.numberOfDays,
-                  pricingDetails.pricePerDay
+                  pricingDetails.pricePerDay,
                 )
               : `Rental (${rentalDetails.numberOfDays} ${rentalDetails.numberOfDays === 1 ? "day" : "days"} × ${formatCurrency(pricingDetails.pricePerDay)}/day):`}
           </Text>
@@ -68,12 +74,15 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
         <Row className="mb-[8px]">
           <Column className="w-2/3">
             <Text className="text-[16px] text-green-600 m-0">
-              {labels?.promoCode ?? "Promo Code Applied:"}
+              {labels?.promoCode ?? "Promo Code Applied:"}{" "}
+              {pricingDetails.promoCode}
             </Text>
           </Column>
           <Column className="w-1/3 text-right">
             <Text className="text-[16px] text-green-600 m-0">
-              {pricingDetails.promoCode}
+              {pricingDetails.discountAmount !== undefined
+                ? `−${formatCurrency(pricingDetails.discountAmount)}`
+                : pricingDetails.promoCode}
             </Text>
           </Column>
         </Row>
@@ -84,8 +93,9 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
           <Row key={index} className="mb-[8px]">
             <Column className="w-2/3">
               <Text className="text-[16px] text-gray-800 m-0">
-                {labels?.additionalCharges ?? "Additional Charge"}
-                {charge.description ? `: ${charge.description}` : ""}
+                {formatReservationCharge(charge, locale) ||
+                  labels?.additionalCharges ||
+                  "Additional Charge"}
               </Text>
             </Column>
             <Column className="w-1/3 text-right">
@@ -127,6 +137,42 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
           </Text>
         </Column>
       </Row>
+
+      {/* Wallet credit pays part of the total rather than discounting it, so
+          it lands under the total and leaves an explicit amount due */}
+      {(pricingDetails.walletCreditApplied || 0) > 0 && (
+        <>
+          <Row className="mb-[8px]">
+            <Column className="w-2/3">
+              <Text className="text-[16px] text-green-600 m-0">
+                {labels?.walletCredit ?? "Wallet credit:"}
+              </Text>
+            </Column>
+            <Column className="w-1/3 text-right">
+              <Text className="text-[16px] text-green-600 m-0">
+                −{formatCurrency(pricingDetails.walletCreditApplied || 0)}
+              </Text>
+            </Column>
+          </Row>
+          <Row className="mb-[12px]">
+            <Column className="w-2/3">
+              <Text className="text-[18px] font-bold text-gray-800 m-0">
+                {labels?.amountDue ?? "Amount Due:"}
+              </Text>
+            </Column>
+            <Column className="w-1/3 text-right">
+              <Text className="text-[18px] font-bold text-gray-800 m-0">
+                {formatCurrency(
+                  bookingAmountDue(
+                    pricingDetails.totalPrice,
+                    pricingDetails.walletCreditApplied,
+                  ),
+                )}
+              </Text>
+            </Column>
+          </Row>
+        </>
+      )}
 
       {/* Protection note for Warranty (deposit) shown under total only when SCDW is not selected */}
       {!pricingDetails.isSCDWSelected &&

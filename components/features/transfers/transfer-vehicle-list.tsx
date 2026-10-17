@@ -97,7 +97,7 @@ export function TransferVehicleList({
         features: v.features,
         imageUrl: v.imageUrl,
       })) ?? [],
-    [vehiclesData]
+    [vehiclesData],
   );
 
   // Notify parent when vehicles are loaded - must be called before any early returns
@@ -142,9 +142,7 @@ export function TransferVehicleList({
             {t("vehicleSelection.noVehiclesFound")}
           </h3>
           <p className="text-muted-foreground text-center max-w-md">
-            No vehicles available for {passengers}{" "}
-            {passengers === 1 ? "passenger" : "passengers"}. Try reducing the
-            passenger count.
+            {t("vehicleSelection.noVehiclesFor", { passengers })}
           </p>
         </div>
       </div>
@@ -180,7 +178,9 @@ export function TransferVehicleList({
             {t("searchForm.transferType")}:
           </span>
           <span className="font-medium capitalize">
-            {transferType === "one_way" ? t("searchForm.oneWay") : t("searchForm.roundTrip")}
+            {transferType === "one_way"
+              ? t("searchForm.oneWay")
+              : t("searchForm.roundTrip")}
           </span>
         </div>
       </div>
@@ -189,8 +189,7 @@ export function TransferVehicleList({
         <div className="flex items-center gap-2 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
           <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-500 shrink-0" />
           <p className="text-sm text-yellow-700 dark:text-yellow-400">
-            Unable to calculate route distance. Please check your pickup and
-            dropoff locations.
+            {t("vehicleSelection.routeWarning")}
           </p>
         </div>
       )}
@@ -209,8 +208,7 @@ export function TransferVehicleList({
       </div>
 
       <p className="text-center text-sm text-muted-foreground">
-        {vehicles.length} {vehicles.length === 1 ? "vehicle" : "vehicles"}{" "}
-        available
+        {t("vehicleSelection.resultCount", { count: vehicles.length })}
       </p>
     </div>
   );

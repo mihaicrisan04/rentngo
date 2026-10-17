@@ -2,7 +2,22 @@
 
 All notable changes to RentNGo are documented here.
 
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+From v2.4.0 onward, version sections below the `[Unreleased]` heading are generated
+automatically by [release-please](https://github.com/googleapis/release-please) from
+[Conventional Commits](https://www.conventionalcommits.org/).
+
 ## [Unreleased]
+
+### Fixed
+- Clerk→Convex user sync (RNGO-32): users are now synced server-side via Clerk webhooks (`POST /webhooks/clerk` Convex HTTP action, Svix-verified) handling `user.created`/`user.updated`/`user.deleted`, with an idempotent `getOrCreateCurrentUser` safety net in renter-facing booking mutations; `user.deleted` and self-serve account removal soft-delete + anonymize the row (`deletedAt` + PII scrub) so booking references stay valid; client-side `UserEnsurer`/`ensureUser` removed; one-off Clerk backfill action added (`migrations/backfillClerkUsers`). Awaiting deploy + Clerk dashboard/webhook-secret config.
+
+### Infrastructure
+- Dev environment: `develop` branch now deploys to a dedicated Convex deployment (`develop`, same project) and is served at dev.rngo.ro; upgraded `convex` to 1.42.1 and `@convex-dev/resend` to 0.2.5
+- Non-production deployments are excluded from search indexing (robots.txt + noindex meta), and dev emails are visibly differentiated (env-driven sender name, `[DEV]` subject prefix, site-URL-aware logo)
+
+## [2.4.0] - 2026-06-02
 
 ### Added
 - **Google Tag Manager**: wired in root layout via `@next/third-parties/google` `GoogleTagManager`, configured by `NEXT_PUBLIC_GTM_ID`
@@ -47,10 +62,6 @@ All notable changes to RentNGo are documented here.
   - Components wrapped with React.memo(): VehicleCard, TransferVehicleCard, BlogCard, FilterCheckboxItem, VehiclePricingCard, TransferBookingFloatingCard
   - Calculations memoized with useMemo(): pricing tip in VehiclePricingCard, vehicle grouping in VehicleListDisplay, reservation pricing hook, pagination in UserReservationsTable, featured vehicles hook
   - Prevents unnecessary re-renders in list-rendered components and expensive calculations
-
-### Planned
-- Copy & content review across all translations
-- React performance optimization (dynamic imports, memoization, lazy state init)
 
 ## [2.3.0] - 2026-01-20
 

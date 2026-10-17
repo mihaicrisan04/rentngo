@@ -1,0 +1,129 @@
+[tools]
+node = "24"
+bun = "latest"
+"npm:vercel" = "latest"
+
+[env]
+_.file = ".env.local"
+_.path = ["node_modules/.bin"]
+
+[tasks.dev]
+alias = "d"
+description = "Start frontend + backend dev servers"
+depends = ["dev:setup"]
+run = "bun run --parallel dev:frontend dev:backend"
+
+[tasks."dev:setup"]
+description = "Push Convex schema once before starting dev servers"
+hide = true
+run = "convex dev --until-success"
+
+[tasks."dev:frontend"]
+description = "Start Next.js dev server"
+hide = true
+run = "next dev"
+
+[tasks."dev:backend"]
+description = "Start Convex dev server"
+hide = true
+run = "convex dev"
+
+[tasks.build]
+alias = "b"
+description = "Build for production"
+sources = [
+  "app/**/*",
+  "components/**/*",
+  "lib/**/*",
+  "hooks/**/*",
+  "messages/**/*",
+  "public/**/*",
+  "package.json",
+  "tsconfig.json",
+  "next.config.ts",
+  "tailwind.config.ts",
+]
+outputs = [".next/**/*"]
+run = "next build --webpack"
+
+[tasks.lint]
+alias = "l"
+description = "Run oxlint"
+sources = [
+  "app/**/*",
+  "components/**/*",
+  "lib/**/*",
+  "hooks/**/*",
+  "convex/**/*",
+]
+run = "oxlint"
+
+[tasks."lint:fix"]
+description = "Run oxlint with auto-fix"
+run = "oxlint --fix"
+
+[tasks.format]
+alias = "f"
+description = "Format code with oxfmt"
+run = "oxfmt"
+
+[tasks."format:check"]
+description = "Check formatting without writing"
+run = "oxfmt --check"
+
+[tasks.check]
+alias = "c"
+description = "Run lint + format check + typecheck + tests"
+depends = ["agents:check", "lint", "format:check", "typecheck", "test"]
+
+[tasks."agents:check"]
+description = "Validate agent instructions, skills, and compatibility symlinks"
+run = "bun run agents:check"
+
+[tasks."agents:refresh-convex"]
+description = "Refresh official Convex AI files and restore portable skill adapters"
+run = "bun run agents:refresh-convex"
+
+[tasks.test]
+alias = "t"
+description = "Run unit tests"
+run = "bun run test"
+
+[tasks."test:watch"]
+description = "Run unit tests in watch mode"
+run = "bun run test:watch"
+
+[tasks.typecheck]
+alias = "tc"
+description = "Run TypeScript type checking"
+sources = [
+  "app/**/*",
+  "components/**/*",
+  "lib/**/*",
+  "hooks/**/*",
+  "convex/**/*",
+  "tsconfig.json",
+]
+run = "tsc --noEmit"
+
+
+[tasks."convex:deploy"]
+description = "Deploy Convex backend"
+run = "convex deploy"
+
+[tasks."convex:deploy-dev"]
+description = "Deploy Convex backend to the develop cloud deployment (needs .env.dev)"
+run = 'test -f .env.dev || { echo "missing .env.dev — copy .env.dev.example and fill in the keys"; exit 1; }; convex deploy -y --env-file .env.dev'
+
+[tasks."convex:run-dev"]
+description = "Run a Convex function on the develop cloud deployment"
+run = "convex run --deployment fortunate-retriever-189"
+
+[tasks."convex:dashboard"]
+description = "Open Convex dashboard"
+run = "convex dashboard"
+
+[tasks.start]
+alias = "s"
+description = "Start production server"
+run = "next start"

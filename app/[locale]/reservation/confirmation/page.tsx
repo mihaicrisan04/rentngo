@@ -8,9 +8,13 @@ import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import Image from "next/image";
 import Link from "next/link";
+import { COMPANY } from "@/lib/company";
+import { StatusBadge } from "@/components/shared/status-badge";
+import { paymentMethodLabelKey } from "@/lib/checkout-payment-methods";
+import { formatPrice } from "@/lib/format";
+import { carsPath } from "@/lib/localized-routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   CheckCircle,
@@ -28,12 +32,20 @@ import {
   Plane,
 } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
-import { getPriceForDurationWithSeason } from "@/lib/vehicle-utils";
+import {
+  bookingAmountDue,
+  calculateRentalDays,
+  getPriceForDurationWithSeason,
+} from "@/lib/pricing";
 
 function ReservationConfirmationContent() {
   const searchParams = useSearchParams();
   const reservationId = searchParams.get("reservationId");
   const t = useTranslations("confirmationPage");
+  const tCharges = useTranslations("reservationCharges");
+  const tPaymentMethods = useTranslations("reservationPage.payment.methods");
+  const tWallet = useTranslations("common.wallet");
+  const tReferral = useTranslations("common.referral");
   const locale = useLocale();
 
   // Get reservation details
@@ -61,20 +73,18 @@ function ReservationConfirmationContent() {
       <div className="flex-grow flex items-center justify-center p-4 md:p-8">
         <div className="text-center max-w-md mx-auto">
           <AlertCircle className="h-16 w-16 text-amber-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-4">
-            {t("noReservationFound")}
-          </h1>
+          <h1 className="text-2xl font-bold mb-4">{t("noReservationFound")}</h1>
           <p className="text-muted-foreground mb-6">
             {t("noReservationDescription")}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/cars">
+            <Link href={carsPath(locale)}>
               <Button>
                 <Car className="mr-2 h-4 w-4" />
                 {t("bookAnotherCar")}
               </Button>
             </Link>
-            <Link href="/">
+            <Link href={`/${locale}`}>
               <Button variant="outline">
                 <Home className="mr-2 h-4 w-4" />
                 Home
@@ -109,13 +119,13 @@ function ReservationConfirmationContent() {
             {t("reservationNotFoundDescription")}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/cars">
+            <Link href={carsPath(locale)}>
               <Button>
                 <Car className="mr-2 h-4 w-4" />
                 {t("bookAnotherCar")}
               </Button>
             </Link>
-            <Link href="/">
+            <Link href={`/${locale}`}>
               <Button variant="outline">
                 <Home className="mr-2 h-4 w-4" />
                 Home
@@ -130,83 +140,40 @@ function ReservationConfirmationContent() {
   const startDate = new Date(reservation.startDate);
   const endDate = new Date(reservation.endDate);
 
-  // Compute rental days similar to pricing logic
-  const computeRentalDays = (
-    start: Date,
-    end: Date,
-    pickupTimeStr: string,
-    restitutionTimeStr: string,
-  ) => {
-    const startMid = new Date(start);
-    startMid.setHours(0, 0, 0, 0);
-    const endMid = new Date(end);
-    endMid.setHours(0, 0, 0, 0);
-    const baseDays = Math.max(
-      0,
-      Math.round((endMid.getTime() - startMid.getTime()) / 86400000),
+  // Render the breakdown persisted by the server recompute at booking time —
+  // the values the customer was actually charged. Old docs predating the
+  // persisted fields fall back to recomputing against the vehicle's current
+  // tiers (best effort, may drift if pricing changed since).
+  const rentalDays =
+    reservation.rentalDays ??
+    calculateRentalDays(
+      startDate,
+      endDate,
+      reservation.pickupTime || "00:00",
+      reservation.restitutionTime || "00:00",
     );
-    const [ph, pm] = (pickupTimeStr || "00:00").split(":").map(Number);
-    const [rh, rm] = (restitutionTimeStr || "00:00").split(":").map(Number);
-    let calculated = baseDays;
-    if (baseDays === 0) {
-      calculated = 1;
-    } else {
-      if (rh <= ph + 2) {
-        calculated = baseDays;
-      } else if (rh > ph + 2) {
-        calculated = baseDays + 1;
-      } else if (rh < ph) {
-        calculated = baseDays;
-      }
-    }
-    return Math.max(1, calculated);
-  };
-
-  const rentalDays = computeRentalDays(
-    startDate,
-    endDate,
-    reservation.pickupTime,
-    reservation.restitutionTime,
-  );
   const seasonalMultiplier = reservation.seasonalMultiplier ?? 1.0;
-  const pricePerDayUsed = vehicle
-    ? getPriceForDurationWithSeason(vehicle, rentalDays, seasonalMultiplier)
-    : 0;
-  const rentalSubtotal = rentalDays * pricePerDayUsed;
+  const pricePerDayUsed =
+    reservation.pricePerDay ??
+    (vehicle
+      ? getPriceForDurationWithSeason(vehicle, rentalDays, seasonalMultiplier)
+      : 0);
+  const rentalSubtotal = reservation.basePrice ?? rentalDays * pricePerDayUsed;
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "confirmed":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "pending":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "cancelled":
-        return "bg-red-100 text-red-800 border-red-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    const key = `status.${status}` as "status.pending" | "status.confirmed" | "status.cancelled";
-    try {
-      return t(key);
-    } catch {
-      return status.charAt(0).toUpperCase() + status.slice(1);
-    }
-  };
+  // Coded charges (new docs) are translated at render; legacy docs carry
+  // only the localized prose description
+  const chargeLabel = (charge: {
+    description?: string;
+    code?: string;
+    params?: Record<string, string | number>;
+  }) =>
+    charge.code
+      ? tCharges(charge.code, charge.params ?? {})
+      : (charge.description ?? "");
 
   const getPaymentMethodLabel = (method: string) => {
-    switch (method) {
-      case "cash_on_delivery":
-        return t("paymentMethods.cashOnDelivery");
-      case "card_on_delivery":
-        return t("paymentMethods.cardOnDelivery");
-      case "card_online":
-        return t("paymentMethods.cardOnline");
-      default:
-        return method;
-    }
+    const key = paymentMethodLabelKey(method);
+    return key ? tPaymentMethods(key) : method;
   };
 
   return (
@@ -237,9 +204,7 @@ function ReservationConfirmationContent() {
                   #{reservation.reservationNumber}
                 </p>
               </div>
-              <Badge className={`w-fit ${getStatusColor(reservation.status)}`}>
-                {getStatusLabel(reservation.status)}
-              </Badge>
+              <StatusBadge status={reservation.status} className="w-fit" />
             </div>
           </CardContent>
         </Card>
@@ -471,13 +436,26 @@ function ReservationConfirmationContent() {
                           key={index}
                           className="flex justify-between text-sm"
                         >
-                          <span>{charge.description}</span>
+                          <span>{chargeLabel(charge)}</span>
                           <span>{charge.amount} EUR</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
+              {/* Applied discount — render the persisted one, no recompute. A
+                  referral discount from a link has no code to show. */}
+              {(reservation.discountAmount ?? 0) > 0 && (
+                <div className="flex justify-between items-center text-sm text-green-600">
+                  <span>
+                    {reservation.discountSource !== "affiliate" &&
+                    reservation.promoCode
+                      ? t("discountLine", { code: reservation.promoCode })
+                      : tReferral("discount")}
+                  </span>
+                  <span>−{formatPrice(reservation.discountAmount ?? 0)}</span>
+                </div>
+              )}
               {/* SCDW line above total */}
               {reservation.isSCDWSelected &&
                 (reservation.protectionCost ?? 0) > 0 && (
@@ -497,6 +475,29 @@ function ReservationConfirmationContent() {
                   {reservation.totalPrice} EUR
                 </span>
               </div>
+              {/* Wallet credit pays part of the total rather than discounting
+                  it, so it sits under the total with an explicit amount due */}
+              {(reservation.walletCreditApplied ?? 0) > 0 && (
+                <>
+                  <div className="flex justify-between items-center text-sm text-green-600">
+                    <span>{tWallet("creditApplied")}</span>
+                    <span>
+                      −{formatPrice(reservation.walletCreditApplied ?? 0)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-lg font-bold">
+                    <span>{tWallet("amountDue")}</span>
+                    <span>
+                      {formatPrice(
+                        bookingAmountDue(
+                          reservation.totalPrice,
+                          reservation.walletCreditApplied,
+                        ),
+                      )}
+                    </span>
+                  </div>
+                </>
+              )}
               {/* Warranty note below total when SCDW not selected */}
               {!reservation.isSCDWSelected &&
                 reservation.deductibleAmount !== undefined && (
@@ -510,7 +511,7 @@ function ReservationConfirmationContent() {
 
         {/* Action Buttons */}
         <div className="flex justify-center mb-10">
-          <Link href="/cars">
+          <Link href={carsPath(locale)}>
             <Button className="px-8 rounded-xl h-12">
               <Car className="mr-2 h-4 w-4" />
               {t("bookAnotherCar")}
@@ -582,7 +583,7 @@ function ReservationConfirmationContent() {
                   <div>
                     <p className="font-medium">{t("customerSupport")}</p>
                     <p className="text-sm text-muted-foreground">
-                      +40 773 932 961
+                      {COMPANY.phone.display}
                     </p>
                   </div>
                 </div>
@@ -591,7 +592,7 @@ function ReservationConfirmationContent() {
                   <div>
                     <p className="font-medium">{t("emailSupport")}</p>
                     <p className="text-sm text-muted-foreground">
-                      office@rngo.ro
+                      {COMPANY.email}
                     </p>
                   </div>
                 </div>
@@ -610,7 +611,7 @@ function ReservationConfirmationContent() {
                     {t("questionsAboutReservation")}
                   </p>
                   <Link
-                    href="/terms"
+                    href={`/${locale}/terms`}
                     className="text-primary hover:underline text-sm"
                   >
                     {t("viewTermsConditions")}

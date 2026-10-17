@@ -1,6 +1,14 @@
-import { mutation, query, QueryCtx, MutationCtx } from "./_generated/server";
+import {
+  mutation,
+  query,
+  internalMutation,
+  QueryCtx,
+  MutationCtx,
+} from "./_generated/server";
 import { v } from "convex/values";
 import { Doc } from "./_generated/dataModel";
+import type { UserJSON } from "@clerk/nextjs/server";
+import { stripUndefined } from "./lib/patch";
 
 // Validator for the User document structure, including system fields
 const UserDocValidator = v.object({
@@ -17,84 +25,167 @@ const UserDocValidator = v.object({
     v.object({
       language: v.union(v.literal("en"), v.literal("ro")),
       notifications: v.boolean(),
-    })
+    }),
   ),
+  deletedAt: v.optional(v.number()),
+});
+
+/** Clerk profile fields mapped to our users table shape. */
+type ClerkUserAttributes = {
+  clerkId: string;
+  email: string;
+  name: string;
+  firstName?: string;
+  lastName?: string;
+};
+
+/**
+ * Core upsert keyed by clerkId, shared by the webhook sync
+ * (upsertFromClerk) and the mutation safety net (getOrCreateCurrentUser).
+ * Soft-deleted rows are left untouched so an out-of-order user.updated
+ * webhook can never resurrect anonymized PII.
+ */
+async function upsertUser(
+  ctx: MutationCtx,
+  attrs: ClerkUserAttributes,
+): Promise<Doc<"users">> {
+  const existingUser = await ctx.db
+    .query("users")
+    .withIndex("by_clerk_id", (q) => q.eq("clerkId", attrs.clerkId))
+    .unique();
+
+  if (existingUser) {
+    if (existingUser.deletedAt !== undefined) {
+      return existingUser;
+    }
+
+    const updates: Partial<Doc<"users">> = {};
+    if (existingUser.name !== attrs.name) {
+      updates.name = attrs.name;
+    }
+    if (existingUser.email !== attrs.email) {
+      updates.email = attrs.email;
+    }
+    // Only update firstName/lastName if Clerk provides them (don't overwrite with undefined)
+    if (
+      attrs.firstName !== undefined &&
+      existingUser.firstName !== attrs.firstName
+    ) {
+      updates.firstName = attrs.firstName;
+    }
+    if (
+      attrs.lastName !== undefined &&
+      existingUser.lastName !== attrs.lastName
+    ) {
+      updates.lastName = attrs.lastName;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await ctx.db.patch(existingUser._id, updates);
+    }
+
+    // Re-fetch to ensure we return the latest state if patched
+    return (await ctx.db.get(existingUser._id))!;
+  }
+
+  const newUserId = await ctx.db.insert("users", {
+    email: attrs.email,
+    name: attrs.name,
+    firstName: attrs.firstName,
+    lastName: attrs.lastName,
+    clerkId: attrs.clerkId,
+    role: "renter", // Default role
+    // phone and preferences are optional and can be set via an update operation later
+  });
+  return (await ctx.db.get(newUserId))!;
+}
+
+/**
+ * Soft delete + anonymize: sets deletedAt and scrubs PII (GDPR erasure)
+ * while keeping the row so userId references in reservations, transfers
+ * and affiliates stay valid. Re-signups are safe — Clerk issues a new
+ * clerkId, so a fresh row is created.
+ */
+async function softDeleteUser(
+  ctx: MutationCtx,
+  user: Doc<"users">,
+): Promise<void> {
+  await ctx.db.patch(user._id, {
+    deletedAt: Date.now(),
+    name: "Deleted user",
+    email: `deleted+${user.clerkId}@removed`,
+    firstName: undefined,
+    lastName: undefined,
+    phone: undefined,
+  });
+}
+
+/**
+ * Webhook-driven upsert for Clerk user.created / user.updated events.
+ * `data` is the raw Clerk UserJSON payload — too wide (and Clerk-versioned)
+ * to spell out as a strict Convex object validator, hence v.any().
+ */
+export const upsertFromClerk = internalMutation({
+  args: { data: v.any() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const data = args.data as UserJSON;
+
+    const primaryEmail =
+      data.email_addresses?.find((e) => e.id === data.primary_email_address_id)
+        ?.email_address ?? data.email_addresses?.[0]?.email_address;
+    if (!primaryEmail) {
+      // Schema requires an email. Skip (200) rather than throw so Clerk
+      // doesn't retry an event we can never process.
+      console.warn(
+        "[users] upsertFromClerk: Clerk user has no email, skipping",
+        {
+          clerkId: data.id,
+        },
+      );
+      return null;
+    }
+
+    const firstName = data.first_name ?? undefined;
+    const lastName = data.last_name ?? undefined;
+    const name =
+      (firstName && lastName
+        ? `${firstName} ${lastName}`
+        : firstName || lastName) ||
+      data.username ||
+      primaryEmail;
+
+    await upsertUser(ctx, {
+      clerkId: data.id,
+      email: primaryEmail,
+      name,
+      firstName,
+      lastName,
+    });
+    return null;
+  },
 });
 
 /**
- * Ensures a user record exists for the currently authenticated Clerk user.
- * Creates a new user if one doesn't exist using their Clerk ID as the identifier.
- * Updates the user's name and email if they have changed in Clerk.
- * This function should be called by the client after successful Clerk authentication.
+ * Webhook-driven soft delete for Clerk user.deleted events.
  */
-export const ensureUser = mutation({
-  args: {}, // No arguments needed as it uses the auth context
-  returns: UserDocValidator, // Added return validator
-  handler: async (ctx): Promise<Doc<"users">> => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("User identity not found. Ensure user is authenticated.");
-    }
-
-    const clerkId = identity.subject;
-    const email = identity.email;
-    if (!email) {
-      throw new Error("Email not found in user identity from Clerk. Cannot ensure user.");
-    }
-
-    // Extract name components from Clerk identity
-    const firstName = typeof identity.firstName === 'string' ? identity.firstName : undefined;
-    const lastName = typeof identity.lastName === 'string' ? identity.lastName : undefined;
-    // Determine the full name: use identity.name, fallback to firstName + lastName, then identity.nickname, then email.
-    // The schema requires 'name' to be a string.
-    const name = (typeof identity.name === 'string' ? identity.name : null) || 
-                 (firstName && lastName ? `${firstName} ${lastName}` : firstName || lastName) || 
-                 (typeof identity.nickname === 'string' ? identity.nickname : null) || 
-                 email;
-
-    // Check if user already exists by Clerk ID (more reliable than email)
-    const existingUser = await ctx.db
+export const deleteFromClerk = internalMutation({
+  args: { clerkId: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const user = await ctx.db
       .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", clerkId))
+      .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkId))
       .unique();
 
-    if (existingUser) {
-      // User exists, check if fields need update
-      const updates: Partial<Doc<"users">> = {};
-      if (existingUser.name !== name) {
-        updates.name = name;
-      }
-      if (existingUser.email !== email) {
-        updates.email = email;
-      }
-      // Only update firstName/lastName if Clerk provides them (don't overwrite with undefined)
-      if (firstName !== undefined && existingUser.firstName !== firstName) {
-        updates.firstName = firstName;
-      }
-      if (lastName !== undefined && existingUser.lastName !== lastName) {
-        updates.lastName = lastName;
-      }
-      
-      if (Object.keys(updates).length > 0) {
-        await ctx.db.patch(existingUser._id, updates);
-      }
-      
-      // Return the (potentially updated) existing user document
-      // Re-fetch to ensure we return the latest state if patched
-      return (await ctx.db.get(existingUser._id))!;
-    } else {
-      // User does not exist, create a new one
-      const newUserId = await ctx.db.insert("users", {
-        email,
-        name,
-        firstName,
-        lastName,
-        clerkId,
-        role: "renter", // Default role
-        // phone and preferences are optional and can be set via an update operation later
+    if (user && user.deletedAt === undefined) {
+      await softDeleteUser(ctx, user);
+    } else if (!user) {
+      console.warn("[users] deleteFromClerk: no user row for Clerk user", {
+        clerkId: args.clerkId,
       });
-      return (await ctx.db.get(newUserId))!;
     }
+    return null;
   },
 });
 
@@ -103,20 +194,70 @@ export const ensureUser = mutation({
  */
 export const get = query({
   args: {},
-  returns: v.union(UserDocValidator, v.null()), // Added return validator
+  returns: v.union(UserDocValidator, v.null()),
   handler: async (ctx): Promise<Doc<"users"> | null> => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      // Not authenticated, so no user profile to return
-      return null;
+    return await getCurrentUser(ctx);
+  },
+});
+
+/** Admin user lookup result — identity and contact only, no booking history. */
+const userSearchResultValidator = v.object({
+  _id: v.id("users"),
+  name: v.string(),
+  email: v.string(),
+  phone: v.optional(v.string()),
+  role: v.union(v.literal("renter"), v.literal("admin")),
+});
+
+const USER_SEARCH_LIMIT = 20;
+
+/**
+ * Admin search over name and email, for wallet top-ups on offline referrals.
+ * Two search indexes rather than one because Convex search matches a single
+ * field: `search_name` cannot find "@gmail.com" and `search_email` cannot find
+ * "Ionescu". An empty query returns the newest users instead of everything.
+ */
+export const searchUsers = query({
+  args: { query: v.string() },
+  returns: v.array(userSearchResultValidator),
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const term = args.query.trim();
+
+    // Oversampled because soft-deleted rows are dropped afterwards and would
+    // otherwise eat into the page the admin sees.
+    const scan = USER_SEARCH_LIMIT * 2;
+    const matches =
+      term.length === 0
+        ? await ctx.db.query("users").order("desc").take(scan)
+        : (
+            await Promise.all([
+              ctx.db
+                .query("users")
+                .withSearchIndex("search_name", (q) => q.search("name", term))
+                .take(scan),
+              ctx.db
+                .query("users")
+                .withSearchIndex("search_email", (q) => q.search("email", term))
+                .take(scan),
+            ])
+          ).flat();
+
+    const seen = new Set<string>();
+    const results: Doc<"users">[] = [];
+    for (const user of matches) {
+      if (user.deletedAt !== undefined || seen.has(user._id)) continue;
+      seen.add(user._id);
+      results.push(user);
+      if (results.length === USER_SEARCH_LIMIT) break;
     }
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-
-    return user;
+    return results.map((user) => ({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+    }));
   },
 });
 
@@ -134,42 +275,17 @@ export const update = mutation({
       v.object({
         language: v.union(v.literal("en"), v.literal("ro")),
         notifications: v.boolean(),
-      })
+      }),
     ),
   },
-  returns: v.null(), // Added return validator
+  returns: v.null(),
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("User not authenticated. Cannot update profile.");
-    }
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-
+    const user = await getCurrentUser(ctx);
     if (!user) {
       throw new Error("User profile not found. Cannot update.");
     }
 
-    const patchData: Partial<Doc<"users">> = {};
-
-    if (args.name !== undefined) {
-      patchData.name = args.name;
-    }
-    if (args.firstName !== undefined) {
-      patchData.firstName = args.firstName;
-    }
-    if (args.lastName !== undefined) {
-      patchData.lastName = args.lastName;
-    }
-    if (args.phone !== undefined) {
-      patchData.phone = args.phone;
-    }
-    if (args.preferences !== undefined) {
-      patchData.preferences = args.preferences;
-    }
+    const patchData = stripUndefined(args);
 
     if (Object.keys(patchData).length > 0) {
       await ctx.db.patch(user._id, patchData);
@@ -180,28 +296,19 @@ export const update = mutation({
 });
 
 /**
- * Deletes the current authenticated user's account based on their Clerk ID.
+ * Soft-deletes the current authenticated user's account (anonymizes PII,
+ * keeps the row so their reservations/transfers stay linked).
  */
 export const remove = mutation({
   args: {},
-  returns: v.null(), // Added return validator
+  returns: v.null(),
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("User not authenticated. Cannot delete account.");
-    }
-
-    const user = await ctx.db
-      .query("users")
-      .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
-      .unique();
-
+    const user = await getCurrentUser(ctx);
     if (!user) {
       throw new Error("User profile not found. Cannot delete.");
     }
 
-    await ctx.db.delete(user._id);
-    // Consider related data cleanup if necessary (e.g., reservations, vehicles)
+    await softDeleteUser(ctx, user);
     // Explicitly return null to match v.null() validator
     return null;
   },
@@ -209,9 +316,11 @@ export const remove = mutation({
 
 /**
  * Helper function to get the current authenticated user from the database.
- * Returns null if not authenticated or user not found.
+ * Returns null if not authenticated, user not found, or soft-deleted.
  */
-export const getCurrentUser = async (ctx: QueryCtx | MutationCtx): Promise<Doc<"users"> | null> => {
+export const getCurrentUser = async (
+  ctx: QueryCtx | MutationCtx,
+): Promise<Doc<"users"> | null> => {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) {
     return null;
@@ -222,17 +331,85 @@ export const getCurrentUser = async (ctx: QueryCtx | MutationCtx): Promise<Doc<"
     .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
     .unique();
 
+  // Cheap defense: a soft-deleted user shouldn't hold a valid JWT anyway
+  if (!user || user.deletedAt !== undefined) {
+    return null;
+  }
+
   return user;
+};
+
+/**
+ * Safety net for renter-facing write mutations: returns the current user's
+ * row, creating (or refreshing) it from the JWT identity when the Clerk
+ * webhook sync hasn't landed yet — a delayed/missed webhook can never block
+ * a booking. Returns null when unauthenticated (guest flows stay guest).
+ */
+export const getOrCreateCurrentUser = async (
+  ctx: MutationCtx,
+): Promise<Doc<"users"> | null> => {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) {
+    return null;
+  }
+
+  const email = identity.email;
+  if (!email) {
+    // Schema requires an email, so we can't create a row — fall back to lookup
+    return await getCurrentUser(ctx);
+  }
+
+  // Extract name components from the Clerk identity (JWT claims)
+  const firstName =
+    typeof identity.firstName === "string" ? identity.firstName : undefined;
+  const lastName =
+    typeof identity.lastName === "string" ? identity.lastName : undefined;
+  // Determine the full name: use identity.name, fallback to firstName + lastName,
+  // then identity.nickname, then email. The schema requires 'name' to be a string.
+  const name =
+    (typeof identity.name === "string" ? identity.name : null) ||
+    (firstName && lastName
+      ? `${firstName} ${lastName}`
+      : firstName || lastName) ||
+    (typeof identity.nickname === "string" ? identity.nickname : null) ||
+    email;
+
+  const user = await upsertUser(ctx, {
+    clerkId: identity.subject,
+    email,
+    name,
+    firstName,
+    lastName,
+  });
+  return user.deletedAt !== undefined ? null : user;
 };
 
 /**
  * Helper function to get the current authenticated user from the database.
  * Throws an error if not authenticated or user not found.
  */
-export const getCurrentUserOrThrow = async (ctx: QueryCtx | MutationCtx): Promise<Doc<"users">> => {
+export const getCurrentUserOrThrow = async (
+  ctx: QueryCtx | MutationCtx,
+): Promise<Doc<"users">> => {
   const user = await getCurrentUser(ctx);
   if (!user) {
-    throw new Error("User not authenticated or not found in database. Please ensure user is logged in and has been created.");
+    throw new Error(
+      "User not authenticated or not found in database. Please ensure user is logged in and has been created.",
+    );
+  }
+  return user;
+};
+
+/**
+ * Helper function to require that the current authenticated user is an admin.
+ * Throws an error if not authenticated, user not found, or not an admin.
+ */
+export const requireAdmin = async (
+  ctx: QueryCtx | MutationCtx,
+): Promise<Doc<"users">> => {
+  const user = await getCurrentUserOrThrow(ctx);
+  if (user.role !== "admin") {
+    throw new Error("User not authorized (admin only).");
   }
   return user;
 };

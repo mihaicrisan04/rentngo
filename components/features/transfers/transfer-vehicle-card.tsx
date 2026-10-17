@@ -61,7 +61,7 @@ export const TransferVehicleCard = React.memo(function TransferVehicleCard({
         <div className="absolute top-3 right-3 z-10">
           <Badge className="bg-primary text-primary-foreground">
             <Check className="h-3 w-3 mr-1" />
-            Selected
+            {t("vehicleSelection.selected")}
           </Badge>
         </div>
       )}
@@ -142,7 +142,7 @@ export const TransferVehicleCard = React.memo(function TransferVehicleCard({
           {isSelected ? (
             <>
               <Check className="h-4 w-4 mr-2" />
-              Selected
+              {t("vehicleSelection.selected")}
             </>
           ) : (
             t("vehicleSelection.selectVehicle")

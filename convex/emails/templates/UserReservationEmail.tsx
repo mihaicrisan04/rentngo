@@ -1,8 +1,16 @@
 import * as React from "react";
-import { Body, Head, Html, Preview, Hr, Tailwind } from "@react-email/components";
+import {
+  Body,
+  Head,
+  Html,
+  Preview,
+  Hr,
+  Tailwind,
+} from "@react-email/components";
 import { ReservationEmailData } from "../types";
 import { EmailHeader } from "../components/email_header";
 import { EmailFooter } from "../components/email_footer";
+import { ReferralBlock } from "../components/referral_block";
 import { CustomerInfoSection } from "../components/customer_info_section";
 import { RentalDetailsSection } from "../components/rental_details_section";
 import { VehicleInfoSection } from "../components/vehicle_info_section";
@@ -42,6 +50,8 @@ export const UserReservationEmail: React.FC<UserReservationEmailProps> = ({
       returnDateTime: isRo ? "Data și Ora Returnării:" : "Return Date & Time:",
       pickupLocation: isRo ? "Locația de Ridicare:" : "Pickup Location:",
       returnLocation: isRo ? "Locația de Returnare:" : "Return Location:",
+      includedKm: isRo ? "Kilometri Incluși:" : "Included Kilometers:",
+      extraKm: isRo ? "Kilometri Extra:" : "Extra Kilometers:",
     },
     vehicle: {
       heading: isRo ? "Informații Vehicul" : "Vehicle Information",
@@ -56,9 +66,17 @@ export const UserReservationEmail: React.FC<UserReservationEmailProps> = ({
         isRo
           ? `Închiriere (${days} ${days === 1 ? "zi" : "zile"} × ${pricePerDay} EUR/zi):`
           : `Rental (${days} ${days === 1 ? "day" : "days"} × ${pricePerDay} EUR/day):`,
-      promoCode: isRo ? "Cod Promoțional Aplicat:" : "Promo Code Applied:",
+      promoCode: pricingDetails.isReferralDiscount
+        ? isRo
+          ? "Reducere Recomandare:"
+          : "Referral Discount:"
+        : isRo
+          ? "Cod Promoțional Aplicat:"
+          : "Promo Code Applied:",
       additionalCharges: isRo ? "Taxă Suplimentară" : "Additional Charge",
       totalAmount: isRo ? "Sumă Totală:" : "Total Amount:",
+      walletCredit: isRo ? "Credit aplicat:" : "Wallet Credit:",
+      amountDue: isRo ? "De plată:" : "Amount Due:",
       paymentMethod: isRo ? "Metoda de Plată:" : "Payment Method:",
       scdwText: isRo ? "SCDW (nerestituibilă)" : "SCDW (zero deductible)",
       warrantyText: isRo ? "Garanție (restituibilă)" : "Warranty (deductible)",
@@ -96,6 +114,8 @@ export const UserReservationEmail: React.FC<UserReservationEmailProps> = ({
               returnDateTime: t.rental.returnDateTime,
               pickupLocation: t.rental.pickupLocation,
               returnLocation: t.rental.returnLocation,
+              includedKm: t.rental.includedKm,
+              extraKm: t.rental.extraKm,
             }}
           />
 
@@ -117,15 +137,22 @@ export const UserReservationEmail: React.FC<UserReservationEmailProps> = ({
           <PricingSection
             pricingDetails={pricingDetails}
             rentalDetails={rentalDetails}
+            locale={locale}
             labels={{
               heading: t.pricing.heading,
               rentalLine: t.pricing.rentalLine,
               promoCode: t.pricing.promoCode,
               additionalCharges: t.pricing.additionalCharges,
               totalAmount: t.pricing.totalAmount,
+              walletCredit: t.pricing.walletCredit,
+              amountDue: t.pricing.amountDue,
               paymentMethod: t.pricing.paymentMethod,
+              scdwText: t.pricing.scdwText,
+              warrantyText: t.pricing.warrantyText,
             }}
           />
+
+          <ReferralBlock referral={data.referral} locale={isRo ? "ro" : "en"} />
 
           <EmailFooter customMessage={t.footerMessage} />
         </Body>

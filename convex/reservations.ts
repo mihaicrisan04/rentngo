@@ -1,21 +1,70 @@
-import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
-import { api, internal } from "./_generated/api";
-import { Id } from "./_generated/dataModel";
-import { getCurrentUser, getCurrentUserOrThrow } from "./users";
-
-// Validator for reservation status, strictly aligned with schema.ts
-const reservationStatusValidator = v.union(
-  v.literal("pending"),
-  v.literal("confirmed"),
-  v.literal("cancelled"),
-  v.literal("completed")
-);
+import { mutation, query, type MutationCtx } from "./_generated/server";
+import { ConvexError, v } from "convex/values";
+import {
+  paginationOptsValidator,
+  paginationResultValidator,
+} from "convex/server";
+import { internal } from "./_generated/api";
+import { Doc, Id } from "./_generated/dataModel";
+import {
+  getCurrentUser,
+  getCurrentUserOrThrow,
+  getOrCreateCurrentUser,
+  requireAdmin,
+} from "./users";
+import { applyAndRedeemCoupon } from "./coupons";
+import { nextBookingNumber, reservationNumberCounter } from "./counters";
+import {
+  getTableStats,
+  recordStatsInsert,
+  recordStatsRemove,
+  recordStatsStatusChange,
+} from "./tableStats";
+import {
+  bucketMonthlyStats,
+  calculateGrowth,
+  getMonthRange,
+  getRecentMonthKeys,
+  validateContiguousTimestampRanges,
+} from "./lib/stats";
+import {
+  recordReferralConversion,
+  recordTypedCodeAttribution,
+  referralArgValidator,
+  referralBlockForBooker,
+  resolveAffiliateCandidates,
+  syncConversionForBooking,
+} from "./affiliates";
+import { redeemWalletCredit, reverseWalletRedemption } from "./wallet";
+import {
+  applyDiscountToTotal,
+  normalizeCustomerEmail,
+  pickDiscount,
+  type AppliedDiscount,
+  assertValidReservationExtras,
+  calculateIncludedKilometers,
+  calculateMultiplierForDateRange,
+  computeReservationPricing,
+  extractLegacyExtras,
+  isKnownLocation,
+  msToDateString,
+  referralDiscountableAmount,
+  resolveEditedBookingTotal,
+  DEFAULT_ADDITIONAL_50KM_PRICE,
+} from "../lib/pricing";
+import {
+  additionalChargeCodeValidator,
+  bookingStatusValidator as reservationStatusValidator,
+  paymentMethodValidator,
+} from "./validators";
+import { stripUndefined } from "./lib/patch";
 
 // Explicit type for ReservationStatus based on the schema
-type ReservationStatusType = "pending" | "confirmed" | "cancelled" | "completed";
-
- 
+type ReservationStatusType =
+  | "pending"
+  | "confirmed"
+  | "cancelled"
+  | "completed";
 
 // Validator for additional charges, aligned with schema.ts
 const additionalChargeValidator = v.object({
@@ -23,22 +72,109 @@ const additionalChargeValidator = v.object({
   amount: v.number(),
 });
 
+// Exported for the drift guard in convex/bookingDocValidators.test.ts: this
+// spells the stored document out by hand, so every schema field must be added
+// here too or reads fail their returns validator.
+export const reservationDocValidator = v.object({
+  _id: v.id("reservations"),
+  _creationTime: v.number(),
+  reservationNumber: v.optional(v.number()),
+  userId: v.optional(v.id("users")),
+  vehicleId: v.id("vehicles"),
+  startDate: v.number(),
+  endDate: v.number(),
+  pickupTime: v.string(),
+  restitutionTime: v.string(),
+  pickupLocation: v.string(),
+  restitutionLocation: v.string(),
+  paymentMethod: paymentMethodValidator,
+  status: reservationStatusValidator,
+  totalPrice: v.number(),
+  customerInfo: v.object({
+    name: v.string(),
+    email: v.string(),
+    phone: v.string(),
+    message: v.optional(v.string()),
+    flightNumber: v.optional(v.string()),
+  }),
+  customerEmailNormalized: v.optional(v.string()),
+  promoCode: v.optional(v.string()),
+  couponId: v.optional(v.id("coupons")),
+  discountAmount: v.optional(v.number()),
+  discountSource: v.optional(
+    v.union(v.literal("coupon"), v.literal("affiliate")),
+  ),
+  affiliateId: v.optional(v.id("affiliates")),
+  walletCreditApplied: v.optional(v.number()),
+  additionalCharges: v.optional(
+    v.array(
+      v.object({
+        description: v.optional(v.string()),
+        code: v.optional(additionalChargeCodeValidator),
+        params: v.optional(
+          v.record(v.string(), v.union(v.string(), v.number())),
+        ),
+        amount: v.number(),
+      }),
+    ),
+  ),
+  isSCDWSelected: v.boolean(),
+  deductibleAmount: v.number(),
+  protectionCost: v.optional(v.number()),
+  seasonId: v.optional(v.id("seasons")),
+  seasonalMultiplier: v.optional(v.number()),
+  pricePerDay: v.optional(v.number()),
+  rentalDays: v.optional(v.number()),
+  basePrice: v.optional(v.number()),
+});
+
+const reservationListItemValidator = reservationDocValidator.extend({
+  vehicle: v.union(
+    v.object({
+      make: v.string(),
+      model: v.string(),
+      year: v.optional(v.number()),
+    }),
+    v.null(),
+  ),
+});
+
+const successValidator = v.object({ success: v.boolean() });
+const successMessageValidator = v.object({
+  success: v.boolean(),
+  message: v.string(),
+});
+
+/**
+ * Cancelling gives the wallet credit back, so the booking must stop claiming
+ * it was paid with credit — otherwise an un-cancel would show a credit line
+ * for money that is spendable again. Idempotent, like the reversal itself.
+ */
+async function refundWalletCredit(
+  ctx: MutationCtx,
+  reservationId: Id<"reservations">,
+): Promise<void> {
+  const restored = await reverseWalletRedemption(ctx, {
+    bookingType: "reservation",
+    bookingId: reservationId,
+  });
+  if (restored > 0) {
+    await ctx.db.patch(reservationId, { walletCreditApplied: undefined });
+  }
+}
+
 // --- CREATE ---
 export const createReservation = mutation({
   args: {
     userId: v.optional(v.id("users")),
     vehicleId: v.id("vehicles"),
     startDate: v.number(), // Unix timestamp
-    endDate: v.number(),   // Unix timestamp
+    endDate: v.number(), // Unix timestamp
     pickupTime: v.string(), // Time in "HH:MM" format
     restitutionTime: v.string(), // Time in "HH:MM" format
     pickupLocation: v.string(), // Name of pickup location
     restitutionLocation: v.string(), // Name of return location
-    paymentMethod: v.union(
-      v.literal("cash_on_delivery"),
-      v.literal("card_on_delivery"),
-      v.literal("card_online")
-    ),
+    paymentMethod: paymentMethodValidator,
     totalPrice: v.number(),
     customerInfo: v.object({
       name: v.string(),
@@ -47,7 +183,19 @@ export const createReservation = mutation({
       message: v.optional(v.string()),
       flightNumber: v.optional(v.string()),
     }),
+    // Coupon code to redeem — validated server-side; an invalid code fails
+    // the booking (no longer a free-text pass-through)
     promoCode: v.optional(v.string()),
+    // Referral cookie payload — validated against the recorded attribution;
+    // an invalid/expired/fabricated pair silently attributes nothing (the
+    // referral is automatic, so it never fails the booking)
+    referral: v.optional(referralArgValidator),
+    // Affiliate slug the customer typed into the promo field. Beats the
+    // cookie; unlike the cookie an ineligible typed code fails the booking.
+    referralCode: v.optional(v.string()),
+    // Wallet credit switch — a boolean only; the server owns the amount and
+    // ignores it for guests and while the referral program is off
+    useWalletCredit: v.optional(v.boolean()),
     additionalCharges: v.optional(v.array(additionalChargeValidator)),
     isSCDWSelected: v.boolean(),
     deductibleAmount: v.number(),
@@ -55,35 +203,225 @@ export const createReservation = mutation({
     seasonId: v.optional(v.id("seasons")),
     seasonalMultiplier: v.optional(v.number()),
     // Email data fields
-    vehicleInfo: v.optional(v.object({
-      make: v.string(),
-      model: v.string(),
-      year: v.optional(v.number()),
-      type: v.optional(v.string()),
-      seats: v.optional(v.number()),
-      transmission: v.optional(v.string()),
-      fuelType: v.optional(v.string()),
-      features: v.optional(v.array(v.string())),
-    })),
+    vehicleInfo: v.optional(
+      v.object({
+        make: v.string(),
+        model: v.string(),
+        year: v.optional(v.number()),
+        type: v.optional(v.string()),
+        seats: v.optional(v.number()),
+        transmission: v.optional(v.string()),
+        fuelType: v.optional(v.string()),
+        features: v.optional(v.array(v.string())),
+      }),
+    ),
     pricePerDayUsed: v.optional(v.number()),
     locale: v.optional(v.string()),
+    // Structured extras (new clients). When present, the server recomputes
+    // ALL charges from these; the legacy prose `additionalCharges` are then
+    // only used for the email rendering.
+    extras: v.optional(
+      v.object({
+        snowChains: v.boolean(),
+        childSeat1to4: v.number(),
+        childSeat5to12: v.number(),
+        extraKilometers: v.number(),
+      }),
+    ),
   },
   returns: v.object({
     reservationId: v.id("reservations"),
     reservationNumber: v.number(),
   }),
   handler: async (ctx, args) => {
-    // Get the current authenticated user (if any)
-    const currentUser = await getCurrentUser(ctx);
+    // Reject malformed extras (negative/fractional counts) before any money
+    // math — v.number() alone puts no lower bound on them
+    assertValidReservationExtras(args.extras);
 
-    // Compute next reservation number
-    const allReservations = await ctx.db.query("reservations").collect();
-    const hasAny = allReservations.length > 0;
-    const maxNumber = allReservations.reduce((max, r) => {
-      const num = (r as any).reservationNumber ?? 0;
-      return num > max ? num : max;
-    }, 0);
-    const nextReservationNumber = hasAny ? (maxNumber + 1) : 10000;
+    // Get the current authenticated user (if any) — never trust a
+    // client-supplied userId. Creates the row from the JWT when the Clerk
+    // webhook sync hasn't landed yet, so a missed webhook can't block or
+    // orphan a booking.
+    const currentUser = await getOrCreateCurrentUser(ctx);
+
+    const vehicle = await ctx.db.get(args.vehicleId);
+    if (!vehicle) {
+      throw new Error("Vehicle not found.");
+    }
+
+    // The picker offers a fixed location list, so an unknown name never
+    // comes from an honest client. It prices as fee 0 rather than failing
+    // the booking (the list may drift between deploys / stored searches);
+    // log it so tampering or drift is visible
+    for (const location of [args.pickupLocation, args.restitutionLocation]) {
+      if (location && !isKnownLocation(location)) {
+        console.warn("[pricing] createReservation unknown location (fee 0)", {
+          location,
+          vehicleId: args.vehicleId,
+        });
+      }
+    }
+
+    // Resolve the seasonal multiplier from server data (same algorithm the
+    // client display uses, fed from the same tables)
+    const activeSeasons = await ctx.db
+      .query("seasons")
+      .withIndex("by_active", (q) => q.eq("isActive", true))
+      .collect();
+    const currentSeasonRow = await ctx.db.query("currentSeason").first();
+    const currentSeasonDoc = currentSeasonRow
+      ? await ctx.db.get(currentSeasonRow.seasonId)
+      : null;
+    const seasonResult = calculateMultiplierForDateRange(
+      msToDateString(args.startDate),
+      msToDateString(args.endDate),
+      activeSeasons,
+      currentSeasonDoc
+        ? { seasonId: currentSeasonDoc._id, season: currentSeasonDoc }
+        : null,
+    );
+
+    const vehicleClass = vehicle.classId
+      ? await ctx.db.get(vehicle.classId)
+      : null;
+
+    // Authoritative recompute — client-submitted money fields are never
+    // persisted (SCDW uses the base-tier seasonal rate per the owner
+    // decision on RNGO-13, matching the on-screen total)
+    const pricing = computeReservationPricing({
+      vehicle,
+      startDate: new Date(args.startDate),
+      endDate: new Date(args.endDate),
+      pickupTime: args.pickupTime,
+      restitutionTime: args.restitutionTime,
+      pickupLocation: args.pickupLocation,
+      restitutionLocation: args.restitutionLocation,
+      seasonalMultiplier: seasonResult.multiplier,
+      isSCDWSelected: args.isSCDWSelected,
+      extras: args.extras,
+      additional50kmPrice:
+        vehicleClass?.additional50kmPrice ?? DEFAULT_ADDITIONAL_50KM_PRICE,
+    });
+
+    let totalPrice: number;
+    let persistedCharges;
+    if (args.extras) {
+      totalPrice = pricing.totalPrice;
+      persistedCharges =
+        pricing.additionalCharges.length > 0
+          ? pricing.additionalCharges
+          : undefined;
+    } else {
+      // TRANSITIONAL legacy path — goes away when RNGO-17 ships the
+      // structured `extras` arg. Dates, locations and protection are fully
+      // recomputed above, but pre-RNGO-17 clients send physical extras only
+      // as localized prose line items mixed with the location-fee entries.
+      // extractLegacyExtras strips the fee entries (head-first, matching the
+      // known client's push order) and sums the rest as the extras total, so
+      // the stored total still reconciles with its line items. The prose
+      // array is persisted as-is so the confirmation page and email keep
+      // rendering labels until RNGO-17/19 switch to coded charges.
+      const legacy = extractLegacyExtras(
+        args.additionalCharges ?? [],
+        pricing.deliveryFee,
+        pricing.returnFee,
+      );
+      if (legacy.ambiguousFeeMatch || legacy.droppedInvalidAmounts) {
+        console.warn("[pricing] createReservation ambiguous legacy charges", {
+          ambiguousFeeMatch: legacy.ambiguousFeeMatch,
+          droppedInvalidAmounts: legacy.droppedInvalidAmounts,
+          clientCharges: args.additionalCharges,
+          deliveryFee: pricing.deliveryFee,
+          returnFee: pricing.returnFee,
+          vehicleId: args.vehicleId,
+        });
+      }
+      totalPrice =
+        pricing.basePrice +
+        pricing.protectionCost +
+        pricing.totalLocationFees +
+        legacy.extrasTotal;
+      persistedCharges = args.additionalCharges;
+    }
+
+    // Soft drift telemetry during rollout: the server value always wins, but
+    // a mismatch signals a client bug (or tampering) worth investigating
+    if (Math.abs(args.totalPrice - totalPrice) > 0.5) {
+      console.warn("[pricing] createReservation client/server total mismatch", {
+        clientTotal: args.totalPrice,
+        serverTotal: totalPrice,
+        clientProtectionCost: args.protectionCost,
+        serverProtectionCost: pricing.protectionCost,
+        vehicleId: args.vehicleId,
+        startDate: args.startDate,
+        endDate: args.endDate,
+        seasonalMultiplier: seasonResult.multiplier,
+      });
+    }
+
+    // Single-discount seam: gather every candidate against the
+    // server-recomputed total, then pickDiscount applies exactly one
+    // (explicit coupon > referred discount). The referrer is not discounted
+    // here: their tier percent is minted as wallet credit when an admin
+    // approves the conversion.
+    //
+    // Coupon: validation, the redemption-count increment and the audit row
+    // all happen inside this mutation's transaction, so a capped code cannot
+    // over-redeem under concurrency and an invalid code rolls the whole
+    // booking back. A present coupon always wins the pick, so redeeming it
+    // unconditionally is correct.
+    const redeemedCoupon = args.promoCode?.trim()
+      ? await applyAndRedeemCoupon(ctx, {
+          code: args.promoCode,
+          bookingType: "rentals",
+          subtotal: totalPrice,
+          userId: currentUser?._id,
+          customerEmail: args.customerInfo.email,
+        })
+      : null;
+    const affiliateCandidates = await resolveAffiliateCandidates(ctx, {
+      referral: args.referral,
+      typedCode: args.referralCode,
+      currentUser,
+      customerEmail: args.customerInfo.email,
+      subtotal: referralDiscountableAmount(pricing),
+    });
+    // A typed referral code that grants nothing fails the booking, exactly
+    // like an invalid coupon: checkout quoted the discounted price, so
+    // silently charging full price would be a bait-and-switch. The cookie
+    // path stays silent — nothing was promised there.
+    if (affiliateCandidates.typedCodeRejection) {
+      throw new ConvexError({
+        code: "REFERRAL_CODE_INVALID",
+        reason: affiliateCandidates.typedCodeRejection,
+      });
+    }
+
+    const couponDiscount: AppliedDiscount | null = redeemedCoupon
+      ? {
+          source: "coupon",
+          code: redeemedCoupon.code,
+          amount: redeemedCoupon.discountAmount,
+        }
+      : null;
+    const referredDiscount: AppliedDiscount | null =
+      affiliateCandidates.referred &&
+      affiliateCandidates.referred.discountAmount > 0
+        ? {
+            source: "affiliate",
+            code: affiliateCandidates.referred.slug,
+            amount: affiliateCandidates.referred.discountAmount,
+          }
+        : null;
+    const appliedDiscount = pickDiscount([couponDiscount, referredDiscount]);
+    if (appliedDiscount) {
+      totalPrice = applyDiscountToTotal(totalPrice, appliedDiscount.amount);
+    }
+
+    const nextReservationNumber = await nextBookingNumber(
+      ctx,
+      reservationNumberCounter,
+    );
 
     const newReservationData = {
       reservationNumber: nextReservationNumber,
@@ -97,56 +435,141 @@ export const createReservation = mutation({
       restitutionLocation: args.restitutionLocation,
       paymentMethod: args.paymentMethod,
       status: "pending" as ReservationStatusType, // Initial status
-      totalPrice: args.totalPrice,
+      totalPrice,
       customerInfo: args.customerInfo,
-      promoCode: args.promoCode,
-      additionalCharges: args.additionalCharges,
+      customerEmailNormalized: normalizeCustomerEmail(args.customerInfo.email),
+      promoCode: redeemedCoupon?.code,
+      couponId: redeemedCoupon?.couponId,
+      discountAmount: appliedDiscount?.amount,
+      discountSource: appliedDiscount?.source,
+      // Referrer credited for this booking (attribution)
+      affiliateId: affiliateCandidates.referred?.affiliateId,
+      additionalCharges: persistedCharges,
       isSCDWSelected: args.isSCDWSelected,
-      deductibleAmount: args.deductibleAmount,
-      protectionCost: args.protectionCost,
-      seasonId: args.seasonId,
-      seasonalMultiplier: args.seasonalMultiplier,
+      deductibleAmount: pricing.deductibleAmount,
+      protectionCost:
+        pricing.protectionCost > 0 ? pricing.protectionCost : undefined,
+      seasonId: seasonResult.seasonId as Id<"seasons"> | undefined,
+      seasonalMultiplier: seasonResult.multiplier,
+      pricePerDay: pricing.pricePerDay,
+      rentalDays: pricing.rentalDays,
+      basePrice: pricing.basePrice,
     };
 
-    const reservationId = await ctx.db.insert("reservations", newReservationData);
+    const reservationId = await ctx.db.insert(
+      "reservations",
+      newReservationData,
+    );
+    await recordStatsInsert(ctx, "reservations", newReservationData.status);
+
+    // Link the redemption audit row to the booking it paid for
+    if (redeemedCoupon) {
+      await ctx.db.patch(redeemedCoupon.redemptionId, { reservationId });
+    }
+
+    // Wallet credit is a payment on top of the single discount, so it is
+    // taken from the already-discounted total. totalPrice stays pre-credit;
+    // the amount still due is totalPrice - walletCreditApplied.
+    const walletCreditApplied = await redeemWalletCredit(ctx, {
+      bookingType: "reservation",
+      bookingId: reservationId,
+      userId: currentUser?._id,
+      totalAfterDiscount: totalPrice,
+      requested: args.useWalletCredit === true,
+    });
+    if (walletCreditApplied > 0) {
+      await ctx.db.patch(reservationId, { walletCreditApplied });
+    }
+
+    // Conversion lifecycle: a referred booking opens a pending conversion —
+    // even when a coupon won the one-discount rule. Nothing is credited until
+    // the rental is completed and an admin approves it.
+    if (affiliateCandidates.referred) {
+      const attributionId =
+        affiliateCandidates.referred.attributionSource === "typedCode"
+          ? await recordTypedCodeAttribution(ctx, {
+              affiliateId: affiliateCandidates.referred.affiliateId,
+              slug: affiliateCandidates.referred.slug,
+            })
+          : affiliateCandidates.referred.attributionId;
+      const conversionId = await recordReferralConversion(ctx, {
+        attributionId,
+        affiliateId: affiliateCandidates.referred.affiliateId,
+        bookingType: "reservation",
+        referredUserId: currentUser?._id,
+        referredEmail: args.customerInfo.email,
+        referredDiscountAmount:
+          referredDiscount && appliedDiscount === referredDiscount
+            ? referredDiscount.amount
+            : 0,
+        rewardPercentSnapshot:
+          affiliateCandidates.referred.rewardPercentSnapshot,
+      });
+      await ctx.db.patch(conversionId, { reservationId });
+    }
 
     // Schedule email sending if vehicle info is provided
     if (args.vehicleInfo) {
-      // Calculate number of days
-      const startDate = new Date(args.startDate);
-      const endDate = new Date(args.endDate);
-      const numberOfDays = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
-      
+      // Minting the booker's own referral code needs the database, so it
+      // happens here rather than in the email action.
+      const referral = await referralBlockForBooker(ctx, currentUser?._id);
       // Format dates for email
-      const timeZone = 'Europe/Bucharest';
-      const startDateString = startDate.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone });
-      const endDateString = endDate.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone });
-
-      await ctx.scheduler.runAfter(0, internal.emails.sendReservationConfirmationEmail, {
-        reservationNumber: nextReservationNumber,
-        customerInfo: args.customerInfo,
-        vehicleInfo: args.vehicleInfo,
-        rentalDetails: {
-          startDate: startDateString,
-          endDate: endDateString,
-          pickupTime: args.pickupTime,
-          restitutionTime: args.restitutionTime,
-          pickupLocation: args.pickupLocation,
-          restitutionLocation: args.restitutionLocation,
-          numberOfDays,
-        },
-        pricingDetails: {
-          pricePerDay: args.pricePerDayUsed ?? Math.round(args.totalPrice / numberOfDays),
-          totalPrice: args.totalPrice,
-          paymentMethod: args.paymentMethod,
-          promoCode: args.promoCode,
-          additionalCharges: args.additionalCharges,
-          isSCDWSelected: args.isSCDWSelected,
-          deductibleAmount: args.deductibleAmount,
-          protectionCost: args.protectionCost,
-        },
-        locale: args.locale,
+      const timeZone = "Europe/Bucharest";
+      const startDateString = new Date(args.startDate).toLocaleDateString(
+        "en-GB",
+        { year: "numeric", month: "long", day: "numeric", timeZone },
+      );
+      const endDateString = new Date(args.endDate).toLocaleDateString("en-GB", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        timeZone,
       });
+
+      await ctx.scheduler.runAfter(
+        0,
+        internal.emails.sendReservationConfirmationEmail,
+        {
+          reservationNumber: nextReservationNumber,
+          customerInfo: args.customerInfo,
+          vehicleInfo: args.vehicleInfo,
+          rentalDetails: {
+            startDate: startDateString,
+            endDate: endDateString,
+            pickupTime: args.pickupTime,
+            restitutionTime: args.restitutionTime,
+            pickupLocation: args.pickupLocation,
+            restitutionLocation: args.restitutionLocation,
+            numberOfDays: pricing.rentalDays,
+            includedKm: calculateIncludedKilometers(pricing.rentalDays),
+            // Only structured clients declare extra km; legacy bookings carry
+            // it solely as a prose additional-charge line, so the explicit row
+            // is omitted for them rather than parsed out of localized text
+            extraKilometers:
+              args.extras && args.extras.extraKilometers > 0
+                ? args.extras.extraKilometers
+                : undefined,
+          },
+          pricingDetails: {
+            // Server-computed values so the email matches what was stored.
+            pricePerDay: pricing.pricePerDay,
+            totalPrice,
+            paymentMethod: args.paymentMethod,
+            promoCode: appliedDiscount?.code,
+            discountAmount: appliedDiscount?.amount,
+            isReferralDiscount: appliedDiscount?.source === "affiliate",
+            walletCreditApplied:
+              walletCreditApplied > 0 ? walletCreditApplied : undefined,
+            additionalCharges: persistedCharges,
+            isSCDWSelected: args.isSCDWSelected,
+            deductibleAmount: pricing.deductibleAmount,
+            protectionCost:
+              pricing.protectionCost > 0 ? pricing.protectionCost : undefined,
+          },
+          referral,
+          locale: args.locale,
+        },
+      );
     }
 
     return { reservationId, reservationNumber: nextReservationNumber };
@@ -156,19 +579,23 @@ export const createReservation = mutation({
 // --- READ ---
 export const getReservationById = query({
   args: { reservationId: v.id("reservations") },
+  returns: v.union(reservationDocValidator, v.null()),
   handler: async (ctx, args) => {
     const reservation = await ctx.db.get(args.reservationId);
     if (!reservation) return null;
 
     // Check if user is authenticated and authorized to view this reservation
     const currentUser = await getCurrentUser(ctx);
-    
+
     // Allow access if:
     // 1. User is an admin
     // 2. User is the owner of the reservation
     // 3. Reservation has no userId (guest booking) - you might want to restrict this further
     if (currentUser) {
-      if (currentUser.role === "admin" || reservation.userId === currentUser._id) {
+      if (
+        currentUser.role === "admin" ||
+        reservation.userId === currentUser._id
+      ) {
         return reservation;
       } else {
         throw new Error("User not authorized to view this reservation.");
@@ -185,24 +612,41 @@ export const getReservationById = query({
   },
 });
 
-export const getCurrentUserReservations = query({
-  args: {}, // No args needed, uses authenticated user
-  handler: async (ctx) => {
+export const getCurrentUserReservationsPaginated = query({
+  args: { paginationOpts: paginationOptsValidator },
+  returns: paginationResultValidator(reservationListItemValidator),
+  handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
-
-    return await ctx.db
+    const result = await ctx.db
       .query("reservations")
       .withIndex("by_user", (q) => q.eq("userId", user._id))
       .order("desc")
-      .collect();
+      .paginate(args.paginationOpts);
+
+    return {
+      ...result,
+      page: await Promise.all(
+        result.page.map(async (reservation) => {
+          const vehicle = await ctx.db.get(reservation.vehicleId);
+          return {
+            ...reservation,
+            vehicle: vehicle
+              ? { make: vehicle.make, model: vehicle.model, year: vehicle.year }
+              : null,
+          };
+        }),
+      ),
+    };
   },
 });
 
 export const getReservationsByVehicle = query({
   args: { vehicleId: v.id("vehicles") },
+  returns: v.array(reservationDocValidator),
   handler: async (ctx, args) => {
-    // This query can be public for availability, or admin-only.
-    // Add auth checks if needed.
+    // Admin-only: reservations include customer PII (name/email/phone)
+    await requireAdmin(ctx);
+
     return await ctx.db
       .query("reservations")
       .withIndex("by_vehicle", (q) => q.eq("vehicleId", args.vehicleId)) // Correct index name
@@ -212,6 +656,7 @@ export const getReservationsByVehicle = query({
 
 export const getReservationsByPickupLocation = query({
   args: { pickupLocation: v.string() },
+  returns: v.array(reservationDocValidator),
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
 
@@ -221,19 +666,18 @@ export const getReservationsByPickupLocation = query({
 
     return await ctx.db
       .query("reservations")
-      .withIndex("by_pickup_location", (q) => q.eq("pickupLocation", args.pickupLocation))
+      .withIndex("by_pickup_location", (q) =>
+        q.eq("pickupLocation", args.pickupLocation),
+      )
       .collect();
   },
 });
 
 export const getReservationsByPaymentMethod = query({
-  args: { 
-    paymentMethod: v.union(
-      v.literal("cash_on_delivery"),
-      v.literal("card_on_delivery"),
-      v.literal("card_online")
-    ) 
+  args: {
+    paymentMethod: paymentMethodValidator,
   },
+  returns: v.array(reservationDocValidator),
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
 
@@ -243,21 +687,37 @@ export const getReservationsByPaymentMethod = query({
 
     return await ctx.db
       .query("reservations")
-      .withIndex("by_payment_method", (q) => q.eq("paymentMethod", args.paymentMethod))
+      .withIndex("by_payment_method", (q) =>
+        q.eq("paymentMethod", args.paymentMethod),
+      )
       .collect();
   },
 });
 
-// Admin-only
-export const getAllReservations = query({
-  args: {},
-  handler: async (ctx) => {
-    const user = await getCurrentUserOrThrow(ctx);
+export const getAllReservationsPaginated = query({
+  args: { paginationOpts: paginationOptsValidator },
+  returns: paginationResultValidator(reservationListItemValidator),
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const result = await ctx.db
+      .query("reservations")
+      .order("desc")
+      .paginate(args.paginationOpts);
 
-    if (user.role !== "admin") {
-      throw new Error("User not authorized (admin only).");
-    }
-    return await ctx.db.query("reservations").order("desc").collect();
+    return {
+      ...result,
+      page: await Promise.all(
+        result.page.map(async (reservation) => {
+          const vehicle = await ctx.db.get(reservation.vehicleId);
+          return {
+            ...reservation,
+            vehicle: vehicle
+              ? { make: vehicle.make, model: vehicle.model, year: vehicle.year }
+              : null,
+          };
+        }),
+      ),
+    };
   },
 });
 
@@ -267,8 +727,12 @@ export const updateReservationStatus = mutation({
     reservationId: v.id("reservations"),
     newStatus: reservationStatusValidator,
   },
+  returns: successValidator,
   handler: async (ctx, args) => {
-    const user = await getCurrentUserOrThrow(ctx);
+    const user = await getOrCreateCurrentUser(ctx);
+    if (!user) {
+      throw new Error("User not authenticated.");
+    }
 
     const reservation = await ctx.db.get(args.reservationId);
     if (!reservation) {
@@ -278,12 +742,63 @@ export const updateReservationStatus = mutation({
     if (reservation.userId !== user._id && user.role !== "admin") {
       throw new Error("User not authorized to update this reservation status.");
     }
+    // Completion is what makes a referral conversion claimable, so only staff
+    // may declare a rental finished. Customers keep their own cancellation.
+    if (args.newStatus === "completed" && user.role !== "admin") {
+      throw new Error("Only an admin can mark a reservation completed.");
+    }
 
     await ctx.db.patch(args.reservationId, { status: args.newStatus });
+    await recordStatsStatusChange(
+      ctx,
+      "reservations",
+      reservation.status,
+      args.newStatus,
+    );
+
+    // Void the linked referral conversion on cancel (re-confirm on un-cancel)
+    await syncConversionForBooking(ctx, {
+      bookingType: "reservation",
+      bookingId: args.reservationId,
+      bookingStatus: args.newStatus,
+    });
+    if (args.newStatus === "cancelled") {
+      await refundWalletCredit(ctx, args.reservationId);
+    }
 
     return { success: true };
   },
 });
+
+const chargesKey = (charges?: { description?: string; amount: number }[]) =>
+  (charges ?? []).map((c) => `${c.description ?? ""}|${c.amount}`).join(";");
+
+/** Whether an edit touches anything the rental price is computed from. */
+function reservationPricingChanged(
+  reservation: Doc<"reservations">,
+  updates: Partial<Doc<"reservations">>,
+): boolean {
+  const priced = [
+    "vehicleId",
+    "startDate",
+    "endDate",
+    "pickupTime",
+    "restitutionTime",
+    "isSCDWSelected",
+    "protectionCost",
+    "seasonId",
+    "seasonalMultiplier",
+  ] as const;
+  return (
+    priced.some(
+      (field) =>
+        updates[field] !== undefined && updates[field] !== reservation[field],
+    ) ||
+    (updates.additionalCharges !== undefined &&
+      chargesKey(updates.additionalCharges) !==
+        chargesKey(reservation.additionalCharges))
+  );
+}
 
 export const updateReservationDetails = mutation({
   args: {
@@ -295,21 +810,18 @@ export const updateReservationDetails = mutation({
     restitutionTime: v.optional(v.string()),
     pickupLocation: v.optional(v.string()),
     restitutionLocation: v.optional(v.string()),
-    paymentMethod: v.optional(v.union(
-      v.literal("cash_on_delivery"),
-      v.literal("card_on_delivery"),
-      v.literal("card_online")
-    )),
+    paymentMethod: v.optional(paymentMethodValidator),
     totalPrice: v.optional(v.number()),
-    customerInfo: v.optional(v.object({
-      name: v.string(),
-      email: v.string(),
-      phone: v.string(),
-      message: v.optional(v.string()),
-      flightNumber: v.optional(v.string()),
-    })),
+    customerInfo: v.optional(
+      v.object({
+        name: v.string(),
+        email: v.string(),
+        phone: v.string(),
+        message: v.optional(v.string()),
+        flightNumber: v.optional(v.string()),
+      }),
+    ),
     status: v.optional(reservationStatusValidator),
-    promoCode: v.optional(v.string()),
     additionalCharges: v.optional(v.array(additionalChargeValidator)),
     isSCDWSelected: v.optional(v.boolean()),
     deductibleAmount: v.optional(v.number()),
@@ -317,8 +829,18 @@ export const updateReservationDetails = mutation({
     seasonId: v.optional(v.id("seasons")),
     seasonalMultiplier: v.optional(v.number()),
   },
+  returns: v.union(
+    successMessageValidator,
+    v.object({
+      success: v.boolean(),
+      reservationId: v.id("reservations"),
+    }),
+  ),
   handler: async (ctx, args) => {
-    const user = await getCurrentUserOrThrow(ctx);
+    const user = await getOrCreateCurrentUser(ctx);
+    if (!user) {
+      throw new Error("User not authenticated.");
+    }
     const { reservationId, ...updatesIn } = args;
 
     const reservation = await ctx.db.get(reservationId);
@@ -329,34 +851,51 @@ export const updateReservationDetails = mutation({
     if (reservation.userId !== user._id && user.role !== "admin") {
       throw new Error("User not authorized to update this reservation.");
     }
-
-    // Construct the updates object carefully to pass to patch
-    const updatesToApply: Partial<typeof reservation> = {};
-    if (updatesIn.vehicleId !== undefined) updatesToApply.vehicleId = updatesIn.vehicleId;
-    if (updatesIn.startDate !== undefined) updatesToApply.startDate = updatesIn.startDate;
-    if (updatesIn.endDate !== undefined) updatesToApply.endDate = updatesIn.endDate;
-    if (updatesIn.pickupTime !== undefined) updatesToApply.pickupTime = updatesIn.pickupTime;
-    if (updatesIn.restitutionTime !== undefined) updatesToApply.restitutionTime = updatesIn.restitutionTime;
-    if (updatesIn.pickupLocation !== undefined) updatesToApply.pickupLocation = updatesIn.pickupLocation;
-    if (updatesIn.restitutionLocation !== undefined) updatesToApply.restitutionLocation = updatesIn.restitutionLocation;
-    if (updatesIn.paymentMethod !== undefined) updatesToApply.paymentMethod = updatesIn.paymentMethod;
-    if (updatesIn.totalPrice !== undefined) updatesToApply.totalPrice = updatesIn.totalPrice;
-    if (updatesIn.customerInfo !== undefined) updatesToApply.customerInfo = updatesIn.customerInfo;
-    if (updatesIn.status !== undefined) updatesToApply.status = updatesIn.status; // status is already validated by args
-    if (updatesIn.promoCode !== undefined) updatesToApply.promoCode = updatesIn.promoCode;
-    if (updatesIn.additionalCharges !== undefined) updatesToApply.additionalCharges = updatesIn.additionalCharges;
-    if (updatesIn.isSCDWSelected !== undefined) updatesToApply.isSCDWSelected = updatesIn.isSCDWSelected;
-    if (updatesIn.deductibleAmount !== undefined) updatesToApply.deductibleAmount = updatesIn.deductibleAmount;
-    if (updatesIn.protectionCost !== undefined) updatesToApply.protectionCost = updatesIn.protectionCost;
-    if (updatesIn.seasonId !== undefined) updatesToApply.seasonId = updatesIn.seasonId;
-    if (updatesIn.seasonalMultiplier !== undefined) updatesToApply.seasonalMultiplier = updatesIn.seasonalMultiplier;
-
-
-    if (Object.keys(updatesToApply).length === 0) {
-        return { success: true, message: "No changes provided." };
+    if (updatesIn.status === "completed" && user.role !== "admin") {
+      throw new Error("Only an admin can mark a reservation completed.");
     }
 
-    await ctx.db.patch(reservationId, updatesToApply);
+    const updatesToApply = stripUndefined(updatesIn);
+
+    if (Object.keys(updatesToApply).length === 0) {
+      return { success: true, message: "No changes provided." };
+    }
+
+    if (updatesToApply.totalPrice !== undefined) {
+      updatesToApply.totalPrice = resolveEditedBookingTotal({
+        submittedTotal: updatesToApply.totalPrice,
+        storedTotal: reservation.totalPrice,
+        discountAmount: reservation.discountAmount,
+        pricingChanged: reservationPricingChanged(reservation, updatesToApply),
+      });
+    }
+
+    await ctx.db.patch(reservationId, {
+      ...updatesToApply,
+      // Keep the denormalized lookup key in step with customerInfo.email
+      ...(updatesToApply.customerInfo && {
+        customerEmailNormalized: normalizeCustomerEmail(
+          updatesToApply.customerInfo.email,
+        ),
+      }),
+    });
+
+    if (updatesToApply.status !== undefined) {
+      await recordStatsStatusChange(
+        ctx,
+        "reservations",
+        reservation.status,
+        updatesToApply.status,
+      );
+      await syncConversionForBooking(ctx, {
+        bookingType: "reservation",
+        bookingId: reservationId,
+        bookingStatus: updatesToApply.status,
+      });
+      if (updatesToApply.status === "cancelled") {
+        await refundWalletCredit(ctx, reservationId);
+      }
+    }
 
     return { success: true, reservationId };
   },
@@ -365,22 +904,53 @@ export const updateReservationDetails = mutation({
 // --- DELETE (Soft Delete) ---
 export const cancelReservation = mutation({
   args: { reservationId: v.id("reservations") },
+  returns: successMessageValidator,
   handler: async (ctx, args) => {
-    const user = await getCurrentUserOrThrow(ctx);
+    const user = await getOrCreateCurrentUser(ctx);
+    if (!user) {
+      throw new Error("User not authenticated.");
+    }
 
     const reservation = await ctx.db.get(args.reservationId);
     if (!reservation) {
       throw new Error("Reservation not found.");
     }
 
-    if (user.role !== 'admin' && (reservation.status === "completed" || reservation.status === "cancelled")) {
-       throw new Error(`Reservation is already ${reservation.status} and cannot be modified by user.`);
+    // Only the owner of the reservation or an admin may cancel it
+    if (user.role !== "admin" && reservation.userId !== user._id) {
+      throw new Error("User not authorized to cancel this reservation.");
     }
-    
+
+    if (
+      user.role !== "admin" &&
+      (reservation.status === "completed" || reservation.status === "cancelled")
+    ) {
+      throw new Error(
+        `Reservation is already ${reservation.status} and cannot be modified by user.`,
+      );
+    }
+
     // If reservation was "pending" or "confirmed", it can be "cancelled".
     // If it was already "completed", only an admin should be able to change it further (e.g. to "cancelled" for a special case refund)
 
-    await ctx.db.patch(args.reservationId, { status: "cancelled" as ReservationStatusType });
+    await ctx.db.patch(args.reservationId, {
+      status: "cancelled" as ReservationStatusType,
+    });
+    await recordStatsStatusChange(
+      ctx,
+      "reservations",
+      reservation.status,
+      "cancelled",
+    );
+
+    // Owner decision (RNGO-26): a cancelled booking must not keep crediting
+    // the referrer — void the conversion and decrement their counter
+    await syncConversionForBooking(ctx, {
+      bookingType: "reservation",
+      bookingId: args.reservationId,
+      bookingStatus: "cancelled",
+    });
+    await refundWalletCredit(ctx, args.reservationId);
 
     return { success: true, message: "Reservation cancelled." };
   },
@@ -389,6 +959,7 @@ export const cancelReservation = mutation({
 // Hard delete (admin-only, use with caution)
 export const deleteReservationPermanently = mutation({
   args: { reservationId: v.id("reservations") },
+  returns: successMessageValidator,
   handler: async (ctx, args) => {
     const user = await getCurrentUserOrThrow(ctx);
 
@@ -398,10 +969,25 @@ export const deleteReservationPermanently = mutation({
 
     const reservation = await ctx.db.get(args.reservationId);
     if (!reservation) {
-      return { success: true, message: "Reservation not found or already deleted." };
+      return {
+        success: true,
+        message: "Reservation not found or already deleted.",
+      };
     }
 
+    // A hard-deleted booking is not live: void its conversion first
+    await syncConversionForBooking(ctx, {
+      bookingType: "reservation",
+      bookingId: args.reservationId,
+      bookingStatus: "deleted",
+    });
+    await reverseWalletRedemption(ctx, {
+      bookingType: "reservation",
+      bookingId: args.reservationId,
+      note: "booking deleted",
+    });
     await ctx.db.delete(args.reservationId);
+    await recordStatsRemove(ctx, "reservations", reservation.status);
 
     return { success: true, message: "Reservation permanently deleted." };
   },
@@ -409,122 +995,213 @@ export const deleteReservationPermanently = mutation({
 
 // Get reservation statistics for admin dashboard
 export const getReservationStats = query({
-  args: {},
+  args: { now: v.number() },
   returns: v.object({
     totalReservations: v.number(),
+    confirmedReservations: v.number(),
     activeReservations: v.number(),
     pendingConfirmations: v.number(),
     currentMonthRevenue: v.number(),
     reservationGrowth: v.number(),
     revenueGrowth: v.number(),
   }),
-  handler: async (ctx) => {
-    const user = await getCurrentUserOrThrow(ctx);
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
 
-    if (user.role !== "admin") {
-      throw new Error("User not authorized (admin only).");
+    const stats = await getTableStats(ctx, "reservations");
+    let totalReservations: number;
+    let confirmedReservations: number;
+    let pendingConfirmations: number;
+    if (stats) {
+      totalReservations = stats.total;
+      confirmedReservations = stats.byStatus.confirmed ?? 0;
+      pendingConfirmations = stats.byStatus.pending ?? 0;
+    } else {
+      // Aggregates not seeded yet (migrations/seedTableStats): keep the
+      // exact-but-slow scan until the seed migration has run.
+      const allReservations = await ctx.db.query("reservations").collect();
+      totalReservations = allReservations.length;
+      confirmedReservations = allReservations.filter(
+        (reservation) => reservation.status === "confirmed",
+      ).length;
+      pendingConfirmations = allReservations.filter(
+        (reservation) => reservation.status === "pending",
+      ).length;
     }
 
-    const allReservations = await ctx.db.query("reservations").collect();
-    
-    const now = Date.now();
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-    const lastMonthStart = new Date(currentYear, currentMonth - 1, 1).getTime();
-    const currentMonthStart = new Date(currentYear, currentMonth, 1).getTime();
-    
-    // Total reservations
-    const totalReservations = allReservations.length;
-    
-    // Active reservations (confirmed and currently ongoing)
-    const activeReservations = allReservations.filter(r => 
-      r.status === "confirmed" && 
-      r.startDate <= now && 
-      r.endDate >= now
+    // Every reservation active now still has endDate >= now, so this range
+    // only reads ongoing + future bookings instead of the whole table.
+    const notYetEnded = await ctx.db
+      .query("reservations")
+      .withIndex("by_end_date", (q) => q.gte("endDate", args.now))
+      .collect();
+    const activeReservations = notYetEnded.filter(
+      (reservation) =>
+        reservation.status === "confirmed" && reservation.startDate <= args.now,
     ).length;
-    
-    // Pending confirmations
-    const pendingConfirmations = allReservations.filter(r => 
-      r.status === "pending"
-    ).length;
-    
-    // Current month revenue and reservations
-    const currentMonthReservations = allReservations.filter(r => 
-      r._creationTime >= currentMonthStart
+
+    const oldestMonth = getRecentMonthKeys(args.now, 2)[0];
+    const currentMonth = getRecentMonthKeys(args.now, 1)[0];
+    const recentReservations = await ctx.db
+      .query("reservations")
+      .withIndex("by_creation_time", (q) =>
+        q
+          .gte("_creationTime", getMonthRange(oldestMonth).start)
+          .lt("_creationTime", getMonthRange(currentMonth).end),
+      )
+      .collect();
+
+    const [previous, current] = bucketMonthlyStats(
+      recentReservations.map((reservation) => ({
+        timestamp: reservation._creationTime,
+        revenue:
+          reservation.status === "confirmed" ||
+          reservation.status === "completed"
+            ? reservation.totalPrice
+            : 0,
+      })),
+      args.now,
+      2,
     );
-    const currentMonthRevenue = currentMonthReservations
-      .filter(r => r.status === "confirmed" || r.status === "completed")
-      .reduce((sum, r) => sum + r.totalPrice, 0);
-    
-    // Last month revenue for comparison
-    const lastMonthReservations = allReservations.filter(r => 
-      r._creationTime >= lastMonthStart && r._creationTime < currentMonthStart
-    );
-    const lastMonthRevenue = lastMonthReservations
-      .filter(r => r.status === "confirmed" || r.status === "completed")
-      .reduce((sum, r) => sum + r.totalPrice, 0);
-    
-    // Calculate percentage changes
-    const reservationGrowth = lastMonthReservations.length > 0 
-      ? ((currentMonthReservations.length - lastMonthReservations.length) / lastMonthReservations.length) * 100
-      : 0;
-    
-    const revenueGrowth = lastMonthRevenue > 0 
-      ? ((currentMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
-      : 0;
 
     return {
       totalReservations,
+      confirmedReservations,
       activeReservations,
       pendingConfirmations,
-      currentMonthRevenue,
-      reservationGrowth: Math.round(reservationGrowth * 10) / 10, // Round to 1 decimal
-      revenueGrowth: Math.round(revenueGrowth * 10) / 10,
+      currentMonthRevenue: current.revenue,
+      reservationGrowth: calculateGrowth(current.count, previous.count),
+      revenueGrowth: calculateGrowth(current.revenue, previous.revenue),
     };
   },
 });
 
 // Get monthly data for charts (last 6 months)
 export const getMonthlyChartData = query({
-  args: {},
-  returns: v.array(v.object({
-    month: v.string(),
-    reservations: v.number(),
-    revenue: v.number(),
-  })),
-  handler: async (ctx) => {
-    const user = await getCurrentUserOrThrow(ctx);
+  args: { now: v.number() },
+  returns: v.array(
+    v.object({
+      month: v.string(),
+      reservations: v.number(),
+      revenue: v.number(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    const oldestMonth = getRecentMonthKeys(args.now, 6)[0];
+    const currentMonth = getRecentMonthKeys(args.now, 1)[0];
+    const reservations = await ctx.db
+      .query("reservations")
+      .withIndex("by_creation_time", (q) =>
+        q
+          .gte("_creationTime", getMonthRange(oldestMonth).start)
+          .lt("_creationTime", getMonthRange(currentMonth).end),
+      )
+      .collect();
 
-    if (user.role !== "admin") {
-      throw new Error("User not authorized (admin only).");
-    }
+    return bucketMonthlyStats(
+      reservations.map((reservation) => ({
+        timestamp: reservation._creationTime,
+        revenue:
+          reservation.status === "confirmed" ||
+          reservation.status === "completed"
+            ? reservation.totalPrice
+            : 0,
+      })),
+      args.now,
+      6,
+    ).map((month) => ({
+      month: month.month,
+      reservations: month.count,
+      revenue: Math.round(month.revenue),
+    }));
+  },
+});
 
-    const allReservations = await ctx.db.query("reservations").collect();
-    
-    // Get last 6 months including current month
-    const months = [];
-    const now = new Date();
-    
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthStart = date.getTime();
-      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999).getTime();
-      
-      const monthReservations = allReservations.filter(r => 
-        r._creationTime >= monthStart && r._creationTime <= monthEnd
-      );
-      
-      const monthRevenue = monthReservations
-        .filter(r => r.status === "confirmed" || r.status === "completed")
-        .reduce((sum, r) => sum + r.totalPrice, 0);
-      
-      months.push({
-        month: date.toLocaleDateString('en-US', { month: 'short' }),
-        reservations: monthReservations.length,
-        revenue: Math.round(monthRevenue), // Round to nearest whole number
-      });
-    }
-    
-    return months;
+export const getOverviewMonthlyRevenue = query({
+  args: {
+    months: v.array(
+      v.object({
+        month: v.string(),
+        start: v.number(),
+        end: v.number(),
+      }),
+    ),
+  },
+  returns: v.array(
+    v.object({
+      month: v.string(),
+      revenue: v.number(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    validateContiguousTimestampRanges(
+      args.months,
+      6,
+      32 * 24 * 60 * 60 * 1000,
+      "Month",
+    );
+
+    const rangeStart = args.months[0].start;
+    const rangeEnd = args.months[args.months.length - 1].end;
+    const reservations = await ctx.db
+      .query("reservations")
+      .withIndex("by_dates", (q) =>
+        q.gte("startDate", rangeStart).lt("startDate", rangeEnd),
+      )
+      .collect();
+
+    return args.months.map((month) => ({
+      month: month.month,
+      revenue: reservations
+        .filter(
+          (reservation) =>
+            reservation.startDate >= month.start &&
+            reservation.startDate < month.end &&
+            (reservation.status === "confirmed" ||
+              reservation.status === "completed"),
+        )
+        .reduce((total, reservation) => total + reservation.totalPrice, 0),
+    }));
+  },
+});
+
+export const getWeeklyReservationChartData = query({
+  args: {
+    days: v.array(
+      v.object({
+        day: v.string(),
+        start: v.number(),
+        end: v.number(),
+      }),
+    ),
+  },
+  returns: v.array(
+    v.object({
+      day: v.string(),
+      reservations: v.number(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    validateContiguousTimestampRanges(args.days, 7, 25 * 60 * 60 * 1000, "Day");
+
+    const rangeStart = args.days[0].start;
+    const rangeEnd = args.days[args.days.length - 1].end;
+    const reservations = await ctx.db
+      .query("reservations")
+      .withIndex("by_dates", (q) =>
+        q.gte("startDate", rangeStart).lt("startDate", rangeEnd),
+      )
+      .collect();
+
+    return args.days.map((day) => ({
+      day: day.day,
+      reservations: reservations.filter(
+        (reservation) =>
+          reservation.startDate >= day.start && reservation.startDate < day.end,
+      ).length,
+    }));
   },
 });

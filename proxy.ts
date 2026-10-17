@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import createMiddleware from 'next-intl/middleware';
+import createMiddleware from "next-intl/middleware";
+import { LOCALIZED_PATHNAMES } from "@/lib/localized-routes";
 
 // Admin routes that require admin role
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
@@ -20,20 +21,28 @@ const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 
 // Create the internationalization middleware
 const intlMiddleware = createMiddleware({
-  locales: ['ro', 'en'],
-  defaultLocale: 'ro',
-  localePrefix: 'always' // Both /ro and /en will have explicit prefixes
+  locales: ["ro", "en"],
+  defaultLocale: "ro",
+  localePrefix: "always", // Both /ro and /en will have explicit prefixes
+  pathnames: LOCALIZED_PATHNAMES,
+  // The pages declare hreflang themselves; next-intl's Link header disagreed
+  // with them (unprefixed x-default, wrong per-locale blog slugs).
+  alternateLinks: false,
 });
 
 export default clerkMiddleware(async (auth, req) => {
   const pathname = req.nextUrl.pathname;
 
-  // Skip internationalization for admin routes, API routes, and static files
-  if (isAdminRoute(req) ||
-      pathname.startsWith('/api/') ||
-      pathname.startsWith('/_next/') ||
-      pathname.includes('.')) {
-
+  // Skip internationalization for admin routes, API routes, referral links
+  // (/r/<slug> is a locale-less Route Handler that must not be redirected to
+  // /ro/r/<slug>), and static files
+  if (
+    isAdminRoute(req) ||
+    pathname.startsWith("/api/") ||
+    pathname.startsWith("/r/") ||
+    pathname.startsWith("/_next/") ||
+    pathname.includes(".")
+  ) {
     // Handle admin routes
     if (isAdminRoute(req)) {
       const { userId, sessionClaims } = await auth();
@@ -56,9 +65,7 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   // Apply internationalization to other routes
-  const response = intlMiddleware(req);
-  response.headers.set("x-pathname", req.nextUrl.pathname);
-  return response;
+  return intlMiddleware(req);
 });
 
 export const config = {

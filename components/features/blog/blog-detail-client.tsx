@@ -3,18 +3,19 @@
 import React, { useEffect, useRef } from "react";
 import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { BlogHeader } from "@/components/features/blog";
+import { BlogHeader } from "@/components/features/blog/blog-header";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import { Blog } from "@/types/blog";
+import type { Locale } from "@/i18n";
 
 interface BlogDetailClientProps {
   blog: Blog;
   coverImageUrl: string | null;
-  locale: string;
+  locale: Locale;
   slug: string;
   children: React.ReactNode;
 }
@@ -32,7 +33,7 @@ export function BlogDetailClient({
 
   useEffect(() => {
     if (!viewTracked.current) {
-      incrementViews({ slug, locale: locale as "ro" | "en" });
+      incrementViews({ slug, locale });
       viewTracked.current = true;
     }
   }, [slug, locale, incrementViews]);

@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { useTranslations } from 'next-intl';
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,7 +29,7 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export function UserProfileForm() {
-  const t = useTranslations('profile');
+  const t = useTranslations("profile");
   const user = useQuery(api.users.get);
   const updateUser = useMutation(api.users.update);
 
@@ -60,15 +60,15 @@ export function UserProfileForm() {
         lastName: data.lastName,
         phone: data.phone,
       });
-      
-      toast.success(t('updateSuccess'), {
-        description: t('updateSuccessDescription'),
+
+      toast.success(t("updateSuccess"), {
+        description: t("updateSuccessDescription"),
         position: "bottom-right",
       });
     } catch (error) {
       console.error("Failed to update profile:", error);
-      toast.error(t('updateError'), {
-        description: t('updateErrorDescription'),
+      toast.error(t("updateError"), {
+        description: t("updateErrorDescription"),
         position: "bottom-right",
       });
     }
@@ -98,9 +98,9 @@ export function UserProfileForm() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium">{t('editProfile')}</h3>
+        <h3 className="text-lg font-medium">{t("editProfile")}</h3>
         <p className="text-sm text-muted-foreground">
-          {t('editProfileDescription')}
+          {t("editProfileDescription")}
         </p>
       </div>
 
@@ -112,12 +112,9 @@ export function UserProfileForm() {
               name="firstName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('firstName')}</FormLabel>
+                  <FormLabel>{t("firstName")}</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder={t('firstNamePlaceholder')}
-                      {...field}
-                    />
+                    <Input placeholder={t("firstNamePlaceholder")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -129,12 +126,9 @@ export function UserProfileForm() {
               name="lastName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{t('lastName')}</FormLabel>
+                  <FormLabel>{t("lastName")}</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder={t('lastNamePlaceholder')}
-                      {...field}
-                    />
+                    <Input placeholder={t("lastNamePlaceholder")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -147,29 +141,23 @@ export function UserProfileForm() {
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('phoneNumber')}</FormLabel>
+                <FormLabel>{t("phoneNumber")}</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder={t('phoneNumberPlaceholder')}
-                    {...field}
-                  />
+                  <Input placeholder={t("phoneNumberPlaceholder")} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          <Button
-            type="submit"
-            disabled={form.formState.isSubmitting}
-          >
+          <Button type="submit" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            {t('saveChanges')}
+            {t("saveChanges")}
           </Button>
         </form>
       </Form>
     </div>
   );
-} 
+}

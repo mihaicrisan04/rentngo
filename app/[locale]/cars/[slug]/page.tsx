@@ -1,9 +1,17 @@
-import { fetchQuery } from "convex/nextjs";
+import { carsPath, carsPathWithoutLocale } from "@/lib/localized-routes";
+import { fetchStaticQuery } from "@/lib/convex-static";
 import { api } from "@/convex/_generated/api";
 import { CarDetailClient } from "./car-detail-client";
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { buildMetadata, jsonLdScriptContent } from "@/lib/metadata";
+import { notFound, permanentRedirect } from "next/navigation";
+import {
+  buildMetadata,
+  jsonLdScriptContent,
+  NO_INDEX_METADATA,
+} from "@/lib/metadata";
+import { COMPANY } from "@/lib/company";
+import { buildAutoRentalSellerSchema } from "@/lib/structured-data";
+import { cacheLife } from "next/cache";
 
 interface PageProps {
   params: Promise<{ slug: string; locale: string }>;
@@ -25,7 +33,11 @@ function VehicleStructuredData({
     fuelType?: string;
     transmission?: string;
     features?: string[];
-    pricingTiers?: { minDays: number; maxDays: number | null; pricePerDay: number }[];
+    pricingTiers?: {
+      minDays: number;
+      maxDays: number | null;
+      pricePerDay: number;
+    }[];
     pricePerDay?: number;
   };
   imageUrl: string;
@@ -37,7 +49,9 @@ function VehicleStructuredData({
 
   let pricePerDay = 0;
   if (vehicle.pricingTiers && vehicle.pricingTiers.length > 0) {
-    const sortedTiers = [...vehicle.pricingTiers].sort((a, b) => a.minDays - b.minDays);
+    const sortedTiers = [...vehicle.pricingTiers].sort(
+      (a, b) => a.minDays - b.minDays,
+    );
     pricePerDay = sortedTiers[0].pricePerDay;
   }
 
@@ -57,29 +71,23 @@ function VehicleStructuredData({
     vehicleModelDate: vehicle.year?.toString(),
     bodyType: vehicle.type || "Car",
     fuelType: vehicle.fuelType || "Petrol",
-    vehicleTransmission: vehicle.transmission === "Automatic" ? "AutomaticTransmission" : "ManualTransmission",
+    vehicleTransmission:
+      vehicle.transmission === "Automatic"
+        ? "AutomaticTransmission"
+        : "ManualTransmission",
     seatingCapacity: vehicle.seats || 5,
     numberOfDoors: 4,
     offers: {
       "@type": "Offer",
       priceCurrency: "EUR",
       price: pricePerDay,
-      priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+      // eslint-disable-next-line react-hooks/purity -- cache-fill-time date is intentional: the JSON-LD offer needs a far-future validity date, refreshed by the page's hourly cacheLife
+      priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0],
       availability: "https://schema.org/InStock",
-      url: `https://rngo.ro/${locale}/cars/${urlSlug}`,
-      seller: {
-        "@type": "AutoRental",
-        name: "Rent'n Go",
-        url: "https://rngo.ro",
-        telephone: "+40-773-932-961",
-        address: {
-          "@type": "PostalAddress",
-          streetAddress: 'Cluj "Avram Iancu" International Airport, Strada Traian Vuia 149-151',
-          addressLocality: "Cluj-Napoca",
-          postalCode: "400397",
-          addressCountry: "RO",
-        },
-      },
+      url: `${COMPANY.baseUrl}${carsPath(locale, urlSlug)}`,
+      seller: buildAutoRentalSellerSchema(),
       itemCondition: "https://schema.org/UsedCondition",
       priceSpecification: {
         "@type": "UnitPriceSpecification",
@@ -126,19 +134,19 @@ function BreadcrumbStructuredData({
         "@type": "ListItem",
         position: 1,
         name: isRomanian ? "Acasă" : "Home",
-        item: `https://rngo.ro/${locale}`,
+        item: `${COMPANY.baseUrl}/${locale}`,
       },
       {
         "@type": "ListItem",
         position: 2,
         name: isRomanian ? "Mașini" : "Cars",
-        item: `https://rngo.ro/${locale}/cars`,
+        item: `${COMPANY.baseUrl}${carsPath(locale)}`,
       },
       {
         "@type": "ListItem",
         position: 3,
         name: vehicleName,
-        item: `https://rngo.ro/${locale}/cars/${slug}`,
+        item: `${COMPANY.baseUrl}${carsPath(locale, slug)}`,
       },
     ],
   };
@@ -154,13 +162,16 @@ function BreadcrumbStructuredData({
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
+  "use cache";
+  cacheLife("hours");
   const { slug, locale } = await params;
 
   try {
-    const vehicle = await fetchQuery(api.vehicles.getBySlug, { slug });
+    const vehicle = await fetchStaticQuery(api.vehicles.getBySlug, { slug });
 
     if (!vehicle) {
       return {
+        ...NO_INDEX_METADATA,
         title: locale === "ro" ? "Vehicul Negăsit" : "Vehicle Not Found",
       };
     }
@@ -170,9 +181,9 @@ export async function generateMetadata({
     const fuelType = vehicle.fuelType || "Petrol";
     const transmission = vehicle.transmission || "Manual";
 
-    let imageUrl = "https://rngo.ro/logo.png";
+    let imageUrl: string = COMPANY.logoUrl;
     if (vehicle.mainImageId) {
-      const fetchedImageUrl = await fetchQuery(api.vehicles.getImageUrl, {
+      const fetchedImageUrl = await fetchStaticQuery(api.vehicles.getImageUrl, {
         imageId: vehicle.mainImageId,
       });
       if (fetchedImageUrl) {
@@ -182,7 +193,10 @@ export async function generateMetadata({
 
     return buildMetadata({
       locale,
-      path: `/cars/${slug}`,
+      path: {
+        ro: carsPathWithoutLocale("ro", slug),
+        en: carsPathWithoutLocale("en", slug),
+      },
       title: {
         ro: `${vehicleName} - Masini de Inchiriat Cluj-Napoca`,
         en: `${vehicleName} - Car Rentals Cluj-Napoca`,
@@ -205,7 +219,7 @@ export async function generateMetadata({
 }
 
 export async function generateStaticParams() {
-  const vehicles = await fetchQuery(api.vehicles.getAllVehicles);
+  const vehicles = await fetchStaticQuery(api.vehicles.getAllVehicles);
   const slugs = vehicles.filter((v) => v.slug).map((v) => v.slug!);
   return slugs.flatMap((slug) => [
     { locale: "ro", slug },
@@ -213,18 +227,26 @@ export async function generateStaticParams() {
   ]);
 }
 
+// Cached per slug+locale; re-generated in the background so vehicle changes
+// show up without a redeploy.
 export default async function CarDetailPage({ params }: PageProps) {
+  "use cache";
+  cacheLife("hours");
   const { slug, locale } = await params;
 
-  const vehicle = await fetchQuery(api.vehicles.getBySlug, { slug });
+  const vehicle = await fetchStaticQuery(api.vehicles.getBySlug, { slug });
 
   if (!vehicle) {
+    const legacySlug = await fetchStaticQuery(api.vehicles.getSlugByLegacyId, {
+      id: slug,
+    });
+    if (legacySlug) permanentRedirect(carsPath(locale, legacySlug));
     notFound();
   }
 
   let mainImageUrl: string | null = null;
   if (vehicle.mainImageId) {
-    mainImageUrl = await fetchQuery(api.vehicles.getImageUrl, {
+    mainImageUrl = await fetchStaticQuery(api.vehicles.getImageUrl, {
       imageId: vehicle.mainImageId,
     });
   }
@@ -233,11 +255,11 @@ export default async function CarDetailPage({ params }: PageProps) {
   if (vehicle.images && vehicle.images.length > 0) {
     const urls = await Promise.all(
       vehicle.images.map(async (imageId) => {
-        const url = await fetchQuery(api.vehicles.getImageUrl, {
+        const url = await fetchStaticQuery(api.vehicles.getImageUrl, {
           imageId,
         });
         return { imageId: imageId.toString(), url };
-      })
+      }),
     );
     urls.forEach(({ imageId, url }) => {
       if (url) {
@@ -264,7 +286,7 @@ export default async function CarDetailPage({ params }: PageProps) {
           features: vehicle.features,
           pricingTiers: vehicle.pricingTiers,
         }}
-        imageUrl={mainImageUrl || "https://rngo.ro/logo.png"}
+        imageUrl={mainImageUrl || COMPANY.logoUrl}
         locale={locale}
       />
       <BreadcrumbStructuredData
@@ -273,7 +295,7 @@ export default async function CarDetailPage({ params }: PageProps) {
         locale={locale}
       />
       <CarDetailClient
-        vehicle={vehicle}
+        initialVehicle={vehicle}
         mainImageUrl={mainImageUrl}
         imageUrls={imageUrls}
       />

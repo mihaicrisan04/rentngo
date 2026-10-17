@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { Doc } from "./_generated/dataModel";
+import { requireAdmin } from "./users";
+import { stripUndefined } from "./lib/patch";
 
 // Query: Get all vehicle classes
 export const list = query({
@@ -111,7 +112,17 @@ export const create = mutation({
   },
   returns: v.id("vehicleClasses"),
   handler: async (ctx, args) => {
-    const { name, displayName, description, isActive = true, additional50kmPrice = 5, transferBaseFare = 25, transferMultiplier = 1.0 } = args;
+    await requireAdmin(ctx);
+
+    const {
+      name,
+      displayName,
+      description,
+      isActive = true,
+      additional50kmPrice = 5,
+      transferBaseFare = 25,
+      transferMultiplier = 1.0,
+    } = args;
 
     // Check if a class with this name already exists
     const existingClass = await ctx.db
@@ -177,7 +188,10 @@ export const update = mutation({
     v.null(),
   ),
   handler: async (ctx, args) => {
-    const { id, name, displayName, description, sortIndex, isActive, additional50kmPrice, transferBaseFare, transferMultiplier } = args;
+    await requireAdmin(ctx);
+
+    const { id, ...updates } = args;
+    const { name } = updates;
 
     // Check if the class exists
     const existingClass = await ctx.db.get(id);
@@ -199,18 +213,7 @@ export const update = mutation({
       }
     }
 
-    // Update the class
-    const updateData: Partial<Doc<"vehicleClasses">> = {};
-    if (name !== undefined) updateData.name = name;
-    if (displayName !== undefined) updateData.displayName = displayName;
-    if (description !== undefined) updateData.description = description;
-    if (sortIndex !== undefined) updateData.sortIndex = sortIndex;
-    if (isActive !== undefined) updateData.isActive = isActive;
-    if (additional50kmPrice !== undefined) updateData.additional50kmPrice = additional50kmPrice;
-    if (transferBaseFare !== undefined) updateData.transferBaseFare = transferBaseFare;
-    if (transferMultiplier !== undefined) updateData.transferMultiplier = transferMultiplier;
-
-    await ctx.db.patch(id, updateData);
+    await ctx.db.patch(id, stripUndefined(updates));
 
     // Return the updated class
     const updatedClass = await ctx.db.get(id);
@@ -225,6 +228,8 @@ export const remove = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { id } = args;
 
     // Check if the class exists
@@ -236,7 +241,7 @@ export const remove = mutation({
     // Check if any vehicles reference this class
     const vehiclesUsingClass = await ctx.db
       .query("vehicles")
-      .filter((q) => q.eq(q.field("classId"), id))
+      .withIndex("by_class_and_sort", (q) => q.eq("classId", id))
       .first();
 
     if (vehiclesUsingClass) {
@@ -264,6 +269,8 @@ export const reorder = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+
     const { updates } = args;
 
     // Update each class with its new sortIndex

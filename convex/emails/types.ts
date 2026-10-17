@@ -16,7 +16,7 @@ export interface VehicleInfo {
   type?: "sedan" | "suv" | "hatchback" | "sports" | "truck" | "van";
   seats?: number;
   transmission?: "automatic" | "manual";
-  fuelType?: "petrol" | "diesel" | "electric" | "hybrid" | "benzina";
+  fuelType?: "diesel" | "electric" | "hybrid" | "benzina";
   features?: string[];
 }
 
@@ -28,6 +28,11 @@ export interface RentalDetails {
   pickupLocation: string;
   restitutionLocation: string;
   numberOfDays: number;
+  // Base included-km allowance (rentalDays × INCLUDED_KM_PER_DAY)
+  includedKm?: number;
+  // Extra kilometers purchased (50km packages; absent on legacy bookings
+  // that only carry the prose additional-charge line)
+  extraKilometers?: number;
 }
 
 export interface PricingDetails {
@@ -35,8 +40,20 @@ export interface PricingDetails {
   totalPrice: number;
   paymentMethod: "cash_on_delivery" | "card_on_delivery" | "card_online";
   promoCode?: string;
+  discountAmount?: number;
+  isReferralDiscount?: boolean;
+  /** Wallet credit spent; `totalPrice` above is always the pre-credit price. */
+  walletCreditApplied?: number;
   additionalCharges?: Array<{
-    description: string;
+    description?: string;
+    code?:
+      | "pickupLocationFee"
+      | "returnLocationFee"
+      | "snowChains"
+      | "childSeat1to4"
+      | "childSeat5to12"
+      | "extraKm";
+    params?: Record<string, string | number>;
     amount: number;
   }>;
   isSCDWSelected?: boolean;
@@ -44,12 +61,22 @@ export interface PricingDetails {
   protectionCost?: number;
 }
 
+/**
+ * "Recommend a friend" block in the customer's confirmation email: the
+ * booker's own referral code, or an invitation to create an account when they
+ * booked as a guest. Absent while the referral program is off.
+ */
+export type ReferralEmailBlockData =
+  | { kind: "affiliate"; code: string }
+  | { kind: "guest" };
+
 export interface ReservationEmailData {
   reservationNumber: number;
   customerInfo: CustomerInfo;
   vehicleInfo: VehicleInfo;
   rentalDetails: RentalDetails;
   pricingDetails: PricingDetails;
+  referral?: ReferralEmailBlockData;
   locale?: "en" | "ro";
 }
 
@@ -66,7 +93,7 @@ export interface TransferVehicleInfo {
   type?: "sedan" | "suv" | "hatchback" | "sports" | "truck" | "van";
   seats?: number;
   transmission?: "automatic" | "manual";
-  fuelType?: "petrol" | "diesel" | "electric" | "hybrid" | "benzina";
+  fuelType?: "diesel" | "electric" | "hybrid" | "benzina";
 }
 
 export interface TransferPricingDetails {
@@ -74,6 +101,11 @@ export interface TransferPricingDetails {
   distancePrice: number;
   totalPrice: number;
   pricePerKm: number;
+  promoCode?: string;
+  discountAmount?: number;
+  isReferralDiscount?: boolean;
+  /** Wallet credit spent; `totalPrice` above is always the pre-credit price. */
+  walletCreditApplied?: number;
 }
 
 export interface TransferEmailData {
@@ -93,5 +125,6 @@ export interface TransferEmailData {
   estimatedDurationMinutes: number;
   pricingDetails: TransferPricingDetails;
   paymentMethod: "cash_on_delivery" | "card_on_delivery" | "card_online";
+  referral?: ReferralEmailBlockData;
   locale?: "en" | "ro";
 }

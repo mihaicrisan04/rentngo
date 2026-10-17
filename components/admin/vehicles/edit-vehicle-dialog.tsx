@@ -44,6 +44,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DraggableImageList } from "@/components/ui/draggable-image-list";
 import { ModernImageUpload } from "@/components/ui/modern-image-upload";
+import { useImageFiles, useImageUpload } from "@/hooks/use-image-upload";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { toast } from "sonner";
@@ -96,7 +97,7 @@ const vehicleSchema = z.object({
   transmission: z.enum(["automatic", "manual"], {
     error: "Transmission type is required",
   }),
-  fuelType: z.enum(["petrol", "diesel", "electric", "hybrid", "benzina"], {
+  fuelType: z.enum(["diesel", "electric", "hybrid", "benzina"], {
     error: "Fuel type is required",
   }),
   engineCapacity: z
@@ -179,9 +180,11 @@ export function EditVehicleDialog({
     vehicleId ? { id: vehicleId } : "skip",
   );
   const updateVehicle = useMutation(api.vehicles.update);
+  const addImages = useMutation(api.vehicles.addImages);
   const setMainImage = useMutation(api.vehicles.setMainImage);
   const reorderImages = useMutation(api.vehicles.reorderImages);
   const removeImage = useMutation(api.vehicles.removeImage);
+  const { uploadFiles, deleteFiles } = useImageUpload();
   const vehicleClasses = useQuery(api.vehicleClasses.list, {
     activeOnly: true,
   });
@@ -192,6 +195,11 @@ export function EditVehicleDialog({
   const [mainImageId, setMainImageIdState] = useState<
     Id<"_storage"> | undefined
   >();
+  const {
+    files: newImageFiles,
+    setFiles: setNewImageFiles,
+    clearFiles: clearNewImageFiles,
+  } = useImageFiles();
 
   // Slug validation state
   const [slugToCheck, setSlugToCheck] = useState<string>("");
@@ -201,7 +209,7 @@ export function EditVehicleDialog({
   // Query to check if slug exists (only runs when slugToCheck is set)
   const existingSlugVehicleId = useQuery(
     api.vehicles.checkSlugExists,
-    slugToCheck ? { slug: slugToCheck, excludeVehicleId: vehicleId } : "skip"
+    slugToCheck ? { slug: slugToCheck, excludeVehicleId: vehicleId } : "skip",
   );
 
   // Debounced slug check
@@ -232,7 +240,8 @@ export function EditVehicleDialog({
     };
   }, []);
 
-  const slugExists = existingSlugVehicleId !== null && existingSlugVehicleId !== undefined;
+  const slugExists =
+    existingSlugVehicleId !== null && existingSlugVehicleId !== undefined;
 
   const form = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
@@ -245,7 +254,7 @@ export function EditVehicleDialog({
       classId: "",
       seats: "5",
       transmission: "automatic",
-      fuelType: "petrol",
+      fuelType: "benzina",
       engineCapacity: "",
       engineType: "",
       // pricePerDay removed - using pricingTiers only
@@ -270,7 +279,7 @@ export function EditVehicleDialog({
         classId: (vehicle.classId as string) || "",
         seats: (vehicle.seats || 5).toString(),
         transmission: (vehicle.transmission as TransmissionType) || "automatic",
-        fuelType: (vehicle.fuelType as FuelType) || "petrol",
+        fuelType: (vehicle.fuelType as FuelType) || "benzina",
         engineCapacity: (vehicle.engineCapacity || 0).toString(),
         engineType: vehicle.engineType || "",
         // pricePerDay removed - using pricingTiers only
@@ -299,8 +308,9 @@ export function EditVehicleDialog({
       form.reset();
       setPricingTiers([]);
       setMainImageIdState(undefined);
+      clearNewImageFiles();
     }
-  }, [open, vehicle]);
+  }, [open, vehicle, clearNewImageFiles]);
 
   const handleSetMainImage = async (imageId: Id<"_storage">) => {
     try {
@@ -356,7 +366,9 @@ export function EditVehicleDialog({
         warranty: values.warranty ? parseFloat(values.warranty) : 0,
         isOwner: values.isOwner,
         isTransferVehicle: values.isTransferVehicle,
-        transferSeats: values.transferSeats ? parseInt(values.transferSeats) : undefined,
+        transferSeats: values.transferSeats
+          ? parseInt(values.transferSeats)
+          : undefined,
         features: values.features,
         status: values.status as VehicleStatus,
         pricingTiers: pricingTiers,
@@ -369,7 +381,8 @@ export function EditVehicleDialog({
       onOpenChange(false);
     } catch (error) {
       console.error("Error updating vehicle:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to update vehicle";
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update vehicle";
       if (errorMessage.includes("slug")) {
         toast.error("This slug is already in use by another vehicle");
       } else {
@@ -559,7 +572,11 @@ export function EditVehicleDialog({
                                 {...field}
                                 disabled={isSubmitting}
                                 placeholder="e.g., bmw-x5-2024"
-                                className={slugExists ? "border-destructive focus-visible:ring-destructive" : ""}
+                                className={
+                                  slugExists
+                                    ? "border-destructive focus-visible:ring-destructive"
+                                    : ""
+                                }
                                 onChange={(e) => {
                                   field.onChange(e);
                                   debouncedSlugCheck(e.target.value);
@@ -577,9 +594,11 @@ export function EditVehicleDialog({
                                 const slug = generateVehicleSlug(
                                   make,
                                   model,
-                                  year ? parseInt(year) : undefined
+                                  year ? parseInt(year) : undefined,
                                 );
-                                form.setValue("slug", slug, { shouldValidate: true });
+                                form.setValue("slug", slug, {
+                                  shouldValidate: true,
+                                });
                                 debouncedSlugCheck(slug);
                               }}
                               disabled={isSubmitting}
@@ -589,13 +608,18 @@ export function EditVehicleDialog({
                             </Button>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            SEO-friendly URL slug. Used in car detail pages: /cars/[slug]
+                            SEO-friendly URL slug. Used in car detail pages:
+                            /ro/masini-de-inchiriat-cluj-napoca/[slug]
                           </p>
                           {isCheckingSlug && (
-                            <p className="text-xs text-muted-foreground">Checking availability...</p>
+                            <p className="text-xs text-muted-foreground">
+                              Checking availability...
+                            </p>
                           )}
                           {slugExists && (
-                            <p className="text-xs text-destructive">This slug is already in use by another vehicle</p>
+                            <p className="text-xs text-destructive">
+                              This slug is already in use by another vehicle
+                            </p>
                           )}
                           <FormMessage />
                         </FormItem>
@@ -891,8 +915,8 @@ export function EditVehicleDialog({
                               />
                             </FormControl>
                             <p className="text-xs text-muted-foreground">
-                              Actual passenger capacity for transfers (excluding driver).
-                              If empty, uses regular seats minus 2.
+                              Actual passenger capacity for transfers (excluding
+                              driver). If empty, uses regular seats minus 2.
                             </p>
                             <FormMessage />
                           </FormItem>
@@ -1092,12 +1116,21 @@ export function EditVehicleDialog({
                   )}
 
                   <ModernImageUpload
-                    vehicleId={vehicleId}
-                    onUpload={(imageIds) => {
+                    files={newImageFiles}
+                    onFilesChange={setNewImageFiles}
+                    onUpload={async (files) => {
+                      const imageIds = await uploadFiles(files);
+                      try {
+                        await addImages({ vehicleId, imageIds });
+                      } catch (error) {
+                        // Never attached — remove the uploads again so a
+                        // retry doesn't leave orphaned storage objects
+                        void deleteFiles(imageIds);
+                        throw error;
+                      }
                       toast.success(
                         `${imageIds.length} new images uploaded successfully`,
                       );
-                      // The images are automatically added to the vehicle via the backend
                     }}
                     onError={(error) => {
                       toast.error(error);

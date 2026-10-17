@@ -3,14 +3,16 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus } from "lucide-react";
 import { CurrentSeasonSelector } from "@/components/admin/seasons/current-season-selector";
 import { SeasonsTable } from "@/components/admin/seasons/seasons-table";
 
 const CreateSeasonDialog = dynamic(
-  () => import("@/components/admin/seasons/create-season-dialog").then(m => m.CreateSeasonDialog),
-  { ssr: false }
+  () =>
+    import("@/components/admin/seasons/create-season-dialog").then(
+      (m) => m.CreateSeasonDialog,
+    ),
+  { ssr: false },
 );
 
 export function SeasonsManagement() {
@@ -21,7 +23,9 @@ export function SeasonsManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Seasons Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Seasons Management
+          </h1>
           <p className="text-muted-foreground">
             Manage seasonal pricing and set the current active season
           </p>
@@ -37,18 +41,7 @@ export function SeasonsManagement() {
         <CurrentSeasonSelector />
       </div>
 
-      {/* All Seasons Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Seasons</CardTitle>
-          <CardDescription>
-            Manage your seasonal pricing configurations
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <SeasonsTable />
-        </CardContent>
-      </Card>
+      <SeasonsTable onCreate={() => setShowCreateDialog(true)} />
 
       {/* Create Season Dialog */}
       <CreateSeasonDialog
@@ -60,4 +53,4 @@ export function SeasonsManagement() {
       />
     </div>
   );
-} 
+}

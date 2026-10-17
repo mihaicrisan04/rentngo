@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { useToday } from "@/hooks/use-today";
 import { useRouter } from "next/navigation";
 import { Search, Users, ArrowRight, Loader2 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -12,17 +13,23 @@ import {
   NativeSelectOption,
 } from "@/components/ui/native-select";
 
-import { MapboxLocationSearch, LocationData } from "@/components/shared/search-filters/mapbox-location-search";
-import { DateTimePicker } from "@/components/shared/search-filters/date-time-picker";
 import {
-  transferStorage,
-  TransferSearchData,
-} from "@/lib/transfer-storage";
-import { getRouteInfo, RouteInfo } from "@/lib/mapbox";
+  MapboxLocationSearch,
+  LocationData,
+} from "@/components/shared/search-filters/mapbox-location-search";
+import { DateTimePicker } from "@/components/shared/search-filters/date-time-picker";
+import { transferStorage, TransferSearchData } from "@/lib/transfer-storage";
+import { formatDuration, getRouteInfo, RouteInfo } from "@/lib/mapbox";
 
 interface TransferSearchFormProps {
   initialData?: TransferSearchData;
   onRouteCalculated?: (routeInfo: RouteInfo | null) => void;
+}
+
+function routeKey(pickup: LocationData, dropoff: LocationData): string {
+  const { lng: plng, lat: plat } = pickup.coordinates;
+  const { lng: dlng, lat: dlat } = dropoff.coordinates;
+  return `${plng},${plat}|${dlng},${dlat}`;
 }
 
 export function TransferSearchForm({
@@ -30,10 +37,10 @@ export function TransferSearchForm({
   onRouteCalculated,
 }: TransferSearchFormProps) {
   const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations("transferPage");
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = useToday();
 
   const [pickupLocation, setPickupLocation] =
     React.useState<LocationData | null>(initialData?.pickupLocation || null);
@@ -62,6 +69,11 @@ export function TransferSearchForm({
   const [routeInfo, setRouteInfo] = React.useState<RouteInfo | null>(null);
   const [isHydrated, setIsHydrated] = React.useState(false);
 
+  // Location pair the current routeInfo was calculated (or restored) for.
+  // Lets the route-calculation effect skip the paid Mapbox Directions call
+  // when route info was just restored from storage for the same pair.
+  const routeInfoKeyRef = React.useRef<string | null>(null);
+
   React.useEffect(() => {
     const stored = transferStorage.load();
     if (stored.pickupLocation) setPickupLocation(stored.pickupLocation);
@@ -72,17 +84,47 @@ export function TransferSearchForm({
     if (stored.returnTime) setReturnTime(stored.returnTime);
     if (stored.passengers) setPassengers(stored.passengers);
     if (stored.transferType) setTransferType(stored.transferType);
-    if (stored.distanceKm && stored.estimatedDurationMinutes) {
-      setRouteInfo({
+    // Only trust restored route metrics when their stored key provably matches
+    // the restored location pair. Otherwise the calc effect below recalculates
+    // (correct-but-costs one Directions call), guarding against stale distance.
+    if (
+      stored.distanceKm &&
+      stored.estimatedDurationMinutes &&
+      stored.routeInfoKey &&
+      stored.pickupLocation &&
+      stored.dropoffLocation &&
+      stored.routeInfoKey ===
+        routeKey(stored.pickupLocation, stored.dropoffLocation)
+    ) {
+      const restoredInfo = {
         distanceKm: stored.distanceKm,
         durationMinutes: stored.estimatedDurationMinutes,
-      });
+      };
+      setRouteInfo(restoredInfo);
+      routeInfoKeyRef.current = stored.routeInfoKey;
+      onRouteCalculated?.(restoredInfo);
     }
     setIsHydrated(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   React.useEffect(() => {
     if (!isHydrated) return;
+
+    // Persist route metrics only when they provably belong to the CURRENT
+    // pair (the ref is updated together with routeInfo). While a location
+    // change has a pending Directions request, routeInfo still holds the
+    // previous pair's distance — writing it here against the new pair would
+    // let a remount restore a wrong distance. In that window we write
+    // `undefined`, which clears any stale metrics from storage.
+    const currentKey =
+      pickupLocation && dropoffLocation
+        ? routeKey(pickupLocation, dropoffLocation)
+        : null;
+    const metricsMatchPair =
+      currentKey !== null &&
+      routeInfoKeyRef.current === currentKey &&
+      !!routeInfo;
 
     transferStorage.save({
       pickupLocation: pickupLocation || undefined,
@@ -93,8 +135,11 @@ export function TransferSearchForm({
       returnTime,
       passengers,
       transferType,
-      distanceKm: routeInfo?.distanceKm,
-      estimatedDurationMinutes: routeInfo?.durationMinutes,
+      distanceKm: metricsMatchPair ? routeInfo.distanceKm : undefined,
+      estimatedDurationMinutes: metricsMatchPair
+        ? routeInfo.durationMinutes
+        : undefined,
+      routeInfoKey: metricsMatchPair ? currentKey : undefined,
     });
   }, [
     pickupLocation,
@@ -110,10 +155,22 @@ export function TransferSearchForm({
   ]);
 
   React.useEffect(() => {
+    // Wait for the storage restore to run first, so a restored route isn't
+    // clobbered (and then re-fetched) by this effect's initial null pass.
+    if (!isHydrated) return;
+
     const calculateRoute = async () => {
       if (!pickupLocation || !dropoffLocation) {
+        routeInfoKeyRef.current = null;
         setRouteInfo(null);
         onRouteCalculated?.(null);
+        return;
+      }
+
+      // Route info for this exact pair was already calculated or restored
+      // from storage — skip the redundant (paid) Directions API round-trip.
+      const key = routeKey(pickupLocation, dropoffLocation);
+      if (routeInfoKeyRef.current === key) {
         return;
       }
 
@@ -123,10 +180,12 @@ export function TransferSearchForm({
           pickupLocation.coordinates,
           dropoffLocation.coordinates,
         );
+        routeInfoKeyRef.current = key;
         setRouteInfo(info);
         onRouteCalculated?.(info);
       } catch (error) {
         console.error("Failed to calculate route:", error);
+        routeInfoKeyRef.current = null;
         setRouteInfo(null);
         onRouteCalculated?.(null);
       } finally {
@@ -135,7 +194,7 @@ export function TransferSearchForm({
     };
 
     calculateRoute();
-  }, [pickupLocation, dropoffLocation, onRouteCalculated]);
+  }, [isHydrated, pickupLocation, dropoffLocation, onRouteCalculated]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -158,6 +217,12 @@ export function TransferSearchForm({
       }
     }
 
+    // Same guard as the save effect: only persist metrics that provably match
+    // this pair, so the vehicles page never prices against a stale distance.
+    const submitKey = routeKey(pickupLocation, dropoffLocation);
+    const metricsMatchPair =
+      routeInfoKeyRef.current === submitKey && !!routeInfo;
+
     transferStorage.save({
       pickupLocation,
       dropoffLocation,
@@ -167,12 +232,15 @@ export function TransferSearchForm({
       returnTime: transferType === "round_trip" ? returnTime : undefined,
       passengers,
       transferType,
-      distanceKm: routeInfo?.distanceKm,
-      estimatedDurationMinutes: routeInfo?.durationMinutes,
+      distanceKm: metricsMatchPair ? routeInfo.distanceKm : undefined,
+      estimatedDurationMinutes: metricsMatchPair
+        ? routeInfo.durationMinutes
+        : undefined,
+      routeInfoKey: metricsMatchPair ? submitKey : undefined,
       selectedVehicleId: undefined,
     });
 
-    router.push("/transfers/vehicles");
+    router.push(`/${locale}/transfers/vehicles`);
   };
 
   const canSearch =
@@ -181,6 +249,32 @@ export function TransferSearchForm({
     pickupDate &&
     pickupTime &&
     (transferType === "one_way" || (returnDate && returnTime));
+
+  // Rendered in the right column for one-way trips (where the return
+  // date/time slot would otherwise leave an empty gap), and as a
+  // full-width row below for round trips.
+  const passengersField = (
+    <div>
+      <Label htmlFor="passengers" className="text-sm font-medium mb-1.5 block">
+        {t("searchForm.passengers")}
+      </Label>
+      <div className="relative">
+        <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <NativeSelect
+          id="passengers"
+          value={passengers.toString()}
+          onChange={(e) => setPassengers(parseInt(e.target.value))}
+          className="w-full h-12 pl-10"
+        >
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
+            <NativeSelectOption key={num} value={num.toString()}>
+              {t("searchForm.passengerCount", { count: num })}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+      </div>
+    </div>
+  );
 
   return (
     <Card className="w-full shadow-xl relative">
@@ -228,7 +322,9 @@ export function TransferSearchForm({
                 timeState={pickupTime}
                 setTimeState={setPickupTime}
                 minDate={today}
-                disabledDateRanges={(date: Date) => date < today}
+                disabledDateRanges={(date: Date) =>
+                  today ? date < today : false
+                }
                 popoverAlign="start"
                 contentAlign="start"
                 isLoading={isLoading}
@@ -259,7 +355,7 @@ export function TransferSearchForm({
                 disabled={isLoading}
               />
 
-              {transferType === "round_trip" && (
+              {transferType === "round_trip" ? (
                 <DateTimePicker
                   id="returnDateTime"
                   label={t("searchForm.returnDateTime")}
@@ -268,45 +364,30 @@ export function TransferSearchForm({
                   timeState={returnTime}
                   setTimeState={setReturnTime}
                   minDate={pickupDate || today}
-                  disabledDateRanges={(date: Date) => date < (pickupDate || today)}
+                  disabledDateRanges={(date: Date) => {
+                    const min = pickupDate || today;
+                    return min ? date < min : false;
+                  }}
                   popoverAlign="end"
                   contentAlign="start"
                   isLoading={isLoading}
                   pickupDate={pickupDate}
                   pickupTime={pickupTime}
                 />
+              ) : (
+                passengersField
               )}
             </div>
           </div>
 
-          <div className="mt-6">
-            <Label
-              htmlFor="passengers"
-              className="text-sm font-medium mb-1.5 block"
-            >
-              {t("searchForm.passengers")}
-            </Label>
-            <div className="relative">
-              <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-              <NativeSelect
-                id="passengers"
-                value={passengers.toString()}
-                onChange={(e) => setPassengers(parseInt(e.target.value))}
-                className="w-full h-12 pl-10"
-              >
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-                  <NativeSelectOption key={num} value={num.toString()}>
-                    {t("searchForm.passengerCount", { count: num })}
-                  </NativeSelectOption>
-                ))}
-              </NativeSelect>
-            </div>
-          </div>
+          {transferType === "round_trip" && (
+            <div className="mt-6">{passengersField}</div>
+          )}
 
           {passengers >= 4 && (
             <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
               <p className="text-sm text-blue-700 dark:text-blue-400">
-                <span className="font-medium">💡 Tip:</span> For 4+ passengers, consider booking with 2 vehicles or a van for more comfort.
+                {t("searchForm.passengerTip")}
               </p>
             </div>
           )}
@@ -319,16 +400,16 @@ export function TransferSearchForm({
                     <span className="text-muted-foreground">
                       {t("vehicleSelection.distanceLabel")}:{" "}
                     </span>
-                    <span className="font-medium">{routeInfo.distanceKm} km</span>
+                    <span className="font-medium">
+                      {routeInfo.distanceKm} km
+                    </span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">
                       {t("vehicleSelection.durationLabel")}:{" "}
                     </span>
                     <span className="font-medium">
-                      {routeInfo.durationMinutes < 60
-                        ? `${routeInfo.durationMinutes} min`
-                        : `${Math.floor(routeInfo.durationMinutes / 60)}h ${routeInfo.durationMinutes % 60}min`}
+                      {formatDuration(routeInfo.durationMinutes)}
                     </span>
                   </div>
                 </div>
@@ -343,7 +424,7 @@ export function TransferSearchForm({
             <div className="mt-4 p-4 bg-muted/50 rounded-lg">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span>Calculating route...</span>
+                <span>{t("searchForm.calculatingRoute")}</span>
               </div>
             </div>
           )}

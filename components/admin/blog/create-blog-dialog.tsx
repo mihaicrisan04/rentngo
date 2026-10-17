@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useAction, useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,12 +37,21 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 import { toast } from "sonner";
-import { Plus, X, Upload, Wand2, Image as ImageIcon, Eye, Star } from "lucide-react";
+import {
+  Plus,
+  X,
+  Upload,
+  Wand2,
+  Image as ImageIcon,
+  Eye,
+  Star,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { generateSlugFromTitle, calculateReadingTime } from "@/lib/blog-utils";
 import { Badge } from "@/components/ui/badge";
 import { BlogPreview } from "@/components/features/blog/blog-preview";
+import { useImageUpload } from "@/hooks/use-image-upload";
 
 const Tabs = TabsPrimitive.Root;
 const TabsList = TabsPrimitive.List;
@@ -175,11 +184,7 @@ function ImageThumbnail({
     >
       <div className="aspect-[4/3] bg-muted">
         {url ? (
-          <img
-            src={url}
-            alt=""
-            className="w-full h-full object-cover"
-          />
+          <img src={url} alt="" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <ImageIcon className="h-6 w-6 text-muted-foreground/30" />
@@ -255,7 +260,7 @@ export function CreateBlogDialog({
   const [tags, setTags] = useState<string[]>([]);
 
   const createBlog = useMutation(api.blogs.create);
-  const uploadImages = useAction(api.blogs.uploadImages);
+  const { uploadFiles, deleteFiles } = useImageUpload();
 
   const form = useForm<BlogFormData>({
     resolver: zodResolver(blogSchema),
@@ -276,10 +281,14 @@ export function CreateBlogDialog({
     },
   });
 
-  function getLocaleStatus(lang: "ro" | "en"): "empty" | "partial" | "complete" {
+  function getLocaleStatus(
+    lang: "ro" | "en",
+  ): "empty" | "partial" | "complete" {
     const title = form.watch(lang === "ro" ? "title_ro" : "title_en");
     const slug = form.watch(lang === "ro" ? "slug_ro" : "slug_en");
-    const description = form.watch(lang === "ro" ? "description_ro" : "description_en");
+    const description = form.watch(
+      lang === "ro" ? "description_ro" : "description_en",
+    );
     const content = form.watch(lang === "ro" ? "content_ro" : "content_en");
     const filled = [title, slug, description, content].filter(
       (v) => v && v.trim().length > 0,
@@ -326,14 +335,7 @@ export function CreateBlogDialog({
     }
 
     try {
-      const imageBuffers = await Promise.all(
-        selectedFiles.map(async (file) => {
-          const arrayBuffer = await file.arrayBuffer();
-          return arrayBuffer;
-        }),
-      );
-
-      const imageIds = await uploadImages({ images: imageBuffers });
+      const imageIds = await uploadFiles(selectedFiles);
       setUploadedImageIds((prev) => [...prev, ...imageIds]);
       setSelectedFiles([]);
       toast.success(`Uploaded ${imageIds.length} image(s)`);
@@ -371,7 +373,26 @@ export function CreateBlogDialog({
     if (coverImageId === imageId) {
       setCoverImageId(undefined);
     }
-    toast.success("Image removed from list");
+    // The blog doesn't exist yet, so nothing references this file
+    void deleteFiles([imageId]);
+    toast.success("Image removed");
+  };
+
+  // Closing without creating the blog abandons the uploads — no document
+  // references them, so remove them from storage again. Every close path
+  // (Cancel, Escape, overlay, X) routes through Radix's onOpenChange, so a
+  // single guard here blocks closing while createBlog is in flight — it may
+  // still persist these IDs, and deleting them would leave the new blog
+  // referencing dead files.
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen && form.formState.isSubmitting) return;
+    if (!nextOpen) {
+      void deleteFiles(uploadedImageIds);
+      setUploadedImageIds([]);
+      setCoverImageId(undefined);
+      setSelectedFiles([]);
+    }
+    onOpenChange(nextOpen);
   };
 
   const onSubmit = async (data: BlogFormData) => {
@@ -413,11 +434,16 @@ export function CreateBlogDialog({
   };
 
   const renderContentFields = (lang: "ro" | "en") => {
-    const titleField: "title_ro" | "title_en" = lang === "ro" ? "title_ro" : "title_en";
-    const slugField: "slug_ro" | "slug_en" = lang === "ro" ? "slug_ro" : "slug_en";
-    const descField: "description_ro" | "description_en" = lang === "ro" ? "description_ro" : "description_en";
-    const contentField: "content_ro" | "content_en" = lang === "ro" ? "content_ro" : "content_en";
-    const readingTimeField: "readingTime_ro" | "readingTime_en" = lang === "ro" ? "readingTime_ro" : "readingTime_en";
+    const titleField: "title_ro" | "title_en" =
+      lang === "ro" ? "title_ro" : "title_en";
+    const slugField: "slug_ro" | "slug_en" =
+      lang === "ro" ? "slug_ro" : "slug_en";
+    const descField: "description_ro" | "description_en" =
+      lang === "ro" ? "description_ro" : "description_en";
+    const contentField: "content_ro" | "content_en" =
+      lang === "ro" ? "content_ro" : "content_en";
+    const readingTimeField: "readingTime_ro" | "readingTime_en" =
+      lang === "ro" ? "readingTime_ro" : "readingTime_en";
     const label = lang === "ro" ? "Romanian" : "English";
     const slugPlaceholder = lang === "ro" ? "slug-in-romana" : "english-slug";
     const urlPrefix = lang === "ro" ? "/ro/blog/" : "/en/blog/";
@@ -555,7 +581,7 @@ export function CreateBlogDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-5xl max-h-[95vh]">
         {/* Header with persistent language toggle */}
         <DialogHeader className="flex flex-row items-center justify-between gap-4 pr-10 space-y-0">
@@ -803,9 +829,7 @@ export function CreateBlogDialog({
                       activeLang === "ro" ? "content_ro" : "content_en",
                     )}
                     readingTime={form.watch(
-                      activeLang === "ro"
-                        ? "readingTime_ro"
-                        : "readingTime_en",
+                      activeLang === "ro" ? "readingTime_ro" : "readingTime_en",
                     )}
                     tags={tags}
                   />
@@ -817,7 +841,8 @@ export function CreateBlogDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => handleOpenChange(false)}
+                disabled={form.formState.isSubmitting}
               >
                 Cancel
               </Button>

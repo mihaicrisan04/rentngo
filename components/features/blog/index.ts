@@ -1,6 +1,9 @@
 export { BlogCard } from "./blog-card";
 export { BlogCardSkeleton } from "./blog-card-skeleton";
-export { BlogContent } from "./blog-content";
+// NOTE: BlogContent (client-side MDX compiler, ~admin preview only) is
+// intentionally NOT re-exported here — pulling it into this barrel leaks the
+// next-mdx-remote/highlight.js toolchain into public blog bundles. Import it
+// directly from "./blog-content" where needed.
 export { BlogContentServer } from "./blog-content-server";
 export { BlogHeader } from "./blog-header";
 export { BlogImage } from "./blog-image";

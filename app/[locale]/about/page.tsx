@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AnimatedGroup } from "@/components/ui/animated-group";
@@ -17,53 +18,23 @@ import {
   Star,
   ArrowRight,
 } from "lucide-react";
-import { Variants } from "framer-motion";
-import { useTranslations } from "next-intl";
-
-const sectionAnimationVariants: {
-  container: Variants;
-  item: Variants;
-} = {
-  container: {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.1,
-      },
-    },
-  },
-  item: {
-    hidden: {
-      opacity: 0,
-      scale: 0.95,
-      filter: "blur(4px)",
-      y: 20,
-    },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      filter: "blur(0px)",
-      y: 0,
-      transition: {
-        type: "spring",
-        stiffness: 100,
-        damping: 15,
-        duration: 0.6,
-      },
-    },
-  },
-};
+import { useLocale, useTranslations } from "next-intl";
+import { contactAnimationVariants as sectionAnimationVariants } from "@/lib/animations";
+import { GOOGLE_RATING } from "@/lib/google-reviews";
 
 const AboutPage = () => {
   const t = useTranslations("aboutPage");
+  const locale = useLocale();
 
   const stats = [
     { icon: Car, label: t("stats.vehicles"), value: "20+" },
     { icon: Users, label: t("stats.customers"), value: "200+" },
     { icon: Award, label: t("stats.experience"), value: "5+" },
-    { icon: Star, label: t("stats.rating"), value: "4.9" },
+    {
+      icon: Star,
+      label: t("stats.rating"),
+      value: GOOGLE_RATING.score.toFixed(1),
+    },
   ];
 
   const values = [
@@ -271,10 +242,12 @@ const AboutPage = () => {
                   <Button
                     size="lg"
                     className="bg-primary hover:bg-primary/90 text-primary-foreground group"
-                    onClick={() => (window.location.href = "/contact")}
+                    asChild
                   >
-                    {t("mission.buttonText")}
-                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    <Link href={`/${locale}/contact`}>
+                      {t("mission.buttonText")}
+                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    </Link>
                   </Button>
                 </div>
               </AnimatedGroup>

@@ -14,12 +14,19 @@ import { UserReservationEmail } from "./emails/templates/UserReservationEmail";
 import { UserTransferEmail } from "./emails/templates/UserTransferEmail";
 import { AdminTransferEmail } from "./emails/templates/AdminTransferEmail";
 import { ReservationEmailData, TransferEmailData } from "./emails/types";
+import { additionalChargeCodeValidator } from "./validators";
+import { COMPANY } from "../lib/company";
 
 // Initialize Resend component (testMode: false for production)
 export const resend = new Resend(components.resend, { testMode: false });
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "office@rngo.ro";
-const FROM_EMAIL = "Rent'n Go <noreply@rngo.ro>";
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || COMPANY.email;
+// EMAIL_FROM / EMAIL_SUBJECT_PREFIX are set per Convex deployment so the
+// develop environment sends visibly distinct emails (e.g. "Rent'n Go [DEV]"
+// with "[DEV] " subjects) from the same verified sender domain.
+const FROM_EMAIL =
+  process.env.EMAIL_FROM || `${COMPANY.name} <noreply@rngo.ro>`;
+const SUBJECT_PREFIX = process.env.EMAIL_SUBJECT_PREFIX || "";
 
 // Validators for email data
 const customerInfoValidator = v.object({
@@ -49,6 +56,8 @@ const rentalDetailsValidator = v.object({
   pickupLocation: v.string(),
   restitutionLocation: v.string(),
   numberOfDays: v.number(),
+  includedKm: v.optional(v.number()),
+  extraKilometers: v.optional(v.number()),
 });
 
 const pricingDetailsValidator = v.object({
@@ -56,18 +65,36 @@ const pricingDetailsValidator = v.object({
   totalPrice: v.number(),
   paymentMethod: v.string(),
   promoCode: v.optional(v.string()),
+  discountAmount: v.optional(v.number()),
+  // True when the discount came from the affiliate program (referral link or
+  // referrer tier reward) rather than a typed coupon code — changes the label
+  isReferralDiscount: v.optional(v.boolean()),
+  // Wallet credit spent on the booking; totalPrice stays pre-credit, so the
+  // amount due is totalPrice - walletCreditApplied
+  walletCreditApplied: v.optional(v.number()),
   additionalCharges: v.optional(
     v.array(
       v.object({
-        description: v.string(),
+        description: v.optional(v.string()),
+        code: v.optional(additionalChargeCodeValidator),
+        params: v.optional(
+          v.record(v.string(), v.union(v.string(), v.number())),
+        ),
         amount: v.number(),
-      })
-    )
+      }),
+    ),
   ),
   isSCDWSelected: v.optional(v.boolean()),
   deductibleAmount: v.optional(v.number()),
   protectionCost: v.optional(v.number()),
 });
+
+// "Recommend a friend" block; omitted entirely while the referral program is
+// off, so a disabled program sends the email exactly as before
+const referralBlockValidator = v.union(
+  v.object({ kind: v.literal("affiliate"), code: v.string() }),
+  v.object({ kind: v.literal("guest") }),
+);
 
 // Send reservation confirmation emails (admin + customer)
 export const sendReservationConfirmationEmail = internalAction({
@@ -77,45 +104,53 @@ export const sendReservationConfirmationEmail = internalAction({
     vehicleInfo: vehicleInfoValidator,
     rentalDetails: rentalDetailsValidator,
     pricingDetails: pricingDetailsValidator,
+    referral: v.optional(referralBlockValidator),
     locale: v.optional(v.string()),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const emailData: ReservationEmailData = {
       reservationNumber: args.reservationNumber,
       customerInfo: args.customerInfo,
       vehicleInfo: args.vehicleInfo as ReservationEmailData["vehicleInfo"],
       rentalDetails: args.rentalDetails,
-      pricingDetails: args.pricingDetails as ReservationEmailData["pricingDetails"],
+      pricingDetails:
+        args.pricingDetails as ReservationEmailData["pricingDetails"],
+      referral: args.referral,
       locale: (args.locale === "ro" ? "ro" : "en") as "en" | "ro",
     };
 
     try {
       // Render admin email
-      const adminHtml = await render(AdminReservationEmail({ data: emailData }) as React.ReactElement);
+      const adminHtml = await render(
+        AdminReservationEmail({ data: emailData }) as React.ReactElement,
+      );
 
       // Send admin notification email
       await resend.sendEmail(ctx, {
         from: FROM_EMAIL,
         to: [ADMIN_EMAIL],
-        subject: `New reservation request #${args.reservationNumber}`,
+        subject: `${SUBJECT_PREFIX}New reservation request #${args.reservationNumber}`,
         html: adminHtml,
         replyTo: [args.customerInfo.email],
       });
 
       // Render user email
-      const userHtml = await render(UserReservationEmail({ data: emailData }) as React.ReactElement);
+      const userHtml = await render(
+        UserReservationEmail({ data: emailData }) as React.ReactElement,
+      );
 
       // Send user confirmation email
       await resend.sendEmail(ctx, {
         from: FROM_EMAIL,
         to: [args.customerInfo.email],
-        subject: `Request submitted #${args.reservationNumber}`,
+        subject: `${SUBJECT_PREFIX}Request submitted #${args.reservationNumber}`,
         html: userHtml,
-        replyTo: ["office@rngo.ro"],
+        replyTo: [COMPANY.email],
       });
 
       console.log(
-        `Reservation confirmation emails sent for #${args.reservationNumber}`
+        `Reservation confirmation emails sent for #${args.reservationNumber}`,
       );
     } catch (error) {
       console.error("Error sending reservation emails:", error);
@@ -144,6 +179,10 @@ const transferPricingDetailsValidator = v.object({
   distancePrice: v.number(),
   totalPrice: v.number(),
   pricePerKm: v.number(),
+  promoCode: v.optional(v.string()),
+  discountAmount: v.optional(v.number()),
+  isReferralDiscount: v.optional(v.boolean()),
+  walletCreditApplied: v.optional(v.number()),
 });
 
 // Send transfer confirmation emails (customer + admin)
@@ -165,11 +204,13 @@ export const sendTransferConfirmationEmail = internalAction({
     estimatedDurationMinutes: v.number(),
     pricingDetails: transferPricingDetailsValidator,
     paymentMethod: v.string(),
+    referral: v.optional(referralBlockValidator),
     locale: v.optional(v.string()),
   },
+  returns: v.null(),
   handler: async (ctx, args) => {
     const locale = (args.locale === "ro" ? "ro" : "en") as "en" | "ro";
-    
+
     const emailData: TransferEmailData = {
       transferNumber: args.transferNumber,
       customerInfo: args.customerInfo,
@@ -190,42 +231,44 @@ export const sendTransferConfirmationEmail = internalAction({
         | "cash_on_delivery"
         | "card_on_delivery"
         | "card_online",
+      referral: args.referral,
       locale,
     };
 
     try {
       // Render admin transfer email
       const adminHtml = await render(
-        AdminTransferEmail({ data: emailData, locale }) as React.ReactElement
+        AdminTransferEmail({ data: emailData, locale }) as React.ReactElement,
       );
 
       // Send admin notification email
       await resend.sendEmail(ctx, {
         from: FROM_EMAIL,
         to: [ADMIN_EMAIL],
-        subject: `New Transfer Booking #${args.transferNumber}`,
+        subject: `${SUBJECT_PREFIX}New Transfer Booking #${args.transferNumber}`,
         html: adminHtml,
         replyTo: [args.customerInfo.email],
       });
 
       // Render user transfer email
       const userHtml = await render(
-        UserTransferEmail({ data: emailData, locale }) as React.ReactElement
+        UserTransferEmail({ data: emailData, locale }) as React.ReactElement,
       );
 
       // Send customer confirmation email
       await resend.sendEmail(ctx, {
         from: FROM_EMAIL,
         to: [args.customerInfo.email],
-        subject: locale === "ro" 
-          ? `Cerere trimisă #${args.transferNumber}` 
-          : `Request submitted #${args.transferNumber}`,
+        subject:
+          locale === "ro"
+            ? `${SUBJECT_PREFIX}Cerere trimisă #${args.transferNumber}`
+            : `${SUBJECT_PREFIX}Request submitted #${args.transferNumber}`,
         html: userHtml,
-        replyTo: ["office@rngo.ro"],
+        replyTo: [COMPANY.email],
       });
 
       console.log(
-        `Transfer confirmation emails sent for #${args.transferNumber}`
+        `Transfer confirmation emails sent for #${args.transferNumber}`,
       );
     } catch (error) {
       console.error("Error sending transfer emails:", error);

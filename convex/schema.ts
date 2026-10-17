@@ -1,7 +1,35 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import {
+  additionalChargeCodeValidator,
+  bookingStatusValidator,
+  fuelTypeValidator,
+  paymentMethodValidator,
+  transmissionValidator,
+  vehicleStatusValidator,
+  vehicleTypeValidator,
+} from "./validators";
 
 export default defineSchema({
+  counters: defineTable({
+    name: v.string(),
+    value: v.number(),
+  }).index("by_name", ["name"]),
+
+  // Maintained all-time aggregates, one doc per covered table. Updated in the
+  // same transaction as every insert/status-change/delete on that table.
+  // Seeded by migrations/seedTableStats; dashboard readers fall back to a
+  // scan until the doc exists, so deploy-then-seed ordering is safe.
+  tableStats: defineTable({
+    table: v.union(
+      v.literal("reservations"),
+      v.literal("transfers"),
+      v.literal("vehicles"),
+    ),
+    total: v.number(),
+    byStatus: v.record(v.string(), v.number()),
+  }).index("by_table", ["table"]),
+
   // Users table - stores user profiles
   users: defineTable({
     name: v.string(),
@@ -17,39 +45,29 @@ export default defineSchema({
         notifications: v.boolean(),
       }),
     ),
+    // Soft delete (set by the Clerk user.deleted webhook or self-serve
+    // removal). PII is anonymized at the same time; userId references in
+    // reservations/transfers/affiliates stay valid.
+    deletedAt: v.optional(v.number()),
   })
     .index("by_email", ["email"])
-    .index("by_clerk_id", ["clerkId"]),
+    .index("by_clerk_id", ["clerkId"])
+    // Admin user search (referral top-ups for offline referrals). Two search
+    // indexes rather than one: a name index cannot match an email fragment.
+    .searchIndex("search_name", { searchField: "name" })
+    .searchIndex("search_email", { searchField: "email" }),
 
   // Vehicles table - stores car inventory
   vehicles: defineTable({
     make: v.string(),
     model: v.string(),
     year: v.optional(v.number()),
-    type: v.optional(
-      v.union(
-        v.literal("sedan"),
-        v.literal("suv"),
-        v.literal("hatchback"),
-        v.literal("sports"),
-        v.literal("truck"),
-        v.literal("van"),
-      ),
-    ),
+    type: v.optional(vehicleTypeValidator),
     classId: v.optional(v.id("vehicleClasses")), // Reference to vehicle class
     classSortIndex: v.optional(v.number()), // For custom sorting within a class (future feature)
     seats: v.optional(v.number()),
-    transmission: v.optional(
-      v.union(v.literal("automatic"), v.literal("manual")),
-    ),
-    fuelType: v.optional(
-      v.union(
-        v.literal("diesel"),
-        v.literal("electric"),
-        v.literal("hybrid"),
-        v.literal("benzina"),
-      ),
-    ),
+    transmission: v.optional(transmissionValidator),
+    fuelType: v.optional(fuelTypeValidator),
     engineCapacity: v.optional(v.number()),
     engineType: v.optional(v.string()),
     pricingTiers: v.optional(
@@ -65,11 +83,7 @@ export default defineSchema({
     isOwner: v.optional(v.boolean()), // Whether the car is owned by the company (true) or partnership (false)
     location: v.optional(v.string()),
     features: v.optional(v.array(v.string())),
-    status: v.union(
-      v.literal("available"),
-      v.literal("rented"),
-      v.literal("maintenance"),
-    ),
+    status: vehicleStatusValidator,
     images: v.optional(v.array(v.id("_storage"))),
     mainImageId: v.optional(v.id("_storage")),
     // Transfer-related fields
@@ -83,6 +97,7 @@ export default defineSchema({
     .index("by_type", ["type"])
     .index("by_status", ["status"])
     .index("by_transfer", ["isTransferVehicle"])
+    .index("by_class_and_sort", ["classId", "classSortIndex"])
     .index("by_slug", ["slug"]),
 
   // Reservations table - stores booking records
@@ -96,17 +111,8 @@ export default defineSchema({
     restitutionTime: v.string(), // Time in "HH:MM" format (e.g., "16:00")
     pickupLocation: v.string(), // Name of pickup location
     restitutionLocation: v.string(), // Name of return location
-    paymentMethod: v.union(
-      v.literal("cash_on_delivery"),
-      v.literal("card_on_delivery"),
-      v.literal("card_online"),
-    ),
-    status: v.union(
-      v.literal("pending"),
-      v.literal("confirmed"),
-      v.literal("cancelled"),
-      v.literal("completed"),
-    ),
+    paymentMethod: paymentMethodValidator,
+    status: bookingStatusValidator,
     totalPrice: v.number(),
     // Customer information (for non-authenticated or guest bookings)
     customerInfo: v.object({
@@ -116,12 +122,44 @@ export default defineSchema({
       message: v.optional(v.string()),
       flightNumber: v.optional(v.string()), // Format: "XX 1234" (airline code + space + number)
     }),
+    // customerInfo.email lowercased+trimmed, denormalized so the referral
+    // first-rental check can look a customer up by index instead of scanning.
+    // Optional while the backfill runs (convex/migrations/README.md); written
+    // on every create and on every customerInfo update.
+    customerEmailNormalized: v.optional(v.string()),
+    // Applied coupon (validated + redeemed server-side in createReservation).
+    // promoCode keeps the human-readable code; discountAmount is the EUR
+    // discount actually granted, persisted so confirmation/emails render the
+    // charged values without recomputing.
     promoCode: v.optional(v.string()),
-    // Store any additional charges or fees (delivery fees, extras, etc.)
+    couponId: v.optional(v.id("coupons")),
+    discountAmount: v.optional(v.number()),
+    // Which source the single applied discount came from (one discount per
+    // booking). Legacy coupon docs predate this field: couponId set +
+    // discountSource undefined means "coupon".
+    discountSource: v.optional(
+      v.union(v.literal("coupon"), v.literal("affiliate")),
+    ),
+    // Affiliate attribution: the referrer credited for this booking (set
+    // whenever a referral conversion was recorded, even if a coupon won the
+    // single-discount rule), or the booking user's own affiliate when their
+    // tier reward was applied.
+    affiliateId: v.optional(v.id("affiliates")),
+    // Wallet credit spent on this booking. Credit is a payment, not a
+    // discount: totalPrice stays the pre-credit price and the amount still due
+    // is totalPrice - walletCreditApplied.
+    walletCreditApplied: v.optional(v.number()),
+    // Store any additional charges or fees (delivery fees, extras, etc.).
+    // New docs carry locale-free `code` + `params` (translated at render
+    // time); legacy docs carry only the localized `description` prose.
     additionalCharges: v.optional(
       v.array(
         v.object({
-          description: v.string(),
+          description: v.optional(v.string()),
+          code: v.optional(additionalChargeCodeValidator),
+          params: v.optional(
+            v.record(v.string(), v.union(v.string(), v.number())),
+          ),
           amount: v.number(),
         }),
       ),
@@ -139,13 +177,30 @@ export default defineSchema({
     seasonId: v.optional(v.id("seasons")),
     // Store the multiplier that was applied (for historical accuracy even if season changes)
     seasonalMultiplier: v.optional(v.number()),
+    // Server-computed price breakdown (persisted so confirmation pages and
+    // emails render the values actually charged, not a recompute against
+    // whatever tiers/season are current at read time)
+    pricePerDay: v.optional(v.number()),
+    rentalDays: v.optional(v.number()),
+    basePrice: v.optional(v.number()),
   })
     .index("by_user", ["userId"])
     .index("by_vehicle", ["vehicleId"])
     .index("by_dates", ["startDate", "endDate"])
+    .index("by_end_date", ["endDate"])
     .index("by_pickup_location", ["pickupLocation"])
     .index("by_restitution_location", ["restitutionLocation"])
-    .index("by_payment_method", ["paymentMethod"]),
+    .index("by_payment_method", ["paymentMethod"])
+    .index("by_status", ["status"])
+    .index("by_number", ["reservationNumber"])
+    // Status is part of both keys so the first-rental check can ask for one
+    // non-cancelled booking per status with a point lookup instead of
+    // scanning a customer's cancelled history.
+    .index("by_user_and_status", ["userId", "status"])
+    .index("by_customer_email_and_status", [
+      "customerEmailNormalized",
+      "status",
+    ]),
 
   // Transfers table - stores VIP transfer bookings
   transfers: defineTable({
@@ -185,12 +240,25 @@ export default defineSchema({
     luggageCount: v.optional(v.number()), // Number of medium-size luggage items
     distanceKm: v.number(),
     estimatedDurationMinutes: v.number(),
+    distanceSource: v.optional(
+      v.union(v.literal("server_mapbox"), v.literal("route_cache")),
+    ),
 
     // Pricing
     baseFare: v.number(), // Minimum fare
     distancePrice: v.number(), // Price calculated from distance
     totalPrice: v.number(),
     pricePerKm: v.number(), // Rate used for this booking
+    // Applied coupon (validated + redeemed server-side in createTransfer)
+    promoCode: v.optional(v.string()),
+    couponId: v.optional(v.id("coupons")),
+    discountAmount: v.optional(v.number()),
+    // See the reservations table for the semantics of these two fields
+    discountSource: v.optional(
+      v.union(v.literal("coupon"), v.literal("affiliate")),
+    ),
+    affiliateId: v.optional(v.id("affiliates")),
+    walletCreditApplied: v.optional(v.number()),
 
     // Customer information
     customerInfo: v.object({
@@ -200,39 +268,229 @@ export default defineSchema({
       message: v.optional(v.string()),
       flightNumber: v.optional(v.string()),
     }),
+    // See the reservations table for the semantics of this field
+    customerEmailNormalized: v.optional(v.string()),
 
     // Payment
-    paymentMethod: v.union(
-      v.literal("cash_on_delivery"),
-      v.literal("card_on_delivery"),
-      v.literal("card_online"),
-    ),
+    paymentMethod: paymentMethodValidator,
 
     // Status
-    status: v.union(
-      v.literal("pending"),
-      v.literal("confirmed"),
-      v.literal("cancelled"),
-      v.literal("completed"),
-    ),
+    status: bookingStatusValidator,
   })
     .index("by_user", ["userId"])
     .index("by_vehicle", ["vehicleId"])
     .index("by_pickup_date", ["pickupDate"])
-    .index("by_status", ["status"]),
+    .index("by_status", ["status"])
+    .index("by_number", ["transferNumber"])
+    .index("by_user_and_status", ["userId", "status"])
+    .index("by_customer_email_and_status", [
+      "customerEmailNormalized",
+      "status",
+    ]),
 
-  // Promotions table - stores discount codes
-  promotions: defineTable({
-    code: v.string(),
-    type: v.union(v.literal("percentage"), v.literal("fixed")),
-    value: v.number(), // percentage or fixed amount
-    expiryDate: v.number(), // Unix timestamp
-    usageCount: v.number(),
-    maxUsage: v.optional(v.number()),
-    active: v.boolean(),
+  routeCache: defineTable({
+    key: v.string(),
+    distanceKm: v.number(),
+    durationMinutes: v.number(),
+    createdAt: v.number(),
+  }).index("by_key", ["key"]),
+
+  // Coupons table - admin-generated discount codes redeemed at checkout
+  coupons: defineTable({
+    code: v.string(), // stored normalized (uppercase, trimmed) — lookups are case-insensitive
+    label: v.optional(v.string()), // admin-only note ("summer 2026 promo")
+    discountType: v.union(v.literal("percentage"), v.literal("fixed")),
+    discountValue: v.number(), // percentage (0-100] or fixed amount in EUR
+    expiresAt: v.optional(v.number()), // UTC ms; set to end-of-day Europe/Bucharest
+    maxRedemptions: v.optional(v.number()), // "first N" cap; undefined = unlimited
+    // Maintained counter, incremented inside the booking mutation. The
+    // read-check-increment lives in one transaction, so Convex OCC keeps a
+    // capped code from ever over-redeeming under concurrency.
+    redemptionCount: v.number(),
+    minOrderValue: v.optional(v.number()), // EUR floor on the pre-discount total
+    appliesTo: v.union(
+      v.literal("rentals"),
+      v.literal("transfers"),
+      v.literal("both"),
+    ),
+    isActive: v.boolean(), // admin kill-switch, checked at validation and redemption
+  }).index("by_code", ["code"]),
+
+  // Coupon redemptions - audit trail, one row per redeemed booking. Also
+  // enforces the once-per-user rule (by userId when authenticated, by
+  // normalized email for guest bookings).
+  couponRedemptions: defineTable({
+    couponId: v.id("coupons"),
+    code: v.string(), // denormalized so reporting survives coupon deletion
+    bookingType: v.union(v.literal("reservation"), v.literal("transfer")),
+    reservationId: v.optional(v.id("reservations")),
+    transferId: v.optional(v.id("transfers")),
+    userId: v.optional(v.id("users")),
+    customerEmail: v.string(), // normalized (lowercase, trimmed)
+    amountDiscounted: v.number(), // actual EUR discount granted
+    redeemedAt: v.number(),
   })
-    .index("by_code", ["code"])
-    .index("by_active", ["active"]),
+    .index("by_coupon", ["couponId"])
+    .index("by_coupon_email", ["couponId", "customerEmail"])
+    .index("by_coupon_user", ["couponId", "userId"]),
+
+  // Affiliates - users with a shareable referral link (rngo.ro/r/<slug>).
+  // Rewards are derived dynamically: approvedConversions -> tier table in
+  // affiliateSettings (or the per-affiliate override), minted as wallet credit.
+  affiliates: defineTable({
+    userId: v.id("users"),
+    slug: v.string(), // normalized lowercase, unique; ^[a-z0-9-]{3,32}$
+    isActive: v.boolean(), // admin kill-switch per affiliate
+    // Denormalized count of approved conversions. Maintained inside the
+    // booking/cancel mutations (same transaction as the conversion row), so
+    // Convex OCC keeps it consistent under concurrency.
+    // confirmedConversions is the v1 name, dual-written until the narrow step
+    // of the wallet migration drops it (convex/migrations/README.md).
+    confirmedConversions: v.number(),
+    approvedConversions: v.optional(v.number()),
+    // Per-affiliate overrides; undefined falls back to affiliateSettings
+    rewardPercentOverride: v.optional(v.number()),
+    referredDiscountOverride: v.optional(
+      v.object({
+        type: v.union(v.literal("percentage"), v.literal("fixed")),
+        value: v.number(),
+      }),
+    ),
+    createdAt: v.number(),
+  })
+    .index("by_slug", ["slug"])
+    .index("by_user", ["userId"]),
+
+  // Global affiliate program configuration (singleton, mirrors currentSeason).
+  // All business numbers live here or in per-affiliate overrides — nothing is
+  // hardcoded. Absent doc = seeded defaults (lib/pricing/affiliate.ts).
+  affiliateSettings: defineTable({
+    enabled: v.boolean(),
+    attributionWindowDays: v.number(),
+    referredDiscountType: v.union(v.literal("percentage"), v.literal("fixed")),
+    referredDiscountValue: v.number(), // percentage (0-100] or EUR
+    // Tier table: highest tier with minConversions <= approvedConversions
+    // wins. Small bounded list, safe to embed.
+    tiers: v.array(
+      v.object({
+        minConversions: v.number(),
+        rewardPercent: v.number(),
+        name: v.optional(v.string()),
+      }),
+    ),
+    // Wallet fields; optional because docs written before the wallet rollout
+    // lack them. Readers fill the gaps via withSettingsDefaults().
+    maxRedemptionPercent: v.optional(v.number()),
+    creditValidityMonths: v.optional(v.number()),
+    autoApproveOnCompletion: v.optional(v.boolean()),
+    referredFirstRentalOnly: v.optional(v.boolean()),
+    updatedAt: v.number(),
+  }),
+
+  // One row per consented referral click (last-click wins per visitor). The
+  // booking mutation requires a live row matching the client's cookie, so a
+  // fabricated visitorKey never attributes anything.
+  referralAttributions: defineTable({
+    affiliateId: v.id("affiliates"),
+    slug: v.string(), // denormalized for observability
+    visitorKey: v.string(), // random UUID minted client-side, stored in the cookie
+    createdAt: v.number(),
+    expiresAt: v.number(), // createdAt + attribution window
+  })
+    .index("by_visitor_key", ["visitorKey"])
+    .index("by_affiliate", ["affiliateId"]),
+
+  // One row per referred booking. Lifecycle (lib/pricing/affiliate.ts,
+  // conversionTransition): created = pending; completed booking ->
+  // awaitingApproval; admin approve -> approved (mints wallet credit and bumps
+  // the counter); admin reject -> rejected; cancelled or hard-deleted booking
+  // -> voided (reversing a minted credit). "confirmed" is the v1 status, read
+  // as "approved" until the narrow step of the wallet migration drops it.
+  referralConversions: defineTable({
+    affiliateId: v.id("affiliates"),
+    bookingType: v.union(v.literal("reservation"), v.literal("transfer")),
+    reservationId: v.optional(v.id("reservations")),
+    transferId: v.optional(v.id("transfers")),
+    referredUserId: v.optional(v.id("users")),
+    referredEmail: v.string(), // normalized (lowercase, trimmed)
+    // The attribution row this conversion came from — the consent-gated click
+    // for a link, or the row the server minted for a typed code. Optional:
+    // conversions written before this field existed have none.
+    attributionId: v.optional(v.id("referralAttributions")),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("awaitingApproval"),
+      v.literal("approved"),
+      v.literal("rejected"),
+      v.literal("voided"),
+      v.literal("confirmed"), // legacy v1, dropped in the narrow step
+    ),
+    // EUR discount actually granted to the referred customer (0 when another
+    // discount won the one-per-booking rule)
+    referredDiscountAmount: v.number(),
+    // Snapshot of the referrer's tier reward percent at conversion time (audit)
+    referrerRewardPercentAtConversion: v.number(),
+    // Approval snapshot: what was minted, and off which booking total
+    creditAmount: v.optional(v.number()),
+    bookingTotalAtApproval: v.optional(v.number()),
+    approvedAt: v.optional(v.number()),
+    approvedByUserId: v.optional(v.id("users")),
+    rejectedAt: v.optional(v.number()),
+    rejectionReason: v.optional(v.string()),
+    createdAt: v.number(),
+    confirmedAt: v.optional(v.number()),
+    voidedAt: v.optional(v.number()),
+  })
+    .index("by_affiliate", ["affiliateId"])
+    .index("by_reservation", ["reservationId"])
+    .index("by_transfer", ["transferId"])
+    // Enforces one referred discount/conversion per customer per affiliate:
+    // status is part of the index so the "any live (non-voided) prior?"
+    // check is a targeted lookup, not a scan that voided rows could push the
+    // live one out of
+    .index("by_affiliate_email_status", [
+      "affiliateId",
+      "referredEmail",
+      "status",
+    ])
+    // Admin approvals queue and the status-filtered history table
+    .index("by_status_createdAt", ["status", "createdAt"]),
+
+  // Append-only wallet ledger. There is no denormalized balance and no expiry
+  // cron: the balance is derived from these rows on read (lib/pricing/wallet.ts),
+  // expiry is an `expiresAt > now` comparison, and redemption consumes the
+  // soonest-expiring credit first. Guests cannot hold a wallet.
+  walletTransactions: defineTable({
+    userId: v.id("users"),
+    kind: v.union(
+      v.literal("referralCredit"),
+      v.literal("creditReversal"), // undoes a referralCredit (voided/rejected)
+      v.literal("manualAdjustment"),
+      v.literal("redemption"),
+      v.literal("redemptionReversal"), // gives back a cancelled booking's spend
+    ),
+    // EUR, rounded to cents and signed by direction, not by kind: positive
+    // opens credit (referralCredit, a top-up manualAdjustment,
+    // redemptionReversal), negative spends it (redemption, creditReversal, a
+    // claw-back manualAdjustment).
+    amount: v.number(),
+    // On a credit-opening row: when that credit lapses (absent = never). A
+    // redemption is written one row per credit it consumed and copies that
+    // credit's expiry, so a redemptionReversal can hand the expiry back
+    // unchanged instead of re-deriving the allocation from the ledger.
+    expiresAt: v.optional(v.number()),
+    // On a creditReversal this points at the conversion whose credit it undoes.
+    conversionId: v.optional(v.id("referralConversions")),
+    reservationId: v.optional(v.id("reservations")),
+    transferId: v.optional(v.id("transfers")),
+    createdByUserId: v.optional(v.id("users")), // admin, for manual adjustments
+    note: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId", "createdAt"])
+    .index("by_conversion", ["conversionId"])
+    .index("by_reservation", ["reservationId"])
+    .index("by_transfer", ["transferId"]),
 
   // Email logs table - tracks sent emails
   emailLogs: defineTable({
@@ -340,5 +598,6 @@ export default defineSchema({
     .index("by_slug_ro", ["slug_ro"])
     .index("by_slug_en", ["slug_en"])
     .index("by_status", ["status"])
+    .index("by_featured", ["isFeatured"])
     .index("by_published_at", ["publishedAt"]),
 });

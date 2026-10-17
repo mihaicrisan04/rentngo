@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useQuery } from "convex/react";
+import { usePaginatedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/shared/status-badge";
+import { formatDate, formatPrice } from "@/lib/format";
+import { bookingAmountDue } from "@/lib/pricing";
 import {
   Table,
   TableBody,
@@ -13,93 +14,40 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { useTranslations } from 'next-intl';
+import { useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 
 const ITEMS_PER_PAGE = 10;
 
 export function UserReservationsTable() {
-  const [currentPage, setCurrentPage] = useState(1);
-  const t = useTranslations('profile');
-  const tCommon = useTranslations('common');
+  const t = useTranslations("profile");
+  const tWallet = useTranslations("common.wallet");
 
-  const reservations = useQuery(api.reservations.getCurrentUserReservations);
+  const {
+    results: reservations,
+    status: paginationStatus,
+    loadMore,
+  } = usePaginatedQuery(
+    api.reservations.getCurrentUserReservationsPaginated,
+    {},
+    { initialNumItems: ITEMS_PER_PAGE },
+  );
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      pending: { color: "bg-yellow-100 text-yellow-800 border-yellow-200", label: tCommon('status.pending') },
-      confirmed: { color: "bg-green-100 text-green-800 border-green-200", label: tCommon('status.confirmed') },
-      cancelled: { color: "bg-red-100 text-red-800 border-red-200", label: tCommon('status.cancelled') },
-      completed: { color: "bg-blue-100 text-blue-800 border-blue-200", label: tCommon('status.completed') },
-    };
-    
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
-    
-    return (
-      <Badge variant="secondary" className={config.color}>
-        {config.label}
-      </Badge>
-    );
-  };
-
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString();
-  };
-
-  const formatPrice = (price: number) => {
-    return `${price.toFixed(2)} EUR`;
-  };
-
-  const VehicleInfo = ({ vehicleId }: { vehicleId: Id<"vehicles"> }) => {
-    const vehicle = useQuery(api.vehicles.getById, { id: vehicleId });
-    
-    if (!vehicle) {
-      return <span className="text-muted-foreground">Loading...</span>;
-    }
-
-    return (
-      <div>
-        <div className="font-medium">
-          {vehicle.make} {vehicle.model}
-        </div>
-        <div className="text-sm text-muted-foreground">
-          {vehicle.year}
-        </div>
-      </div>
-    );
-  };
-
-  // Memoize pagination calculations (must be before early returns to respect Rules of Hooks)
-  const { paginatedReservations, totalPages, startIndex, endIndex } = useMemo(() => {
-    if (!reservations || reservations.length === 0) {
-      return { paginatedReservations: [], totalPages: 0, startIndex: 0, endIndex: 0 };
-    }
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    return {
-      startIndex: start,
-      endIndex: end,
-      paginatedReservations: reservations.slice(start, end),
-      totalPages: Math.ceil(reservations.length / ITEMS_PER_PAGE),
-    };
-  }, [reservations, currentPage]);
-
-  if (reservations === undefined) {
+  if (paginationStatus === "LoadingFirstPage") {
     return (
       <div className="flex justify-center py-8">
         <Loader2 className="h-6 w-6 animate-spin" />
-        <span className="ml-2">Loading reservations...</span>
+        <span className="ml-2">{t("table.loadingReservations")}</span>
       </div>
     );
   }
 
-  if (reservations === null || reservations.length === 0) {
+  if (reservations.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-muted-foreground">{t('noReservations')}</p>
+        <p className="text-muted-foreground">{t("noReservations")}</p>
         <p className="text-sm text-muted-foreground mt-2">
-          {t('noReservationsDescription')}
+          {t("noReservationsDescription")}
         </p>
       </div>
     );
@@ -111,23 +59,44 @@ export function UserReservationsTable() {
         <Table className="w-full">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[200px]">{t('table.vehicle')}</TableHead>
-              <TableHead className="w-[180px]">{t('table.dates')}</TableHead>
-              <TableHead className="min-w-[200px]">{t('table.locations')}</TableHead>
-              <TableHead className="w-[130px]">{t('table.totalPrice')}</TableHead>
-              <TableHead className="w-[100px]">{t('table.status')}</TableHead>
+              <TableHead className="w-[200px]">{t("table.vehicle")}</TableHead>
+              <TableHead className="w-[180px]">{t("table.dates")}</TableHead>
+              <TableHead className="min-w-[200px]">
+                {t("table.locations")}
+              </TableHead>
+              <TableHead className="w-[130px]">
+                {t("table.totalPrice")}
+              </TableHead>
+              <TableHead className="w-[100px]">{t("table.status")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedReservations.map((reservation) => (
+            {reservations.map((reservation) => (
               <TableRow key={reservation._id}>
                 <TableCell>
-                  <VehicleInfo vehicleId={reservation.vehicleId} />
+                  {reservation.vehicle ? (
+                    <div>
+                      <div className="font-medium">
+                        {reservation.vehicle.make} {reservation.vehicle.model}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {reservation.vehicle.year}
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      {t("table.vehicleUnavailable")}
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <div>
-                    <div className="text-sm">From: {formatDate(reservation.startDate)}</div>
-                    <div className="text-sm">To: {formatDate(reservation.endDate)}</div>
+                    <div className="text-sm">
+                      {t("table.fromLabel")} {formatDate(reservation.startDate)}
+                    </div>
+                    <div className="text-sm">
+                      {t("table.toLabel")} {formatDate(reservation.endDate)}
+                    </div>
                     <div className="text-xs text-muted-foreground">
                       {reservation.pickupTime} - {reservation.restitutionTime}
                     </div>
@@ -135,62 +104,73 @@ export function UserReservationsTable() {
                 </TableCell>
                 <TableCell>
                   <div>
-                    <div className="text-sm">Pickup: {reservation.pickupLocation}</div>
-                    <div className="text-sm">Return: {reservation.restitutionLocation}</div>
+                    <div className="text-sm">
+                      {t("table.pickupLabel")} {reservation.pickupLocation}
+                    </div>
+                    <div className="text-sm">
+                      {t("table.returnLabel")} {reservation.restitutionLocation}
+                    </div>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="font-medium">{formatPrice(reservation.totalPrice)}</div>
+                  <div className="font-medium">
+                    {formatPrice(reservation.totalPrice)}
+                  </div>
                   {reservation.promoCode && (
                     <div className="text-xs text-muted-foreground">
-                      Promo: {reservation.promoCode}
+                      {t("table.promoLabel")} {reservation.promoCode}
+                    </div>
+                  )}
+                  {/* Credit is a payment, not a discount: totalPrice above
+                      stays pre-credit, so the amount due is spelled out */}
+                  {(reservation.walletCreditApplied ?? 0) > 0 && (
+                    <div className="text-xs text-green-600">
+                      {tWallet("creditApplied")} −
+                      {formatPrice(reservation.walletCreditApplied ?? 0)} ·{" "}
+                      {tWallet("amountDue")}{" "}
+                      {formatPrice(
+                        bookingAmountDue(
+                          reservation.totalPrice,
+                          reservation.walletCreditApplied,
+                        ),
+                      )}
                     </div>
                   )}
                   {reservation.isSCDWSelected ? (
                     <div className="text-xs text-green-600">
-                      ✓ SCDW (Zero deductible)
+                      ✓ {t("table.scdwZeroDeductible")}
                     </div>
                   ) : (
                     <div className="text-xs text-blue-600">
-                      ✓ Standard Warranty ({reservation.deductibleAmount || 0} EUR deductible)
+                      ✓{" "}
+                      {t("table.standardWarranty", {
+                        amount: reservation.deductibleAmount || 0,
+                      })}
                     </div>
                   )}
                 </TableCell>
-                <TableCell>{getStatusBadge(reservation.status)}</TableCell>
+                <TableCell>
+                  <StatusBadge status={reservation.status} />
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
 
-      {reservations.length > ITEMS_PER_PAGE && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing {startIndex + 1} to {Math.min(endIndex, reservations.length)} of {reservations.length} reservations
-          </div>
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious 
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink className="cursor-default">
-                  {currentPage} of {totalPages}
-                </PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext 
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+      {paginationStatus !== "Exhausted" && (
+        <div className="flex justify-center">
+          <Button
+            variant="outline"
+            onClick={() => loadMore(ITEMS_PER_PAGE)}
+            disabled={paginationStatus === "LoadingMore"}
+          >
+            {paginationStatus === "LoadingMore"
+              ? t("table.loading")
+              : t("table.loadMore")}
+          </Button>
         </div>
       )}
     </div>
   );
-} 
+}

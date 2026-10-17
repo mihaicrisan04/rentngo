@@ -2,48 +2,49 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { ArrowLeft, ArrowRight, Clock, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Id } from "@/convex/_generated/dataModel";
 import { TransferVehicleList } from "@/components/features/transfers/transfer-vehicle-list";
 import { TransferRouteMap } from "@/components/features/transfers/transfer-route-map";
 import { TransferBookingFloatingCard } from "@/components/features/transfers/transfer-booking-sidebar";
-import { transferStorage, type TransferSearchData } from "@/lib/transfer-storage";
+import { transferStorage } from "@/lib/transfer-storage";
+import {
+  useTransferSearch,
+  hasTransferSearchDetails,
+} from "@/hooks/use-transfer-search";
 import { formatDistance, formatDuration } from "@/lib/mapbox";
 import type { TransferVehicle } from "@/components/features/transfers/transfer-vehicle-card";
 
 export default function TransferVehiclesPage() {
   const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations("transferPage");
+  const tCommon = useTranslations("common");
 
-  const [searchData, setSearchData] = React.useState<TransferSearchData | null>(
-    null,
-  );
+  const { searchData, isHydrated } = useTransferSearch();
   const [selectedVehicleId, setSelectedVehicleId] =
     React.useState<Id<"vehicles"> | null>(null);
-  const [isHydrated, setIsHydrated] = React.useState(false);
   const [vehicles, setVehicles] = React.useState<TransferVehicle[]>([]);
 
   const selectedVehicle = React.useMemo(
     () => vehicles.find((v) => v._id === selectedVehicleId) || null,
-    [vehicles, selectedVehicleId]
+    [vehicles, selectedVehicleId],
   );
 
-  const handleVehiclesLoaded = React.useCallback((loadedVehicles: TransferVehicle[]) => {
-    setVehicles(loadedVehicles);
-  }, []);
+  const handleVehiclesLoaded = React.useCallback(
+    (loadedVehicles: TransferVehicle[]) => {
+      setVehicles(loadedVehicles);
+    },
+    [],
+  );
 
   React.useEffect(() => {
-    const stored = transferStorage.load();
-    setSearchData(stored);
-
-    if (stored.selectedVehicleId) {
-      setSelectedVehicleId(stored.selectedVehicleId as Id<"vehicles">);
+    if (searchData?.selectedVehicleId) {
+      setSelectedVehicleId(searchData.selectedVehicleId);
     }
-
-    setIsHydrated(true);
-  }, []);
+  }, [searchData]);
 
   React.useEffect(() => {
     if (isHydrated && selectedVehicleId) {
@@ -52,12 +53,12 @@ export default function TransferVehiclesPage() {
   }, [selectedVehicleId, isHydrated]);
 
   const handleBack = () => {
-    router.push("/transfers");
+    router.push(`/${locale}/transfers`);
   };
 
   const handleContinue = () => {
     if (selectedVehicleId) {
-      router.push("/transfers/booking");
+      router.push(`/${locale}/transfers/booking`);
     }
   };
 
@@ -69,28 +70,27 @@ export default function TransferVehiclesPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-pulse text-muted-foreground">Loading...</div>
+          <div className="animate-pulse text-muted-foreground">
+            {tCommon("loading")}
+          </div>
         </div>
       </div>
     );
   }
 
-  if (
-    !searchData?.pickupLocation ||
-    !searchData?.dropoffLocation ||
-    !searchData?.pickupDate ||
-    !searchData?.pickupTime
-  ) {
+  if (!hasTransferSearchDetails(searchData)) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-          <h2 className="text-2xl font-bold mb-4">Missing Transfer Details</h2>
+          <h2 className="text-2xl font-bold mb-4">
+            {t("emptyState.missingTitle")}
+          </h2>
           <p className="text-muted-foreground mb-6">
-            Please complete the transfer search form first.
+            {t("emptyState.vehiclesBody")}
           </p>
           <Button onClick={handleBack}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Search
+            {t("emptyState.backToSearch")}
           </Button>
         </div>
       </div>
@@ -104,22 +104,30 @@ export default function TransferVehiclesPage() {
   return (
     <div className="container mx-auto py-10 max-w-6xl px-4 lg:px-0">
       <div className="mb-8">
-        <Button variant="ghost" onClick={handleBack} className="mb-4 rounded-xl">
+        <Button
+          variant="ghost"
+          onClick={handleBack}
+          className="mb-4 rounded-xl"
+        >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Search
+          {t("emptyState.backToSearch")}
         </Button>
 
         <div className="bg-muted/30 border border-border/50 rounded-2xl p-5 mb-6">
           <div className="flex flex-wrap items-center gap-4 text-sm">
             <div>
-              <span className="text-muted-foreground">From: </span>
+              <span className="text-muted-foreground">
+                {t("vehicleSelection.routeFrom")}{" "}
+              </span>
               <span className="font-medium">
                 {searchData.pickupLocation.address.split(",")[0]}
               </span>
             </div>
             <ArrowRight className="h-4 w-4 text-muted-foreground hidden sm:block" />
             <div>
-              <span className="text-muted-foreground">To: </span>
+              <span className="text-muted-foreground">
+                {t("vehicleSelection.routeTo")}{" "}
+              </span>
               <span className="font-medium">
                 {searchData.dropoffLocation.address.split(",")[0]}
               </span>

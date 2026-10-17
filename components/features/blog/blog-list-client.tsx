@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { BlogCard } from "@/components/features/blog";
+import { BlogCard } from "@/components/features/blog/blog-card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { carsPath } from "@/lib/localized-routes";
 import { BlogListItem } from "@/types/blog";
+import type { Locale } from "@/i18n";
 import Link from "next/link";
 
 const POSTS_PER_PAGE = 30;
@@ -15,7 +17,7 @@ const POSTS_PER_PAGE = 30;
 interface BlogListClientProps {
   featuredBlog: BlogListItem | null;
   initialBlogs: BlogListItem[];
-  locale: string;
+  locale: Locale;
 }
 
 export function BlogListClient({
@@ -27,14 +29,11 @@ export function BlogListClient({
   const [visibleCount, setVisibleCount] = useState(POSTS_PER_PAGE);
 
   // Live queries — SSR data used as initial, then live updates take over
-  const liveFeatured = useQuery(api.blogs.getFeatured, {
-    locale: locale as "ro" | "en",
-  });
-  const liveAll = useQuery(api.blogs.getAll, {
-    locale: locale as "ro" | "en",
-  });
+  const liveFeatured = useQuery(api.blogs.getFeatured, { locale });
+  const liveAll = useQuery(api.blogs.getAll, { locale });
 
-  const featuredBlog = liveFeatured !== undefined ? liveFeatured : initialFeatured;
+  const featuredBlog =
+    liveFeatured !== undefined ? liveFeatured : initialFeatured;
 
   // Filter out featured from the list
   const allBlogs = liveAll !== undefined ? liveAll : initialBlogs;
@@ -99,7 +98,7 @@ export function BlogListClient({
                     </h2>
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    {blogs.length} {blogs.length === 1 ? "post" : "posts"}
+                    {t("postCount", { count: blogs.length })}
                   </span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -144,7 +143,7 @@ export function BlogListClient({
               className="bg-primary hover:bg-primary/90 text-primary-foreground group px-8 h-13 text-base rounded-xl shadow-lg shadow-primary/20"
               asChild
             >
-              <Link href={`/${locale}/cars`}>
+              <Link href={carsPath(locale)}>
                 {t("cta.button")}
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Link>

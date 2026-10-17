@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useUser } from "@clerk/nextjs";
+import { SignInButton, useUser } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
 import {
   Card,
@@ -14,6 +14,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { UserProfileForm } from "@/components/shared/auth/user-profile-form";
 import { UserReservationsTable } from "@/components/features/reservations/user-reservations-table";
+import { AffiliateDashboard } from "@/components/features/affiliate/affiliate-dashboard";
+import { WalletCard } from "@/components/features/affiliate/wallet-card";
 import { Separator } from "@/components/ui/separator";
 
 export default function ProfilePage() {
@@ -38,12 +40,11 @@ export default function ProfilePage() {
             <div className="text-center space-y-5">
               <p className="text-lg font-medium">{t("pleaseSignIn")}</p>
               <div className="flex justify-center">
-                <Button
-                  className="rounded-xl px-6"
-                  onClick={() => (window.location.href = "/login")}
-                >
-                  {t("signInButton")}
-                </Button>
+                <SignInButton mode="modal">
+                  <Button className="rounded-xl px-6">
+                    {t("signInButton")}
+                  </Button>
+                </SignInButton>
               </div>
             </div>
           </CardContent>
@@ -71,14 +72,17 @@ export default function ProfilePage() {
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-center">
             {t("title")}
           </h1>
-          <p className="text-muted-foreground mt-2 text-center">{t("subtitle")}</p>
+          <p className="text-muted-foreground mt-2 text-center">
+            {t("subtitle")}
+          </p>
         </div>
 
         <div className="space-y-8">
           {/* User Details Card */}
           <Card className="rounded-2xl border-border/50 overflow-hidden">
-            {/* Profile header with subtle background */}
-            <div className="relative bg-gradient-to-br from-primary/5 via-transparent to-primary/5 px-6 pt-8 pb-6">
+            {/* Profile header with subtle background — pulled up over the
+                Card's py-6 so the gradient reaches the top edge */}
+            <div className="relative -mt-6 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 px-6 pt-8 pb-6">
               <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
               <div className="flex flex-col items-center gap-4">
                 <Avatar className="h-24 w-24 ring-4 ring-background shadow-xl">
@@ -107,6 +111,11 @@ export default function ProfilePage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Wallet (renders whenever the referral program is enabled, code
+              or no code) and the affiliate card */}
+          <WalletCard />
+          <AffiliateDashboard />
 
           {/* Reservations Card */}
           <Card className="rounded-2xl border-border/50">

@@ -1,10 +1,13 @@
 "use client";
 
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import Image from "next/image";
 import Link from "next/link";
 import { SocialIcon } from "react-social-icons";
 import { useTranslations } from "next-intl";
 import { useLocale } from "next-intl";
+import { COMPANY } from "@/lib/company";
+import { carsPath } from "@/lib/localized-routes";
 
 interface FooterProps {
   logo: React.ReactNode;
@@ -15,37 +18,50 @@ const socialLinks = [
   {
     icon: (
       <SocialIcon
-        url="https://www.tiktok.com/@rentn.go"
+        url={COMPANY.social.tiktok}
         style={{ height: 36, width: 36 }}
         borderRadius={"0.5rem"}
       />
     ),
-    href: "https://www.tiktok.com/@rentngo",
+    href: COMPANY.social.tiktok,
     label: "TikTok",
   },
   {
     icon: (
       <SocialIcon
-        url="https://www.instagram.com/rentn_go.ro"
+        url={COMPANY.social.instagram}
         style={{ height: 36, width: 36 }}
         borderRadius={"0.5rem"}
       />
     ),
-    href: "https://www.instagram.com/rentn_go.ro",
+    href: COMPANY.social.instagram,
     label: "Instagram",
   },
   {
     icon: (
       <SocialIcon
-        url="https://www.facebook.com/share/1Ad82uMtP3/?mibextid=wwXIfr"
+        url={COMPANY.social.facebook}
         style={{ height: 36, width: 36 }}
         borderRadius={"0.5rem"}
       />
     ),
-    href: "https://www.facebook.com/share/1Ad82uMtP3/?mibextid=wwXIfr",
+    href: COMPANY.social.facebook,
     label: "Facebook",
   },
 ];
+
+const consumerProtectionLinks = [
+  {
+    href: "https://www.anpc.ro/sal",
+    src: "/anpc/sal.webp",
+    labelKey: "anpcSal",
+  },
+  {
+    href: "https://consumer-redress.ec.europa.eu/index_ro",
+    src: "/anpc/sol.webp",
+    labelKey: "anpcSol",
+  },
+] as const;
 
 export function Footer({ logo, brandName }: FooterProps) {
   const t = useTranslations("common");
@@ -54,10 +70,11 @@ export function Footer({ logo, brandName }: FooterProps) {
 
   const mainLinks = [
     { href: `/${locale}`, label: t("home") },
-    { href: `/${locale}/cars`, label: t("cars") },
+    { href: carsPath(locale), label: t("cars") },
     { href: `/${locale}/transfers`, label: t("transfers") },
     { href: `/${locale}/about`, label: t("about") },
     { href: `/${locale}/contact`, label: t("contact") },
+    { href: `/${locale}/faq`, label: tFooter("faq") },
   ];
 
   const legalLinks = [
@@ -86,7 +103,10 @@ export function Footer({ logo, brandName }: FooterProps) {
           <div className="flex items-center gap-4 mt-6 md:mt-0">
             <ul className="flex list-none gap-3">
               {socialLinks.map((link, i) => (
-                <li key={i} className="hover:scale-110 transition-transform duration-200">
+                <li
+                  key={i}
+                  className="hover:scale-110 transition-transform duration-200"
+                >
                   {link.icon}
                 </li>
               ))}
@@ -117,9 +137,9 @@ export function Footer({ logo, brandName }: FooterProps) {
             </ul>
           </nav>
 
-          {/* Legal links */}
-          <div className="lg:col-start-5 lg:col-span-6 xl:col-start-6 xl:col-span-5 mb-5 lg:mb-0">
-            <ul className="list-none flex flex-wrap gap-x-5 gap-y-2 lg:justify-end">
+          {/* Legal links + consumer protection (ANPC) */}
+          <div className="lg:col-start-5 lg:col-span-6 xl:col-start-6 xl:col-span-5 mb-5 lg:mb-0 flex flex-col gap-4 sm:flex-row sm:items-center lg:justify-end">
+            <ul className="list-none flex flex-wrap gap-x-5 gap-y-2">
               {legalLinks.map((link, i) => (
                 <li key={i} className="shrink-0">
                   <Link
@@ -131,12 +151,35 @@ export function Footer({ logo, brandName }: FooterProps) {
                 </li>
               ))}
             </ul>
+            <div className="hidden sm:block w-px h-6 bg-border/50"></div>
+            <ul className="list-none flex gap-2">
+              {consumerProtectionLinks.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block rounded-md transition-transform duration-200 hover:scale-105"
+                  >
+                    <Image
+                      src={link.src}
+                      alt={tFooter(link.labelKey)}
+                      width={251}
+                      height={64}
+                      className="h-9 w-auto"
+                    />
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
 
           {/* Copyright */}
           <div className="text-sm leading-6 text-muted-foreground whitespace-nowrap lg:row-start-1 lg:col-span-4 xl:col-span-5">
             <div>{tFooter("copyright")}</div>
-            <div className="text-muted-foreground/70">{tFooter("allRightsReserved")}</div>
+            <div className="text-muted-foreground/70">
+              {tFooter("allRightsReserved")}
+            </div>
             <div className="flex items-center gap-1 mt-2">
               <span>{tFooter("builtBy")}</span>
               <Link

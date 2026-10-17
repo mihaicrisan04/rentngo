@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { fetchQuery } from "convex/nextjs";
+import { fetchStaticQuery } from "@/lib/convex-static";
 import { api } from "@/convex/_generated/api";
 import { BlogDetailClient } from "@/components/features/blog/blog-detail-client";
 import { BlogContentServer } from "@/components/features/blog/blog-content-server";
@@ -8,7 +8,9 @@ import {
   BreadcrumbStructuredData,
 } from "@/components/features/blog/blog-structured-data";
 import { notFound } from "next/navigation";
-import { buildMetadata } from "@/lib/metadata";
+import { buildMetadata, NO_INDEX_METADATA } from "@/lib/metadata";
+import { cacheLife } from "next/cache";
+import { isLocale } from "@/i18n";
 
 interface BlogDetailPageProps {
   params: Promise<{ locale: string; slug: string }>;
@@ -17,20 +19,26 @@ interface BlogDetailPageProps {
 export async function generateMetadata({
   params,
 }: BlogDetailPageProps): Promise<Metadata> {
+  "use cache";
+  cacheLife("minutes");
   const { locale, slug } = await params;
-  const blog = await fetchQuery(api.blogs.getBySlug, {
+  if (!isLocale(locale)) notFound();
+  const blog = await fetchStaticQuery(api.blogs.getBySlug, {
     slug,
-    locale: locale as "ro" | "en",
+    locale,
   });
 
   if (!blog) {
     return {
+      ...NO_INDEX_METADATA,
       title: "Blog Post Not Found",
     };
   }
 
   const coverImageUrl = blog.coverImage
-    ? await fetchQuery(api.blogs.getImageUrl, { imageId: blog.coverImage })
+    ? await fetchStaticQuery(api.blogs.getImageUrl, {
+        imageId: blog.coverImage,
+      })
     : null;
 
   const roSlug = locale === "ro" ? blog.slug : blog.alternateSlug;
@@ -59,21 +67,23 @@ export async function generateMetadata({
 }
 
 export async function generateStaticParams() {
-  const [roBlogs, enBlogs] = await Promise.all([
-    fetchQuery(api.blogs.getAll, { locale: "ro" }),
-    fetchQuery(api.blogs.getAll, { locale: "en" }),
-  ]);
+  const blogs = await fetchStaticQuery(api.blogs.getPublishedSlugs, {});
   return [
-    ...roBlogs.map((blog) => ({ locale: "ro", slug: blog.slug })),
-    ...enBlogs.map((blog) => ({ locale: "en", slug: blog.slug })),
+    ...blogs.map((blog) => ({ locale: "ro", slug: blog.slugRo })),
+    ...blogs.map((blog) => ({ locale: "en", slug: blog.slugEn })),
   ];
 }
 
+// Cached per slug+locale; the body is server-rendered so it cannot follow a
+// live subscription, hence the short lifetime for post edits to show up quickly.
 export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
+  "use cache";
+  cacheLife("minutes");
   const { locale, slug } = await params;
-  const blog = await fetchQuery(api.blogs.getBySlug, {
+  if (!isLocale(locale)) notFound();
+  const blog = await fetchStaticQuery(api.blogs.getBySlug, {
     slug,
-    locale: locale as "ro" | "en",
+    locale,
   });
 
   if (!blog) {
@@ -81,7 +91,9 @@ export default async function BlogDetailPage({ params }: BlogDetailPageProps) {
   }
 
   const coverImageUrl = blog.coverImage
-    ? await fetchQuery(api.blogs.getImageUrl, { imageId: blog.coverImage })
+    ? await fetchStaticQuery(api.blogs.getImageUrl, {
+        imageId: blog.coverImage,
+      })
     : null;
 
   return (

@@ -2,11 +2,20 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { useQuery, useMutation } from "convex/react";
+import { useMutation, usePaginatedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/shared/status-badge";
+import { formatDate, formatPrice, formatRelativeTime } from "@/lib/format";
+import { bookingAmountDue } from "@/lib/pricing";
+import { cn } from "@/lib/utils";
+import { usePeriodicNow } from "@/hooks/use-periodic-now";
+import { getTableLayout } from "@/components/admin/shared/table-layout";
+import {
+  rowActivationProps,
+  stopRowActivation,
+} from "@/components/admin/shared/row-activation";
 import {
   Table,
   TableBody,
@@ -15,8 +24,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-import { Edit, Trash2, MoreHorizontal, Mail, CheckCircle, XCircle } from "lucide-react";
+import {
+  Edit,
+  Trash2,
+  MoreHorizontal,
+  Mail,
+  CheckCircle,
+  XCircle,
+  CalendarX,
+} from "lucide-react";
+import { EmptyState } from "@/components/admin/shared/empty-state";
+import { toastWithUndo } from "@/components/admin/shared/undo-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,32 +44,82 @@ import {
 import { toast } from "sonner";
 
 const EditReservationDialog = dynamic(
-  () => import("./edit-reservation-dialog").then(m => m.EditReservationDialog),
-  { ssr: false }
+  () =>
+    import("./edit-reservation-dialog").then((m) => m.EditReservationDialog),
+  { ssr: false },
 );
 
 const ReservationEmailDialog = dynamic(
-  () => import("@/components/admin/reservations/reservation-email-dialog").then(m => m.ReservationEmailDialog),
-  { ssr: false }
+  () =>
+    import("@/components/admin/reservations/reservation-email-dialog").then(
+      (m) => m.ReservationEmailDialog,
+    ),
+  { ssr: false },
 );
 
 const ITEMS_PER_PAGE = 10;
 
-export function ReservationsTable() {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [editingReservation, setEditingReservation] = useState<Id<"reservations"> | null>(null);
-  const [emailDialogReservation, setEmailDialogReservation] = useState<Id<"reservations"> | null>(null);
-  
-  const reservations = useQuery(api.reservations.getAllReservations);
-  const deleteReservation = useMutation(api.reservations.deleteReservationPermanently);
-  const updateStatus = useMutation(api.reservations.updateReservationStatus);
+type ReservationStatus = "pending" | "confirmed" | "cancelled" | "completed";
+
+interface ReservationsTableProps {
+  fullHeight?: boolean;
+  onCreate?: () => void;
+}
+
+export function ReservationsTable({
+  fullHeight = false,
+  onCreate,
+}: ReservationsTableProps) {
+  const layout = getTableLayout(fullHeight);
+  const now = usePeriodicNow();
+  const [editingReservation, setEditingReservation] =
+    useState<Id<"reservations"> | null>(null);
+  const [emailDialogReservation, setEmailDialogReservation] =
+    useState<Id<"reservations"> | null>(null);
+
+  const {
+    results: reservations,
+    status: paginationStatus,
+    loadMore,
+  } = usePaginatedQuery(
+    api.reservations.getAllReservationsPaginated,
+    {},
+    { initialNumItems: ITEMS_PER_PAGE },
+  );
+  const deleteReservation = useMutation(
+    api.reservations.deleteReservationPermanently,
+  );
+  const updateStatus = useMutation(
+    api.reservations.updateReservationStatus,
+  ).withOptimisticUpdate((localStore, { reservationId, newStatus }) => {
+    for (const { args, value } of localStore.getAllQueries(
+      api.reservations.getAllReservationsPaginated,
+    )) {
+      if (value === undefined) continue;
+      localStore.setQuery(api.reservations.getAllReservationsPaginated, args, {
+        ...value,
+        page: value.page.map((reservation) =>
+          reservation._id === reservationId
+            ? { ...reservation, status: newStatus }
+            : reservation,
+        ),
+      });
+    }
+  });
 
   const handleEdit = (reservationId: Id<"reservations">) => {
     setEditingReservation(reservationId);
   };
 
-  const handleDelete = async (reservationId: Id<"reservations">, customerName: string) => {
-    if (confirm(`Are you sure you want to permanently delete the reservation for ${customerName}? This action cannot be undone.`)) {
+  const handleDelete = async (
+    reservationId: Id<"reservations">,
+    customerName: string,
+  ) => {
+    if (
+      confirm(
+        `Are you sure you want to permanently delete the reservation for ${customerName}? This action cannot be undone.`,
+      )
+    ) {
       try {
         await deleteReservation({ reservationId });
         toast.success("Reservation deleted successfully", {
@@ -68,12 +136,18 @@ export function ReservationsTable() {
     }
   };
 
-  const handleStatusUpdate = async (reservationId: Id<"reservations">, newStatus: "pending" | "confirmed" | "cancelled" | "completed") => {
+  const handleStatusUpdate = async (
+    reservationId: Id<"reservations">,
+    newStatus: ReservationStatus,
+    previousStatus: ReservationStatus,
+  ) => {
     try {
       await updateStatus({ reservationId, newStatus });
-      toast.success("Reservation status updated", {
+      toastWithUndo({
+        message: "Reservation status updated",
         description: `Status changed to ${newStatus}`,
-        position: "bottom-right",
+        onUndo: () =>
+          updateStatus({ reservationId, newStatus: previousStatus }),
       });
     } catch (error) {
       toast.error("Failed to update status", {
@@ -84,65 +158,19 @@ export function ReservationsTable() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      pending: { color: "bg-yellow-100 text-yellow-800 border-yellow-200", label: "Pending" },
-      confirmed: { color: "bg-green-100 text-green-800 border-green-200", label: "Confirmed" },
-      cancelled: { color: "bg-red-100 text-red-800 border-red-200", label: "Cancelled" },
-      completed: { color: "bg-blue-100 text-blue-800 border-blue-200", label: "Completed" },
-    };
-    
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
-    
+  if (paginationStatus === "LoadingFirstPage") {
     return (
-      <Badge variant="secondary" className={config.color}>
-        {config.label}
-      </Badge>
+      <div className="flex justify-center py-8">Loading reservations...</div>
     );
-  };
-
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString();
-  };
-
-  const formatPrice = (price: number) => {
-    return `${price.toFixed(2)} EUR`;
-  };
-
-  const VehicleInfo = ({ vehicleId }: { vehicleId: Id<"vehicles"> }) => {
-    const vehicle = useQuery(api.vehicles.getById, { id: vehicleId });
-    
-    if (!vehicle) {
-      return <span className="text-muted-foreground">Loading...</span>;
-    }
-
-    return (
-      <div>
-        <div className="font-medium">
-          {vehicle.make} {vehicle.model}
-        </div>
-        <div className="text-sm text-muted-foreground">
-          {vehicle.year}
-        </div>
-      </div>
-    );
-  };
-
-  if (!reservations) {
-    return <div className="flex justify-center py-8">Loading reservations...</div>;
   }
 
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const paginatedReservations = reservations.slice(startIndex, endIndex);
-  const totalPages = Math.ceil(reservations.length / ITEMS_PER_PAGE);
-
   return (
-    <div className="space-y-4">
-      <div className="rounded-md border overflow-x-auto">
-        <Table>
-          <TableHeader>
+    <div className={layout.root}>
+      <div className={cn("rounded-md border", layout.scrollArea)}>
+        <Table containerClassName="overflow-x-visible" dense>
+          <TableHeader sticky>
             <TableRow>
+              <TableHead>Created</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Vehicle</TableHead>
               <TableHead>Dates</TableHead>
@@ -155,29 +183,68 @@ export function ReservationsTable() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedReservations.length === 0 ? (
+            {reservations.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                  No reservations found.
+                <TableCell colSpan={10}>
+                  <EmptyState
+                    icon={CalendarX}
+                    message="No reservations yet"
+                    actionLabel={onCreate ? "Add reservation" : undefined}
+                    onAction={onCreate}
+                  />
                 </TableCell>
               </TableRow>
             ) : (
-              paginatedReservations.map((reservation) => (
-                <TableRow key={reservation._id}>
+              reservations.map((reservation) => (
+                <TableRow
+                  key={reservation._id}
+                  {...rowActivationProps(() => handleEdit(reservation._id))}
+                >
+                  <TableCell
+                    className="text-muted-foreground"
+                    title={new Date(reservation._creationTime).toLocaleString()}
+                  >
+                    {now === null
+                      ? ""
+                      : formatRelativeTime(reservation._creationTime, now)}
+                  </TableCell>
                   <TableCell>
                     <div>
-                      <div className="font-medium">{reservation.customerInfo.name}</div>
-                      <div className="text-sm text-muted-foreground">{reservation.customerInfo.email}</div>
-                      <div className="text-sm text-muted-foreground">{reservation.customerInfo.phone}</div>
+                      <div className="font-medium">
+                        {reservation.customerInfo.name}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {reservation.customerInfo.email}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {reservation.customerInfo.phone}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <VehicleInfo vehicleId={reservation.vehicleId} />
+                    {reservation.vehicle ? (
+                      <div>
+                        <div className="font-medium">
+                          {reservation.vehicle.make} {reservation.vehicle.model}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {reservation.vehicle.year}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">
+                        Vehicle unavailable
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <div>
-                      <div className="text-sm">From: {formatDate(reservation.startDate)}</div>
-                      <div className="text-sm">To: {formatDate(reservation.endDate)}</div>
+                      <div className="text-sm">
+                        From: {formatDate(reservation.startDate)}
+                      </div>
+                      <div className="text-sm">
+                        To: {formatDate(reservation.endDate)}
+                      </div>
                       <div className="text-xs text-muted-foreground">
                         {reservation.pickupTime} - {reservation.restitutionTime}
                       </div>
@@ -185,12 +252,31 @@ export function ReservationsTable() {
                   </TableCell>
                   <TableCell>
                     <div>
-                      <div className="text-sm">Pickup: {reservation.pickupLocation}</div>
-                      <div className="text-sm">Return: {reservation.restitutionLocation}</div>
+                      <div className="text-sm">
+                        Pickup: {reservation.pickupLocation}
+                      </div>
+                      <div className="text-sm">
+                        Return: {reservation.restitutionLocation}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="font-medium">{formatPrice(reservation.totalPrice)}</div>
+                    <div className="font-medium">
+                      {formatPrice(reservation.totalPrice)}
+                    </div>
+                    {(reservation.walletCreditApplied ?? 0) > 0 && (
+                      <div className="text-xs text-muted-foreground">
+                        Wallet −
+                        {formatPrice(reservation.walletCreditApplied ?? 0)} ·
+                        due{" "}
+                        {formatPrice(
+                          bookingAmountDue(
+                            reservation.totalPrice,
+                            reservation.walletCreditApplied,
+                          ),
+                        )}
+                      </div>
+                    )}
                     {reservation.promoCode && (
                       <div className="text-xs text-muted-foreground">
                         Promo: {reservation.promoCode}
@@ -202,29 +288,40 @@ export function ReservationsTable() {
                       </div>
                     ) : (
                       <div className="text-xs text-blue-600">
-                        ✓ Standard Warranty ({reservation.deductibleAmount || 0} EUR deductible)
+                        ✓ Standard Warranty ({reservation.deductibleAmount || 0}{" "}
+                        EUR deductible)
                       </div>
                     )}
                   </TableCell>
                   <TableCell>
                     <span className="capitalize text-sm">
-                      {reservation.paymentMethod.replace(/_/g, ' ')}
+                      {reservation.paymentMethod.replace(/_/g, " ")}
                     </span>
                   </TableCell>
-                  <TableCell>{getStatusBadge(reservation.status)}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={reservation.status} />
+                  </TableCell>
                   <TableCell className="max-w-[150px]">
                     <div className="text-sm">
                       {reservation.customerInfo.flightNumber && (
-                        <div className="truncate" title={`Flight: ${reservation.customerInfo.flightNumber}`}>Flight: {reservation.customerInfo.flightNumber}</div>
+                        <div
+                          className="truncate"
+                          title={`Flight: ${reservation.customerInfo.flightNumber}`}
+                        >
+                          Flight: {reservation.customerInfo.flightNumber}
+                        </div>
                       )}
                       {reservation.customerInfo.message && (
-                        <div className="text-muted-foreground truncate max-w-20" title={reservation.customerInfo.message}>
+                        <div
+                          className="text-muted-foreground truncate max-w-20"
+                          title={reservation.customerInfo.message}
+                        >
                           {reservation.customerInfo.message}
                         </div>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell {...stopRowActivation}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
@@ -241,16 +338,29 @@ export function ReservationsTable() {
                         </DropdownMenuItem>
                         {reservation.status === "pending" && (
                           <DropdownMenuItem
-                            onClick={() => handleStatusUpdate(reservation._id, "confirmed")}
+                            onClick={() =>
+                              handleStatusUpdate(
+                                reservation._id,
+                                "confirmed",
+                                reservation.status,
+                              )
+                            }
                             className="cursor-pointer"
                           >
                             <CheckCircle className="h-4 w-4 mr-2" />
                             Confirm
                           </DropdownMenuItem>
                         )}
-                        {(reservation.status === "pending" || reservation.status === "confirmed") && (
+                        {(reservation.status === "pending" ||
+                          reservation.status === "confirmed") && (
                           <DropdownMenuItem
-                            onClick={() => handleStatusUpdate(reservation._id, "cancelled")}
+                            onClick={() =>
+                              handleStatusUpdate(
+                                reservation._id,
+                                "cancelled",
+                                reservation.status,
+                              )
+                            }
                             className="cursor-pointer text-red-600 hover:text-red-700"
                           >
                             <XCircle className="h-4 w-4 mr-2" />
@@ -258,14 +368,21 @@ export function ReservationsTable() {
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem
-                          onClick={() => setEmailDialogReservation(reservation._id)}
+                          onClick={() =>
+                            setEmailDialogReservation(reservation._id)
+                          }
                           className="cursor-pointer"
                         >
                           <Mail className="h-4 w-4 mr-2" />
                           Send Email
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleDelete(reservation._id, reservation.customerInfo.name)}
+                          onClick={() =>
+                            handleDelete(
+                              reservation._id,
+                              reservation.customerInfo.name,
+                            )
+                          }
                           className="cursor-pointer text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
@@ -281,32 +398,15 @@ export function ReservationsTable() {
         </Table>
       </div>
 
-      {reservations.length > 0 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            Showing {startIndex + 1} to {Math.min(endIndex, reservations.length)} of {reservations.length} reservations
-          </div>
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious 
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink className="cursor-default">
-                  {currentPage} of {totalPages}
-                </PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationNext 
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
+      {paginationStatus !== "Exhausted" && (
+        <div className={cn("flex justify-center", layout.footer)}>
+          <Button
+            variant="outline"
+            onClick={() => loadMore(ITEMS_PER_PAGE)}
+            disabled={paginationStatus === "LoadingMore"}
+          >
+            {paginationStatus === "LoadingMore" ? "Loading..." : "Load more"}
+          </Button>
         </div>
       )}
 
@@ -321,10 +421,12 @@ export function ReservationsTable() {
       {emailDialogReservation && (
         <ReservationEmailDialog
           open={!!emailDialogReservation}
-          onOpenChange={(open: boolean) => !open && setEmailDialogReservation(null)}
+          onOpenChange={(open: boolean) =>
+            !open && setEmailDialogReservation(null)
+          }
           reservationId={emailDialogReservation}
         />
       )}
     </div>
   );
-} 
+}

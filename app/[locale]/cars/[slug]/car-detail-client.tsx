@@ -11,7 +11,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { ArrowLeft } from "lucide-react";
 import { VehicleImageCarouselWithPreloadedImages } from "@/components/features/vehicles/vehicle-image-carousel-with-preloaded-images";
 import { VehicleSpecifications } from "@/components/features/vehicles/vehicle-specifications";
 import { VehiclePricingCard } from "@/components/features/vehicles/vehicle-pricing-card";
@@ -22,55 +21,42 @@ import {
   calculateVehiclePricingWithSeason,
 } from "@/lib/vehicle-utils";
 import { RentalDetails } from "@/components/shared/navigation/rental-details";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
+import { carsPath } from "@/lib/localized-routes";
 import { Vehicle } from "@/types/vehicle";
-import React, { useState, useEffect, useCallback } from "react";
-import { searchStorage, SearchData } from "@/lib/search-storage";
+import React from "react";
+import { useVehicleSearch } from "@/hooks/use-vehicle-search";
 import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
 
-
-
-interface RentalState extends SearchData {
-  isHydrated: boolean;
-}
-
 interface CarDetailClientProps {
-  vehicle: Vehicle;
+  initialVehicle: Vehicle;
   mainImageUrl: string | null;
   imageUrls: Record<string, string>;
 }
 
 export function CarDetailClient({
-  vehicle,
+  initialVehicle,
   mainImageUrl,
   imageUrls,
 }: CarDetailClientProps) {
+  const liveVehicle = useQuery(api.vehicles.getById, {
+    id: initialVehicle._id,
+  });
+  const vehicle = liveVehicle ?? initialVehicle;
   const t = useTranslations("carDetailPage");
+  const locale = useLocale();
   const tCommon = useTranslations("common");
 
-  const [rentalState, setRentalState] = useState<RentalState>({
-    deliveryLocation: searchStorage.getDefaultLocation(),
-    pickupDate: undefined,
-    pickupTime: null,
-    restitutionLocation: searchStorage.getDefaultLocation(),
-    returnDate: undefined,
-    returnTime: null,
-    isHydrated: false,
+  const { searchState: rentalState, updateSearchFields } = useVehicleSearch({
+    persist: "onUpdate",
   });
 
   const { multiplier: currentMultiplier } = useDateBasedSeasonalPricing(
     rentalState.pickupDate,
-    rentalState.returnDate
+    rentalState.returnDate,
   );
-
-  useEffect(() => {
-    const storedData = searchStorage.load();
-    setRentalState((prev) => ({
-      ...prev,
-      ...storedData,
-      isHydrated: true,
-    }));
-  }, []);
 
   const priceDetails = calculateVehiclePricingWithSeason(
     vehicle,
@@ -80,56 +66,19 @@ export function CarDetailClient({
     rentalState.deliveryLocation,
     rentalState.restitutionLocation,
     rentalState.pickupTime,
-    rentalState.returnTime
+    rentalState.returnTime,
   );
 
-  const updateRentalDetails = useCallback((updates: Partial<SearchData>) => {
-    setRentalState((prev) => {
-      const newState = { ...prev, ...updates };
-
-      if (prev.isHydrated) {
-        searchStorage.save(updates);
-      }
-
-      return newState;
-    });
-  }, []);
-
-  const buildReservationUrl = useCallback(() => {
-    const params = new URLSearchParams();
-    params.append("vehicleId", vehicle._id);
-    return `/reservation?${params.toString()}`;
-  }, [vehicle._id]);
-
   const currency = "EUR";
-  const reservationUrl = buildReservationUrl();
+  // Carry the vehicle in the href so new-tab/cmd-click works; the reservation
+  // page moves it into per-tab storage and strips it back to a bare URL.
+  const reservationUrl = `/${locale}/reservation?vehicleId=${vehicle._id}`;
 
   const vehicleName = formatVehicleName(
     vehicle.make,
     vehicle.model,
-    vehicle.year
+    vehicle.year,
   );
-
-  if (!vehicle) {
-    return (
-      <div className="flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">
-            {t("vehicleNotFound.title")}
-          </h1>
-          <p className="text-muted-foreground mb-6">
-            {t("vehicleNotFound.description")}
-          </p>
-          <Link href="/cars">
-            <Button>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              {t("vehicleNotFound.backToCars")}
-            </Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="py-6 px-4 md:py-10 md:px-8">
@@ -140,13 +89,13 @@ export function CarDetailClient({
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link href="/">{tCommon("home")}</Link>
+                  <Link href={`/${locale}`}>{tCommon("home")}</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link href="/cars">{tCommon("cars")}</Link>
+                  <Link href={carsPath(locale)}>{tCommon("cars")}</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
@@ -157,13 +106,25 @@ export function CarDetailClient({
           </Breadcrumb>
         </div>
 
+        {/* Title — full width so both columns start level */}
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+            {vehicleName}
+          </h1>
+          {vehicle.type && (
+            <Badge variant="outline" className="mt-3 rounded-lg px-3 py-1">
+              {getVehicleTypeLabel(vehicle.type)}
+            </Badge>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-12">
           {/* Left column — images + specs */}
           <div className="space-y-6">
             <div className="rounded-2xl overflow-hidden">
               <VehicleImageCarouselWithPreloadedImages
-                images={vehicle.images}
-                mainImageId={vehicle.mainImageId}
+                images={initialVehicle.images}
+                mainImageId={initialVehicle.mainImageId}
                 vehicleName={vehicleName}
                 mainImageUrl={mainImageUrl}
                 imageUrls={imageUrls}
@@ -172,19 +133,8 @@ export function CarDetailClient({
             <VehicleSpecifications vehicle={vehicle} />
           </div>
 
-          {/* Right column — details + pricing + CTA */}
+          {/* Right column — rental details + pricing + CTA */}
           <div className="space-y-6">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-                {vehicleName}
-              </h1>
-              {vehicle.type && (
-                <Badge variant="outline" className="mt-3 rounded-lg px-3 py-1">
-                  {getVehicleTypeLabel(vehicle.type)}
-                </Badge>
-              )}
-            </div>
-
             <RentalDetails
               deliveryLocation={rentalState.deliveryLocation}
               pickupDate={rentalState.pickupDate}
@@ -192,7 +142,7 @@ export function CarDetailClient({
               restitutionLocation={rentalState.restitutionLocation}
               returnDate={rentalState.returnDate}
               returnTime={rentalState.returnTime}
-              onUpdateDetails={updateRentalDetails}
+              onUpdateDetails={updateSearchFields}
             />
 
             <VehiclePricingCard
@@ -211,7 +161,9 @@ export function CarDetailClient({
                 className="w-full bg-[#055E3B] hover:bg-[#055E3B]/80 text-white font-bold py-4 text-lg rounded-xl h-14"
                 asChild
               >
-                <Link href={reservationUrl}>{t("reserveThisCar")}</Link>
+                <Link href={reservationUrl} rel="nofollow">
+                  {t("reserveThisCar")}
+                </Link>
               </Button>
               <p className="text-sm text-muted-foreground text-center">
                 {t("reserveDescription")}

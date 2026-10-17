@@ -6,7 +6,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AnimatedGroup } from "@/components/ui/animated-group";
-import { Phone, Mail, MapPin, MessageCircle, ExternalLink, Clock } from "lucide-react";
+import {
+  Phone,
+  Mail,
+  MapPin,
+  MessageCircle,
+  ExternalLink,
+  Clock,
+} from "lucide-react";
 import {
   contactAnimationVariants,
   sectionAnimationVariants,
@@ -14,6 +21,7 @@ import {
 import { SocialIcon } from "react-social-icons";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { COMPANY, whatsAppChatUrl } from "@/lib/company";
 
 const ContactPage = () => {
   const t = useTranslations("contactPage");
@@ -24,20 +32,18 @@ const ContactPage = () => {
   };
 
   const handleWhatsAppClick = () => {
-    const whatsappUrl =
-      "https://wa.me/40773932961?text=Hello!%20I'm%20interested%20in%20your%20rental%20services.";
-    window.open(whatsappUrl, "_blank");
+    window.open(whatsAppChatUrl(t("whatsappMessage")), "_blank");
   };
 
   const handlePhoneClick = () => {
-    const phoneNumber = "+40773932961";
+    const phoneNumber = COMPANY.phone.tel;
     navigator.clipboard.writeText(phoneNumber).then(() => {
-      toast.success("Phone number copied to clipboard!");
+      toast.success(t("phoneCopied"));
     });
   };
 
   const handleEmailClick = () => {
-    window.location.href = "mailto:office@rngo.ro";
+    window.location.href = `mailto:${COMPANY.email}`;
   };
 
   return (
@@ -160,19 +166,19 @@ const ContactPage = () => {
                   </h3>
                   <div className="flex justify-center gap-4">
                     <SocialIcon
-                      url="https://www.tiktok.com/@rentn.go"
+                      url={COMPANY.social.tiktok}
                       style={{ height: 40, width: 40 }}
                       borderRadius={"0.75rem"}
                       className="hover:scale-110 transition-transform"
                     />
                     <SocialIcon
-                      url="https://www.instagram.com/rentn_go.ro"
+                      url={COMPANY.social.instagram}
                       style={{ height: 40, width: 40 }}
                       borderRadius={"0.75rem"}
                       className="hover:scale-110 transition-transform"
                     />
                     <SocialIcon
-                      url="https://www.facebook.com/share/1Ad82uMtP3/?mibextid=wwXIfr"
+                      url={COMPANY.social.facebook}
                       style={{ height: 40, width: 40 }}
                       borderRadius={"0.75rem"}
                       className="hover:scale-110 transition-transform"
@@ -197,7 +203,10 @@ const ContactPage = () => {
               >
                 <div className="flex flex-col items-center gap-3 mb-12">
                   <div className="accent-line"></div>
-                  <Badge variant="outline" className="px-4 py-1.5 text-base rounded-full">
+                  <Badge
+                    variant="outline"
+                    className="px-4 py-1.5 text-base rounded-full"
+                  >
                     {t("meetTheMan")}
                   </Badge>
                   <h2 className="text-3xl md:text-4xl font-bold text-foreground text-center">
@@ -232,10 +241,16 @@ const ContactPage = () => {
                           {t("founder.description")}
                         </p>
                         <div className="flex flex-wrap gap-2">
-                          <Badge variant="secondary" className="rounded-lg px-3 py-1">
+                          <Badge
+                            variant="secondary"
+                            className="rounded-lg px-3 py-1"
+                          >
                             {t("founder.badges.expert")}
                           </Badge>
-                          <Badge variant="secondary" className="rounded-lg px-3 py-1">
+                          <Badge
+                            variant="secondary"
+                            className="rounded-lg px-3 py-1"
+                          >
                             {t("founder.badges.customerFirst")}
                           </Badge>
                         </div>
@@ -287,8 +302,9 @@ const ContactPage = () => {
                           <p className="text-muted-foreground flex items-start gap-2 text-sm">
                             <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
                             <span>
-                              Cluj "Avram Iancu" International Airport, Strada
-                              Traian Vuia 149-151, Cluj-Napoca 400397
+                              Cluj &quot;Avram Iancu&quot; International
+                              Airport, Strada Traian Vuia 149-151, Cluj-Napoca
+                              400397
                             </span>
                           </p>
                           <Button
@@ -323,9 +339,7 @@ const ContactPage = () => {
                             {t("businessHours.mondayToSundayTime")}
                           </span>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          24/7
-                        </p>
+                        <p className="text-sm text-muted-foreground">24/7</p>
                       </div>
                     </CardContent>
                   </Card>

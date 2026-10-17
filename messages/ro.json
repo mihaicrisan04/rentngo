@@ -20,8 +20,8 @@
     "ourLatestCars": "Cele Mai Noi Mașini",
     "noCarsAvailable": "Nicio Mașină Disponibilă",
     "trustBar": {
-      "rating": "4.9 rating",
-      "ratingDesc": "200+ recenzii",
+      "rating": "{score} pe Google",
+      "ratingDesc": "{count} recenzii",
       "airport": "Preluare aeroport",
       "airportDesc": "Cluj-Napoca",
       "support": "24/7",
@@ -133,7 +133,9 @@
       "title": "Program de Lucru",
       "mondayToSunday": "Luni - Duminică",
       "mondayToSundayTime": "24/7"
-    }
+    },
+    "phoneCopied": "Numărul de telefon a fost copiat!",
+    "whatsappMessage": "Bună! Sunt interesat de serviciile voastre de închiriere."
   },
   "reservationPage": {
     "backToVehicleDetails": "Înapoi la Detaliile Vehiculului",
@@ -171,7 +173,9 @@
       "title": "Detalii Vehicul",
       "noImage": "Fără Imagine",
       "rateFor": "Tarif pentru",
-      "rental": "închiriere"
+      "rental": "închiriere",
+      "pricePerDay": "{price} EUR / zi",
+      "rateForDays": "Tarif pentru o închiriere de {days, plural, one {# zi} few {# zile} other {# de zile}}"
     },
     "additionalFeatures": {
       "title": "Caracteristici Suplimentare",
@@ -234,8 +238,8 @@
       "flight": "Zbor",
       "notSelected": "Nu este selectată",
       "notCalculated": "Nu este calculată",
-      "daysCount": "{days} zi{plural}",
-      "basePrice": "Preț de bază ({days} zi{plural})",
+      "daysCount": "{days, plural, one {# zi} few {# zile} other {# de zile}}",
+      "basePrice": "Preț de bază ({days, plural, one {# zi} few {# zile} other {# de zile}})",
       "pickupLocationFee": "Taxa pentru locația de ridicare",
       "returnLocationFee": "Taxa pentru locația de returnare",
       "totalLocationFees": "Total taxe de relocare",
@@ -314,6 +318,7 @@
     "paymentMethod": "Metoda de Plată:",
     "additionalCharges": "Taxe Suplimentare:",
     "totalAmount": "Suma Totală:",
+    "discountLine": "Reducere ({code})",
     "scdwLine": "SCDW (nerestituibilă)",
     "warrantyLine": "Garanție (restituibilă)",
     "baseRentalLine": "Închiriere ({days} {days, plural, one {zi} other {zile}} × {price} EUR/zi)",
@@ -338,17 +343,7 @@
     "transmission": "Transmisie:",
     "fuel": "Combustibil:",
     "browseCars": "Răsfoiește Mașinile",
-    "goBack": "Înapoi",
-    "paymentMethods": {
-      "cashOnDelivery": "Plata Cash la Livrare",
-      "cardOnDelivery": "Plata cu Cardul la Livrare",
-      "cardOnline": "Plata cu Cardul Online"
-    },
-    "status": {
-      "pending": "În așteptare",
-      "confirmed": "Confirmat",
-      "cancelled": "Anulat"
-    }
+    "goBack": "Înapoi"
   },
   "transferPage": {
     "title": "Servicii Transfer",
@@ -366,7 +361,9 @@
       "oneWay": "Doar Dus",
       "roundTrip": "Dus-Întors",
       "searchTransfers": "Caută Transferuri",
-      "searching": "Se caută..."
+      "searching": "Se caută...",
+      "passengerTip": "Pentru 4+ pasageri, luați în considerare rezervarea a 2 vehicule sau a unei dube pentru mai mult confort.",
+      "calculatingRoute": "Se calculează traseul..."
     },
     "vehicleSelection": {
       "title": "Selectează Vehiculul",
@@ -378,7 +375,14 @@
       "passengers": "{count} pasageri max",
       "noVehiclesFound": "Niciun Vehicul Disponibil",
       "routeEstimationNote": "Estimare traseu. Distanța și durata reală pot varia ușor.",
-      "selectPrompt": "Selectează un vehicul pentru a continua"
+      "selectPrompt": "Selectează un vehicul pentru a continua",
+      "noVehiclesFor": "Nu sunt disponibile vehicule pentru {passengers, plural, one {# pasager} few {# pasageri} other {# de pasageri}}. Încercați să reduceți numărul de pasageri.",
+      "routeWarning": "Nu am putut calcula distanța traseului. Verificați locațiile de preluare și destinație.",
+      "resultCount": "{count, plural, one {# vehicul disponibil} few {# vehicule disponibile} other {# de vehicule disponibile}}",
+      "routeFrom": "De la:",
+      "routeTo": "Până la:",
+      "continue": "Continuă",
+      "selected": "Selectat"
     },
     "booking": {
       "title": "Finalizează Rezervarea",
@@ -387,7 +391,28 @@
       "paymentMethod": "Metodă de Plată",
       "summary": "Sumar Transfer",
       "confirmBooking": "Confirmă Transferul",
-      "processing": "Se procesează..."
+      "processing": "Se procesează...",
+      "subtitle": "Completați detaliile rezervării de mai jos",
+      "backToVehicles": "Înapoi la Selectarea Vehiculului",
+      "luggageLabel": "Număr de Bagaje",
+      "luggagePlaceholder": "Număr de bagaje de dimensiune medie",
+      "luggageHelp": "Numărul aproximativ de bagaje de aeroport de dimensiune medie",
+      "messageTooltip": "Adăugați cereri speciale: opriri pe traseu, așteptarea unei persoane, instrucțiuni specifice de preluare etc.",
+      "invalidEmail": "Format de email invalid",
+      "toasts": {
+        "missingInfo": "Lipsesc informații obligatorii despre transfer",
+        "successTitle": "Transfer rezervat cu succes!",
+        "successBody": "Transferul #{number} a fost confirmat.",
+        "failedTitle": "Transferul nu a putut fi rezervat",
+        "failedBody": "Încercați din nou sau contactați echipa de suport."
+      },
+      "errors": {
+        "routeChanged": "Traseul sau prețul s-a modificat. Revino la căutarea traseului și recalculează înainte de rezervare.",
+        "invalidCoordinates": "Selectează locații valide de preluare și destinație, apoi recalculează traseul.",
+        "noRoute": "Nu a fost găsit un traseu rutier între aceste locații. Alege alt traseu.",
+        "providerUnavailable": "Nu putem verifica traseul momentan. Încearcă din nou în scurt timp.",
+        "clientUpgradeRequired": "Această pagină de rezervare este învechită. Reîncarcă pagina și încearcă din nou."
+      }
     },
     "confirmation": {
       "title": "Transfer Confirmat!",
@@ -396,7 +421,23 @@
       "route": "Rută",
       "distance": "Distanță",
       "duration": "Durată Estimată",
-      "bookAnother": "Rezervă Alt Transfer"
+      "bookAnother": "Rezervă Alt Transfer",
+      "pickup": "Preluare",
+      "dropoff": "Destinație",
+      "date": "Dată",
+      "time": "Oră",
+      "passengers": "Pasageri",
+      "luggage": "Bagaje",
+      "bags": "{count, plural, one {# bagaj} few {# bagaje} other {# de bagaje}}",
+      "returnTrip": "Călătorie de Întoarcere",
+      "returnDate": "Data Întoarcerii",
+      "returnTime": "Ora Întoarcerii",
+      "seats": "{count, plural, one {# loc} few {# locuri} other {# de locuri}}",
+      "flightPrefix": "Zbor:",
+      "driverAssignment": {
+        "title": "Alocarea Șoferului",
+        "description": "Un șofer profesionist va fi alocat transferului și vă va contacta înainte de preluare."
+      }
     },
     "pricing": {
       "basePrice": "Tarif de Bază",
@@ -418,6 +459,33 @@
         "title": "Confirmă și Relaxează-te",
         "description": "Finalizează rezervarea și noi ne ocupăm de restul"
       }
+    },
+    "features": {
+      "premium": {
+        "title": "Vehicule Premium",
+        "description": "Călătoriți confortabil cu flota noastră de lux"
+      },
+      "safe": {
+        "title": "Sigur și Fiabil",
+        "description": "Șoferi profesioniști cu experiență verificată"
+      },
+      "onTime": {
+        "title": "Serviciu Punctual",
+        "description": "Preluări și sosiri punctuale garantate"
+      },
+      "destination": {
+        "title": "Orice Destinație",
+        "description": "Transferuri de aeroport și rute între orașe"
+      }
+    },
+    "emptyState": {
+      "missingTitle": "Lipsesc Detaliile Transferului",
+      "bookingBody": "Completați mai întâi căutarea transferului și selectarea vehiculului.",
+      "vehiclesBody": "Completați mai întâi formularul de căutare a transferului.",
+      "startOver": "Începe din Nou",
+      "backToSearch": "Înapoi la Căutare",
+      "notFoundTitle": "Transfer Negăsit",
+      "notFoundBody": "Transferul căutat nu există sau a fost eliminat."
     }
   },
   "common": {
@@ -449,11 +517,65 @@
     "optional": "Opțional",
     "noImage": "Fără Imagine",
     "invalidData": "Date invalide",
+    "termsAcceptance": "Accept <terms>Termenii și Condițiile</terms> și <privacy>Politica de Confidențialitate</privacy>",
     "status": {
       "confirmed": "Confirmată",
       "pending": "În Așteptare",
       "cancelled": "Anulată",
-      "completed": "Finalizată"
+      "completed": "Finalizată",
+      "available": "Disponibilă",
+      "rented": "Închiriată",
+      "maintenance": "În Mentenanță",
+      "currentSeason": "Sezon Curent",
+      "active": "Activ",
+      "inactive": "Inactiv"
+    },
+    "coupon": {
+      "title": "Cod promoțional sau de recomandare",
+      "placeholder": "Introdu codul promoțional sau de recomandare",
+      "apply": "Aplică",
+      "checking": "Se verifică...",
+      "applied": "Cuponul {code} a fost aplicat",
+      "remove": "Elimină codul",
+      "discount": "Reducere",
+      "errors": {
+        "notFound": "Acest cod nu există.",
+        "inactive": "Acest cupon nu mai este activ.",
+        "expired": "Acest cupon a expirat.",
+        "exhausted": "Acest cupon a atins limita de utilizări.",
+        "wrongBookingType": "Acest cupon nu se aplică acestui tip de rezervare.",
+        "belowMinimum": "Totalul comenzii este sub minimul cerut de acest cupon.",
+        "alreadyUsed": "Ai folosit deja acest cupon.",
+        "emailRequired": "Introdu adresa de email înainte de a aplica un cod.",
+        "submitFailed": "Codul nu a putut fi aplicat. Verifică din nou codul și reîncearcă.",
+        "referralSelfReferral": "Acesta este propriul tău cod de recomandare — nu îl poți folosi pentru rezervările tale.",
+        "referralDuplicate": "Ai folosit deja acest cod de recomandare.",
+        "referralNotFirstRental": "Reducerea de recomandare este doar pentru prima ta rezervare."
+      },
+      "appliedReferral": "Codul de recomandare {code} a fost aplicat"
+    },
+    "referral": {
+      "discount": "Reducere recomandare"
+    },
+    "wallet": {
+      "useCredit": "Folosește creditul ({amount} EUR disponibil)",
+      "creditApplied": "Credit aplicat",
+      "amountDue": "De plată",
+      "capNote": "Poți acoperi cel mult {percent}% din valoarea rezervării."
+    },
+    "consent": {
+      "title": "Cookie-uri",
+      "description": "Folosim un cookie pentru a reține cine te-a recomandat, ca reducerea ta de recomandare să poată fi aplicată. Acceptă pentru a-l activa — dacă refuzi, nu te urmărim și reducerea nu se aplică.",
+      "accept": "Accept",
+      "decline": "Refuz"
+    },
+    "quickContact": {
+      "label": "Contact rapid",
+      "whatsapp": "Scrie-ne pe WhatsApp",
+      "instagram": "Instagram",
+      "tiktok": "TikTok",
+      "phone": "Sună-ne",
+      "email": "Trimite-ne un email"
     }
   },
   "navigation": {
@@ -486,7 +608,8 @@
       "description": "Rezervă mașina de închiriat azi și descoperă tot ce are Transilvania de oferit.",
       "button": "Vezi Mașinile Noastre"
     },
-    "loadMore": "Încarcă Mai Multe"
+    "loadMore": "Încarcă Mai Multe",
+    "postCount": "{count, plural, one {# articol} few {# articole} other {# de articole}}"
   },
   "blogDetail": {
     "loading": "Se încarcă articolul...",
@@ -526,15 +649,91 @@
       "dates": "Perioada Închirierii",
       "locations": "Ridicare și Returnare",
       "totalPrice": "Preț Total",
-      "status": "Status"
+      "status": "Status",
+      "fromLabel": "De la:",
+      "toLabel": "Până la:",
+      "pickupLabel": "Preluare:",
+      "returnLabel": "Returnare:",
+      "promoLabel": "Promoție:",
+      "scdwZeroDeductible": "SCDW (garanție zero)",
+      "standardWarranty": "Garanție Standard ({amount} EUR garanție)",
+      "showingRange": "Se afișează {from}-{to} din {total} rezervări",
+      "pageOf": "{page} din {total}",
+      "loading": "Se încarcă...",
+      "loadingReservations": "Se încarcă rezervările...",
+      "loadMore": "Încarcă mai multe",
+      "vehicleUnavailable": "Vehicul indisponibil"
+    },
+    "affiliate": {
+      "title": "Program de Recomandare",
+      "description": "Distribuie linkul tău și primești recompense când recomandările tale rezervă",
+      "inactive": "Contul tău de afiliat este momentan inactiv.",
+      "notEnrolled": {
+        "body": "Câștigi recompense de fiecare dată când cineva rezervă cu codul tău. Generează-ți codul și începe să îl distribui.",
+        "cta": "Contactează-ne",
+        "generate": "Generează codul meu",
+        "generating": "Se generează...",
+        "generateFailed": "Codul nu a putut fi generat. Reîncearcă.",
+        "closedBody": "Programul de recomandare nu este deschis momentan. Contactează-ne dacă vrei să afli mai multe."
+      },
+      "yourLink": "Linkul tău de recomandare",
+      "copyLink": "Copiază linkul de recomandare",
+      "referredDiscountInfo": "Cei care rezervă prin linkul tău primesc o reducere de {discount}.",
+      "conversions": "Rezervări confirmate",
+      "currentReward": "Recompensa ta actuală",
+      "nextTier": "Următorul nivel: {count, plural, one {# rezervare deblochează} few {# rezervări deblochează} other {# de rezervări deblochează}} o recompensă de {percent}%",
+      "history": "Istoric recomandări",
+      "bookingRental": "Închiriere auto",
+      "bookingTransfer": "Transfer",
+      "status": {
+        "pending": "În așteptare",
+        "confirmed": "Confirmată",
+        "voided": "Anulată",
+        "awaitingApproval": "În curs de validare",
+        "approved": "Aprobată",
+        "rejected": "Respinsă"
+      },
+      "yourCode": "Codul tău de recomandare",
+      "copyCode": "Copiază codul de recomandare",
+      "codeInfo": "Prietenii tăi pot folosi acest cod direct în câmpul de cod promoțional la rezervare.",
+      "share": {
+        "title": "Recomandă un prieten",
+        "whatsapp": "Trimite pe WhatsApp",
+        "native": "Distribuie",
+        "message": "Închiriază o mașină la Rent'n Go cu codul meu {code} și primești o reducere la prima ta rezervare: {link}"
+      },
+      "wallet": {
+        "title": "Portofelul meu",
+        "balance": "Credit disponibil",
+        "rewardsEarned": "Recompense câștigate",
+        "expiringSoon": "{amount} EUR expiră pe {date}. Folosește creditul la următoarea rezervare.",
+        "ledger": "Mișcări credit",
+        "empty": "Încă nu ai credit în portofel.",
+        "kinds": {
+          "referralCredit": "Credit din recomandare",
+          "creditReversal": "Credit anulat",
+          "manualAdjustment": "Ajustare manuală",
+          "redemption": "Credit folosit",
+          "redemptionReversal": "Credit returnat"
+        }
+      },
+      "tier": {
+        "current": "Nivelul tău: {name}",
+        "none": "Nu ai atins încă primul nivel",
+        "next": "Următorul nivel: {name} — {count, plural, one {# recomandare aprobată îți aduce} few {# recomandări aprobate îți aduc} other {# de recomandări aprobate îți aduc}} {percent}% credit",
+        "custom": "Ai o recompensă negociată separat"
+      }
     }
   },
   "footer": {
+    "faq": "Întrebări frecvente",
     "privacy": "Confidențialitate",
     "terms": "Termeni",
     "copyright": "© 2026 Rent'n Go Cluj",
     "allRightsReserved": "Toate drepturile rezervate",
-    "builtBy": "Creat de"
+    "builtBy": "Creat de",
+    "anpcSal": "Soluționarea alternativă a litigiilor (ANPC)",
+    "anpcSol": "Soluționarea online a litigiilor (Comisia Europeană)"
   },
   "search": {
     "pickupLocation": "Locația de Ridicare",
@@ -550,11 +749,20 @@
     "searchCars": "Caută Mașini de Închiriat",
     "searchingCars": "Se caută mașini de închiriat...",
     "returnDateAfterPickup": "Data de returnare trebuie să fie după sau aceeași cu data de ridicare.",
-    "selectDateFirst": "Selectează mai întâi o dată"
+    "selectDateFirst": "Selectează mai întâi o dată",
+    "locationRetrieveError": "Nu am putut prelua detaliile locației. Te rugăm să încerci din nou.",
+    "defaultLocationPlaceholder": "Introduceți locația...",
+    "mapboxTokenMissing": "Tokenul Mapbox nu este configurat",
+    "locationSearchPlaceholder": "Căutați o locație...",
+    "searchingLocations": "Se caută locații...",
+    "noLocationsFound": "Nu s-au găsit locații.",
+    "minimumCharacters": "Introduceți cel puțin 2 caractere pentru căutare...",
+    "clearSelection": "Șterge selecția"
   },
   "vehicleCard": {
     "or": "sau",
     "perDay": "/ zi",
+    "fromPrice": "de la",
     "features": "Caracteristici",
     "viewDetails": "Vezi Detalii",
     "bookNow": "Rezervă Acum",
@@ -622,7 +830,69 @@
   },
   "testimonials": {
     "title": "Ce Spun Clienții Noștri",
-    "description": "Citește ce au de spus clienții noștri despre noi."
+    "description": "Recenzii de la clienții noștri",
+    "reviewCount": "{count} recenzii",
+    "seeAllOnGoogle": "Vezi toate recenziile pe Google",
+    "writeReview": "Lasă o recenzie"
+  },
+  "faqPage": {
+    "title": "Întrebări frecvente",
+    "description": "Răspunsuri la cele mai frecvente întrebări despre închirierea auto și transferurile VIP cu Rent'n Go Cluj-Napoca.",
+    "questions": {
+      "0": {
+        "question": "Ce documente am nevoie pentru a închiria o mașină?",
+        "answer": "Un permis de conducere valabil, deținut de cel puțin 2 ani, plus o carte de identitate sau un pașaport valabil. Un card bancar este necesar dacă alegeți plata sau blocarea garanției prin card."
+      },
+      "1": {
+        "question": "Care este vârsta minimă pentru închiriere?",
+        "answer": "Vârsta minimă este de 23 de ani, iar permisul de conducere trebuie deținut de cel puțin 2 ani."
+      },
+      "2": {
+        "question": "De unde pot prelua și unde pot returna mașina?",
+        "answer": "Locația noastră principală este Aeroportul Internațional „Avram Iancu” Cluj, Strada Traian Vuia 149-151, Cluj-Napoca. Livrarea și preluarea în alte locații sunt posibile contra unei taxe suplimentare."
+      },
+      "3": {
+        "question": "Există o garanție (depozit)?",
+        "answer": "Da. O garanție între 200 și 1.800 EUR (în funcție de valoarea mașinii) se blochează pe card sau se achită în numerar la preluare și se restituie integral la returnarea mașinii nevătămate, curate și cu toate accesoriile. Alternativ, puteți achita asigurarea SCDW în locul garanției."
+      },
+      "4": {
+        "question": "Ce acoperă asigurarea SCDW?",
+        "answer": "SCDW (Super Collision Damage Waiver) reduce garanția la zero și vă exonerează de răspunderea financiară în caz de daune. În cazul daunelor totale se aplică totuși o răspundere între 1.000 și 8.000 EUR, în funcție de model. SCDW nu acoperă combustibilul, daunele la anvelope sau la partea inferioară a mașinii produse din neglijență și nici pierderea accesoriilor."
+      },
+      "5": {
+        "question": "Care este politica de kilometri?",
+        "answer": "Tariful de închiriere acoperă o medie de 200 km/zi. Kilometrii suplimentari se taxează cu 5 EUR/50 km pentru clasele standard și business și cu 8 EUR/50 km pentru clasa premium."
+      },
+      "6": {
+        "question": "Care este politica de combustibil?",
+        "answer": "Plin-la-plin: primiți mașina cu rezervorul plin și o returnați cu rezervorul plin. Combustibilul lipsă se taxează cu 2,5 EUR/litru."
+      },
+      "7": {
+        "question": "Pot conduce mașina în afara României?",
+        "answer": "Da, doar în statele membre UE. Acest lucru trebuie anunțat la confirmarea rezervării și implică o taxă de 50 EUR/ieșire pentru extinderea teritorială a asigurării și emiterea împuternicirilor de conducere."
+      },
+      "8": {
+        "question": "Cum plătesc și în ce monedă?",
+        "answer": "Prețurile sunt exprimate în EUR și se facturează în RON la cursul de vânzare BNR +1% din ziua semnării contractului. Puteți plăti cu cardul sau numerar; garanția poate fi blocată pe card sau achitată în numerar."
+      },
+      "9": {
+        "question": "Care este perioada minimă de închiriere?",
+        "answer": "O zi. În perioadele de sărbători (Paște, Crăciun, Revelion) și în sezonul de vară (iunie–septembrie), perioada minimă de închiriere este de 10 zile."
+      },
+      "10": {
+        "question": "Cum funcționează transferurile VIP și de aeroport?",
+        "answer": "Oferim transferuri private de aeroport, oraș și business în Cluj și împrejurimi, cu șoferi profesioniști. Prețurile se calculează în funcție de distanță — rezervați online pe pagina de transferuri sau telefonic/WhatsApp la +40 773 932 961."
+      },
+      "11": {
+        "question": "Ce se întâmplă dacă returnez mașina cu întârziere?",
+        "answer": "Depășirea orei de returnare din contract se taxează cu o zi întreagă de închiriere (pentru primele 2 ore). Întârzierile de peste 2 ore se taxează cu 100–300 EUR, în funcție de mașină, și pot fi raportate autorităților, cu excepția situațiilor agreate explicit în contract. Contactați-ne cât mai devreme dacă doriți să prelungiți închirierea."
+      }
+    },
+    "cta": {
+      "title": "Gata de drum?",
+      "description": "Descoperă flota noastră și găsește mașina potrivită pentru călătoria ta la Cluj-Napoca.",
+      "buttonText": "Vezi mașinile"
+    }
   },
   "faq": {
     "questions": {
@@ -743,5 +1013,19 @@
     "availableCars": "Mașini disponibile",
     "couldNotLoadVehicles": "Nu s-au putut încărca vehiculele. Încercați să căutați din nou.",
     "noVehiclesFoundMessage": "Nu s-au găsit vehicule care să corespundă criteriilor. Încercați să extindeți căutarea sau verificați mai târziu."
+  },
+  "reservationCharges": {
+    "pickupLocationFee": "Taxă locație ridicare ({location})",
+    "returnLocationFee": "Taxă locație returnare ({location})",
+    "snowChains": "Lanțuri de zăpadă ({days, plural, one {# zi} few {# zile} other {# de zile}})",
+    "childSeat1to4": "Scaun copil 1-4 ani ×{count} ({days, plural, one {# zi} few {# zile} other {# de zile}})",
+    "childSeat5to12": "Scaun copil 5-12 ani ×{count} ({days, plural, one {# zi} few {# zile} other {# de zile}})",
+    "extraKm": "Kilometri suplimentari (+{km} km)"
+  },
+  "errorPage": {
+    "title": "Ceva nu a funcționat",
+    "description": "A apărut o eroare neașteptată. Încercați din nou sau reveniți la pagina principală.",
+    "tryAgain": "Încearcă din nou",
+    "goHome": "Pagina principală"
   }
 }

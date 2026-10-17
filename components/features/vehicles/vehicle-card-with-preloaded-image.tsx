@@ -9,11 +9,10 @@ import { Separator } from "@/components/ui/separator";
 import { Cog, Fuel, CarFront, Icon } from "lucide-react";
 import { gearbox } from "@lucide/lab";
 import { Vehicle } from "@/types/vehicle";
-import {
-  buildReservationUrl,
-  calculateVehiclePricingWithSeason,
-} from "@/lib/vehicle-utils";
+import { calculateVehiclePricingWithSeason } from "@/lib/vehicle-utils";
+import { carsPath } from "@/lib/localized-routes";
 import { getBasePricePerDay } from "@/types/vehicle";
+import { getLongestTierPricePerDayWithSeason } from "@/lib/pricing";
 import { useDateBasedSeasonalPricing } from "@/hooks/use-date-based-seasonal-pricing";
 import { useTranslations, useLocale } from "next-intl";
 
@@ -26,10 +25,11 @@ interface VehicleCardWithPreloadedImageProps {
   restitutionLocation?: string | null;
   pickupTime?: string | null;
   returnTime?: string | null;
-}
-
-function buildCarDetailsUrl(vehicleSlug: string | undefined, vehicleId: string): string {
-  return `/cars/${vehicleSlug || vehicleId}`;
+  /**
+   * Only the first few above-the-fold cards should preload their image;
+   * the rest lazy-load so they don't compete with LCP content.
+   */
+  imagePriority?: boolean;
 }
 
 export function VehicleCardWithPreloadedImage({
@@ -41,15 +41,14 @@ export function VehicleCardWithPreloadedImage({
   restitutionLocation,
   pickupTime,
   returnTime,
+  imagePriority = false,
 }: VehicleCardWithPreloadedImageProps) {
   const t = useTranslations("vehicleCard");
   const tCommon = useTranslations("common");
   const locale = useLocale();
 
-  const { multiplier: currentMultiplier } = useDateBasedSeasonalPricing(
-    pickupDate,
-    returnDate,
-  );
+  const { multiplier: currentMultiplier, isLoading: isSeasonLoading } =
+    useDateBasedSeasonalPricing(pickupDate, returnDate);
 
   const priceDetails = React.useMemo(() => {
     if (!vehicle) {
@@ -92,9 +91,21 @@ export function VehicleCardWithPreloadedImage({
     return Math.round(basePrice * currentMultiplier);
   }, [priceDetails.days, priceDetails.basePrice, vehicle, currentMultiplier]);
 
+  const hasDates = Boolean(pickupDate && returnDate);
+  const fromPricePerDay =
+    hasDates || isSeasonLoading
+      ? null
+      : getLongestTierPricePerDayWithSeason(vehicle, currentMultiplier);
+
   const currency = "EUR";
-  const reservationUrl = vehicle ? buildReservationUrl(vehicle._id) : "#";
-  const carDetailsUrl = vehicle ? buildCarDetailsUrl(vehicle.slug, vehicle._id) : "#";
+  // Carry the vehicle in the href so new-tab/cmd-click works; the reservation
+  // page moves it into per-tab storage and strips it back to a bare URL.
+  const reservationUrl = vehicle
+    ? `/${locale}/reservation?vehicleId=${vehicle._id}`
+    : "#";
+  const carDetailsUrl = vehicle
+    ? carsPath(locale, vehicle.slug || vehicle._id)
+    : "#";
 
   if (!vehicle || typeof vehicle._id !== "string") {
     return (
@@ -117,12 +128,34 @@ export function VehicleCardWithPreloadedImage({
             fill
             style={{ objectFit: "cover" }}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            priority
+            priority={imagePriority}
           />
         ) : (
           <div className="flex items-center justify-center h-full text-muted-foreground">
             <span className="text-sm">{tCommon("noImage")}</span>
           </div>
+        )}
+        {fromPricePerDay !== null && (
+          <>
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(140%_120%_at_100%_0%,rgb(0_0_0/0.75),rgb(0_0_0/0.45)_30%,rgb(0_0_0/0.15)_65%,rgb(0_0_0/0.05))] transition-opacity duration-300 group-hover:opacity-70"
+            />
+            <div className="absolute top-0 right-0 flex flex-col items-end rounded-bl-2xl bg-gradient-to-br from-[#F6D77A] via-[#E2B64A] to-[#B8902B] px-3.5 pt-2 pb-2.5 text-stone-950 shadow-[0_8px_24px_-6px_rgb(0_0_0/0.55)] ring-1 ring-inset ring-white/35 animate-in fade-in slide-in-from-top-1 duration-500">
+              <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.18em] text-stone-900/80">
+                {t("fromPrice")}
+              </span>
+              <span className="mt-1 flex items-baseline gap-1 leading-none">
+                <span className="font-heading text-[1.75rem] font-extrabold tabular-nums tracking-tight">
+                  {fromPricePerDay}
+                </span>
+                <span className="text-base font-bold">€</span>
+                <span className="text-[11px] font-semibold text-stone-900/75">
+                  {t("perDay")}
+                </span>
+              </span>
+            </div>
+          </>
         )}
       </Link>
 
@@ -137,7 +170,7 @@ export function VehicleCardWithPreloadedImage({
           </span>
         </div>
 
-        {pickupDate && returnDate && (
+        {hasDates && (
           <div className="space-y-1.5">
             <div className="flex justify-between items-baseline">
               <div>
@@ -185,7 +218,9 @@ export function VehicleCardWithPreloadedImage({
           className="w-full bg-[#055E3B] hover:bg-[#055E3B]/80 text-white font-bold py-2 rounded-xl text-xs"
           asChild
         >
-          <Link href={reservationUrl}>{t("bookNow")}</Link>
+          <Link href={reservationUrl} rel="nofollow">
+            {t("bookNow")}
+          </Link>
         </Button>
       </div>
 
