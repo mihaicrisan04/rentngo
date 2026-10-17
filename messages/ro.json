@@ -731,7 +731,9 @@
     "terms": "Termeni",
     "copyright": "© 2026 Rent'n Go Cluj",
     "allRightsReserved": "Toate drepturile rezervate",
-    "builtBy": "Creat de"
+    "builtBy": "Creat de",
+    "anpcSal": "Soluționarea alternativă a litigiilor (ANPC)",
+    "anpcSol": "Soluționarea online a litigiilor (Comisia Europeană)"
   },
   "search": {
     "pickupLocation": "Locația de Ridicare",

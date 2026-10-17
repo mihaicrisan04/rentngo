@@ -731,7 +731,9 @@
     "terms": "Terms",
     "copyright": "© 2026 Rent'n Go Cluj",
     "allRightsReserved": "All rights reserved",
-    "builtBy": "Built by"
+    "builtBy": "Built by",
+    "anpcSal": "Alternative dispute resolution (ANPC)",
+    "anpcSol": "Online dispute resolution (European Commission)"
   },
   "search": {
     "pickupLocation": "Pick-up Location",
