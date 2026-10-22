@@ -6,7 +6,7 @@ export interface TestimonialCardProps {
   rating: number;
   text: string;
   /** Already localized, e.g. "mai 2026". */
-  postedLabel: string;
+  postedLabel?: string;
   className?: string;
 }
 
@@ -34,8 +34,12 @@ export function TestimonialCard({
           {author.charAt(0).toUpperCase()}
         </span>
         <div className="flex min-w-0 flex-1 flex-col items-start">
-          <span className="truncate font-semibold leading-tight">{author}</span>
-          <span className="text-xs text-muted-foreground">{postedLabel}</span>
+          <span className="max-w-full truncate font-semibold leading-tight">
+            {author}
+          </span>
+          {postedLabel && (
+            <span className="text-xs text-muted-foreground">{postedLabel}</span>
+          )}
         </div>
         <GoogleIcon className="size-5 shrink-0" />
       </figcaption>

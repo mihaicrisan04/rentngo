@@ -74,9 +74,12 @@ export function TestimonialsSection({ className }: TestimonialsSectionProps) {
                       author={review.author}
                       rating={review.rating}
                       text={review.text}
-                      postedLabel={monthFormat.format(
-                        new Date(`${review.postedAt}-01T00:00:00Z`),
-                      )}
+                      postedLabel={
+                        review.postedAt &&
+                        monthFormat.format(
+                          new Date(`${review.postedAt}-01T00:00:00Z`),
+                        )
+                      }
                     />
                   )),
                 )}
