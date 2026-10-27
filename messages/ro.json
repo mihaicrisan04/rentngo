@@ -26,8 +26,10 @@
       "airportDesc": "Cluj-Napoca",
       "support": "24/7",
       "supportDesc": "Suport",
-      "roadside": "Gratis",
-      "roadsideDesc": "Asistență rutieră"
+      "roadside": "Asistență rutieră",
+      "roadsideDesc": "Inclusă în preț",
+      "noCard": "Fără card de credit",
+      "noCardDesc": "Nu e obligatoriu"
     }
   },
   "aboutPage": {

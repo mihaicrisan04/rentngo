@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Plane, Clock, Star, Headphones } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { FeaturesSectionWithHoverEffects } from "@/components/features/landing/feature-section-with-hover-effects";
@@ -21,10 +21,10 @@ import {
 } from "@/components/ui/progressive-carousel";
 import { Vehicle } from "@/types/vehicle";
 import { sectionAnimationVariants } from "@/lib/animations";
-import { GOOGLE_RATING, GOOGLE_REVIEWS_URL } from "@/lib/google-reviews";
 import { carsPath } from "@/lib/localized-routes";
 import { useLocale, useTranslations } from "next-intl";
 import { useQuery } from "convex/react";
+import { useTrustItems } from "@/hooks/use-trust-items";
 import { api } from "@/convex/_generated/api";
 import { useVehicleSearch } from "@/hooks/use-vehicle-search";
 import { SearchData } from "@/lib/search-storage";
@@ -107,6 +107,7 @@ export function HomePageClient({ initialVehicles }: HomePageClientProps) {
 
   const { searchState, updateSearchField } = useVehicleSearch();
   const { vehicles, titleKey } = useLiveHomepageVehicles(initialVehicles);
+  const trustItems = useTrustItems();
 
   const faqItems = [
     {
@@ -192,56 +193,22 @@ export function HomePageClient({ initialVehicles }: HomePageClientProps) {
         >
           <div className="max-w-5xl mx-auto w-full px-4 mt-4 mb-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                {
-                  icon: Star,
-                  label: t("trustBar.rating", {
-                    score: GOOGLE_RATING.score.toFixed(1),
-                  }),
-                  value: t("trustBar.ratingDesc", {
-                    count: GOOGLE_RATING.reviewCount,
-                  }),
-                  href: GOOGLE_REVIEWS_URL,
-                },
-                {
-                  icon: Plane,
-                  label: t("trustBar.airport"),
-                  value: t("trustBar.airportDesc"),
-                },
-                {
-                  icon: Clock,
-                  label: t("trustBar.support"),
-                  value: t("trustBar.supportDesc"),
-                },
-                {
-                  icon: Headphones,
-                  label: t("trustBar.roadside"),
-                  value: t("trustBar.roadsideDesc"),
-                },
-              ].map((item, i) => {
-                const TrustItem = item.href ? "a" : "div";
-                return (
-                  <TrustItem
-                    key={i}
-                    {...(item.href && {
-                      href: item.href,
-                      target: "_blank",
-                      rel: "noopener noreferrer",
-                    })}
-                    className="flex items-center gap-3 px-5 py-4 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm transition-colors [a&]:hover:bg-card"
-                  >
-                    <item.icon className="w-5 h-5 text-primary flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-sm font-semibold text-foreground truncate">
-                        {item.label}
-                      </div>
-                      <div className="text-xs text-muted-foreground truncate">
-                        {item.value}
-                      </div>
+              {trustItems.map((item) => (
+                <div
+                  key={item.label}
+                  className="flex items-center gap-3 px-5 py-4 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm"
+                >
+                  <item.icon className="w-5 h-5 text-primary flex-shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-foreground truncate">
+                      {item.label}
                     </div>
-                  </TrustItem>
-                );
-              })}
+                    <div className="text-xs text-muted-foreground truncate">
+                      {item.value}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </AnimatedGroup>
