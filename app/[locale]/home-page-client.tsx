@@ -2,6 +2,7 @@
 
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { FeaturesSectionWithHoverEffects } from "@/components/features/landing/feature-section-with-hover-effects";
 import { Button } from "@/components/ui/button";
@@ -37,8 +38,19 @@ interface VehicleWithImageUrl extends Vehicle {
   imageUrl: string | null;
 }
 
+export interface HomeHeroProps {
+  searchState: SearchData & { isHydrated: boolean };
+  updateSearchField: <K extends keyof SearchData>(
+    field: K,
+    value: SearchData[K],
+  ) => void;
+  vehicles: VehicleWithImageUrl[];
+}
+
 interface HomePageClientProps {
   initialVehicles: HomepageVehicles<VehicleWithImageUrl>;
+  /** Replaces the default hero and trust bar. */
+  hero?: (props: HomeHeroProps) => ReactNode;
 }
 
 function useLiveHomepageVehicles(
@@ -99,7 +111,7 @@ function VehicleList({
   );
 }
 
-export function HomePageClient({ initialVehicles }: HomePageClientProps) {
+export function HomePageClient({ initialVehicles, hero }: HomePageClientProps) {
   const t = useTranslations("homepage");
   const locale = useLocale();
   const tAbout = useTranslations("aboutPage");
@@ -142,76 +154,82 @@ export function HomePageClient({ initialVehicles }: HomePageClientProps) {
 
   return (
     <>
-      <BackgroundImage bottomGradient={true} />
+      {!hero && <BackgroundImage bottomGradient={true} />}
 
       <div className="relative z-10 flex flex-col overflow-x-clip">
-        {/* ═══════════════════════════════════════════
+        {hero ? (
+          hero({ searchState, updateSearchField, vehicles })
+        ) : (
+          <>
+            {/* ═══════════════════════════════════════════
             HERO — cinematic, full-impact
         ═══════════════════════════════════════════ */}
-        <div className="flex flex-col gap-12 max-w-5xl mx-auto p-4 md:p-6 lg:p-8 w-full mt-[8%] md:mt-[12%] lg:mt-[16%]">
-          <AnimatedGroup
-            variants={sectionAnimationVariants}
-            threshold={0.2}
-            triggerOnce={true}
-          >
-            <div className="text-center relative">
-              <div className="absolute inset-0 bg-black/50 blur-2xl rounded-3xl -z-10 scale-110"></div>
+            <div className="flex flex-col gap-12 max-w-5xl mx-auto p-4 md:p-6 lg:p-8 w-full mt-[8%] md:mt-[12%] lg:mt-[16%]">
+              <AnimatedGroup
+                variants={sectionAnimationVariants}
+                threshold={0.2}
+                triggerOnce={true}
+              >
+                <div className="text-center relative">
+                  <div className="absolute inset-0 bg-black/50 blur-2xl rounded-3xl -z-10 scale-110"></div>
 
-              <div className="inline-flex items-center gap-2 px-5 py-2 mb-8 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-sm font-medium text-white/90 shadow-lg shadow-black/10">
-                <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                Cluj-Napoca, Romania
-              </div>
+                  <div className="inline-flex items-center gap-2 px-5 py-2 mb-8 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-sm font-medium text-white/90 shadow-lg shadow-black/10">
+                    <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                    Cluj-Napoca, Romania
+                  </div>
 
-              <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-white font-bold tracking-tight leading-[1.05]">
-                {t("title")}
-              </h1>
-              <p className="mt-6 text-lg md:text-xl lg:text-2xl text-white/75 max-w-2xl mx-auto leading-relaxed font-light">
-                {t("subtitle")}
-              </p>
+                  <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-white font-bold tracking-tight leading-[1.05]">
+                    {t("title")}
+                  </h1>
+                  <p className="mt-6 text-lg md:text-xl lg:text-2xl text-white/75 max-w-2xl mx-auto leading-relaxed font-light">
+                    {t("subtitle")}
+                  </p>
+                </div>
+              </AnimatedGroup>
+
+              <AnimatedGroup
+                variants={sectionAnimationVariants}
+                threshold={0.2}
+                triggerOnce={true}
+              >
+                <VehicleSearchFilterForm
+                  searchState={searchState}
+                  updateSearchField={updateSearchField}
+                />
+              </AnimatedGroup>
             </div>
-          </AnimatedGroup>
 
-          <AnimatedGroup
-            variants={sectionAnimationVariants}
-            threshold={0.2}
-            triggerOnce={true}
-          >
-            <VehicleSearchFilterForm
-              searchState={searchState}
-              updateSearchField={updateSearchField}
-            />
-          </AnimatedGroup>
-        </div>
-
-        {/* ═══════════════════════════════════════════
+            {/* ═══════════════════════════════════════════
             TRUST BAR — quick social proof strip
         ═══════════════════════════════════════════ */}
-        <AnimatedGroup
-          variants={sectionAnimationVariants}
-          threshold={0.2}
-          triggerOnce={true}
-        >
-          <div className="max-w-5xl mx-auto w-full px-4 mt-4 mb-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {trustItems.map((item) => (
-                <div
-                  key={item.label}
-                  className="flex items-center gap-3 px-5 py-4 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm"
-                >
-                  <item.icon className="w-5 h-5 text-primary flex-shrink-0" />
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-foreground truncate">
-                      {item.label}
+            <AnimatedGroup
+              variants={sectionAnimationVariants}
+              threshold={0.2}
+              triggerOnce={true}
+            >
+              <div className="max-w-5xl mx-auto w-full px-4 mt-4 mb-8">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {trustItems.map((item) => (
+                    <div
+                      key={item.label}
+                      className="flex items-center gap-3 px-5 py-4 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm"
+                    >
+                      <item.icon className="w-5 h-5 text-primary flex-shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-foreground truncate">
+                          {item.label}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {item.value}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {item.value}
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        </AnimatedGroup>
+              </div>
+            </AnimatedGroup>
+          </>
+        )}
 
         {/* ═══════════════════════════════════════════
             FEATURED VEHICLES

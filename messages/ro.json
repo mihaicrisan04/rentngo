@@ -759,7 +759,9 @@
     "searchingLocations": "Se caută locații...",
     "noLocationsFound": "Nu s-au găsit locații.",
     "minimumCharacters": "Introduceți cel puțin 2 caractere pentru căutare...",
-    "clearSelection": "Șterge selecția"
+    "clearSelection": "Șterge selecția",
+    "differentReturnLocation": "Returnare în altă locație",
+    "sameReturnLocation": "Returnare în aceeași locație"
   },
   "vehicleCard": {
     "or": "sau",
